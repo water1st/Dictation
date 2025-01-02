@@ -31,6 +31,7 @@
             lableAaccuracyRate = new Label();
             resultGridView = new DataGridView();
             word = new DataGridViewTextBoxColumn();
+            btnExport = new Button();
             ((System.ComponentModel.ISupportInitialize)resultGridView).BeginInit();
             SuspendLayout();
             // 
@@ -62,11 +63,23 @@
             word.Name = "word";
             word.ReadOnly = true;
             // 
+            // btnExport
+            // 
+            btnExport.Enabled = false;
+            btnExport.Location = new Point(676, 25);
+            btnExport.Name = "btnExport";
+            btnExport.Size = new Size(112, 34);
+            btnExport.TabIndex = 3;
+            btnExport.Text = "导出错误单词";
+            btnExport.UseVisualStyleBackColor = true;
+            btnExport.Click += btnExport_Click;
+            // 
             // ResultWindow
             // 
             AutoScaleDimensions = new SizeF(11F, 24F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(btnExport);
             Controls.Add(resultGridView);
             Controls.Add(lableAaccuracyRate);
             Name = "ResultWindow";
@@ -81,5 +94,6 @@
         private Label lableAaccuracyRate;
         private DataGridView resultGridView;
         private DataGridViewTextBoxColumn word;
+        private Button btnExport;
     }
 }
