@@ -9,7 +9,8 @@ namespace Dictation.Core
         public readonly static Dictionary<string, string> SupportLanguages = new Dictionary<string, string>
         {
             {"ja","日语"},
-            {"en","英语"}
+            {"en","英语"},
+            { "edge-jp","日语（edge）" }
         };
 
         private TTSOption() { }

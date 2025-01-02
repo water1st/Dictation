@@ -1,4 +1,5 @@
 ﻿
+using Edge_tts_sharp;
 using System;
 using System.Linq;
 using System.Speech.Synthesis;

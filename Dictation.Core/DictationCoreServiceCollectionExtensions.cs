@@ -12,6 +12,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.AddKeyedTransient<ITTSPlayer, JapaneseTTSPlayer>("ja");
             services.AddKeyedTransient<ITTSPlayer, EnglishTTSPlayer>("en");
+            services.AddKeyedTransient<ITTSPlayer, JapaneseEdgeTTSPlayer>("edge-jp");
             services.AddTransient<DictationManager>();
             services.AddTransient<TTSFactory>();
 
