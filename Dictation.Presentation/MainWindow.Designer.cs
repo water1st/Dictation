@@ -37,6 +37,7 @@
             WordColumn = new DataGridViewTextBoxColumn();
             ActionColumn = new DataGridViewButtonColumn();
             listLanguage = new ComboBox();
+            lbWordCount = new Label();
             ((System.ComponentModel.ISupportInitialize)dataGridViewWords).BeginInit();
             SuspendLayout();
             // 
@@ -127,11 +128,21 @@
             listLanguage.TabIndex = 12;
             listLanguage.SelectedIndexChanged += listLanguage_SelectedIndexChanged;
             // 
+            // lbWordCount
+            // 
+            lbWordCount.AutoSize = true;
+            lbWordCount.Location = new Point(495, 79);
+            lbWordCount.Name = "lbWordCount";
+            lbWordCount.Size = new Size(129, 24);
+            lbWordCount.TabIndex = 13;
+            lbWordCount.Text = "总共：0个单词";
+            // 
             // MainWindow
             // 
             AutoScaleDimensions = new SizeF(11F, 24F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(lbWordCount);
             Controls.Add(listLanguage);
             Controls.Add(dataGridViewWords);
             Controls.Add(btnAddWord);
@@ -157,5 +168,6 @@
         private DataGridViewTextBoxColumn WordColumn;
         private DataGridViewButtonColumn ActionColumn;
         private ComboBox listLanguage;
+        private Label lbWordCount;
     }
 }

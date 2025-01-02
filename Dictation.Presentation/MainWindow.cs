@@ -37,6 +37,9 @@ namespace Dictation.Presentation
             {
                 dataGridViewWords.Rows.Add(word);
             }
+
+
+            lbWordCount.Text = $"总共：{wordCollection.Count}个单词";
         }
 
         private void btnImportWords_Click(object sender, EventArgs e)
