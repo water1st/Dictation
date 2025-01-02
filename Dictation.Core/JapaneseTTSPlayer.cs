@@ -3,6 +3,7 @@ using Edge_tts_sharp;
 using System;
 using System.Linq;
 using System.Speech.Synthesis;
+using System.Threading.Tasks;
 
 namespace Dictation.Core
 {
@@ -53,13 +54,18 @@ namespace Dictation.Core
 
             try
             {
+                
                 var speakWord = word;
                 if (word.Contains(','))
                 {
                     speakWord = word.Split(',')[0].Trim();
                 }
 
-                synthesizer.Speak(speakWord);
+                Task.Run(async () => {
+                    await Task.Delay(1000);
+                    synthesizer.Speak(speakWord);
+                });
+                
             }
             catch (Exception ex)
             {

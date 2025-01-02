@@ -53,7 +53,7 @@ namespace Dictation.Presentation
             if (!dictationManager.IsEnd)
             {
                 InitializeDrawingBoard();
-                PlayNext();
+                currentWord = dictationManager.PlayNextWord();
             }
             else
             {
@@ -155,18 +155,7 @@ namespace Dictation.Presentation
         {
             base.OnShown(e);
 
-            PlayNext();
-        }
-
-
-        private void PlayNext()
-        {
-            Task.Run(async () =>
-            {
-                await Task.Delay(1000);
-                currentWord = dictationManager.PlayNextWord();
-            });
-
+            currentWord = dictationManager.PlayNextWord();
         }
     }
 }
