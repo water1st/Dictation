@@ -28,6 +28,12 @@ namespace Dictation.Presentation
             SetStyle(ControlStyles.AllPaintingInWmPaint, true);
             SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
             SetStyle(ControlStyles.UserPaint, true);
+
+        }
+
+        private void UpdateStatus()
+        {
+            labelStatus.Text = $"{dictationManager.Current}/{dictationManager.WordCount}";
         }
 
 
@@ -61,6 +67,7 @@ namespace Dictation.Presentation
             {
                 InitializeDrawingBoard();
                 currentWord = dictationManager.PlayNextWord();
+                UpdateStatus();
             }
             else
             {
@@ -165,6 +172,7 @@ namespace Dictation.Presentation
             base.OnShown(e);
 
             currentWord = dictationManager.PlayNextWord();
+            UpdateStatus();
         }
 
         private void btnClear_Click(object sender, EventArgs e)

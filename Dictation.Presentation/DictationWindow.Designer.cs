@@ -32,6 +32,7 @@
             btnPlay = new Button();
             drawingPanel = new Panel();
             btnClear = new Button();
+            labelStatus = new Label();
             SuspendLayout();
             // 
             // btnNext
@@ -57,7 +58,7 @@
             // drawingPanel
             // 
             drawingPanel.BackColor = SystemColors.ButtonHighlight;
-            drawingPanel.Location = new Point(12, 77);
+            drawingPanel.Location = new Point(12, 110);
             drawingPanel.Name = "drawingPanel";
             drawingPanel.Size = new Size(500, 200);
             drawingPanel.TabIndex = 2;
@@ -75,11 +76,21 @@
             btnClear.UseVisualStyleBackColor = true;
             btnClear.Click += btnClear_Click;
             // 
+            // labelStatus
+            // 
+            labelStatus.AutoSize = true;
+            labelStatus.Location = new Point(12, 74);
+            labelStatus.Name = "labelStatus";
+            labelStatus.Size = new Size(40, 24);
+            labelStatus.TabIndex = 0;
+            labelStatus.Text = "0/0";
+            // 
             // DictationWindow
             // 
             AutoScaleDimensions = new SizeF(11F, 24F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(527, 295);
+            ClientSize = new Size(527, 322);
+            Controls.Add(labelStatus);
             Controls.Add(btnClear);
             Controls.Add(drawingPanel);
             Controls.Add(btnPlay);
@@ -88,6 +99,7 @@
             StartPosition = FormStartPosition.CenterScreen;
             Text = "听写";
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -96,5 +108,6 @@
         private Button btnPlay;
         private Panel drawingPanel;
         private Button btnClear;
+        private Label labelStatus;
     }
 }

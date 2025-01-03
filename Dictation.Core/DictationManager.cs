@@ -10,10 +10,13 @@ namespace Dictation.Core
         private readonly ITTSPlayer player;
         private readonly List<string> worlds;
         private string currentWorld;
+        private int count;
+        private int current = 0;
 
         public DictationManager(WordCollection wordManager, WordDrawingCollection wordDrawings, TTSFactory ttsFactory)
         {
             worlds = new List<string>(wordManager);
+            count = wordManager.Count;
             this.wordDrawings = wordDrawings;
             player = ttsFactory.CreateTTSPlayer();
         }
@@ -26,6 +29,10 @@ namespace Dictation.Core
             }
 
         }
+
+        public int WordCount => count;
+
+        public int Current => current;
 
         public IEnumerable<string> Stop()
         {
@@ -40,6 +47,7 @@ namespace Dictation.Core
         {
             if (worlds.Count > 0)
             {
+                current++;
                 Random random = new Random();
                 var index = random.Next(worlds.Count);
 
