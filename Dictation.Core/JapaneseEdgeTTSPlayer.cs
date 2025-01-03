@@ -1,6 +1,7 @@
 ﻿using Edge_tts_sharp;
 using Edge_tts_sharp.Model;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Dictation.Core
 {
@@ -21,12 +22,15 @@ namespace Dictation.Core
                 speakWord = word.Split(',')[0].Trim();
             }
 
-            Edge_tts.PlayText(new PlayOption
+            Task.Run(() =>
             {
-                Rate = 0,
-                Volume = 1,
-                Text = speakWord
-            }, voice);
+                Edge_tts.PlayText(new PlayOption
+                {
+                    Rate = 0,
+                    Volume = 1,
+                    Text = speakWord
+                }, voice);
+            });
         }
     }
 }

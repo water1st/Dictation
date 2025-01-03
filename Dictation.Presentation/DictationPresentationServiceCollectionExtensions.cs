@@ -6,10 +6,10 @@ namespace Dictation.Presentation
     {
         public static IServiceCollection AddDictationPresentation(this IServiceCollection services)
         {
-            services.AddTransient<MainWindow>();
-            services.AddTransient<DictationWindow>();
-            services.AddTransient<ResultWindow>();
-            services.AddTransient<ReviewWindow>();
+            services.AddSingleton<MainWindow>();
+            services.AddSingleton<DictationWindow>();
+            services.AddSingleton<ResultWindow>();
+            services.AddSingleton<ReviewWindow>();
 
             services.AddTransient<WindowFactory>();
 
