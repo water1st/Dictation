@@ -1,4 +1,5 @@
 ﻿using Dictation.Core;
+using System.Drawing.Drawing2D;
 
 namespace Dictation.Presentation
 {
@@ -11,6 +12,7 @@ namespace Dictation.Presentation
         private Point lastPoint = Point.Empty;
         private Bitmap drawingBitmap;
         private Graphics drawingGraphics;
+        GraphicsPath currentPath;
         private bool end = false;
 
         public DictationWindow(WordDrawingCollection wordDrawings,
@@ -37,6 +39,7 @@ namespace Dictation.Presentation
             // 创建绘图对象并设置背景颜色
             drawingGraphics = Graphics.FromImage(drawingBitmap);
             drawingGraphics.Clear(Color.White);
+            currentPath = new GraphicsPath();
         }
 
         private void btnNext_Click(object sender, EventArgs e)
@@ -90,6 +93,10 @@ namespace Dictation.Presentation
             if (e.Button == MouseButtons.Left)
             {
                 lastPoint = e.Location; // 记录初始点
+
+                currentPath.Reset();
+                currentPath.StartFigure(); // 开始一个新的路径
+                currentPath.AddLine(lastPoint, lastPoint); // 第一个点
             }
         }
 
@@ -97,6 +104,7 @@ namespace Dictation.Presentation
         {
             if (e.Button == MouseButtons.Left)
             {
+                currentPath.CloseFigure(); // 结束当前路径
                 lastPoint = Point.Empty; // 重置点
             }
         }
@@ -106,17 +114,14 @@ namespace Dictation.Presentation
             if (lastPoint != Point.Empty)
             {
 
-                // 在位图上绘制
+                // 增加当前点到路径中
+                currentPath.AddLine(lastPoint, e.Location); // 连接当前点与上一个点
 
-                using (var pen = new Pen(Color.Black, 5)) // 设置画笔颜色和粗细
-                {
-                    drawingGraphics.DrawLine(pen, lastPoint, e.Location);
-                }
+                // 清除之前的绘制，并用当前路径重新绘制
+                drawingGraphics.DrawPath(new Pen(Color.Black, 5), currentPath); // 绘制当前路径
 
-                // 更新画板的显示
-                drawingPanel.Invalidate();
-
-                lastPoint = e.Location; // 更新最后一个点
+                drawingPanel.Invalidate(); // 刷新画板
+                lastPoint = e.Location; // 更新上一个点
             }
         }
 
