@@ -24,6 +24,10 @@ namespace Dictation.Presentation
             InitializeComponent();
 
             InitializeDrawingBoard();
+
+            SetStyle(ControlStyles.AllPaintingInWmPaint, true);
+            SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
+            SetStyle(ControlStyles.UserPaint, true);
         }
 
 
