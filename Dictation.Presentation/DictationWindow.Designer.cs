@@ -31,6 +31,7 @@
             btnNext = new Button();
             btnPlay = new Button();
             drawingPanel = new Panel();
+            btnClear = new Button();
             SuspendLayout();
             // 
             // btnNext
@@ -64,11 +65,22 @@
             drawingPanel.MouseMove += drawingPanel_MouseMove;
             drawingPanel.MouseUp += drawingPanel_MouseUp;
             // 
+            // btnClear
+            // 
+            btnClear.Location = new Point(204, 27);
+            btnClear.Name = "btnClear";
+            btnClear.Size = new Size(112, 34);
+            btnClear.TabIndex = 3;
+            btnClear.Text = "清除";
+            btnClear.UseVisualStyleBackColor = true;
+            btnClear.Click += btnClear_Click;
+            // 
             // DictationWindow
             // 
             AutoScaleDimensions = new SizeF(11F, 24F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(527, 295);
+            Controls.Add(btnClear);
             Controls.Add(drawingPanel);
             Controls.Add(btnPlay);
             Controls.Add(btnNext);
@@ -83,5 +95,6 @@
         private Button btnNext;
         private Button btnPlay;
         private Panel drawingPanel;
+        private Button btnClear;
     }
 }

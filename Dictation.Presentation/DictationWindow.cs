@@ -166,5 +166,10 @@ namespace Dictation.Presentation
 
             currentWord = dictationManager.PlayNextWord();
         }
+
+        private void btnClear_Click(object sender, EventArgs e)
+        {
+            InitializeDrawingBoard();
+        }
     }
 }
