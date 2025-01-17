@@ -8,10 +8,12 @@ namespace Dictation.Core
         private static readonly Lazy<TTSOption> instance = new Lazy<TTSOption>(() => new TTSOption());
         public readonly static Dictionary<string, string> SupportLanguages = new Dictionary<string, string>
         {
-            { "1_ja","日语（edge）" },
-            {"0_ja","日语"},
-            {"0_en","英语"},
-            { "0_zh","中文"}
+            { "edge_ja","日语（edge）" },
+            { "edge_en","英语（edge）" },
+            { "edge_zh","汉语（edge）" },
+            { "system_ja","日语"},
+            { "system_en","英语"},
+            { "system_zh","汉语"}
 
         };
 

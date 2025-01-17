@@ -9,8 +9,8 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<WordCollection>();
             services.AddSingleton<WordDrawingCollection>();
 
-            services.AddTransient<SystemTTSPlayer>();
-            services.AddTransient<JapaneseEdgeTTSPlayer>();
+            services.AddKeyedTransient<ITTSPlayer, SystemTTSPlayer>("system");
+            services.AddKeyedTransient<ITTSPlayer, EdgeTTSPlayer>("edge");
             services.AddTransient<DictationManager>();
             services.AddTransient<TTSFactory>();
 

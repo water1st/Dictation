@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 
 namespace Dictation.Core
 {
-    [TTS(target: TTSTarget.System, "any")]
     internal class SystemTTSPlayer : ITTSPlayer
     {
         private SpeechSynthesizer synthesizer;
@@ -28,9 +27,7 @@ namespace Dictation.Core
             {
                 var voices = synthesizer.GetInstalledVoices();
 
-                var language = TTSOption.Instance.Language.Key.Split('_')[1];
-
-                var voice = voices.FirstOrDefault(v => v?.VoiceInfo?.Culture?.TwoLetterISOLanguageName == language);
+                var voice = voices.FirstOrDefault(v => v?.VoiceInfo?.Culture?.TwoLetterISOLanguageName == TTSOption.Instance.Language.Key.Split('_')[1]);
 
                 if (voice != null)
                 {
