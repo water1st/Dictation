@@ -64,8 +64,9 @@ namespace Dictation.Presentation
                             if (word.StartsWith('#'))
                                 continue;
 
-                            word = word.Replace('，', ',');
-                            word = word.Replace('。', ',');
+                            word = word.Replace('，', '_');
+                            word = word.Replace('。', '_');
+                            word = word.Replace('\t', '_');
 
                             if (!string.IsNullOrEmpty(word))
                             {

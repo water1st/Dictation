@@ -4,6 +4,7 @@ namespace Dictation.Core
 {
     internal class TTSProxy : ITTSPlayer
     {
+        private const char SEPARATOR = '_';
         private readonly ITTSPlayer player;
 
         public TTSProxy(ITTSPlayer player)
@@ -17,9 +18,9 @@ namespace Dictation.Core
                 throw new ArgumentException("单词不能为空或仅为空格。", nameof(word));
 
             var speakWord = word;
-            if (word.Contains(','))
+            if (word.Contains(SEPARATOR))
             {
-                speakWord = word.Split(',')[0].Trim();
+                speakWord = word.Split(SEPARATOR)[0].Trim();
             }
 
             player.Play(speakWord);
