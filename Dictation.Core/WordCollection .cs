@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 
 namespace Dictation.Core
 {
@@ -12,6 +13,40 @@ namespace Dictation.Core
             if (!string.IsNullOrWhiteSpace(word) && !words.Contains(word))
             {
                 words.Add(word);
+            }
+        }
+
+        public void Import(IEnumerable<string> lines)
+        {
+            const char defaultSeparator = '_';
+            var separator = defaultSeparator;
+
+            // 遍历每行并添加单词
+            foreach (var line in lines)
+            {
+                string word = line.Trim();
+                if (word.StartsWith('#'))
+                {
+                    word = word.ToLower();
+                    const string keyword = "#separator:";
+
+
+                    if (word.StartsWith(keyword) && word.Length > keyword.Length)
+                    {
+                        separator = word[keyword.Length];
+                    }
+
+                    continue;
+                }
+
+
+                if (!string.IsNullOrEmpty(word))
+                {
+                    if (separator != defaultSeparator)
+                        word = word.Replace(separator, defaultSeparator);
+
+                    AddWord(word);
+                }
             }
         }
 
