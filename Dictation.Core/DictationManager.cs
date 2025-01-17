@@ -4,7 +4,7 @@ using System.Drawing;
 
 namespace Dictation.Core
 {
-    public class DictationManager
+    public class DictationManager : IDisposable
     {
         private readonly WordDrawingCollection wordDrawings;
         private readonly ITTSPlayer player;
@@ -71,5 +71,9 @@ namespace Dictation.Core
                 wordDrawings.Add(new WordDrawing(word, bitmap));
         }
 
+        public void Dispose()
+        {
+            player.Dispose();
+        }
     }
 }

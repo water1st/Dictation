@@ -1,20 +1,21 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System;
+﻿using System;
 
 namespace Dictation.Core
 {
     public class TTSFactory
     {
-        private readonly IServiceProvider serviceProvider;
-
-        public TTSFactory(IServiceProvider serviceProvider)
-        {
-            this.serviceProvider = serviceProvider;
-        }
-
         public ITTSPlayer CreateTTSPlayer()
         {
-            var tts = serviceProvider.GetRequiredKeyedService<ITTSPlayer>(TTSOption.Instance.Target);
+            var language = TTSOption.Instance.LanguageName;
+
+            ITTSPlayer tts;
+            if (TTSOption.Instance.Target == "system")
+                tts = new SystemTTSPlayer(language);
+            else if (TTSOption.Instance.Target == "edge")
+                tts = new EdgeTTSPlayer(language);
+            else
+                throw new NotSupportedException($"不支持{TTSOption.Instance.Target} TTS");
+
             return new TTSProxy(tts);
         }
     }

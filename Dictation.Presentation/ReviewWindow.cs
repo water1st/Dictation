@@ -59,6 +59,8 @@ namespace Dictation.Presentation
 
         protected override void OnClosed(EventArgs e)
         {
+            player.Dispose();
+
             if (!isJudged)
                 DefaultJudge();
 

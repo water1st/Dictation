@@ -3,6 +3,7 @@ using Edge_tts_sharp.Model;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Dictation.Core
@@ -16,12 +17,20 @@ namespace Dictation.Core
             { "en","en-US-AriaNeural" }
         });
 
+        private readonly CancellationTokenSource tokenSource = new CancellationTokenSource();
+
         private readonly eVoice voice;
-        public EdgeTTSPlayer()
+        public EdgeTTSPlayer(string language)
         {
             var voices = Edge_tts.GetVoice();
 
-            voice = voices.FirstOrDefault(c => c.ShortName == ttsMapping[TTSOption.Instance.LanguageName]);
+            voice = voices.FirstOrDefault(c => c.ShortName == ttsMapping[language]);
+        }
+
+        public void Dispose()
+        {
+            tokenSource.Cancel();
+            tokenSource.Dispose();
         }
 
         public void Play(string word)
@@ -34,7 +43,7 @@ namespace Dictation.Core
                     Volume = 1,
                     Text = word
                 }, voice);
-            });
+            }, tokenSource.Token).ConfigureAwait(false);
         }
     }
 }

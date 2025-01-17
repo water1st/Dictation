@@ -140,6 +140,8 @@ namespace Dictation.Presentation
         {
             SaveAndCloseWindow();
 
+            dictationManager.Dispose();
+
             base.OnClosed(e);
         }
 

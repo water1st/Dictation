@@ -12,6 +12,11 @@ namespace Dictation.Core
             this.player = player;
         }
 
+        public void Dispose()
+        {
+            player.Dispose();
+        }
+
         public void Play(string word)
         {
             if (string.IsNullOrWhiteSpace(word))

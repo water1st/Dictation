@@ -1,6 +1,8 @@
-﻿namespace Dictation.Core
+﻿using System;
+
+namespace Dictation.Core
 {
-    public interface ITTSPlayer
+    public interface ITTSPlayer : IDisposable
     {
         void Play(string word);
     }

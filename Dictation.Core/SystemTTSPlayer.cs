@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Linq;
 using System.Speech.Synthesis;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Dictation.Core
 {
-    internal class SystemTTSPlayer : ITTSPlayer, IDisposable
+    internal class SystemTTSPlayer : ITTSPlayer
     {
         private SpeechSynthesizer synthesizer;
+        private readonly CancellationTokenSource tokenSource = new CancellationTokenSource();
 
-        public SystemTTSPlayer()
+        public SystemTTSPlayer(string language)
         {
             synthesizer = new SpeechSynthesizer();
 
@@ -18,16 +20,16 @@ namespace Dictation.Core
             synthesizer.Volume = 100; // 音量：0 到 100
 
             // 设置语音
-            SetVoice();
+            SetVoice(language);
         }
 
-        private void SetVoice()
+        private void SetVoice(string language)
         {
             try
             {
                 var voices = synthesizer.GetInstalledVoices();
 
-                var voice = voices.FirstOrDefault(v => v?.VoiceInfo?.Culture?.TwoLetterISOLanguageName == TTSOption.Instance.LanguageName);
+                var voice = voices.FirstOrDefault(v => v?.VoiceInfo?.Culture?.TwoLetterISOLanguageName == language);
 
                 if (voice != null)
                 {
@@ -53,7 +55,7 @@ namespace Dictation.Core
                 {
                     await Task.Delay(1000);
                     synthesizer.Speak(word);
-                });
+                }, tokenSource.Token).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -65,6 +67,8 @@ namespace Dictation.Core
         {
             if (synthesizer != null)
             {
+                tokenSource.Cancel();
+                tokenSource.Dispose();
                 synthesizer.Dispose();
                 synthesizer = null;
             }
