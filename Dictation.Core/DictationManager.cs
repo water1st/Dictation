@@ -18,7 +18,7 @@ namespace Dictation.Core
             worlds = new List<string>(wordManager);
             count = wordManager.Count;
             this.wordDrawings = wordDrawings;
-            player = ttsFactory.CreateTTSPlayer();
+            player = ttsFactory.CreateTTSPlayer(TTSOption.Instance.LanguageName);
         }
 
         public void PlayCurrentWord()

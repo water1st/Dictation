@@ -4,10 +4,8 @@ namespace Dictation.Core
 {
     public class TTSFactory
     {
-        public ITTSPlayer CreateTTSPlayer()
+        public ITTSPlayer CreateTTSPlayer(string language)
         {
-            var language = TTSOption.Instance.LanguageName;
-
             ITTSPlayer tts;
             if (TTSOption.Instance.Target == "system")
                 tts = new SystemTTSPlayer(language);
