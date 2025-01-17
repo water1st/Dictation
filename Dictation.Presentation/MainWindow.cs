@@ -61,6 +61,10 @@ namespace Dictation.Presentation
                         foreach (var line in lines)
                         {
                             string word = line.Trim();
+
+                            word = word.Replace('，', ',');
+                            word = word.Replace('、', ',');
+
                             if (!string.IsNullOrEmpty(word))
                             {
                                 wordCollection.AddWord(word);
