@@ -38,4 +38,8 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <Target Name="RenameExeFile" AfterTargets="Publish">
+    <Exec Command="ren &quot;$(PublishDir)$(AssemblyName).exe&quot; &quot;DictationApp.exe&quot;" />
+  </Target>
+
 </Project>
