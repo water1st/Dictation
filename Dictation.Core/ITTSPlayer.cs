@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Dictation.Core
+﻿namespace Dictation.Core
 {
     public interface ITTSPlayer
     {
