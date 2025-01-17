@@ -32,7 +32,8 @@ namespace Dictation.Core
                 .FirstOrDefault(c =>
                 {
                     var attr = c.GetCustomAttribute<TTSAttribute>();
-                    return attr != null && attr.Target == target && (attr.Language == "any" || attr.Language == language);
+                    return attr != null && attr.Target == target && (attr.Target == TTSTarget.System || 
+                    (attr.Target == TTSTarget.Edge && attr.Language == language));
                 });
             });
 
