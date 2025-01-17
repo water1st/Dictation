@@ -11,6 +11,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.AddKeyedTransient<ITTSPlayer, SystemTTSPlayer>("system");
             services.AddKeyedTransient<ITTSPlayer, EdgeTTSPlayer>("edge");
+            services.AddTransient<LanguageRecognizer>();
             services.AddTransient<DictationManager>();
             services.AddTransient<TTSFactory>();
 
