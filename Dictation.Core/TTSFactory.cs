@@ -14,9 +14,7 @@ namespace Dictation.Core
 
         public ITTSPlayer CreateTTSPlayer()
         {
-            var key = TTSOption.Instance.Language.Key.Split('_')[0];
-
-            var tts = serviceProvider.GetRequiredKeyedService<ITTSPlayer>(key);
+            var tts = serviceProvider.GetRequiredKeyedService<ITTSPlayer>(TTSOption.Instance.Target);
             return new TTSProxy(tts);
         }
     }

@@ -21,7 +21,7 @@ namespace Dictation.Core
         {
             var voices = Edge_tts.GetVoice();
 
-            voice = voices.FirstOrDefault(c => c.ShortName == ttsMapping[TTSOption.Instance.Language.Key.Split('_')[1]]);
+            voice = voices.FirstOrDefault(c => c.ShortName == ttsMapping[TTSOption.Instance.LanguageName]);
         }
 
         public void Play(string word)

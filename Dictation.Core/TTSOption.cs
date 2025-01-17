@@ -11,18 +11,36 @@ namespace Dictation.Core
             { "edge_zh","汉语（edge）" },
             { "edge_ja","日语（edge）" },
             { "edge_en","英语（edge）" },
-            
+
             { "system_ja","日语"},
             { "system_en","英语"},
             { "system_zh","汉语"}
 
         };
 
+        private KeyValuePair<string, string> language;
+
         private TTSOption() { }
 
         public static TTSOption Instance => instance.Value;
 
-        public KeyValuePair<string, string> Language { get; set; }
+        public string Target { get; private set; }
+        public string LanguageName { get; private set; }
+
+        public KeyValuePair<string, string> Language
+        {
+            get
+            {
+                return language;
+            }
+            set
+            {
+                language = value;
+                var args = language.Key.Split('_');
+                Target = args[0];
+                LanguageName = args[1];
+            }
+        }
 
     }
 }

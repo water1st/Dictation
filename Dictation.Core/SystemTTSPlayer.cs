@@ -27,7 +27,7 @@ namespace Dictation.Core
             {
                 var voices = synthesizer.GetInstalledVoices();
 
-                var voice = voices.FirstOrDefault(v => v?.VoiceInfo?.Culture?.TwoLetterISOLanguageName == TTSOption.Instance.Language.Key.Split('_')[1]);
+                var voice = voices.FirstOrDefault(v => v?.VoiceInfo?.Culture?.TwoLetterISOLanguageName == TTSOption.Instance.LanguageName);
 
                 if (voice != null)
                 {
