@@ -57,7 +57,9 @@ namespace Dictation.Presentation
                         // 读取文件内容
                         var lines = File.ReadAllLines(openFileDialog.FileName);
                         //默认分隔符
-                        var separator = '_';
+                        const char defaultSeparator = '_';
+                        var separator = defaultSeparator;
+                        
 
 
                         // 遍历每行并添加单词
@@ -68,6 +70,7 @@ namespace Dictation.Presentation
                             {
                                 word = word.ToLower();
                                 const string keyword = "#separator:";
+                                
 
                                 if (word.StartsWith(keyword) && word.Length > keyword.Length)
                                 {
@@ -80,8 +83,8 @@ namespace Dictation.Presentation
 
                             if (!string.IsNullOrEmpty(word))
                             {
-                                if (separator != '_')
-                                    word = word.Replace(separator, '_');
+                                if (separator != defaultSeparator)
+                                    word = word.Replace(separator, defaultSeparator);
 
                                 wordCollection.AddWord(word);
                             }
