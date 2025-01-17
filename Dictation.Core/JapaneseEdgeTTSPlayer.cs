@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace Dictation.Core
 {
+    [TTS(target: TTSTarget.Edge, "ja")]
     internal class JapaneseEdgeTTSPlayer : ITTSPlayer
     {
         private readonly eVoice voice;
@@ -16,19 +17,13 @@ namespace Dictation.Core
 
         public void Play(string word)
         {
-            var speakWord = word;
-            if (word.Contains(','))
-            {
-                speakWord = word.Split(',')[0].Trim();
-            }
-
             Task.Run(() =>
             {
                 Edge_tts.PlayText(new PlayOption
                 {
                     Rate = 0,
                     Volume = 1,
-                    Text = speakWord
+                    Text = word
                 }, voice);
             });
         }

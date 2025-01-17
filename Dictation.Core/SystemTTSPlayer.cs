@@ -1,16 +1,16 @@
-﻿
-using System;
+﻿using System;
 using System.Linq;
 using System.Speech.Synthesis;
 using System.Threading.Tasks;
 
 namespace Dictation.Core
 {
-    internal class EnglishTTSPlayer : ITTSPlayer, IDisposable
+    [TTS(target: TTSTarget.System, "any")]
+    internal class SystemTTSPlayer : ITTSPlayer
     {
         private SpeechSynthesizer synthesizer;
 
-        public EnglishTTSPlayer()
+        public SystemTTSPlayer()
         {
             synthesizer = new SpeechSynthesizer();
 
@@ -18,17 +18,19 @@ namespace Dictation.Core
             synthesizer.Rate = 0; // 语速：-10 (最慢) 到 10 (最快)
             synthesizer.Volume = 100; // 音量：0 到 100
 
-            // 设置日语语音
-            SetJapaneseVoice();
+            // 设置语音
+            SetVoice();
         }
 
-        private void SetJapaneseVoice()
+        private void SetVoice()
         {
             try
             {
                 var voices = synthesizer.GetInstalledVoices();
 
-                var voice = voices.FirstOrDefault(v => v?.VoiceInfo?.Culture?.TwoLetterISOLanguageName == TTSOption.Instance.Language.Key);
+                var language = TTSOption.Instance.Language.Key.Split('_')[1];
+
+                var voice = voices.FirstOrDefault(v => v?.VoiceInfo?.Culture?.TwoLetterISOLanguageName == language);
 
                 if (voice != null)
                 {
@@ -48,12 +50,10 @@ namespace Dictation.Core
 
         public void Play(string word)
         {
-            if (string.IsNullOrWhiteSpace(word))
-                throw new ArgumentException("单词不能为空或仅为空格。", nameof(word));
-
             try
             {
-                Task.Run(async () => {
+                Task.Run(async () =>
+                {
                     await Task.Delay(1000);
                     synthesizer.Speak(word);
                 });
