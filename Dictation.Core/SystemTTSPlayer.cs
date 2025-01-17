@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Dictation.Core
 {
-    internal class SystemTTSPlayer : ITTSPlayer
+    internal class SystemTTSPlayer : ITTSPlayer, IDisposable
     {
         private SpeechSynthesizer synthesizer;
 
