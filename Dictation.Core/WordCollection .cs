@@ -38,9 +38,7 @@ namespace Dictation.Core
 
                     continue;
                 }
-
-
-                if (!string.IsNullOrEmpty(word))
+                else if (!string.IsNullOrEmpty(word))
                 {
                     if (separator != defaultSeparator)
                         word = word.Replace(separator, defaultSeparator);
