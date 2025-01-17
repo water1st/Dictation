@@ -4,7 +4,7 @@ namespace Dictation.Core
 {
     internal class TTSProxy : ITTSPlayer
     {
-        private const char SEPARATOR = '|';
+        private const char SEPARATOR = '_';
         private readonly ITTSPlayer player;
 
         public TTSProxy(ITTSPlayer player)

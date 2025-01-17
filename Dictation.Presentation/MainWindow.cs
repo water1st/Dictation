@@ -56,16 +56,33 @@ namespace Dictation.Presentation
                     {
                         // 读取文件内容
                         var lines = File.ReadAllLines(openFileDialog.FileName);
+                        //默认分隔符
+                        var separator = '_';
+
 
                         // 遍历每行并添加单词
                         foreach (var line in lines)
                         {
                             string word = line.Trim();
                             if (word.StartsWith('#'))
+                            {
+                                word = word.ToLower();
+                                const string keyword = "#separator:";
+
+                                if (word.StartsWith(keyword) && word.Length > keyword.Length)
+                                {
+                                    separator = word[keyword.Length];
+                                }
+
                                 continue;
+                            }
+
 
                             if (!string.IsNullOrEmpty(word))
                             {
+                                if (separator != '_')
+                                    word = word.Replace(separator, '_');
+
                                 wordCollection.AddWord(word);
                             }
                         }
