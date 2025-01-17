@@ -56,7 +56,7 @@
             Word.MinimumWidth = 8;
             Word.Name = "Word";
             Word.ReadOnly = true;
-            Word.Width = 200;
+            Word.Width = 400;
             // 
             // Image
             // 

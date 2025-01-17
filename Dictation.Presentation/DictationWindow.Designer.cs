@@ -37,7 +37,7 @@
             // 
             // btnNext
             // 
-            btnNext.Location = new Point(400, 27);
+            btnNext.Location = new Point(700, 27);
             btnNext.Name = "btnNext";
             btnNext.Size = new Size(112, 34);
             btnNext.TabIndex = 0;
@@ -60,7 +60,7 @@
             drawingPanel.BackColor = SystemColors.ButtonHighlight;
             drawingPanel.Location = new Point(12, 110);
             drawingPanel.Name = "drawingPanel";
-            drawingPanel.Size = new Size(500, 200);
+            drawingPanel.Size = new Size(800, 200);
             drawingPanel.TabIndex = 2;
             drawingPanel.MouseDown += drawingPanel_MouseDown;
             drawingPanel.MouseMove += drawingPanel_MouseMove;
@@ -68,7 +68,7 @@
             // 
             // btnClear
             // 
-            btnClear.Location = new Point(204, 27);
+            btnClear.Location = new Point(359, 27);
             btnClear.Name = "btnClear";
             btnClear.Size = new Size(112, 34);
             btnClear.TabIndex = 3;
@@ -89,7 +89,7 @@
             // 
             AutoScaleDimensions = new SizeF(11F, 24F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(527, 322);
+            ClientSize = new Size(828, 333);
             Controls.Add(labelStatus);
             Controls.Add(btnClear);
             Controls.Add(drawingPanel);
