@@ -11,7 +11,6 @@ namespace Dictation.Presentation
         {
             this.wordCollection = wordCollection;
             this.windowFactory = windowFactory;
-            this.importer = importer;
             InitializeComponent();
 
             InitializeLanuageOptions();
