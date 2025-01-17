@@ -63,6 +63,7 @@ namespace Dictation.Presentation
                             string word = line.Trim();
 
                             word = word.Replace('，', ',');
+                            word = word.Replace('。', ',');
 
                             if (!string.IsNullOrEmpty(word))
                             {
