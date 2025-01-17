@@ -61,6 +61,8 @@ namespace Dictation.Presentation
                         foreach (var line in lines)
                         {
                             string word = line.Trim();
+                            if (word.StartsWith('#'))
+                                continue;
 
                             word = word.Replace('，', ',');
                             word = word.Replace('。', ',');
