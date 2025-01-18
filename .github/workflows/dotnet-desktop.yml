@@ -52,7 +52,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: Dictation-Realease
-        path: ${{ env.Project_Directory }}\bin\Release\net8.0-windows\publish
+        path: ${{ env.Project_Directory }}\bin\Release\net8.0-windows\
 
         
     
