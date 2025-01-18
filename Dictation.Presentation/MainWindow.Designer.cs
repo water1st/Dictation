@@ -39,6 +39,8 @@
             listLanguage = new ComboBox();
             lbWordCount = new Label();
             listPlayMod = new ComboBox();
+            labelTTSName = new Label();
+            labelPlayMod = new Label();
             ((System.ComponentModel.ISupportInitialize)dataGridViewWords).BeginInit();
             SuspendLayout();
             // 
@@ -123,7 +125,7 @@
             // listLanguage
             // 
             listLanguage.FormattingEnabled = true;
-            listLanguage.Location = new Point(495, 25);
+            listLanguage.Location = new Point(569, 20);
             listLanguage.Name = "listLanguage";
             listLanguage.Size = new Size(182, 32);
             listLanguage.TabIndex = 12;
@@ -132,7 +134,7 @@
             // lbWordCount
             // 
             lbWordCount.AutoSize = true;
-            lbWordCount.Location = new Point(495, 79);
+            lbWordCount.Location = new Point(793, 28);
             lbWordCount.Name = "lbWordCount";
             lbWordCount.Size = new Size(129, 24);
             lbWordCount.TabIndex = 13;
@@ -141,17 +143,37 @@
             // listPlayMod
             // 
             listPlayMod.FormattingEnabled = true;
-            listPlayMod.Location = new Point(727, 25);
+            listPlayMod.Location = new Point(569, 75);
             listPlayMod.Name = "listPlayMod";
             listPlayMod.Size = new Size(182, 32);
             listPlayMod.TabIndex = 14;
             listPlayMod.SelectedIndexChanged += listPlayMod_SelectedIndexChanged;
+            // 
+            // labelTTSName
+            // 
+            labelTTSName.AutoSize = true;
+            labelTTSName.Location = new Point(463, 28);
+            labelTTSName.Name = "labelTTSName";
+            labelTTSName.Size = new Size(58, 24);
+            labelTTSName.TabIndex = 15;
+            labelTTSName.Text = "TTS：";
+            // 
+            // labelPlayMod
+            // 
+            labelPlayMod.AutoSize = true;
+            labelPlayMod.Location = new Point(463, 82);
+            labelPlayMod.Name = "labelPlayMod";
+            labelPlayMod.Size = new Size(100, 24);
+            labelPlayMod.TabIndex = 16;
+            labelPlayMod.Text = "播放模式：";
             // 
             // MainWindow
             // 
             AutoScaleDimensions = new SizeF(11F, 24F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(949, 447);
+            Controls.Add(labelPlayMod);
+            Controls.Add(labelTTSName);
             Controls.Add(listPlayMod);
             Controls.Add(lbWordCount);
             Controls.Add(listLanguage);
@@ -181,5 +203,7 @@
         private ComboBox listLanguage;
         private Label lbWordCount;
         private ComboBox listPlayMod;
+        private Label labelTTSName;
+        private Label labelPlayMod;
     }
 }
