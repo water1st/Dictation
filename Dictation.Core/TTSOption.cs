@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace Dictation.Core
 {
     public class TTSOption
     {
         private static readonly Lazy<TTSOption> instance = new Lazy<TTSOption>(() => new TTSOption());
-        public readonly static Dictionary<string, string> SupportLanguages = new Dictionary<string, string>
+        public readonly static ReadOnlyDictionary<string, string> SupportLanguages = new ReadOnlyDictionary<string, string>(
+            new Dictionary<string, string>
         {
             { "edge_zh","汉语（edge）" },
             { "edge_ja","日语（edge）" },
@@ -16,7 +18,7 @@ namespace Dictation.Core
             { "system_en","英语"},
             { "system_zh","汉语"}
 
-        };
+        });
 
         private KeyValuePair<string, string> language;
 

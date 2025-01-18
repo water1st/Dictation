@@ -1,7 +1,6 @@
 ﻿using Dictation.Core;
 using System.Data;
 using System.Text;
-using System.Windows.Forms;
 
 namespace Dictation.Presentation
 {
