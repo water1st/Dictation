@@ -1,0 +1,38 @@
+name: .NET桌面发布
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  publish_dotnet:
+    name: 构建.NET
+    runs-on: windows-latset
+    steps:
+    - name: 拉取代码
+      uses: actions/checkout@v4
+
+    - name: 安装.NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: 恢复依赖
+      run: dotnet restore
+
+    - name: 编译
+      run: dotnet build --configuration Release
+
+    - name: 发布
+      run: dotnet publish --release
+
+    - name: 拷贝到新分支
+      uses: actions/upload-artifact@v4.6.0
+      with:
+        name: Dictation-Release
+        path: Dictation/Dictation.Presentation/bin/Release/net8.0-windows/publish
+
+        
+    
