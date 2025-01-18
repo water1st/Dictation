@@ -49,7 +49,12 @@ jobs:
         Configuration: ${{ matrix.configuration }}
         
     - name: 打包成ZIP文件
-      run: zip -r Dictation.zip ${{ env.Project_Directory }}\bin\Release\net8.0-windows\
+      run: |
+        $OutputPath = "${{ env.Project_Directory }}\bin\Release\net8.0-windows"
+        $ZipPath = "${{ env.Project_Directory }}\bin\Release\net8.0-windows\Dictation.zip"
+        if (Test-Path $ZipPath) { Remove-Item $ZipPath }
+        Compress-Archive -Path $OutputPath\* -DestinationPath $ZipPath
+      shell: pwsh
     
     - name: 获取branch
       shell: bash
