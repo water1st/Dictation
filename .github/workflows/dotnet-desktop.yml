@@ -1,4 +1,4 @@
-name: .NET桌面发布
+name: 发布.NET桌面程序
 
 on:
   push:
@@ -7,32 +7,52 @@ on:
     branches: [ "master" ]
 
 jobs:
-  publish_dotnet:
-    name: 构建.NET
-    runs-on: windows-latset
+
+  build:
+
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+
+    runs-on: windows-latest
+
+    env:
+      Solution_Name: Dictation.sln                                                         # Replace with your solution name, i.e. MyWpfApp.sln.
+      Project_Directory: Dictation.Presentation                                            # Replace with the Wap project directory relative to the solution, i.e. MyWpfApp.Package.
+      Project_Path: Dictation.Presentation\Dictation.Presentation.csproj                   # Replace with the path to your Wap project, i.e. MyWpf.App.Package\MyWpfApp.Package.wapproj.
+
     steps:
     - name: 拉取代码
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: 安装.NET SDK
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
 
-    - name: 恢复依赖
-      run: dotnet restore
+    - name: 安装MS Build
+      uses: microsoft/setup-msbuild@v2
 
-    - name: 编译
-      run: dotnet build --configuration Release
+    - name: 还原依赖
+      run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
+      env:
+        Configuration: ${{ matrix.configuration }}
 
-    - name: 发布
-      run: dotnet publish --release
+    - name: 编译程序
+      run: msbuild $env:Project_Path /p:Configuration=$env:Configuration /p:UapAppxPackageBuildMode=$env:Appx_Package_Build_Mode /p:AppxBundle=$env:Appx_Bundle
+      env:
+        Appx_Bundle: Always
+        Appx_Bundle_Platforms: x86|x64
+        Appx_Package_Build_Mode: StoreUpload
+        Configuration: ${{ matrix.configuration }}
 
-    - name: 拷贝到新分支
-      uses: actions/upload-artifact@v4.6.0
+    - name: 发布程序
+      uses: actions/upload-artifact@v3
       with:
-        name: Dictation-Release
-        path: Dictation/Dictation.Presentation/bin/Release/net8.0-windows/publish
+        name: Dictation-Realease
+        path: ${{ env.Project_Directory }}\bin\Release\net8.0-windows\publish
 
         
     
