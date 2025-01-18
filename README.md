@@ -11,7 +11,8 @@ Dictation Application 是一个用于手写单词听写应用程序。用户可�
 - 导入单词列表（✔️已完成）
 - 添加和删除单词（✔️已完成）
 - 清空单词列表（✔️已完成）
-- 听写练习（✔️已完成）
+- 根据单词意义进行听写（✔️已完成）
+- 根据单词发声进行听写（✔️已完成）
 - 手写单词（✔️已完成）
 - 检查听写结果（✔️已完成）
 - 统计并显示听写结果（✔️已完成）
@@ -21,7 +22,7 @@ Dictation Application 是一个用于手写单词听写应用程序。用户可�
 
 ## 已知问题
 
-- 目前并未适配数位板压力传感支持，使用Windows Ink数位板时，笑幅度笔触无法被识别，需要在数位板驱动上关闭Windows Ink功能。
+- 目前并未适配数位板压力传感支持，使用Windows Ink数位板时，小幅度笔触无法被识别，需要在数位板驱动上关闭Windows Ink功能后可正常使用。
 
 ## 安装与运行
 
@@ -32,21 +33,14 @@ Dictation Application 是一个用于手写单词听写应用程序。用户可�
 - edge浏览器
 - Windows内置TTS
 
-### 不进行开发，仅使用的环境要求
+### 运行环境要求
 
 - Windows 7或以上
-- Windows内置TTS或Edge浏览器
+- 确认已安装 .NET 桌面运行时 8.0.12(https://dotnet.microsoft.com/zh-cn/download/dotnet/8.0)
+- 确认已安装 Windows内置TTS或Edge浏览器
 
 ### 安装步骤
-
-1. 克隆项目代码到本地：
-    
-        
-2. 打开 Visual Studio 2022，加载解决方案文件 `Dictation.sln`。
-
-3. 选择 `Dictation.Presentation` 项目作为启动项目。
-
-4. 运行项目。
+下载编译好的二进制包，解压到电脑后，运行`Dictation.Presentation.exe`即可
 
 ## 使用说明
 
