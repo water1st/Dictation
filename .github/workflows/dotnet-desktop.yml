@@ -48,18 +48,22 @@ jobs:
         Appx_Package_Build_Mode: StoreUpload
         Configuration: ${{ matrix.configuration }}
         
+    
+    - name: 获取branch
+      shell: bash
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
+        
     - name: 创建发布
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}
       with:
-        tag_name: "v${{ github.run_number }}"
-        release_name: Release ${{ github.run_number }}
+        tag_name: "v${{ steps.extract_branch.outputs.branch }}-${{ github.run_number }}"
+        release_name: Release for ${{ steps.extract_branch.outputs.branch }} at ${{ github.sha }}
         draft: false
         prerelease: false
 
-    - name: 检查发布URL
-      run: echo "Release URL ${{ steps.create_release.outputs.upload_url }}"
 
     - name: 上传发布文件
       uses: actions/upload-release-asset@v1
