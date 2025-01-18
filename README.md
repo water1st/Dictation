@@ -35,11 +35,11 @@ Dictation Application 是一个用于手写单词听写应用程序。用户可�
 ### 运行环境要求
 
 - Windows 7或以上
-- 确认已安装 .NET 桌面运行时 8.0.12(https://dotnet.microsoft.com/zh-cn/download/dotnet/8.0)
+- 确认已安装 [.NET 桌面运行时 8.0.12（如未安装，请点击连接下载安装）](https://dotnet.microsoft.com/zh-cn/download/dotnet/8.0)
 - 确认已安装 Windows内置TTS或Edge浏览器
 
 ### 安装步骤
-下载编译好的二进制包，解压到电脑后，运行`Dictation.Presentation.exe`即可
+[点击这里](https://github.com/water1st/Dictation/releases)下载最新版本的二进制包（Dictation.zip），解压到电脑后，运行`Dictation.Presentation.exe`即可
 
 
 ## 使用说明
