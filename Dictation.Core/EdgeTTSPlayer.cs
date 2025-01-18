@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Dictation.Core
 {
-    internal class EdgeTTSPlayer : ITTSPlayer
+    internal class EdgeTTSPlayer : ILanguageSettableTTSPlayer
     {
         private static readonly ReadOnlyDictionary<string, string> ttsMapping = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>
         {
@@ -19,18 +19,20 @@ namespace Dictation.Core
 
         private readonly CancellationTokenSource tokenSource = new CancellationTokenSource();
 
-        private readonly eVoice voice;
-        public EdgeTTSPlayer(string language)
-        {
-            var voices = Edge_tts.GetVoice();
-
-            voice = voices.FirstOrDefault(c => c.ShortName == ttsMapping[language]);
-        }
+        private eVoice voice;
 
         public void Dispose()
         {
             tokenSource.Cancel();
             tokenSource.Dispose();
+            voice = null;
+        }
+
+        public void SetLanguage(string language)
+        {
+            var voices = Edge_tts.GetVoice();
+
+            voice = voices.FirstOrDefault(c => c.ShortName == ttsMapping[language]);
         }
 
         public void Play(string word)
