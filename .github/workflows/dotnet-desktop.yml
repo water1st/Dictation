@@ -48,11 +48,28 @@ jobs:
         Appx_Package_Build_Mode: StoreUpload
         Configuration: ${{ matrix.configuration }}
 
-    - name: 发布程序
-      uses: actions/upload-artifact@v3
+    - name: 获取最新提交的日期
+      run: echo "COMMIT_DATE=$(git log -1 --format=%cd --date=format:'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+        
+    - name: 创建发布
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
       with:
-        name: Dictation-Realease
-        path: ${{ env.Project_Directory }}\bin\Release\net8.0-windows\
+        tag_name: ${{ env.COMMIT_DATE }}
+        release_name: Release ${{ env.COMMIT_DATE }}
+        draft: false
+        prerelease: false
+
+    - name: 上传发布文件
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ env.Project_Directory }}\bin\Release\net8.0-windows\
+        asset_name: Dictation.zip
+        asset_content_type: application/zip
 
         
     
