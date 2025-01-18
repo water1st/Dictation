@@ -13,12 +13,12 @@ namespace Dictation.Core
         private int count;
         private int current = 0;
 
-        public DictationManager(WordCollection wordManager, WordDrawingCollection wordDrawings, TTSFactory ttsFactory)
+        public DictationManager(WordCollection wordManager, WordDrawingCollection wordDrawings, ITTSPlayer player)
         {
             worlds = new List<string>(wordManager);
             count = wordManager.Count;
             this.wordDrawings = wordDrawings;
-            player = ttsFactory.CreateTTSPlayer(TTSOption.Instance.Target, TTSOption.Instance.LanguageName);
+            this.player = player;
         }
 
         public void PlayCurrentWord()

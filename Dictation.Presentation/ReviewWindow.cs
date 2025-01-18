@@ -9,11 +9,11 @@ namespace Dictation.Presentation
         private readonly WindowFactory windowFactory;
         private bool isJudged = false;
 
-        public ReviewWindow(WordDrawingCollection wordDrawings, TTSFactory ttsFactory, WindowFactory windowFactory)
+        public ReviewWindow(WordDrawingCollection wordDrawings, WindowFactory windowFactory, ITTSPlayer player)
         {
             InitializeComponent();
             this.wordDrawings = wordDrawings;
-            player = ttsFactory.CreateTTSPlayer(TTSOption.Instance.Target, TTSOption.Instance.LanguageName);
+            this.player = player;
             this.windowFactory = windowFactory;
 
             InitializeDataGridView();

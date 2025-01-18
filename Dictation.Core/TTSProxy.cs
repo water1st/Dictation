@@ -7,9 +7,9 @@ namespace Dictation.Core
         private const char SEPARATOR = '_';
         private readonly ITTSPlayer player;
 
-        public TTSProxy(ITTSPlayer player)
+        public TTSProxy(TTSFactory factory)
         {
-            this.player = player;
+            player = factory.CreateTTSPlayer(TTSOption.Instance.Target, TTSOption.Instance.LanguageName);
         }
 
         public void Dispose()

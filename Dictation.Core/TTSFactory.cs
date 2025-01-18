@@ -3,7 +3,7 @@ using System;
 
 namespace Dictation.Core
 {
-    public class TTSFactory
+    internal class TTSFactory
     {
         private readonly IServiceProvider serviceProvider;
 
@@ -17,7 +17,7 @@ namespace Dictation.Core
             var tts = serviceProvider.GetRequiredKeyedService<ILanguageSettableTTSPlayer>(target);
             tts.SetLanguage(language);
 
-            return new TTSProxy(tts);
+            return tts;
         }
     }
 }
