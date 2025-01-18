@@ -17,6 +17,7 @@ jobs:
     runs-on: windows-latest
 
     env:
+      App_Name: Dictation
       Solution_Name: Dictation.sln                                                         # Replace with your solution name, i.e. MyWpfApp.sln.
       Project_Directory: Dictation.Presentation                                            # Replace with the Wap project directory relative to the solution, i.e. MyWpfApp.Package.
       Project_Path: Dictation.Presentation\Dictation.Presentation.csproj                   # Replace with the path to your Wap project, i.e. MyWpf.App.Package\MyWpfApp.Package.wapproj.
@@ -48,11 +49,27 @@ jobs:
         Appx_Package_Build_Mode: StoreUpload
         Configuration: ${{ matrix.configuration }}
 
-    - name: 发布程序
-      uses: actions/upload-artifact@v3
+    - name: 创建 Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: Dictation-Realease
-        path: ${{ env.Project_Directory }}\bin\Release\net8.0-windows\
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: TODO New Release.
+        draft: false
+        prerelease: false
+
+    - name: 上传Release文件
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./${{ env.App_Name }}.zip
+        asset_name: ${{ env.App_Name }}.zip
+        asset_content_type: application/zip
 
         
     
