@@ -49,7 +49,12 @@ jobs:
         Configuration: ${{ matrix.configuration }}
 
     - name: 获取最新提交的日期
-      run: echo "COMMIT_DATE=$(git log -1 --format=%cd --date=format:'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+      run: |
+        COMMIT_DATE=$(git log -1 --format=%cd --date=format:'%Y%m%d%H%M%S')
+        echo "COMMIT_DATE=$COMMIT_DATE" >> $GITHUB_ENV
+      
+    - name: 检查环境变量 COMMIT_DATE
+      run: echo ${{env.COMMIT_DATE}}
         
     - name: 创建发布
       uses: actions/create-release@v1
