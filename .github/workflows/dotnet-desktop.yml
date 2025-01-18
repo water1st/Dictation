@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        configuration: [Debug, Release]
+        configuration: [Release]
 
     runs-on: windows-latest
 
@@ -50,7 +50,6 @@ jobs:
         
     - name: 打包成ZIP文件
       run: |
-        mkdir -p ${{ env.Project_Directory }}/bin/Release/net8.0-windows/
         cd ${{ env.Project_Directory }}/bin/Release/net8.0-windows/
         zip -r Dictation.zip *
     
