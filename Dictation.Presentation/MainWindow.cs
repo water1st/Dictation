@@ -14,8 +14,18 @@ namespace Dictation.Presentation
             InitializeComponent();
 
             InitializeLanuageOptions();
+            InitializePlayMod();
 
             UpdateWordGrid();
+        }
+
+        private void InitializePlayMod()
+        {
+            listPlayMod.DataSource = TTSOption.SupportPlayMods.ToList();
+            listPlayMod.DisplayMember = "Value";
+            listPlayMod.ValueMember = "Key";
+
+            listPlayMod.SelectedIndex = 0;
         }
 
 
@@ -132,6 +142,11 @@ namespace Dictation.Presentation
         private void listLanguage_SelectedIndexChanged(object sender, EventArgs e)
         {
             TTSOption.Instance.Language = (KeyValuePair<string, string>)listLanguage.SelectedItem;
+        }
+
+        private void listPlayMod_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            TTSOption.Instance.PlayMod = ((KeyValuePair<string, string>)listPlayMod.SelectedItem).Key;
         }
     }
 }

@@ -20,6 +20,13 @@ namespace Dictation.Core
 
         });
 
+        public readonly static ReadOnlyDictionary<string, string> SupportPlayMods = new ReadOnlyDictionary<string, string>(
+            new Dictionary<string, string> {
+                {"play_meaning","读意" },
+                {"play_pronunciation","读音"}
+            });
+
+
         private KeyValuePair<string, string> language;
 
         private TTSOption() { }
@@ -28,6 +35,8 @@ namespace Dictation.Core
 
         public string Target { get; private set; }
         public string LanguageName { get; private set; }
+
+        public string PlayMod { get; set; }
 
         public KeyValuePair<string, string> Language
         {

@@ -38,6 +38,7 @@
             ActionColumn = new DataGridViewButtonColumn();
             listLanguage = new ComboBox();
             lbWordCount = new Label();
+            listPlayMod = new ComboBox();
             ((System.ComponentModel.ISupportInitialize)dataGridViewWords).BeginInit();
             SuspendLayout();
             // 
@@ -96,7 +97,7 @@
             dataGridViewWords.Location = new Point(19, 127);
             dataGridViewWords.Name = "dataGridViewWords";
             dataGridViewWords.RowHeadersWidth = 62;
-            dataGridViewWords.Size = new Size(769, 311);
+            dataGridViewWords.Size = new Size(917, 311);
             dataGridViewWords.TabIndex = 11;
             dataGridViewWords.CellContentClick += dataGridViewWords_CellContentClick;
             // 
@@ -137,11 +138,21 @@
             lbWordCount.TabIndex = 13;
             lbWordCount.Text = "总共：0个单词";
             // 
+            // listPlayMod
+            // 
+            listPlayMod.FormattingEnabled = true;
+            listPlayMod.Location = new Point(727, 25);
+            listPlayMod.Name = "listPlayMod";
+            listPlayMod.Size = new Size(182, 32);
+            listPlayMod.TabIndex = 14;
+            listPlayMod.SelectedIndexChanged += listPlayMod_SelectedIndexChanged;
+            // 
             // MainWindow
             // 
             AutoScaleDimensions = new SizeF(11F, 24F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(949, 447);
+            Controls.Add(listPlayMod);
             Controls.Add(lbWordCount);
             Controls.Add(listLanguage);
             Controls.Add(dataGridViewWords);
@@ -169,5 +180,6 @@
         private DataGridViewButtonColumn ActionColumn;
         private ComboBox listLanguage;
         private Label lbWordCount;
+        private ComboBox listPlayMod;
     }
 }

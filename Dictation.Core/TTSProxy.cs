@@ -25,8 +25,18 @@ namespace Dictation.Core
             var speakWord = word;
             if (word.Contains(SEPARATOR))
             {
-                speakWord = word.Split(SEPARATOR)[0].Trim();
+                var wordSplits = word.Split(SEPARATOR);
+                if (TTSOption.Instance.PlayMod == "play_meaning")
+                {
+                    speakWord = wordSplits[0];
+                }
+                else if (TTSOption.Instance.PlayMod == "play_pronunciation")
+                {
+                    if (wordSplits.Length > 1)
+                        speakWord = wordSplits[1];
+                }
             }
+            speakWord = speakWord.Trim();
 
             player.Play(speakWord);
         }
