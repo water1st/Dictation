@@ -13,7 +13,7 @@ namespace Dictation.Presentation
         {
             InitializeComponent();
             this.wordDrawings = wordDrawings;
-            player = ttsFactory.CreateTTSPlayer(TTSOption.Instance.LanguageName);
+            player = ttsFactory.CreateTTSPlayer(TTSOption.Instance.Target, TTSOption.Instance.LanguageName);
             this.windowFactory = windowFactory;
 
             InitializeDataGridView();

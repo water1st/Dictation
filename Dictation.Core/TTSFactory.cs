@@ -12,9 +12,9 @@ namespace Dictation.Core
             this.serviceProvider = serviceProvider;
         }
 
-        public ITTSPlayer CreateTTSPlayer(string language)
+        public ITTSPlayer CreateTTSPlayer(string target, string language)
         {
-            var tts = serviceProvider.GetRequiredKeyedService<ILanguageSettableTTSPlayer>(TTSOption.Instance.Target);
+            var tts = serviceProvider.GetRequiredKeyedService<ILanguageSettableTTSPlayer>(target);
             tts.SetLanguage(language);
 
             return new TTSProxy(tts);
