@@ -49,9 +49,9 @@ jobs:
         Configuration: ${{ matrix.configuration }}
         
     - name: 打包成ZIP文件
-      run: |
-        cd ${{ env.Project_Directory }}/bin/Release/net8.0-windows/
-        zip -r Dictation.zip *
+      uses: montudor/action-zip@v1
+      with:
+        args: zip -qq -r Dictation.zip ${{ env.Project_Directory }}\bin\Release\net8.0-windows\
     
     - name: 获取branch
       shell: bash
