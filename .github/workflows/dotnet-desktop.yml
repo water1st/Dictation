@@ -48,6 +48,11 @@ jobs:
         Appx_Package_Build_Mode: StoreUpload
         Configuration: ${{ matrix.configuration }}
         
+    - name: 打包成ZIP文件
+      run: |
+        mkdir -p ${{ env.Project_Directory }}/bin/Release/net8.0-windows/
+        cd ${{ env.Project_Directory }}/bin/Release/net8.0-windows/
+        zip -r Dictation.zip *
     
     - name: 获取branch
       shell: bash
@@ -60,7 +65,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}
       with:
-        tag_name: "v${{ steps.extract_branch.outputs.branch }}-${{ github.run_number }}"
+        tag_name: ${{ steps.extract_branch.outputs.branch }}-${{ github.run_number }}
         release_name: Release for ${{ steps.extract_branch.outputs.branch }} at ${{ github.sha }}
         draft: false
         prerelease: false
