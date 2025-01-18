@@ -1,6 +1,6 @@
 ﻿namespace Dictation.Core
 {
-    public interface ILanguageSettableTTSPlayer : ITTSPlayer
+    internal interface ILanguageSettableTTSPlayer : ITTSPlayer
     {
         void SetLanguage(string language);
     }
