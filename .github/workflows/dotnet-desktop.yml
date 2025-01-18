@@ -59,7 +59,7 @@ jobs:
         prerelease: false
 
     - name: 检查发布URL
-      run: echo "Release URL: ${{ steps.create_release.outputs.upload_url }}"
+      run: echo "Release URL ${{ steps.create_release.outputs.upload_url }}"
 
     - name: 上传发布文件
       uses: actions/upload-release-asset@v1
