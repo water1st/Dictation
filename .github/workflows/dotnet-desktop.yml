@@ -79,7 +79,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ env.Project_Directory }}\bin\Release\net8.0-windows\
+        asset_path: ${{ env.Project_Directory }}\bin\Release\net8.0-windows\Dictation.zip
         asset_name: Dictation.zip
         asset_content_type: application/zip
 
