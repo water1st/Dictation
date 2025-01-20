@@ -71,7 +71,6 @@ namespace Dictation.Presentation
 
                         // 更新 DataGridView 显示
                         UpdateWordGrid();
-                        MessageBox.Show("单词导入成功！", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception ex)
                     {
@@ -121,9 +120,6 @@ namespace Dictation.Presentation
                 return;
             }
 
-
-
-
             try
             {
                 var dictationWindow = windowFactory.GetWindow<DictationWindow>();
@@ -141,12 +137,18 @@ namespace Dictation.Presentation
 
         private void listLanguage_SelectedIndexChanged(object sender, EventArgs e)
         {
-            TTSOption.Instance.Language = (KeyValuePair<string, string>)listLanguage.SelectedItem;
+            if (listLanguage.SelectedItem is KeyValuePair<string, string> selectedItem)
+            {
+                TTSOption.Instance.Language = selectedItem;
+            }
         }
 
         private void listPlayMod_SelectedIndexChanged(object sender, EventArgs e)
         {
-            TTSOption.Instance.PlayMod = ((KeyValuePair<string, string>)listPlayMod.SelectedItem).Key;
+            if (listPlayMod.SelectedItem is KeyValuePair<string, string> selectedItem)
+            {
+                TTSOption.Instance.PlayMod = selectedItem.Key;
+            }
         }
 
         private void dataGridViewWords_DragEnter(object sender, DragEventArgs e)
@@ -163,26 +165,29 @@ namespace Dictation.Presentation
 
         private void dataGridViewWords_DragDrop(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
             {
-                var files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                foreach (var file in files)
+                var files = e.Data.GetData(DataFormats.FileDrop) as string[];
+                if (files != null)
                 {
-                    if (Path.GetExtension(file).Equals(".txt", StringComparison.OrdinalIgnoreCase))
+                    foreach (var file in files)
                     {
-                        try
+                        if (Path.GetExtension(file).Equals(".txt", StringComparison.OrdinalIgnoreCase))
                         {
-                            var lines = File.ReadAllLines(file);
-                            wordCollection.Import(lines);
-                            MessageBox.Show("单词导入成功！", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show($"导入单词时发生错误: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            try
+                            {
+                                var lines = File.ReadAllLines(file);
+                                wordCollection.Import(lines);
+                            }
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show($"导入单词时发生错误: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                break;
+                            }
                         }
                     }
+                    UpdateWordGrid();
                 }
-                UpdateWordGrid();
             }
         }
     }
