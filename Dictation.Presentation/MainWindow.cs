@@ -148,5 +148,42 @@ namespace Dictation.Presentation
         {
             TTSOption.Instance.PlayMod = ((KeyValuePair<string, string>)listPlayMod.SelectedItem).Key;
         }
+
+        private void dataGridViewWords_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effect = DragDropEffects.Copy;
+            }
+            else
+            {
+                e.Effect = DragDropEffects.None;
+            }
+        }
+
+        private void dataGridViewWords_DragDrop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                foreach (var file in files)
+                {
+                    if (Path.GetExtension(file).Equals(".txt", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            var lines = File.ReadAllLines(file);
+                            wordCollection.Import(lines);
+                            MessageBox.Show("单词导入成功！", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"导入单词时发生错误: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                }
+                UpdateWordGrid();
+            }
+        }
     }
 }

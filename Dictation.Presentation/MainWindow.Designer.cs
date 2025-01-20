@@ -93,6 +93,7 @@
             // 
             // dataGridViewWords
             // 
+            dataGridViewWords.AllowDrop = true;
             dataGridViewWords.BackgroundColor = SystemColors.ButtonHighlight;
             dataGridViewWords.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dataGridViewWords.Columns.AddRange(new DataGridViewColumn[] { WordColumn, ActionColumn });
@@ -102,6 +103,8 @@
             dataGridViewWords.Size = new Size(917, 311);
             dataGridViewWords.TabIndex = 11;
             dataGridViewWords.CellContentClick += dataGridViewWords_CellContentClick;
+            dataGridViewWords.DragDrop += dataGridViewWords_DragDrop;
+            dataGridViewWords.DragEnter += dataGridViewWords_DragEnter;
             // 
             // WordColumn
             // 
