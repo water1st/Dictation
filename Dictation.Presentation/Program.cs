@@ -9,7 +9,7 @@ namespace Dictation.Presentation
         ///  The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
             var serviceCollection = new ServiceCollection();
             ConfigureServices(serviceCollection);
@@ -20,6 +20,7 @@ namespace Dictation.Presentation
             using (var scope = ServiceProvider.CreateScope())
             {
                 var mainWindow = scope.ServiceProvider.GetRequiredService<MainWindow>();
+                mainWindow.SetStartupArgs(args);
                 Application.Run(mainWindow);
             }
         }

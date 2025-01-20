@@ -19,6 +19,31 @@ namespace Dictation.Presentation
             UpdateWordGrid();
         }
 
+        public void SetStartupArgs(string[] args)
+        {
+            if (args != null && args.Length > 0)
+            {
+                foreach (var file in args)
+                {
+                    if (Path.GetExtension(file).Equals(".txt", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            var lines = File.ReadAllLines(file);
+                            wordCollection.Import(lines);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"导入单词时发生错误: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            break;
+                        }
+                    }
+                }
+
+                UpdateWordGrid();
+            }
+        }
+
         private void InitializePlayMod()
         {
             listPlayMod.DataSource = TTSOption.SupportPlayMods.ToList();
