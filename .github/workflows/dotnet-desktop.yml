@@ -1,0 +1,87 @@
+name: 发布.NET桌面程序
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+
+  build:
+
+    strategy:
+      matrix:
+        configuration: [Release]
+
+    runs-on: windows-latest
+
+    env:
+      Solution_Name: Dictation.sln                                                         # Replace with your solution name, i.e. MyWpfApp.sln.
+      Project_Directory: Dictation.Presentation                                            # Replace with the Wap project directory relative to the solution, i.e. MyWpfApp.Package.
+      Project_Path: Dictation.Presentation\Dictation.Presentation.csproj                   # Replace with the path to your Wap project, i.e. MyWpf.App.Package\MyWpfApp.Package.wapproj.
+
+    steps:
+    - name: 拉取代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 安装.NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: 安装MS Build
+      uses: microsoft/setup-msbuild@v2
+
+    - name: 还原依赖
+      run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
+      env:
+        Configuration: ${{ matrix.configuration }}
+
+    - name: 编译程序
+      run: msbuild $env:Project_Path /p:Configuration=$env:Configuration /p:UapAppxPackageBuildMode=$env:Appx_Package_Build_Mode /p:AppxBundle=$env:Appx_Bundle
+      env:
+        Appx_Bundle: Always
+        Appx_Bundle_Platforms: x86|x64
+        Appx_Package_Build_Mode: StoreUpload
+        Configuration: ${{ matrix.configuration }}
+        
+    - name: 打包成ZIP文件
+      run: |
+        $OutputPath = "${{ env.Project_Directory }}\bin\Release\net8.0-windows"
+        $ZipPath = "${{ env.Project_Directory }}\bin\Release\net8.0-windows\Dictation.zip"
+        if (Test-Path $ZipPath) { Remove-Item $ZipPath }
+        Compress-Archive -Path $OutputPath\* -DestinationPath $ZipPath
+      shell: pwsh
+    
+    - name: 获取branch
+      shell: bash
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
+        
+    - name: 创建发布
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
+      with:
+        tag_name: ${{ steps.extract_branch.outputs.branch }}-${{ github.run_number }}
+        release_name: Release for ${{ steps.extract_branch.outputs.branch }}-${{ github.run_number }}
+        draft: false
+        prerelease: false
+
+
+    - name: 上传发布文件
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ env.Project_Directory }}\bin\Release\net8.0-windows\Dictation.zip
+        asset_name: Dictation.zip
+        asset_content_type: application/zip
+
+        
+    
