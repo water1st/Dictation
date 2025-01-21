@@ -186,6 +186,8 @@
             Controls.Add(btnStartDictation);
             Controls.Add(btnClearWords);
             Controls.Add(btnImportWords);
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
             Name = "MainWindow";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "听写不求人";

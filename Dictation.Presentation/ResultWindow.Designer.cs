@@ -82,6 +82,8 @@
             Controls.Add(btnExport);
             Controls.Add(resultGridView);
             Controls.Add(lableAaccuracyRate);
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
             Name = "ResultWindow";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "听写结果";

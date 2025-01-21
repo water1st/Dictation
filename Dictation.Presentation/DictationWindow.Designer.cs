@@ -95,6 +95,8 @@
             Controls.Add(drawingPanel);
             Controls.Add(btnPlay);
             Controls.Add(btnNext);
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
             Name = "DictationWindow";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "听写";

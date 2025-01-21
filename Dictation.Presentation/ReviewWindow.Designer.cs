@@ -100,6 +100,8 @@
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(2323, 1430);
             Controls.Add(reviewGridView);
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
             Name = "ReviewWindow";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "检查听写结果";
