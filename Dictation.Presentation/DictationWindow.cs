@@ -25,17 +25,15 @@ namespace Dictation.Presentation
 
             InitializeDrawingBoard();
 
-            SetStyle(ControlStyles.AllPaintingInWmPaint, true);
-            SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
-            SetStyle(ControlStyles.UserPaint, true);
-
+            // 启用双缓冲
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint, true);
+            UpdateStyles();
         }
 
         private void UpdateStatus()
         {
             labelStatus.Text = $"{dictationManager.Current}/{dictationManager.WordCount}";
         }
-
 
         private void InitializeDrawingBoard()
         {
@@ -44,7 +42,6 @@ namespace Dictation.Presentation
             // 创建位图并设置到画板背景
             drawingBitmap = new Bitmap(drawingPanel.Width, drawingPanel.Height);
             drawingPanel.BackgroundImage = drawingBitmap;
-            drawingPanel.BackgroundImageLayout = ImageLayout.None;
 
             // 创建绘图对象并设置背景颜色
             drawingGraphics = Graphics.FromImage(drawingBitmap);
@@ -98,7 +95,6 @@ namespace Dictation.Presentation
             reviewWindow.Show();
         }
 
-
         private void drawingPanel_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
@@ -124,14 +120,18 @@ namespace Dictation.Presentation
         {
             if (lastPoint != Point.Empty)
             {
-
                 // 增加当前点到路径中
                 currentPath.AddLine(lastPoint, e.Location); // 连接当前点与上一个点
 
-                // 清除之前的绘制，并用当前路径重新绘制
-                drawingGraphics.DrawPath(new Pen(Color.Black, 5), currentPath); // 绘制当前路径
+                // 使用内存位图进行绘制
+                using (var pen = new Pen(Color.Black, 5))
+                {
+                    drawingGraphics.DrawPath(pen, currentPath);
+                }
 
-                drawingPanel.Invalidate(); // 刷新画板
+                // 只重绘画板区域
+                drawingPanel.Invalidate(new Rectangle(Math.Min(lastPoint.X, e.X) - 5, Math.Min(lastPoint.Y, e.Y) - 5, Math.Abs(lastPoint.X - e.X) + 10, Math.Abs(lastPoint.Y - e.Y) + 10));
+
                 lastPoint = e.Location; // 更新上一个点
             }
         }
