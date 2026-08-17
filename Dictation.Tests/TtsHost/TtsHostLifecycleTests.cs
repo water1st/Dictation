@@ -79,11 +79,11 @@ namespace Dictation.Tests.TtsHost
             {
                 var exception = await Assert.ThrowsAsync<TtsSynthesisException>(() =>
                     ttsService.SynthesizeAsync(
-                        new TtsSynthesisRequestDto(TtsLanguage.Japanese, "食べる"),
+                        new TtsSynthesisRequestDto(TtsLanguage.English, "go"),
                         TestContext.Current.CancellationToken));
 
                 Assert.NotNull(exception.InnerException);
-                Assert.Contains("模型尚未配置", exception.InnerException!.Message);
+                Assert.Contains("英语 TTS 模型尚未配置", exception.InnerException!.Message);
             }
             finally
             {

@@ -5,7 +5,7 @@ namespace Dictation.TtsHost
     public sealed class UnconfiguredTtsSynthesisEngine : ITtsSynthesisEngine
     {
         private static readonly IReadOnlyCollection<TtsLanguage> Languages =
-            Array.AsReadOnly(new[] { TtsLanguage.Japanese, TtsLanguage.English });
+            Array.AsReadOnly(new[] { TtsLanguage.English });
 
         public IReadOnlyCollection<TtsLanguage> SupportedLanguages => Languages;
 
@@ -15,7 +15,8 @@ namespace Dictation.TtsHost
         {
             ArgumentNullException.ThrowIfNull(request);
             cancellationToken.ThrowIfCancellationRequested();
-            return Task.FromException<byte[]>(new InvalidOperationException("TTS 模型尚未配置。"));
+            return Task.FromException<byte[]>(
+                new InvalidOperationException("英语 TTS 模型尚未配置。"));
         }
     }
 }

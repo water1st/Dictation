@@ -17,11 +17,7 @@ namespace Dictation.TtsHost
 
             try
             {
-                using var services = new ServiceCollection()
-                    .AddSingleton(options.Session)
-                    .AddSingleton<ITtsSynthesisEngine, UnconfiguredTtsSynthesisEngine>()
-                    .AddSingleton<TtsPipeServer>()
-                    .BuildServiceProvider();
+                using var services = BuildServiceProvider(options);
                 var server = services.GetRequiredService<TtsPipeServer>();
                 using var parentCancellation = new CancellationTokenSource();
                 var parentMonitor = MonitorParentProcessAsync(options.ParentProcessId, parentCancellation);
@@ -47,6 +43,17 @@ namespace Dictation.TtsHost
             {
                 return 1;
             }
+        }
+
+        internal static ServiceProvider BuildServiceProvider(TtsHostOptions options)
+        {
+            ArgumentNullException.ThrowIfNull(options);
+            return new ServiceCollection()
+                .AddSingleton(options.Session)
+                .AddSingleton<ITtsSynthesisEngine, PiperJapaneseTtsSynthesisEngine>()
+                .AddSingleton<ITtsSynthesisEngine, UnconfiguredTtsSynthesisEngine>()
+                .AddSingleton<TtsPipeServer>()
+                .BuildServiceProvider();
         }
 
         private static async Task MonitorParentProcessAsync(

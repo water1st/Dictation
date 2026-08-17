@@ -257,6 +257,27 @@ namespace Dictation.Tests.TtsHost
         }
 
         [Fact]
+        public void ProgramRegistration_MapsJapaneseToPiperAndEnglishToPlaceholderOnce()
+        {
+            var options = new TtsHostOptions(
+                new TtsHostSession(CreatePipeName()),
+                Environment.ProcessId);
+            using var services = Program.BuildServiceProvider(options);
+
+            var engines = services.GetServices<ITtsSynthesisEngine>().ToArray();
+            var languages = engines
+                .SelectMany(engine => engine.SupportedLanguages)
+                .ToArray();
+
+            Assert.Equal(2, engines.Length);
+            Assert.Equal(
+                new[] { TtsLanguage.Japanese, TtsLanguage.English },
+                languages.OrderBy(language => language));
+            Assert.Contains(engines, engine => engine is PiperJapaneseTtsSynthesisEngine);
+            Assert.Contains(engines, engine => engine is UnconfiguredTtsSynthesisEngine);
+        }
+
+        [Fact]
         public void HostOptions_RequiresPipeAndParentProcessIdArguments()
         {
             var parentProcessId = Environment.ProcessId.ToString();
@@ -288,15 +309,15 @@ namespace Dictation.Tests.TtsHost
         }
 
         [Fact]
-        public async Task PlaceholderEngine_ReturnsModelNotConfiguredErrorWithoutAudio()
+        public async Task PlaceholderEngine_ReturnsEnglishModelNotConfiguredErrorWithoutAudio()
         {
             var engine = new UnconfiguredTtsSynthesisEngine();
 
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => engine.SynthesizeAsync(
-                new TtsSynthesisRequestDto(TtsLanguage.Japanese, "食べる"),
+                new TtsSynthesisRequestDto(TtsLanguage.English, "go"),
                 TestContext.Current.CancellationToken));
 
-            Assert.Contains("模型尚未配置", exception.Message);
+            Assert.Contains("英语", exception.Message);
         }
 
         private static string CreatePipeName()

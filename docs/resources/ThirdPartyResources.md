@@ -13,8 +13,38 @@
 | `JMdict.gz` | 创建日期 2026-08-14 | 22,155,996 bytes；`9C1DE325ED8E3D690F4DD9F9E1E114FB800ABE5B23782C43F89D9A9E44F431CF` | EDRDG JMdict，CC BY-SA 4.0；发布物须保留 EDRDG/JMdict 归属、许可副本或有效链接，并满足对应再分发义务 | 构建时解析并清洗；运行时使用生成的只读日语词库 |
 | `english-wordnet` | `https://github.com/globalwordnet/english-wordnet.git`；commit `02ff9f3f5bc0a25592e7263ffdbc9bcb6564936b`；`2025-edition-160-g02ff9f3`；工作树 clean | 本次以 commit 固定，不把嵌套 Git 元数据作为发布输入 | Open English WordNet CC BY 4.0；同时保留底层 Princeton WordNet 许可证归属 | 构建时提取 synset、词性、义项和关系；具体运行表结构在词库切片固定 |
 | `Kokoro-82M` | `https://huggingface.co/hexgrad/Kokoro-82M`；commit `f3ff3571791e39611d31c381e3a41a3af07b4987`；工作树 clean | `kokoro-v1_0.pth`：327,212,226 bytes；`496DBA118D1A58F5F3DB2EFC88DBDC216E0483FC89FE6E47EE1F2C53F18AD1E4` | 模型卡标记 Apache-2.0；随发布保留模型卡与适用归属文本 | 供英语英式发音使用；现有 British voices 为 `bf_alice`、`bf_emma`、`bf_isabella`、`bf_lily`、`bm_daniel`、`bm_fable`、`bm_george`、`bm_lewis`，默认 speaker 尚未选择 |
-| `piper-plus-css10-ja-6lang` | `https://huggingface.co/ayousanz/piper-plus-css10-ja-6lang`；commit `bd0d812d4db9182ecdb907ef074becf9e230c17f`；工作树 clean | ONNX：39,652,717 bytes；`5EBC51DBF897238523F3DF0D6E0F6C93033BC5CDA3F8602A8379EBE2A4738C42`；`config.json`：`1328B76E67B7D785E57D0ECF1E76571F6E931B5B9313C88AFE9D0017049CB692` | 模型卡标记 CSS10 public domain；要求使用 Piper Plus PR #320 之后的运行时 | 供日语发音使用；具体 Piper Plus 运行时、裁剪文件和启动参数留给 TTS 切片验证 |
+| `piper-plus-css10-ja-6lang` | `https://huggingface.co/ayousanz/piper-plus-css10-ja-6lang`；commit `bd0d812d4db9182ecdb907ef074becf9e230c17f`；工作树 clean | ONNX：39,652,717 bytes；`5EBC51DBF897238523F3DF0D6E0F6C93033BC5CDA3F8602A8379EBE2A4738C42`；`config.json`：`1328B76E67B7D785E57D0ECF1E76571F6E931B5B9313C88AFE9D0017049CB692` | 模型卡标记 CSS10 public domain；要求使用 Piper Plus PR #320 之后的运行时 | 供日语发音使用；运行时固定使用 `PiperPlus.Core` 0.4.0 与 OpenJTalk 词典 |
 | `PP-OCRv5_server_rec_infer.tar` | PaddleOCR PP-OCRv5 server recognition inference 输入 | 84,869,120 bytes；`D99BE2FFD348943AB52876179168BE4FB5B14F5F0812F2AE4C76D89EC2EA750A` | PaddleOCR 项目 Apache-2.0；随发布保留项目许可和归属 | 已确认包含 `inference.yml`、`inference.pdiparams`、`inference.json`；Windows CPU 运行时、模型裁剪和推理参数留给 OCR 切片验证 |
+
+## 2.1 日语 TTS 运行时固定依赖
+
+`Dictation.TtsHost` 只使用本地 CPU 推理，不调用 `DictionaryManager`、`HttpClient` 或任何运行时下载。四个 NuGet 依赖固定如下，发布时须随包保留对应许可证和归属文件：
+
+| NuGet 包 | 版本 | 许可证 |
+| --- | --- | --- |
+| `PiperPlus.Core` | `0.4.0` | MIT |
+| `Microsoft.ML.OnnxRuntime` | `1.24.3` | MIT |
+| `DotNetG2P` | `1.8.0` | Apache-2.0 |
+| `DotNetG2P.MeCab` | `1.8.0` | Apache-2.0 |
+
+OpenJTalk 词典下载地址为 [`open_jtalk_dic_utf_8-1.11.tar.gz`](https://github.com/r9y9/open_jtalk/releases/download/v1.11.1/open_jtalk_dic_utf_8-1.11.tar.gz)，固定 SHA-256 为 `FE6BA0E43542CEF98339ABDFFD903E062008EA170B04E7E2A35DA805902F382A`。构建或发布前解压并核验后，运行时布局必须为：
+
+```text
+Resources/Tts/Japanese/PiperPlus/
+├── css10-ja-6lang-fp16.onnx
+├── config.json
+└── OpenJTalk/open_jtalk_dic_utf_8-1.11/
+    ├── sys.dic
+    ├── matrix.bin
+    ├── char.bin
+    └── unk.dic
+```
+
+OpenJTalk 词典的 COPYING 适用 Modified BSD 风格条款，并包含 NAIST、UniDic、Open JTalk/HTS Working Group 等版权与免责声明。源码和二进制再分发都必须保留适用的版权、条件和免责声明；发布包须随附对应 notice，不能仅保留下载链接。
+
+DotNetG2P.MeCab 依赖的 MeCab/NMeCab 第三方 notices 也必须随发布包保留，包括包内 NOTICE、THIRD-PARTY-NOTICES.md 及适用许可证，并在资源归属目录中登记。
+
+模型、配置和词典在首次日语合成请求时才加载；TTS Host 启动和 Ping 不访问这些大文件。资源缺失时返回中文错误，不能通过联网补齐。
 
 ## 3. 构建加工与发布取舍
 
@@ -22,7 +52,7 @@
 
 词库生成必须输出来源 commit/日期、生成器版本、许可证文件名和输入哈希。中文翻译模型尚未选定，不得在本清单或运行时宣称包含某个翻译模型；当前只要求构建阶段产出可编辑中文释义。
 
-TTS 切片需要从 Kokoro 的 British voice 中选择并记录一个默认 speaker，同时确定 Piper Plus 的可分发运行子集；在此之前不把任一 speaker 或运行库称为最终方案。OCR 切片需要验证 Windows CPU 推理依赖、模型是否裁剪以及运行时文件清单；本资源表不预先承诺识别效果。
+英语 TTS 后续切片仍需从 Kokoro 的 British voice 中选择并记录一个默认 speaker。日语 TTS 已固定使用上述 Piper Plus 资源布局和 CPU 运行时。OCR 切片需要验证 Windows CPU 推理依赖、模型是否裁剪以及运行时文件清单；本资源表不预先承诺识别效果。
 
 发布只携带运行所需子集和许可证/归属文件，不携带完整原始仓库、嵌套 `.git`、样例数据、训练文件或未使用的大模型。构建缓存可位于工作区外，但不能成为用户运行时的隐式依赖。每个 ZIP 必须带同名 `.sha256` 和资源 manifest；客户端更新先校验 ZIP 哈希，再替换程序与不可变 Resources。
 
