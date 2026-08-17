@@ -1,7 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
 using Dictation.Services.Configuration;
 using Dictation.Services.SingleInstance;
 using Dictation.Services.Startup;
+using Dictation.Services.Tts;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Services
 {
@@ -13,6 +14,7 @@ namespace Dictation.Services
             services.AddSingleton<SettingsService>();
             services.AddSingleton<StartupInitializer>();
             services.AddSingleton<SingleInstanceCoordinator>();
+            services.AddSingleton<TtsService>();
             return services;
         }
     }
