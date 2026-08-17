@@ -8,14 +8,6 @@ namespace Dictation.DataAccess
         }
     }
 
-    public sealed class SettingsDataAccessException : DataAccessException
-    {
-        public SettingsDataAccessException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
-
     public sealed class SchemaMigrationDataAccessException : DataAccessException
     {
         public SchemaMigrationDataAccessException(string message, Exception innerException)

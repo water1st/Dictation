@@ -10,7 +10,7 @@
 
 - WPF、Services、DataAccess 和可选 MCP Hosted Service 属于同一个 WPF Generic Host 与 DI 容器。入口为 `[STAThread] Program.Main`，`App` 不使用 `StartupUri`。`Dictation.TtsHost` 是由该宿主生命周期钩子启动和停止的单独隐藏进程，通过命名管道通信；它不建立第二套业务层或数据库访问链路。
 - Presentation 只处理 WPF、ViewModel、绑定和输入适配；Services 只编排业务；DataAccess 只执行 CRUD/SQL。DTO、业务模型、持久化对象（PO）分离，跨层使用简单 Mapper。
-- 配置 PO 只保存持久化字符串字段，不含业务枚举；DataAccess 只处理 JSON 语法、缺失记录和原子 IO。SettingsService 将字符串映射为 DTO 枚举并拒绝未知业务值，默认值也由 SettingsService 产生。
+- 设置配置集中在 `Dictation.Services.Configuration`：`ApplicationSettingsDocument` 只保存持久化字符串，Microsoft `IConfiguration.GetValue<T>` 负责读取可选的 `CONFIG/settings.json`，内部 `IConfiguration.SetValueAsync<T>` 负责一次完整文档的原子写回并调用 `IConfigurationRoot.Reload()`。微软提供器没有官方 JSON 写回 API，因此只补这个最小缺口；SettingsService 将字符串映射为 DTO 枚举并拒绝未知业务值，默认值也由 SettingsService 产生。DataAccess 不承担读写设置。
 - 只有 TTS、OCR、更新源、系统时钟等确实有多 Provider 的边界使用接口；单实现 Service 和 DataAccessor 以具体类注册。禁止 DDD、CQRS、EF、`Repository`/`Repository<T>` 和无实际扩展价值的抽象。
 - 每次数据库操作独立创建连接。SQLite 迁移器维护 `SchemaMigrations`；升级先备份，迁移在事务中执行，失败回滚并阻止应用启动。
 - 单例使用命名互斥体和命名管道：第二进程静默退出，不提示、不转交参数；第一进程若最小化则还原并置前。

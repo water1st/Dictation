@@ -87,7 +87,8 @@ namespace Dictation.Presentation.ViewModels
 
                 try
                 {
-                    var settings = await settingsService.LoadAsync(cancellationToken);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var settings = settingsService.Load();
                     ApplySettings(settings);
                     ErrorMessage = null;
                     isInitialized = true;

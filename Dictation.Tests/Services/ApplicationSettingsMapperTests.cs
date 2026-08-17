@@ -1,4 +1,3 @@
-using Dictation.DataAccess.Configuration;
 using Dictation.Services.Configuration;
 
 namespace Dictation.Tests.Services
@@ -11,7 +10,7 @@ namespace Dictation.Tests.Services
         [InlineData("Dark", ThemeMode.Dark)]
         public void ToDto_MapsEachValidTheme(string persistedTheme, ThemeMode expectedTheme)
         {
-            var result = ApplicationSettingsMapper.ToDto(new SettingsPo
+            var result = ApplicationSettingsMapper.ToDto(new ApplicationSettingsDocument
             {
                 ThemeMode = persistedTheme,
                 LastLanguage = "Japanese"
@@ -25,7 +24,7 @@ namespace Dictation.Tests.Services
         [InlineData("English", LearningLanguage.English)]
         public void ToDto_MapsEachValidLanguage(string persistedLanguage, LearningLanguage expectedLanguage)
         {
-            var result = ApplicationSettingsMapper.ToDto(new SettingsPo
+            var result = ApplicationSettingsMapper.ToDto(new ApplicationSettingsDocument
             {
                 ThemeMode = "System",
                 LastLanguage = persistedLanguage
@@ -40,7 +39,7 @@ namespace Dictation.Tests.Services
         [InlineData(" ", "Japanese")]
         public void ToDto_RejectsUnknownOrBlankTheme(string? persistedTheme, string persistedLanguage)
         {
-            Assert.Throws<SettingsConfigurationException>(() => ApplicationSettingsMapper.ToDto(new SettingsPo
+            Assert.Throws<SettingsConfigurationException>(() => ApplicationSettingsMapper.ToDto(new ApplicationSettingsDocument
             {
                 ThemeMode = persistedTheme,
                 LastLanguage = persistedLanguage
@@ -53,7 +52,7 @@ namespace Dictation.Tests.Services
         [InlineData("System", " ")]
         public void ToDto_RejectsUnknownOrBlankLanguage(string persistedTheme, string? persistedLanguage)
         {
-            Assert.Throws<SettingsConfigurationException>(() => ApplicationSettingsMapper.ToDto(new SettingsPo
+            Assert.Throws<SettingsConfigurationException>(() => ApplicationSettingsMapper.ToDto(new ApplicationSettingsDocument
             {
                 ThemeMode = persistedTheme,
                 LastLanguage = persistedLanguage
@@ -61,14 +60,28 @@ namespace Dictation.Tests.Services
         }
 
         [Fact]
-        public void ToPo_MapsDtoEnumsToPersistedStrings()
+        public void ToDocument_MapsDtoEnumsToPersistedStrings()
         {
-            var result = ApplicationSettingsMapper.ToPo(new ApplicationSettingsDto(
+            var result = ApplicationSettingsMapper.ToDocument(new ApplicationSettingsDto(
                 ThemeMode.Dark,
                 LearningLanguage.English));
 
             Assert.Equal("Dark", result.ThemeMode);
             Assert.Equal("English", result.LastLanguage);
+        }
+
+        [Fact]
+        public void ToDto_RejectsNullDocument()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+                ApplicationSettingsMapper.ToDto(null!));
+        }
+
+        [Fact]
+        public void ToDocument_RejectsNullDto()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+                ApplicationSettingsMapper.ToDocument(null!));
         }
     }
 }

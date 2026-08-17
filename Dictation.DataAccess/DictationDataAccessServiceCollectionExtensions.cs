@@ -1,4 +1,3 @@
-using Dictation.DataAccess.Configuration;
 using Dictation.DataAccess.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,7 +13,6 @@ namespace Dictation.DataAccess
 
             var applicationPaths = new ApplicationPaths(applicationRootDirectory);
             services.AddSingleton(applicationPaths);
-            services.AddSingleton<SettingsDataAccessor>();
             services.AddSingleton<SqliteConnectionFactory>();
             services.AddSingleton<SchemaMigrationRunner>(serviceProvider =>
                 new SchemaMigrationRunner(

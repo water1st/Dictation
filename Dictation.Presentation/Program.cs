@@ -2,6 +2,7 @@ using Dictation.DataAccess;
 using Dictation.Services;
 using Dictation.Services.SingleInstance;
 using Dictation.Services.Startup;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -58,6 +59,17 @@ namespace Dictation.Presentation
         private static IHostBuilder CreateHostBuilder(string[] args)
         {
             return Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((_, configuration) =>
+                {
+                    configuration.SetBasePath(AppContext.BaseDirectory);
+                    configuration.AddJsonFile(source =>
+                    {
+                        source.Path = Path.Combine("CONFIG", "settings.json");
+                        source.Optional = true;
+                        source.ReloadOnChange = false;
+                        source.OnLoadException = context => context.Ignore = true;
+                    });
+                })
                 .ConfigureServices((_, services) =>
                 {
                     services

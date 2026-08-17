@@ -1,6 +1,6 @@
-namespace Dictation.DataAccess.Configuration
+namespace Dictation.Services.Configuration
 {
-    public sealed class SettingsPo
+    public sealed class ApplicationSettingsDocument
     {
         public string? ThemeMode { get; init; }
 

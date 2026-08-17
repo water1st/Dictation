@@ -1,23 +1,21 @@
-using Dictation.DataAccess.Configuration;
-
 namespace Dictation.Services.Configuration
 {
     public static class ApplicationSettingsMapper
     {
-        public static ApplicationSettingsDto ToDto(SettingsPo settings)
+        public static ApplicationSettingsDto ToDto(ApplicationSettingsDocument document)
         {
-            ArgumentNullException.ThrowIfNull(settings);
+            ArgumentNullException.ThrowIfNull(document);
 
             return new ApplicationSettingsDto(
-                ParseThemeMode(settings.ThemeMode),
-                ParseLearningLanguage(settings.LastLanguage));
+                ParseThemeMode(document.ThemeMode),
+                ParseLearningLanguage(document.LastLanguage));
         }
 
-        public static SettingsPo ToPo(ApplicationSettingsDto settings)
+        public static ApplicationSettingsDocument ToDocument(ApplicationSettingsDto settings)
         {
             ArgumentNullException.ThrowIfNull(settings);
 
-            return new SettingsPo
+            return new ApplicationSettingsDocument
             {
                 ThemeMode = settings.ThemeMode switch
                 {

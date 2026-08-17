@@ -70,7 +70,7 @@
   Run:
 
   ```powershell
-  dotnet test Dictation.Tests/Dictation.Tests.csproj --filter "FullyQualifiedName~ApplicationSettingsMapperTests|FullyQualifiedName~SettingsServiceTests|FullyQualifiedName~HomeViewModelTests"
+  dotnet test Dictation.Tests/Dictation.Tests.csproj --no-restore -- --filter-class Dictation.Tests.Services.ApplicationSettingsMapperTests Dictation.Tests.Services.SettingsServiceTests Dictation.Tests.Presentation.HomeViewModelTests
   ```
 
   Expected: FAIL，原因直接指向 `ApplicationSettingsDocument`、新构造器、`Load()`、`SetValueAsync<T>` 或 `SettingsPersistenceException` 尚不存在，而不是测试基础设施错误。记录关键失败，不提交红状态。
@@ -150,7 +150,7 @@
   Run:
 
   ```powershell
-  dotnet test Dictation.Tests/Dictation.Tests.csproj --filter "FullyQualifiedName~ApplicationSettingsMapperTests|FullyQualifiedName~SettingsServiceTests|FullyQualifiedName~HomeViewModelTests"
+  dotnet test Dictation.Tests/Dictation.Tests.csproj --no-restore -- --filter-class Dictation.Tests.Services.ApplicationSettingsMapperTests Dictation.Tests.Services.SettingsServiceTests Dictation.Tests.Presentation.HomeViewModelTests
   dotnet test Dictation.sln
   dotnet build Dictation.sln --configuration Debug --no-restore
   git diff --check
