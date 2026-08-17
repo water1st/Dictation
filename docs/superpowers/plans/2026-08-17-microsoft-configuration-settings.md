@@ -2,33 +2,43 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 用 `Microsoft.Extensions.Configuration` 取代自制设置读取逻辑，并仅保留最小、可靠的 JSON 原子写入能力。
+**Goal:** 使用微软配置扩展读取设置，并在同一配置模块内为 `IConfiguration` 补充最小泛型 JSON 原子写回能力。
 
-**Architecture:** Generic Host 将根目录下的 `CONFIG/settings.json` 作为最后一个可选 JSON 配置源；`SettingsService` 从 DI 注入的 `IConfiguration` 同步读取并执行业务映射。DataAccess 中的具体类 `SettingsFileWriter` 只创建和原子替换设置文件，不承担读取。
+**Architecture:** Generic Host 注册 `CONFIG/settings.json`；Presentation 只调用 `SettingsService`。`SettingsService`、设置文件模型、Mapper、异常及内部 `IConfiguration.SetValueAsync<T>` 扩展集中在 `Dictation.Services.Configuration`，DataAccess 不承担读写配置。
 
-**Tech Stack:** .NET 10、WPF、Generic Host、`Microsoft.Extensions.Configuration.Json`、`System.Text.Json`、xUnit v3
+**Tech Stack:** .NET 10、WPF、Generic Host、`Microsoft.Extensions.Configuration.Binder`、`Microsoft.Extensions.Configuration.Json`、`System.Text.Json`、xUnit v3
 
 ## Global Constraints
 
 - 只在 `codex/dictation-refactor` 隔离分支修改，不合并或推送。
-- 保持传统三层和单一 DI 容器；不引入 DDD、Repository、EF、`IOptions`、自定义配置提供器或第三方可写配置库。
-- 生产读取必须使用 `IConfiguration`；自有代码仅补足微软 JSON 提供器没有的创建与写回能力。
-- 测试必须覆盖正常、缺失、非法、异常、取消和状态变化；临时制造错误验证测试会失败后立即修正，错误不得提交。
+- 保持传统三层和单一 DI 容器；配置不是普通 DAL 数据，不创建设置 DataAccessor、Repository 或 Provider。
+- 读取必须使用微软 `IConfiguration.GetValue<T>()`；自有代码只补官方没有的 JSON 写回。
+- 设置相关类型集中在 `Dictation.Services.Configuration`，对 Presentation 只暴露 `SettingsService`。
+- `SetValueAsync<T>` 的 `T` 是一次完整写入的配置文档；一次业务保存只写一次文件并 Reload 一次。
+- 不引入 `IOptions`、自定义 `ConfigurationProvider`、第三方可写配置库或重型框架。
+- 测试覆盖正常、缺失、非法、异常、取消和状态变化；临时错误只用于证明测试会失败，不得提交。
 - 不改动尚未提交的 JMdict 词库实现，不把两项工作放进同一提交。
 
 ---
 
-### Task 1: 用微软配置读取设置并保留最小写入器
+### Task 1: 统一设置配置模块
 
 **Files:**
-- Rename: `Dictation.DataAccess/Configuration/SettingsDataAccessor.cs` → `Dictation.DataAccess/Configuration/SettingsFileWriter.cs`
+- Delete: `Dictation.DataAccess/Configuration/SettingsDataAccessor.cs`
+- Delete: `Dictation.DataAccess/Configuration/SettingsPo.cs`
+- Modify: `Dictation.DataAccess/DataAccessException.cs`
 - Modify: `Dictation.DataAccess/DictationDataAccessServiceCollectionExtensions.cs`
+- Create: `Dictation.Services/Configuration/ApplicationSettingsDocument.cs`
+- Create: `Dictation.Services/Configuration/ConfigurationWriteExtensions.cs`
+- Create: `Dictation.Services/Configuration/SettingsPersistenceException.cs`
+- Modify: `Dictation.Services/Configuration/ApplicationSettingsMapper.cs`
 - Modify: `Dictation.Services/Configuration/SettingsService.cs`
 - Modify: `Dictation.Services/Dictation.Services.csproj`
 - Modify: `Dictation.Presentation/Program.cs`
 - Modify: `Dictation.Presentation/Dictation.Presentation.csproj`
 - Modify: `Dictation.Presentation/ViewModels/HomeViewModel.cs`
-- Rename: `Dictation.Tests/DataAccess/SettingsDataAccessorTests.cs` → `Dictation.Tests/DataAccess/SettingsFileWriterTests.cs`
+- Delete: `Dictation.Tests/DataAccess/SettingsDataAccessorTests.cs`
+- Modify: `Dictation.Tests/Services/ApplicationSettingsMapperTests.cs`
 - Modify: `Dictation.Tests/Services/SettingsServiceTests.cs`
 - Modify: `Dictation.Tests/Presentation/HomeViewModelTests.cs`
 - Modify: `Dictation.Tests/Dictation.Tests.csproj`
@@ -36,12 +46,12 @@
 - Modify: `docs/plans/2026-08-14-wpf-foundation.md`
 
 **Interfaces:**
-- Consumes: `ApplicationPaths.SettingsFile`、`SettingsPo`、`ApplicationSettingsMapper`、DI 提供的 `IConfiguration`
-- Produces: `SettingsFileWriter.SaveAsync(SettingsPo, CancellationToken)`、`SettingsService.Load()`、现有 `SettingsService.SaveAsync(...)`
+- Consumes: DI 提供的 `IConfiguration`、`ApplicationPaths.SettingsFile`、微软 `GetValue<string>()` 和 `IConfigurationRoot.Reload()`
+- Produces: `SettingsService.Load()`、`SettingsService.SaveAsync(...)`、模块内部 `IConfiguration.SetValueAsync<T>(string, T, CancellationToken)`
 
-- [ ] **Step 1: 先改测试表达新边界**
+- [ ] **Step 1: 先让测试表达新的内聚边界**
 
-  将 DataAccess 测试改为只验证写入；SettingsService 和 HomeViewModel 测试通过以下真实微软配置构造方式读取：
+  删除 DataAccess 设置测试。将 Mapper 测试切换到 `ApplicationSettingsDocument`；SettingsService 和 HomeViewModel 测试使用真实微软配置：
 
   ```csharp
   private static IConfiguration BuildConfiguration(ApplicationPaths paths)
@@ -53,37 +63,59 @@
   }
   ```
 
-  测试至少包括：缺失文件产生默认值；有效文件恢复值；保存后当前 `IConfiguration` 立即返回新值；重新 Build 后从文件恢复；未知字符串抛业务异常；非法 DTO 不落盘；预取消不落盘；目标为目录时清理临时文件并抛 DataAccess 异常；HomeViewModel 保存失败保持旧状态。
+  测试至少包括：两键缺失产生默认值；有效文件恢复；只缺一键和未知值拒绝；首次保存及覆盖保存；保存后同一配置立即可见；重新 Build 后恢复；非法 DTO、预取消和写入失败均不更新文件或当前配置；不支持 Reload 的 IConfiguration 在写入前拒绝；目标路径为目录时抛 `SettingsPersistenceException` 且无临时文件；HomeViewModel 保持旧状态并显示错误；损坏 JSON 经 Host 相同策略使用默认值。
 
-- [ ] **Step 2: 运行定向测试并证明旧实现不满足新接口**
+- [ ] **Step 2: 实际运行红测**
 
   Run:
 
   ```powershell
-  dotnet test Dictation.Tests/Dictation.Tests.csproj --filter "FullyQualifiedName~SettingsFileWriterTests|FullyQualifiedName~SettingsServiceTests|FullyQualifiedName~HomeViewModelTests"
+  dotnet test Dictation.Tests/Dictation.Tests.csproj --filter "FullyQualifiedName~ApplicationSettingsMapperTests|FullyQualifiedName~SettingsServiceTests|FullyQualifiedName~HomeViewModelTests"
   ```
 
-  Expected: FAIL，原因必须直接指向 `SettingsFileWriter`/`IConfiguration` 构造器或 `Load()` 尚不存在，而不是测试基础设施错误。保留命令与关键失败摘要作为执行记录，不提交红状态。
+  Expected: FAIL，原因直接指向 `ApplicationSettingsDocument`、新构造器、`Load()`、`SetValueAsync<T>` 或 `SettingsPersistenceException` 尚不存在，而不是测试基础设施错误。记录关键失败，不提交红状态。
 
-- [ ] **Step 3: 临时制造可观察错误并证明断言有效**
+- [ ] **Step 3: 临时制造行为错误证明断言有效**
 
-  在最小可编译骨架中临时让 `SettingsService.Load()` 无条件返回 `System/Japanese`，运行“有效文件恢复 Dark/English”测试。
+  在可编译骨架中临时让 `SettingsService.Load()` 无条件返回 `System/Japanese`，只运行有效文件恢复测试。
 
-  Expected: FAIL，明确显示期望 `Dark/English`、实际 `System/Japanese`。随后立即删除该临时错误；不得暂存或提交。
+  Expected: FAIL，明确显示期望 `Dark/English`、实际 `System/Japanese`。立即删除临时错误，不得暂存或提交。
 
 - [ ] **Step 4: 实现最小生产代码**
 
-  `SettingsFileWriter` 删除全部读取代码，仅保留参数校验、运行目录创建、`JsonSerializer.SerializeAsync`、Flush、同目录临时文件替换和失败清理。
-
-  `SettingsService` 使用以下构造边界和同步读取：
+  `SettingsService` 构造器为：
 
   ```csharp
-  public SettingsService(IConfiguration configuration, SettingsFileWriter settingsFileWriter);
-  public ApplicationSettingsDto Load();
-  public Task SaveAsync(ApplicationSettingsDto settings, CancellationToken cancellationToken = default);
+  public SettingsService(IConfiguration configuration, ApplicationPaths applicationPaths);
   ```
 
-  `Load()` 在两个键都缺失时返回默认值，否则构造 `SettingsPo` 交给现有 Mapper。`SaveAsync` 先映射并写文件，成功后再更新 `configuration[nameof(SettingsPo.ThemeMode)]` 与 `configuration[nameof(SettingsPo.LastLanguage)]`。
+  `Load()` 使用微软扩展读取：
+
+  ```csharp
+  var themeMode = configuration.GetValue<string>(nameof(ApplicationSettingsDocument.ThemeMode));
+  var lastLanguage = configuration.GetValue<string>(nameof(ApplicationSettingsDocument.LastLanguage));
+  ```
+
+  两值都为 `null` 时返回默认 DTO，否则构造 `ApplicationSettingsDocument` 交给 Mapper。`SaveAsync` 先映射，再一次调用：
+
+  ```csharp
+  await configuration.SetValueAsync(
+      applicationPaths.SettingsFile,
+      document,
+      cancellationToken);
+  ```
+
+  泛型扩展签名为：
+
+  ```csharp
+  internal static Task SetValueAsync<T>(
+      this IConfiguration configuration,
+      string filePath,
+      T value,
+      CancellationToken cancellationToken = default);
+  ```
+
+  扩展先校验 `configuration is IConfigurationRoot`、路径和值，创建父目录，以 `JsonSerializer.SerializeAsync` 写同目录唯一临时文件，Flush 后 `File.Move(..., overwrite: true)`；替换成功后调用 `configurationRoot.Reload()`。取消、IO、权限错误时清理临时文件；IO/权限错误包装为 `SettingsPersistenceException`。
 
   `Program` 在 `Host.CreateDefaultBuilder(args)` 后配置：
 
@@ -101,39 +133,38 @@
   })
   ```
 
-  对直接使用的 `Microsoft.Extensions.Configuration.Abstractions`/`Json` 添加版本 `10.0.10` 的显式包引用。HomeViewModel 将 `await settingsService.LoadAsync(...)` 改为同步 `settingsService.Load()`，其余异步保存与并发门保持不变。
+  Services 对直接使用的 `Microsoft.Extensions.Configuration.Binder`、Presentation 对直接使用的 `Microsoft.Extensions.Configuration.Json` 添加 `10.0.10` 显式引用。HomeViewModel 初始化改用同步 `settingsService.Load()`，异步保存与并发门保持不变。
 
-- [ ] **Step 5: 运行定向测试、完整测试和构建**
+- [ ] **Step 5: 修正文档与静态边界**
+
+  将旧文档改为“微软配置扩展读、同一 Services 配置模块的 `SetValueAsync<T>` 写”，并删除任何 DataAccessor/Writer 设计陈述。运行：
+
+  ```powershell
+  rg -n "SettingsDataAccessor|SettingsFileWriter|DeserializeAsync<.*Settings|读取设置文件" Dictation.DataAccess Dictation.Services Dictation.Presentation docs
+  ```
+
+  Expected: 生产代码没有设置 DataAccessor/Writer 或手工反序列化；历史计划只在明确说明已被取代时可出现旧名称。
+
+- [ ] **Step 6: 运行完整验收**
 
   Run:
 
   ```powershell
-  dotnet test Dictation.Tests/Dictation.Tests.csproj --filter "FullyQualifiedName~SettingsFileWriterTests|FullyQualifiedName~SettingsServiceTests|FullyQualifiedName~HomeViewModelTests"
+  dotnet test Dictation.Tests/Dictation.Tests.csproj --filter "FullyQualifiedName~ApplicationSettingsMapperTests|FullyQualifiedName~SettingsServiceTests|FullyQualifiedName~HomeViewModelTests"
   dotnet test Dictation.sln
   dotnet build Dictation.sln --configuration Debug --no-restore
   git diff --check
   ```
 
-  Expected: 所有测试通过；构建 0 errors；不新增警告；`git diff --check` 无错误。
+  Expected: 全部测试通过；构建 0 errors；不新增警告；静态检查通过。
 
-- [ ] **Step 6: 做 WPF 配置冒烟**
+- [ ] **Step 7: 做 WPF 配置冒烟并提交**
 
-  在独立临时输出目录启动应用，确认缺少 `CONFIG/settings.json` 时可进入首页；选择英语和深色后文件被创建；退出并重启后恢复英语和深色。将文件临时改成损坏 JSON，再启动应使用默认值而不是终止进程。测试完成后仅清理该临时输出目录，不触碰仓库根目录的用户资源。
-
-- [ ] **Step 7: 修正文档并提交**
-
-  将旧文档中“DataAccessor 负责 JSON 读取”改为“IConfiguration 负责读取，SettingsFileWriter 只负责原子写回”，并明确微软提供器没有写回 API。检查不再存在生产 `SettingsDataAccessor` 或 `JsonSerializer.Deserialize*` 设置读取：
-
-  ```powershell
-  rg -n "SettingsDataAccessor|DeserializeAsync<SettingsPo>|读取设置文件" Dictation.DataAccess Dictation.Services Dictation.Presentation docs
-  git diff --check
-  ```
-
-  Expected: 生产代码无自制设置读取器；文档无冲突陈述。
+  在独立临时输出目录启动应用，确认缺少设置文件时进入首页；选择英语和深色后创建文件；重启恢复；损坏 JSON 时使用默认值而不终止。不得触碰仓库根目录用户资源。
 
   Commit:
 
   ```powershell
-  git add Dictation.DataAccess Dictation.Services Dictation.Presentation Dictation.Tests docs/requirements/RefactorSpecification.md docs/plans/2026-08-14-wpf-foundation.md
-  git commit -m "设置：改用微软配置组件读取"
+  git add AGENTS.md Dictation.DataAccess Dictation.Services Dictation.Presentation Dictation.Tests docs/requirements/RefactorSpecification.md docs/plans/2026-08-14-wpf-foundation.md docs/superpowers
+  git commit -m "设置：统一微软配置读写入口"
   ```

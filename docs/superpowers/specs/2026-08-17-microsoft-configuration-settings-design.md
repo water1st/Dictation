@@ -2,15 +2,15 @@
 
 ## 目标
 
-应用设置读取使用 `Microsoft.Extensions.Configuration` 的现成 JSON 配置提供器，不再由 DataAccess 手工打开、反序列化 `CONFIG/settings.json`。微软配置体系没有 JSON 回写 API，因此仅保留一个职责单一的文件写入器补足创建和持久化能力。
+应用设置通过一个内聚的 `Dictation.Services.Configuration` 模块完成读取、校验和写回。读取复用 `Microsoft.Extensions.Configuration` 已有扩展；微软配置体系没有 JSON 写回 API，因此在同一模块内为 `IConfiguration` 补充最小泛型 `SetValueAsync<T>` 扩展，不再手写读取器，也不把配置放进普通 DAL。
 
 ## 组件与边界
 
-- `Program` 在 Generic Host 的配置管线末尾注册 `CONFIG/settings.json`，路径以 `AppContext.BaseDirectory` 为根，文件可缺失且不启用运行时文件监视。
-- JSON 文件缺失或语法损坏时，配置源不阻止应用启动，`SettingsService` 使用系统主题和日语作为默认值。合法 JSON 中出现未知主题或语言值时仍抛出 `SettingsConfigurationException`，避免静默接受错误业务值。
-- `SettingsService` 直接注入 `IConfiguration` 读取 `ThemeMode` 与 `LastLanguage`，读取为同步操作；它仍负责默认值、DTO/PO 映射和业务枚举校验。
-- `SettingsFileWriter` 取代 `SettingsDataAccessor`，只负责把 `SettingsPo` 以 UTF-8 JSON 写入同目录临时文件，再替换 `CONFIG/settings.json`。保存成功后，`SettingsService` 同步更新当前 `IConfiguration` 的两个键，使同一进程后续读取立即可见。
-- 不引入 `IOptions`、自定义 `ConfigurationProvider`、第三方可写配置库或设置 Repository。
+- `Program` 在 Generic Host 配置管线末尾注册根目录下的 `CONFIG/settings.json`。文件可缺失，不启用运行时文件监视；语法损坏时忽略该配置源并使用默认值，不能阻止应用启动。
+- `SettingsService` 是 Presentation 唯一使用的设置入口。它注入 `IConfiguration` 和 `ApplicationPaths`，通过微软的 `GetValue<string>()` 读取 `ThemeMode`、`LastLanguage`，负责默认值和业务编排。
+- `ApplicationSettingsDocument`、`ApplicationSettingsMapper`、`SettingsPersistenceException` 与写入扩展均位于 `Dictation.Services.Configuration`。文件模型只保存字符串，Mapper 负责与 DTO 枚举转换并拒绝未知业务值。
+- 内部 `IConfiguration.SetValueAsync<T>(...)` 把一个完整配置文档作为 `T` 一次性写入：创建父目录、同目录临时文件序列化与替换，成功后调用微软的 `IConfigurationRoot.Reload()` 刷新当前配置。SettingsService 每次只调用一次，主题与语言不会出现半更新。
+- DataAccess 不读取或写入设置；`ApplicationPaths` 仅提供统一根目录路径。不存在 `SettingsDataAccessor`、`SettingsFileWriter`、设置 Repository、自定义 `ConfigurationProvider` 或第三方可写配置库。
 
 保持现有扁平 JSON 键名，已有文件无需迁移：
 
@@ -23,12 +23,11 @@
 
 ## 错误与数据安全
 
-写入器继续保留同目录临时文件加替换写入，避免进程中断留下半个 JSON。取消、IO 错误和权限错误会清理临时文件；IO 与权限错误包装为 `SettingsDataAccessException`。业务值先通过 Mapper 校验，非法 DTO 不得创建或修改设置文件。
+两个键都缺失时返回系统主题和日语；仅缺一项或值未知时抛出 `SettingsConfigurationException`。写入前先校验 DTO，非法值不得触碰文件或当前配置。取消操作原样传播；IO 与权限错误包装为 `SettingsPersistenceException`，并尽力清理临时文件。扩展在写入前确认传入配置实现了 `IConfigurationRoot`，避免文件落盘后才发现无法 Reload。
 
 ## 测试
 
-- 使用真实 `ConfigurationBuilder`、`AddJsonFile` 和内存配置验证缺失、有效、损坏及非法业务值。
-- 写入器测试覆盖创建、覆盖、空参数、预取消、目标路径冲突和临时文件清理。
-- Service 测试覆盖默认值、保存后同进程可见、重新构建微软 JSON 配置后可恢复，以及非法枚举不落盘。
-- HomeViewModel 测试改为通过 `IConfiguration` 构造真实 SettingsService，继续验证初始化、保存失败、状态保持和属性通知。
-
+- 使用真实 `ConfigurationBuilder`、`AddJsonFile`、微软 `GetValue<T>()` 和 `IConfigurationRoot.Reload()` 验证缺失、有效、损坏、部分缺失及非法业务值。
+- 通过 `SettingsService` 覆盖首次创建、覆盖保存、同进程立即可见、重新 Build 后恢复、空参数、预取消、路径冲突、临时文件清理和失败不改变当前配置。
+- HomeViewModel 测试继续验证初始化、保存失败、状态保持、属性通知和损坏 JSON 默认启动。
+- 搜索生产代码，确保不存在设置 JSON 的手工反序列化，也不存在 DataAccess 设置读写类。
