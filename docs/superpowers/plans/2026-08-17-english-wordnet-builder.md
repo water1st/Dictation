@@ -94,7 +94,7 @@ Run: `dotnet test Dictation.Tests/Dictation.Tests.csproj -- --filter-class Dicta
 
 - [ ] **Step 3: 实现最小确定性规则和显式例外范式**
 
-规则只负责可由拼写确定的部分：动词 `-s/-es/-ies`、`-ed/-ied`、`-ing`；名词 `-s/-es/-ies`；形容词/副词仅处理来源形式或明确的 `-er/-est` 拼写变换。`-f/-fe` 等存在大量反例的名词变化不靠通用规则猜测。来源 form 先由 suffix 规则识别，再由小型显式范式解决 `go/do/be/run/come/good` 等无法从拼写判定的情况。多个可接受拼写全部保留；最终按 kind、来源优先级、surface 固定排序并去重。
+规则只负责可由拼写确定的部分：动词 `-s/-es/-ies`、`-ed/-ied`、`-ing`；名词 `-s/-es/-ies`。形容词/副词不根据 lemma 自动制造比较级，而只分类来源明确给出的 `-er/-est` 或显式例外；`beautiful` 等没有来源比较形式时只保留 Base。`-f/-fe` 等存在大量反例的名词变化不靠通用规则猜测。来源 form 先由 suffix 规则识别，再由小型显式范式解决 `go/do/be/run/come/good` 等无法从拼写判定的情况。多个可接受拼写全部保留；最终按 kind、来源优先级、surface 固定排序并去重。
 
 - [ ] **Step 4: 做 mutation check 并确认全绿**
 
@@ -138,7 +138,7 @@ Commit: `词库：实现WordNet解析与英语词形规则`
 - `conversion -> convert` 只保存直接边，不生成传递闭包；
 - definition/example 回到正确 synset；
 - `IX_Lexemes_Lemma`、`IX_Forms_Surface`、`IX_Senses_SynsetId` 存在；
-- metadata 保存 schema/generator/source commit/source tree fingerprint/counts；
+- metadata 保存 schema/generator/source name/source tree fingerprint/counts；Git commit 由真实资源验收文档与 fingerprint 建立对应，不要求构建器解析 `.git`；
 - 缺失文件、损坏 YAML、未知例外、无效参数失败时保留既有目标数据库且清理自己的 temp。
 
 - [ ] **Step 2: 运行集成测试并确认数据库构建器尚不存在而失败**

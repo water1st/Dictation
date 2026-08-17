@@ -18,8 +18,12 @@ namespace Dictation.LexiconBuilder
         internal JapaneseLexiconBuildSummary Build(BuilderOptions options)
         {
             ArgumentNullException.ThrowIfNull(options);
+            if (options.SourceKind != LexiconSourceKind.JmDict)
+            {
+                throw new ArgumentException("日语构建器需要 JMdict 来源。", nameof(options));
+            }
 
-            var inputPath = Path.GetFullPath(options.JmDictPath);
+            var inputPath = Path.GetFullPath(options.SourcePath);
             var outputPath = Path.GetFullPath(options.OutputPath);
             ValidatePaths(inputPath, outputPath);
             var inputSha256 = ComputeSha256(inputPath);

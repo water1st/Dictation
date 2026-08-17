@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
@@ -14,14 +13,6 @@ namespace Dictation.LexiconBuilder.WordNet
 {
     internal sealed class WordNetYamlParser
     {
-        private static readonly Regex EntryFilePattern = new(
-            @"^entries-.+\.ya?ml$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
-
-        private static readonly Regex SynsetFilePattern = new(
-            @"^(adj|adv|noun|verb)\..+\.ya?ml$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
-
         private readonly IDeserializer deserializer = new DeserializerBuilder()
             .IgnoreUnmatchedProperties()
             .Build();
@@ -39,20 +30,8 @@ namespace Dictation.LexiconBuilder.WordNet
                 throw new DirectoryNotFoundException($"WordNet YAML 目录不存在：{fullDirectoryPath}。");
             }
 
-            var files = Directory
-                .EnumerateFiles(fullDirectoryPath, "*.yaml", SearchOption.AllDirectories)
-                .Concat(Directory.EnumerateFiles(fullDirectoryPath, "*.yml", SearchOption.AllDirectories))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Select(path => new SourceFile(path, Path.GetRelativePath(fullDirectoryPath, path)))
-                .OrderBy(file => file.RelativePath, StringComparer.Ordinal)
-                .ToArray();
-            var entryFiles = files
-                .Where(file => EntryFilePattern.IsMatch(Path.GetFileName(file.FullPath)))
-                .ToArray();
-            var synsetFiles = files
-                .Where(file => SynsetFilePattern.IsMatch(Path.GetFileName(file.FullPath)))
-                .ToArray();
-            if (entryFiles.Length == 0 && synsetFiles.Length == 0)
+            var files = WordNetSourceFiles.Enumerate(fullDirectoryPath);
+            if (files.Count == 0)
             {
                 throw new LexiconBuildException($"WordNet YAML 目录为空或没有受支持的文件：{fullDirectoryPath}。");
             }
@@ -63,11 +42,11 @@ namespace Dictation.LexiconBuilder.WordNet
             var synsetIds = new HashSet<string>(StringComparer.Ordinal);
             foreach (var file in files)
             {
-                if (entryFiles.Contains(file))
+                if (file.Kind == WordNetSourceFileKind.Entries)
                 {
                     ParseEntryFile(file, lexemes, lexemeIds);
                 }
-                else if (synsetFiles.Contains(file))
+                else if (file.Kind == WordNetSourceFileKind.Synsets)
                 {
                     ParseSynsetFile(file, synsets, synsetIds);
                 }
@@ -93,7 +72,7 @@ namespace Dictation.LexiconBuilder.WordNet
         }
 
         private void ParseEntryFile(
-            SourceFile sourceFile,
+            WordNetSourceFile sourceFile,
             ICollection<ParsedLexeme> lexemes,
             ISet<string> lexemeIds)
         {
@@ -161,7 +140,7 @@ namespace Dictation.LexiconBuilder.WordNet
         }
 
         private void ParseSynsetFile(
-            SourceFile sourceFile,
+            WordNetSourceFile sourceFile,
             ICollection<ParsedSynset> synsets,
             ISet<string> synsetIds)
         {
@@ -195,7 +174,7 @@ namespace Dictation.LexiconBuilder.WordNet
             }
         }
 
-        private T Deserialize<T>(SourceFile sourceFile)
+        private T Deserialize<T>(WordNetSourceFile sourceFile)
         {
             try
             {
@@ -218,7 +197,7 @@ namespace Dictation.LexiconBuilder.WordNet
 
         private static IReadOnlyList<string> ParseSourceForms(
             IReadOnlyList<string>? values,
-            SourceFile sourceFile,
+            WordNetSourceFile sourceFile,
             string lemma,
             string sourceEntryKey)
         {
@@ -243,7 +222,7 @@ namespace Dictation.LexiconBuilder.WordNet
 
         private static IReadOnlyList<string> ParseDerivationIds(
             IReadOnlyList<string>? values,
-            SourceFile sourceFile,
+            WordNetSourceFile sourceFile,
             string senseId)
         {
             if (values is null)
@@ -267,7 +246,7 @@ namespace Dictation.LexiconBuilder.WordNet
 
         private static IReadOnlyList<string> ParseTexts(
             IReadOnlyList<string>? values,
-            SourceFile sourceFile,
+            WordNetSourceFile sourceFile,
             string fieldName,
             bool required)
         {
@@ -302,7 +281,7 @@ namespace Dictation.LexiconBuilder.WordNet
 
         private static IReadOnlyList<string> ParseExamples(
             IReadOnlyList<object>? values,
-            SourceFile sourceFile,
+            WordNetSourceFile sourceFile,
             string synsetId)
         {
             if (values is null)
@@ -480,19 +459,17 @@ namespace Dictation.LexiconBuilder.WordNet
             };
         }
 
-        private static string RequireSourceText(string? value, SourceFile sourceFile, string fieldName)
+        private static string RequireSourceText(string? value, WordNetSourceFile sourceFile, string fieldName)
         {
             return string.IsNullOrWhiteSpace(value)
                 ? throw CreateSourceException(sourceFile, $"{fieldName} 缺失或为空。")
                 : value;
         }
 
-        private static LexiconBuildException CreateSourceException(SourceFile sourceFile, string message)
+        private static LexiconBuildException CreateSourceException(WordNetSourceFile sourceFile, string message)
         {
             return new LexiconBuildException($"WordNet 文件 {sourceFile.RelativePath}：{message}");
         }
-
-        private readonly record struct SourceFile(string FullPath, string RelativePath);
 
         private readonly record struct ParsedLexeme(EnglishLexeme Lexeme, string SourceRelativePath);
 

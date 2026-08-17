@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 
 using Dictation.LexiconBuilder.JmDict;
+using Dictation.LexiconBuilder.WordNet;
 
 namespace Dictation.LexiconBuilder
 {
@@ -27,10 +28,21 @@ namespace Dictation.LexiconBuilder
             {
                 var options = ParseArguments(args);
                 var stopwatch = Stopwatch.StartNew();
-                var summary = new JapaneseLexiconDatabaseBuilder().Build(options);
-                stopwatch.Stop();
-                output.WriteLine(
-                    $"词库构建完成：source_entries={summary.SourceEntryCount} entries={summary.EntryCount} senses={summary.SenseCount} forms={summary.FormCount} glosses={summary.GlossCount} output={summary.OutputPath} elapsed_ms={stopwatch.ElapsedMilliseconds}");
+                if (options.SourceKind == LexiconSourceKind.JmDict)
+                {
+                    var summary = new JapaneseLexiconDatabaseBuilder().Build(options);
+                    stopwatch.Stop();
+                    output.WriteLine(
+                        $"词库构建完成：source_entries={summary.SourceEntryCount} entries={summary.EntryCount} senses={summary.SenseCount} forms={summary.FormCount} glosses={summary.GlossCount} output={summary.OutputPath} elapsed_ms={stopwatch.ElapsedMilliseconds}");
+                }
+                else
+                {
+                    var summary = new EnglishLexiconDatabaseBuilder().Build(options);
+                    stopwatch.Stop();
+                    output.WriteLine(
+                        $"词库构建完成：source=wordnet source_files={summary.SourceFileCount} lexemes={summary.LexemeCount} senses={summary.SenseCount} synsets={summary.SynsetCount} definitions={summary.DefinitionCount} examples={summary.ExampleCount} forms={summary.FormCount} derivations={summary.DerivationCount} unclassified_source_forms={summary.UnclassifiedSourceFormCount} source_fingerprint_sha256={summary.SourceFingerprintSha256} output={summary.OutputPath} elapsed_ms={stopwatch.ElapsedMilliseconds}");
+                }
+
                 return 0;
             }
             catch (ArgumentException exception)
@@ -69,15 +81,16 @@ namespace Dictation.LexiconBuilder
         {
             if (args.Count == 0)
             {
-                throw new ArgumentException("必须同时提供 --jmdict 和 --output。", nameof(args));
+                throw new ArgumentException("必须提供 --jmdict 或 --wordnet 之一以及 --output。", nameof(args));
             }
 
-            string? jmdictPath = null;
+            LexiconSourceKind? sourceKind = null;
+            string? sourcePath = null;
             string? outputPath = null;
             for (var index = 0; index < args.Count; index++)
             {
                 var option = args[index];
-                if (option is not "--jmdict" and not "--output")
+                if (option is not "--jmdict" and not "--wordnet" and not "--output")
                 {
                     throw new ArgumentException($"不支持的参数：{option}。", nameof(args));
                 }
@@ -90,14 +103,17 @@ namespace Dictation.LexiconBuilder
                 }
 
                 var value = args[++index];
-                if (option == "--jmdict")
+                if (option is "--jmdict" or "--wordnet")
                 {
-                    if (jmdictPath is not null)
+                    if (sourceKind is not null)
                     {
-                        throw new ArgumentException("--jmdict 不能重复。", nameof(args));
+                        throw new ArgumentException("--jmdict 和 --wordnet 必须且只能指定一个，来源参数不能重复。", nameof(args));
                     }
 
-                    jmdictPath = value;
+                    sourceKind = option == "--jmdict"
+                        ? LexiconSourceKind.JmDict
+                        : LexiconSourceKind.WordNet;
+                    sourcePath = value;
                 }
                 else
                 {
@@ -110,12 +126,12 @@ namespace Dictation.LexiconBuilder
                 }
             }
 
-            if (jmdictPath is null || outputPath is null)
+            if (sourceKind is null || sourcePath is null || outputPath is null)
             {
-                throw new ArgumentException("必须同时提供 --jmdict 和 --output。", nameof(args));
+                throw new ArgumentException("必须提供 --jmdict 或 --wordnet 之一以及 --output。", nameof(args));
             }
 
-            return new BuilderOptions(jmdictPath, outputPath);
+            return new BuilderOptions(sourceKind.Value, sourcePath, outputPath);
         }
     }
 }

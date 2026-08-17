@@ -29,7 +29,7 @@ namespace Dictation.Tests.LexiconBuilder
                 </JMdict>
                 """);
 
-            var summary = new JapaneseLexiconDatabaseBuilder().Build(new BuilderOptions(inputPath, outputPath));
+            var summary = new JapaneseLexiconDatabaseBuilder().Build(new BuilderOptions(LexiconSourceKind.JmDict, inputPath, outputPath));
 
             Assert.True(File.Exists(outputPath));
             Assert.Equal(2, summary.SourceEntryCount);
@@ -70,7 +70,7 @@ namespace Dictation.Tests.LexiconBuilder
                 </JMdict>
                 """);
 
-            new JapaneseLexiconDatabaseBuilder().Build(new BuilderOptions(inputPath, outputPath));
+            new JapaneseLexiconDatabaseBuilder().Build(new BuilderOptions(LexiconSourceKind.JmDict, inputPath, outputPath));
 
             await using var connection = new SqliteConnection($"Data Source={outputPath};Mode=ReadOnly;Pooling=False");
             await connection.OpenAsync(TestContext.Current.CancellationToken);
@@ -88,7 +88,7 @@ namespace Dictation.Tests.LexiconBuilder
             await File.WriteAllTextAsync(inputPath, "not gzip", TestContext.Current.CancellationToken);
             await File.WriteAllTextAsync(outputPath, "existing database", TestContext.Current.CancellationToken);
 
-            Assert.ThrowsAny<Exception>(() => new JapaneseLexiconDatabaseBuilder().Build(new BuilderOptions(inputPath, outputPath)));
+            Assert.ThrowsAny<Exception>(() => new JapaneseLexiconDatabaseBuilder().Build(new BuilderOptions(LexiconSourceKind.JmDict, inputPath, outputPath)));
             Assert.Equal("existing database", await File.ReadAllTextAsync(outputPath, TestContext.Current.CancellationToken));
             Assert.Empty(Directory.GetFiles(temporaryDirectory.Path, "*.tmp"));
         }
@@ -188,7 +188,7 @@ namespace Dictation.Tests.LexiconBuilder
                 </entry></JMdict>
                 """);
 
-            var summary = new JapaneseLexiconDatabaseBuilder().Build(new BuilderOptions(inputPath, outputPath));
+            var summary = new JapaneseLexiconDatabaseBuilder().Build(new BuilderOptions(LexiconSourceKind.JmDict, inputPath, outputPath));
 
             Assert.Equal(1, summary.SourceEntryCount);
             Assert.Equal(1, summary.EntryCount);
@@ -211,7 +211,7 @@ namespace Dictation.Tests.LexiconBuilder
                 </entry></JMdict>
                 """);
 
-            new JapaneseLexiconDatabaseBuilder().Build(new BuilderOptions(inputPath, outputPath));
+            new JapaneseLexiconDatabaseBuilder().Build(new BuilderOptions(LexiconSourceKind.JmDict, inputPath, outputPath));
 
             await using var connection = new SqliteConnection($"Data Source={outputPath};Mode=ReadOnly;Pooling=False");
             await connection.OpenAsync(TestContext.Current.CancellationToken);

@@ -2,15 +2,29 @@ using System;
 
 namespace Dictation.LexiconBuilder
 {
+    internal enum LexiconSourceKind
+    {
+        JmDict = 0,
+        WordNet = 1
+    }
+
     internal sealed class BuilderOptions
     {
-        internal BuilderOptions(string jmdictPath, string outputPath)
+        internal BuilderOptions(LexiconSourceKind sourceKind, string sourcePath, string outputPath)
         {
-            JmDictPath = RequirePath(jmdictPath, nameof(jmdictPath));
+            if (!Enum.IsDefined(sourceKind))
+            {
+                throw new ArgumentOutOfRangeException(nameof(sourceKind));
+            }
+
+            SourceKind = sourceKind;
+            SourcePath = RequirePath(sourcePath, nameof(sourcePath));
             OutputPath = RequirePath(outputPath, nameof(outputPath));
         }
 
-        internal string JmDictPath { get; }
+        internal LexiconSourceKind SourceKind { get; }
+
+        internal string SourcePath { get; }
 
         internal string OutputPath { get; }
 
