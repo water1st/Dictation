@@ -5,6 +5,8 @@ using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 
+using Dictation.LexiconBuilder;
+
 namespace Dictation.LexiconBuilder.JmDict
 {
     internal sealed class JmDictParser

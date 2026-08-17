@@ -12,8 +12,8 @@
 
 - 只读取显式传入的本地 `english-wordnet` 目录；不运行该仓库的 Python 脚本，不联网下载，不引入 Humanizer、完整 NLP 框架或第二个 YAML 库。
 - YamlDotNet 是本切片唯一新增的构建工具包依赖；解析器一次只反序列化一个 YAML 文件，不把整个词库装入单个对象图。
-- `SenseId` 使用 Open English WordNet 原始 sense key；每个 sense 是独立学习词条。`LexemeId` 由来源 lemma 与词性稳定生成，词形归属于 lexeme，多个 sense 复用同一套词形。
-- 词性严格区分 noun、verb、adjective、adjective satellite、adverb；相同拼写的不同词性不得合并。直接 derivation 只保存一跳边，不在构建期递归聚类。
+- `SenseId` 使用 Open English WordNet 原始 sense key；每个 sense 是独立学习词条。`LexemeId` 由来源 lemma 与原始 lexical-entry key 稳定生成，词形归属于 lexeme，多个 sense 复用同一套词形。`n-1/n-2`、`v-1/v-2`、`a-1/a-2` 等同词性变体必须保持独立，不能只按 lemma + 基础词性合并。
+- 词元基础词性严格区分 noun、verb、adjective、adverb；相同拼写的不同词性不得合并。adjective satellite 由 sense 指向的 `-s` synset 保留，不能把同一个 `a` lexical entry 人为拆开。直接 derivation 只保存一跳边，不在构建期递归聚类。
 - 含空白的词元是短语，只产生固定 Base 形式，不与动词、名词或形容词变形组合。`conversion/convert`、`execution/execute` 等仍是不同词元，只通过直接派生边关联。
 - 来源 `form` 是权威例外拼写。分类器必须把每个来源 form 映射到明确的 `FormKind`；不能分类时构建失败并报告文件、lemma、词性和 form，禁止丢弃或猜测。
 - 规则生成不能覆盖来源例外：例如 `go` 使用来源 `went/gone`，规则只补 `goes/going`，不得生成 `goed`；`stop` 使用来源 `stopped/stopping`，不得保留 `stoped/stoping`。
@@ -33,12 +33,12 @@
 **Interfaces:**
 - Produces: `IEnumerable<EnglishLexeme> ParseEntries(string yamlDirectory)`。
 - Produces: `IReadOnlyDictionary<string, WordNetSynset> ParseSynsets(string yamlDirectory)`。
-- `EnglishLexeme` 包含稳定 `LexemeId`、`Lemma`、`PartOfSpeech`、来源 forms、senses 和 `IsPhrase`；每个 sense 包含原始 `SenseId`、`SynsetId`、顺序和直接 derivation sense IDs。
+- `EnglishLexeme` 包含稳定 `LexemeId`、`Lemma`、`SourceEntryKey`、规范基础 `PartOfSpeech`、来源 forms、senses 和 `IsPhrase`；每个 sense 包含原始 `SenseId`、`SynsetId`、顺序和直接 derivation sense IDs。
 - `WordNetSynset` 包含 `SynsetId`、词性、definitions 和 examples。
 
 - [ ] **Step 1: 写最小 YAML 行为测试**
 
-fixture 必须覆盖：同一 lemma 的 noun/verb 分离、`go` 的 `went/gone`、多个 sense、直接 derivation、synset definitions/examples、adjective satellite、短语、重复 sense ID、缺失 synset、未知词性、无效 YAML 和空目录。
+fixture 必须覆盖：同一 lemma 的 noun/verb 分离、同一 lemma 的 `n-1/n-2` 独立词元、`go` 的 `went/gone`、多个 sense、直接 derivation、synset definitions/examples、`a` 词元引用 adjective satellite synset、短语、重复 sense ID、缺失 synset、未知 lexical-entry key、无效 YAML 和空目录。
 
 ```csharp
 var go = parser.ParseEntries(root)

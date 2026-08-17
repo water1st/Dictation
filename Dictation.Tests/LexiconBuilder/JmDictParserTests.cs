@@ -1,5 +1,6 @@
 using System.Text;
 
+using Dictation.LexiconBuilder;
 using Dictation.LexiconBuilder.JmDict;
 
 namespace Dictation.Tests.LexiconBuilder
