@@ -15,6 +15,8 @@ namespace Dictation.DataAccess
             var applicationPaths = new ApplicationPaths(applicationRootDirectory);
             services.AddSingleton(applicationPaths);
             services.AddSingleton<SettingsDataAccessor>();
+            services.AddSingleton<SqliteConnectionFactory>();
+            services.AddSingleton<SchemaMigrationRunner>();
             return services;
         }
     }

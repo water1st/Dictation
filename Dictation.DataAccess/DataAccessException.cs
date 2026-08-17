@@ -15,4 +15,12 @@ namespace Dictation.DataAccess
         {
         }
     }
+
+    public sealed class SchemaMigrationDataAccessException : DataAccessException
+    {
+        public SchemaMigrationDataAccessException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
 }
