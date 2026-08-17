@@ -44,7 +44,29 @@ namespace Dictation.LexiconBuilder.WordNet
                     (EnglishFormKind.PresentParticiple, "running")),
                 [("good", EnglishPartOfSpeech.Adjective)] = Create(
                     (EnglishFormKind.Comparative, "better"),
-                    (EnglishFormKind.Superlative, "best"))
+                    (EnglishFormKind.Superlative, "best")),
+                [("cut", EnglishPartOfSpeech.Verb)] = CreateVerb("cuts", "cut", "cut", "cutting"),
+                [("read", EnglishPartOfSpeech.Verb)] = CreateVerb("reads", "read", "read", "reading"),
+                [("hit", EnglishPartOfSpeech.Verb)] = CreateVerb("hits", "hit", "hit", "hitting"),
+                [("set", EnglishPartOfSpeech.Verb)] = CreateVerb("sets", "set", "set", "setting"),
+                [("put", EnglishPartOfSpeech.Verb)] = CreateVerb("puts", "put", "put", "putting"),
+                [("let", EnglishPartOfSpeech.Verb)] = CreateVerb("lets", "let", "let", "letting"),
+                [("shut", EnglishPartOfSpeech.Verb)] = CreateVerb("shuts", "shut", "shut", "shutting"),
+                [("beat", EnglishPartOfSpeech.Verb)] = CreateVerb("beats", "beat", "beaten", "beating"),
+                [("become", EnglishPartOfSpeech.Verb)] = CreateVerb("becomes", "became", "become", "becoming"),
+                [("overcome", EnglishPartOfSpeech.Verb)] = CreateVerb("overcomes", "overcame", "overcome", "overcoming"),
+                [("get", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "gets"),
+                    (EnglishFormKind.Past, "got"),
+                    (EnglishFormKind.PastParticiple, "got"),
+                    (EnglishFormKind.PastParticiple, "gotten"),
+                    (EnglishFormKind.PresentParticiple, "getting")),
+                [("have", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "has"),
+                    (EnglishFormKind.Past, "had"),
+                    (EnglishFormKind.PastParticiple, "had"),
+                    (EnglishFormKind.PresentParticiple, "having")),
+                [("say", EnglishPartOfSpeech.Verb)] = CreateVerb("says", "said", "said", "saying")
             };
 
         internal static bool TryGetParadigm(
@@ -81,6 +103,19 @@ namespace Dictation.LexiconBuilder.WordNet
 
             kinds = Array.Empty<EnglishFormKind>();
             return false;
+        }
+
+        private static IReadOnlyDictionary<EnglishFormKind, IReadOnlyList<string>> CreateVerb(
+            string thirdPersonSingular,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            return Create(
+                (EnglishFormKind.ThirdPersonSingular, thirdPersonSingular),
+                (EnglishFormKind.Past, past),
+                (EnglishFormKind.PastParticiple, pastParticiple),
+                (EnglishFormKind.PresentParticiple, presentParticiple));
         }
 
         private static IReadOnlyDictionary<EnglishFormKind, IReadOnlyList<string>> Create(

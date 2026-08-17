@@ -118,6 +118,116 @@ namespace Dictation.Tests.LexiconBuilder
             Assert.Equal(new[] { "visiting" }, FormsOfKind(forms, EnglishFormKind.PresentParticiple));
         }
 
+        [Theory]
+        [InlineData("cut", "cuts", "cut", "cut", "cutting")]
+        [InlineData("read", "reads", "read", "read", "reading")]
+        [InlineData("hit", "hits", "hit", "hit", "hitting")]
+        [InlineData("set", "sets", "set", "set", "setting")]
+        [InlineData("put", "puts", "put", "put", "putting")]
+        [InlineData("let", "lets", "let", "let", "letting")]
+        [InlineData("shut", "shuts", "shut", "shut", "shutting")]
+        [InlineData("beat", "beats", "beat", "beaten", "beating")]
+        [InlineData("become", "becomes", "became", "become", "becoming")]
+        [InlineData("overcome", "overcomes", "overcame", "overcome", "overcoming")]
+        [InlineData("say", "says", "said", "said", "saying")]
+        public void Generate_UsesZeroChangeVerbParadigmWithoutRegularPastErrors(
+            string lemma,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(thirdPerson, Find(forms, EnglishFormKind.ThirdPersonSingular).Surface);
+            Assert.Equal(past, Find(forms, EnglishFormKind.Past).Surface);
+            Assert.Equal(pastParticiple, Find(forms, EnglishFormKind.PastParticiple).Surface);
+            Assert.Equal(presentParticiple, Find(forms, EnglishFormKind.PresentParticiple).Surface);
+            Assert.DoesNotContain(forms, form => form.Surface is "cutted" or "readed" or "hitted" or "setted" or "putted" or "letted" or "shutted" or "beated" or "becomed" or "overcomed" or "sayed");
+        }
+
+        [Theory]
+        [InlineData("beat", "beaten", "beats", "beat", "beaten", "beating")]
+        [InlineData("become", "became", "becomes", "became", "become", "becoming")]
+        [InlineData("overcome", "overcame", "overcomes", "overcame", "overcome", "overcoming")]
+        [InlineData("say", "said", "says", "said", "said", "saying")]
+        public void Generate_UsesRequiredIrregularVerbParadigmsWithExplicitSourceForms(
+            string lemma,
+            string sourceForm,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { sourceForm }));
+
+            Assert.Equal(thirdPerson, Find(forms, EnglishFormKind.ThirdPersonSingular).Surface);
+            Assert.Equal(past, Find(forms, EnglishFormKind.Past).Surface);
+            Assert.Equal(pastParticiple, Find(forms, EnglishFormKind.PastParticiple).Surface);
+            Assert.Equal(presentParticiple, Find(forms, EnglishFormKind.PresentParticiple).Surface);
+            Assert.DoesNotContain(forms, form => form.Surface is "becomed" or "overcomed" or "sayed");
+        }
+
+        [Fact]
+        public void Generate_HandlesGetAndHaveAlternateSourceFormsWithoutDroppingThem()
+        {
+            var generator = new EnglishFormGenerator();
+            var get = generator.Generate(CreateLexeme(
+                "get",
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { "got", "gotten" }));
+            Assert.Equal(new[] { "got", "gotten" }, FormsOfKind(get, EnglishFormKind.PastParticiple));
+            Assert.Equal(new[] { "got" }, FormsOfKind(get, EnglishFormKind.Past));
+            Assert.Equal("gets", Find(get, EnglishFormKind.ThirdPersonSingular).Surface);
+            Assert.Equal("getting", Find(get, EnglishFormKind.PresentParticiple).Surface);
+
+            var have = generator.Generate(CreateLexeme(
+                "have",
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { "had", "has" }));
+            Assert.Equal(new[] { "has" }, FormsOfKind(have, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(new[] { "had" }, FormsOfKind(have, EnglishFormKind.Past));
+            Assert.Equal(new[] { "had" }, FormsOfKind(have, EnglishFormKind.PastParticiple));
+            Assert.Equal("having", Find(have, EnglishFormKind.PresentParticiple).Surface);
+        }
+
+        [Fact]
+        public void Generate_UsesGetAndHaveParadigmsWithoutSourceForms()
+        {
+            var generator = new EnglishFormGenerator();
+            var get = generator.Generate(CreateLexeme(
+                "get",
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+            Assert.Equal(new[] { "gets" }, FormsOfKind(get, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(new[] { "got" }, FormsOfKind(get, EnglishFormKind.Past));
+            Assert.Equal(new[] { "got", "gotten" }, FormsOfKind(get, EnglishFormKind.PastParticiple));
+            Assert.Equal(new[] { "getting" }, FormsOfKind(get, EnglishFormKind.PresentParticiple));
+
+            var have = generator.Generate(CreateLexeme(
+                "have",
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+            Assert.Equal(new[] { "has" }, FormsOfKind(have, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(new[] { "had" }, FormsOfKind(have, EnglishFormKind.Past));
+            Assert.Equal(new[] { "had" }, FormsOfKind(have, EnglishFormKind.PastParticiple));
+            Assert.Equal(new[] { "having" }, FormsOfKind(have, EnglishFormKind.PresentParticiple));
+            Assert.DoesNotContain(get, form => form.Surface == "getted");
+            Assert.DoesNotContain(have, form => form.Surface == "haved");
+        }
+
         [Fact]
         public void Generate_DoesNotInflectPhrase()
         {
