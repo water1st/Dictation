@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Dictation.Services.Configuration;
+using Dictation.Services.Startup;
 
 namespace Dictation.Services
 {
@@ -9,6 +10,7 @@ namespace Dictation.Services
         {
             ArgumentNullException.ThrowIfNull(services);
             services.AddSingleton<SettingsService>();
+            services.AddSingleton<StartupInitializer>();
             return services;
         }
     }

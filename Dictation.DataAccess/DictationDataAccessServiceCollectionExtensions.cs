@@ -16,7 +16,10 @@ namespace Dictation.DataAccess
             services.AddSingleton(applicationPaths);
             services.AddSingleton<SettingsDataAccessor>();
             services.AddSingleton<SqliteConnectionFactory>();
-            services.AddSingleton<SchemaMigrationRunner>();
+            services.AddSingleton<SchemaMigrationRunner>(serviceProvider =>
+                new SchemaMigrationRunner(
+                    serviceProvider.GetRequiredService<ApplicationPaths>(),
+                    serviceProvider.GetRequiredService<SqliteConnectionFactory>()));
             return services;
         }
     }

@@ -1,6 +1,6 @@
 using Dictation.DataAccess;
-using Dictation.DataAccess.Runtime;
 using Dictation.Services;
+using Dictation.Services.Startup;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -15,8 +15,10 @@ namespace Dictation.Presentation
             try
             {
                 host.StartAsync().GetAwaiter().GetResult();
-                var applicationPaths = host.Services.GetRequiredService<ApplicationPaths>();
-                applicationPaths.EnsureRuntimeDirectories();
+                host.Services.GetRequiredService<StartupInitializer>()
+                    .InitializeAsync()
+                    .GetAwaiter()
+                    .GetResult();
 
                 var viewModel = host.Services.GetRequiredService<ViewModels.HomeViewModel>();
                 viewModel.InitializeAsync().GetAwaiter().GetResult();
