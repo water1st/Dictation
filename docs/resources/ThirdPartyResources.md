@@ -12,7 +12,7 @@
 | --- | --- | --- | --- | --- |
 | `JMdict.gz` | 创建日期 2026-08-14 | 22,155,996 bytes；`9C1DE325ED8E3D690F4DD9F9E1E114FB800ABE5B23782C43F89D9A9E44F431CF` | EDRDG JMdict，CC BY-SA 4.0；发布物须保留 EDRDG/JMdict 归属、许可副本或有效链接，并满足对应再分发义务 | 构建时解析并清洗；运行时使用生成的只读日语词库 |
 | `english-wordnet` | `https://github.com/globalwordnet/english-wordnet.git`；commit `02ff9f3f5bc0a25592e7263ffdbc9bcb6564936b`；`2025-edition-160-g02ff9f3`；工作树 clean | 本次以 commit 固定，不把嵌套 Git 元数据作为发布输入 | Open English WordNet CC BY 4.0；同时保留底层 Princeton WordNet 许可证归属 | 构建时提取 synset、词性、义项和关系；具体运行表结构在词库切片固定 |
-| `Kokoro-82M` | `https://huggingface.co/hexgrad/Kokoro-82M`；commit `f3ff3571791e39611d31c381e3a41a3af07b4987`；工作树 clean | `kokoro-v1_0.pth`：327,212,226 bytes；`496DBA118D1A58F5F3DB2EFC88DBDC216E0483FC89FE6E47EE1F2C53F18AD1E4` | 模型卡标记 Apache-2.0；随发布保留模型卡与适用归属文本 | 供英语英式发音使用；现有 British voices 为 `bf_alice`、`bf_emma`、`bf_isabella`、`bf_lily`、`bm_daniel`、`bm_fable`、`bm_george`、`bm_lewis`，默认 speaker 尚未选择 |
+| `Kokoro-82M` | `https://huggingface.co/hexgrad/Kokoro-82M`；commit `f3ff3571791e39611d31c381e3a41a3af07b4987`；工作树 clean | `kokoro-v1_0.pth`：327,212,226 bytes；`496DBA118D1A58F5F3DB2EFC88DBDC216E0483FC89FE6E47EE1F2C53F18AD1E4` | 模型卡标记 Apache-2.0；随发布保留模型卡与适用归属文本 | 仅作为原始模型输入和归属参考；纯 .NET 运行时不直接加载 `.pth`，发布使用下方 Sherpa-ONNX 转换资源子集 |
 | `piper-plus-css10-ja-6lang` | `https://huggingface.co/ayousanz/piper-plus-css10-ja-6lang`；commit `bd0d812d4db9182ecdb907ef074becf9e230c17f`；工作树 clean | ONNX：39,652,717 bytes；`5EBC51DBF897238523F3DF0D6E0F6C93033BC5CDA3F8602A8379EBE2A4738C42`；`config.json`：`1328B76E67B7D785E57D0ECF1E76571F6E931B5B9313C88AFE9D0017049CB692` | 模型卡标记 CSS10 public domain；要求使用 Piper Plus PR #320 之后的运行时 | 供日语发音使用；运行时固定使用 `PiperPlus.Core` 0.4.0 与 OpenJTalk 词典 |
 | `PP-OCRv5_server_rec_infer.tar` | PaddleOCR PP-OCRv5 server recognition inference 输入 | 84,869,120 bytes；`D99BE2FFD348943AB52876179168BE4FB5B14F5F0812F2AE4C76D89EC2EA750A` | PaddleOCR 项目 Apache-2.0；随发布保留项目许可和归属 | 已确认包含 `inference.yml`、`inference.pdiparams`、`inference.json`；Windows CPU 运行时、模型裁剪和推理参数留给 OCR 切片验证 |
 
@@ -45,6 +45,30 @@ OpenJTalk 词典的 COPYING 适用 Modified BSD 风格条款，并包含 NAIST�
 DotNetG2P.MeCab 依赖的 MeCab/NMeCab 第三方 notices 也必须随发布包保留，包括包内 NOTICE、THIRD-PARTY-NOTICES.md 及适用许可证，并在资源归属目录中登记。
 
 模型、配置和词典在首次日语合成请求时才加载；TTS Host 启动和 Ping 不访问这些大文件。资源缺失时返回中文错误，不能通过联网补齐。
+
+## 2.2 英语 Kokoro 运行时固定依赖
+
+英语使用 `org.k2fsa.sherpa.onnx` 1.13.5（Apache-2.0）和 `Microsoft.ML.OnnxRuntime` 1.27.1（MIT），仅发布 `win-x64` CPU 原生运行时。官方 Kokoro v1.0 Sherpa-ONNX 归档地址为 [`kokoro-multi-lang-v1_0.tar.bz2`](https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_0.tar.bz2)，归档大小为 349,418,188 bytes，SHA-256 为 `C133D26353D776DA730870DAC7DA07DBFC9A5E3BC80CC5E8E83AB6E823BE7046`。发布只抽取英语运行时子集，并在发布 manifest 中再次核验：
+
+| 文件 | 大小 | SHA-256 |
+| --- | ---: | --- |
+| `model.onnx` | 325,630,829 bytes | `C436DC6A842B62ABA06AF67E40BAFCFB9C60AC3AF895358F1974AD9A7F7C026B` |
+| `voices.bin` | 27,678,720 bytes | `8A77C0D397026208D22211F37670B5B3B11E03F190756B25A1D24041FCED82A9` |
+| `tokens.txt` | 687 bytes | `6EBB6BB288F20F3AE8D004D3C2CA27697DA27C037D75E81A60E2A6A663F95425` |
+| `lexicon-gb-en.txt` | 6,366,635 bytes | `C4CBB37316F62210DFF52718A7AFCAAE24F50C032CC75AB47AE67B831D1049E7` |
+
+运行时固定布局为：
+
+```text
+Resources/Tts/English/Kokoro/
+├── model.onnx
+├── voices.bin
+├── tokens.txt
+├── lexicon-gb-en.txt
+└── espeak-ng-data/
+```
+
+默认英式女声为 `bf_emma`，Sherpa speaker id 为 `21`；合成使用 CPU、2 个线程和速度 `1.0`。构造、DI、TTS Host 启动和 Ping 都不加载模型，首次英语合成才检查并懒加载上述资源；运行时不联网补齐。生成的采样只在内存中转换为 RIFF/WAV 并通过命名管道返回，严禁调用 `SaveToWaveFile`、写入音频文件或创建缓存。英语发布子集只省略未使用的中文 `dict/`、中文 lexicon/FST 和 `lexicon-us-en.txt`；`voices.bin` 与 `espeak-ng-data/` 按官方包完整保留，不声称对其中内容做了裁剪。Apache-2.0 许可证及归属说明须随发布包保留。
 
 ## 3. 构建加工与发布取舍
 

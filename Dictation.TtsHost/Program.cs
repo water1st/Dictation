@@ -51,7 +51,7 @@ namespace Dictation.TtsHost
             return new ServiceCollection()
                 .AddSingleton(options.Session)
                 .AddSingleton<ITtsSynthesisEngine, PiperJapaneseTtsSynthesisEngine>()
-                .AddSingleton<ITtsSynthesisEngine, UnconfiguredTtsSynthesisEngine>()
+                .AddSingleton<ITtsSynthesisEngine, KokoroEnglishTtsSynthesisEngine>()
                 .AddSingleton<TtsPipeServer>()
                 .BuildServiceProvider();
         }

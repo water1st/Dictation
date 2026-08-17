@@ -257,7 +257,7 @@ namespace Dictation.Tests.TtsHost
         }
 
         [Fact]
-        public void ProgramRegistration_MapsJapaneseToPiperAndEnglishToPlaceholderOnce()
+        public void ProgramRegistration_MapsJapaneseToPiperAndEnglishToKokoroOnce()
         {
             var options = new TtsHostOptions(
                 new TtsHostSession(CreatePipeName()),
@@ -274,7 +274,7 @@ namespace Dictation.Tests.TtsHost
                 new[] { TtsLanguage.Japanese, TtsLanguage.English },
                 languages.OrderBy(language => language));
             Assert.Contains(engines, engine => engine is PiperJapaneseTtsSynthesisEngine);
-            Assert.Contains(engines, engine => engine is UnconfiguredTtsSynthesisEngine);
+            Assert.Contains(engines, engine => engine is KokoroEnglishTtsSynthesisEngine);
         }
 
         [Fact]

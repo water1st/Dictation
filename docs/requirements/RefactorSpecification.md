@@ -67,7 +67,7 @@ OCR 使用 Windows Ink 和本地 PP-OCRv5 的混合 Provider，并用预期答�
 
 ## 9. TTS 与外部接口
 
-单个隐藏 `Dictation.TtsHost` 通过命名管道提供音频；日语使用 Piper Plus CSS10，英语使用 Kokoro 英式发音，模型懒加载，后台服务不显示黑框，WPF 退出时关闭。界面只显示喇叭图标，播放实际目标词形。
+单个隐藏 `Dictation.TtsHost` 通过命名管道提供音频；日语使用 Piper Plus CSS10，英语使用 Sherpa-ONNX Kokoro v1.0 英式发音，模型懒加载，后台服务不显示黑框，WPF 退出时关闭。界面只显示喇叭图标，播放实际目标词形。TTS Host 只在内存中生成并传输 WAV 字节，客户端播放后释放；产品代码不得持久化音频、写入 `.wav` 或建立音频缓存。
 
 MCP 是同一 Generic Host 中按设置启停的可选 Hosted Service。仅监听 `127.0.0.1:<固定且可配置的高位端口>/mcp`，不使用 HTTPS、token 或 CORS，并严格校验 Host/Origin；端口冲突只显示状态，不影响 WPF。设置页原子注册/注销 Codex MCP 配置。工具包括 capability/schema、离线查询、整组暂存导入、批次状态和诊断；所有写入经过 Services，不能确认 Inbox 或直写数据库。
 
