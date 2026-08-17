@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Dictation.Presentation.Theme;
+using Dictation.Presentation.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Presentation
 {
@@ -6,6 +8,14 @@ namespace Dictation.Presentation
     {
         public static IServiceCollection AddDictationPresentation(this IServiceCollection services)
         {
+            ArgumentNullException.ThrowIfNull(services);
+
+            services.AddSingleton<App>();
+            services.AddSingleton<HomeViewModel>();
+            services.AddSingleton<HomeWindow>();
+            services.AddSingleton<ThemeManager>();
+            services.AddSingleton<ISystemThemeProvider, WindowsSystemThemeProvider>();
+
             services.AddSingleton<MainWindow>();
             services.AddTransient<DictationWindow>();
             services.AddTransient<ResultWindow>();

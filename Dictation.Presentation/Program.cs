@@ -1,37 +1,47 @@
+using Dictation.DataAccess;
+using Dictation.DataAccess.Runtime;
+using Dictation.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Dictation.Presentation
 {
     internal static class Program
     {
-        private static IServiceProvider? ServiceProvider;
-        /// <summary>
-        ///  The main entry point for the application.
-        /// </summary>
         [STAThread]
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-            var serviceCollection = new ServiceCollection();
-            ConfigureServices(serviceCollection);
-            ServiceProvider = serviceCollection.BuildServiceProvider();
-
-            // Run the application
-            ApplicationConfiguration.Initialize();
-            using (var scope = ServiceProvider.CreateScope())
+            using var host = CreateHostBuilder(args).Build();
+            try
             {
-                var mainWindow = scope.ServiceProvider.GetRequiredService<MainWindow>();
-                mainWindow.SetStartupArgs(args);
-                Application.Run(mainWindow);
+                host.StartAsync().GetAwaiter().GetResult();
+                var applicationPaths = host.Services.GetRequiredService<ApplicationPaths>();
+                applicationPaths.EnsureRuntimeDirectories();
+
+                var viewModel = host.Services.GetRequiredService<ViewModels.HomeViewModel>();
+                viewModel.InitializeAsync().GetAwaiter().GetResult();
+
+                var application = host.Services.GetRequiredService<App>();
+                var homeWindow = host.Services.GetRequiredService<HomeWindow>();
+                application.Run(homeWindow);
+            }
+            finally
+            {
+                host.StopAsync().GetAwaiter().GetResult();
             }
         }
 
-        private static void ConfigureServices(IServiceCollection services)
+        private static IHostBuilder CreateHostBuilder(string[] args)
         {
-            // Register application services
-            services.AddDictationPresentation();
-            services.AddDictationCore();
-
+            return Host.CreateDefaultBuilder(args)
+                .ConfigureServices((_, services) =>
+                {
+                    services
+                        .AddDictationDataAccess(AppContext.BaseDirectory)
+                        .AddDictationServices()
+                        .AddDictationPresentation()
+                        .AddDictationCore();
+                });
         }
-
     }
 }
