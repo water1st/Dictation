@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dictation.Services", "Dicta
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dictation.Tests", "Dictation.Tests\Dictation.Tests.csproj", "{499F0B83-FCB2-4110-BA2F-5D29C6285C14}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dictation.TtsHost", "Dictation.TtsHost\Dictation.TtsHost.csproj", "{C7C5ABBC-FFDE-456D-99E2-CAB29F5E1352}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{499F0B83-FCB2-4110-BA2F-5D29C6285C14}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{499F0B83-FCB2-4110-BA2F-5D29C6285C14}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{499F0B83-FCB2-4110-BA2F-5D29C6285C14}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7C5ABBC-FFDE-456D-99E2-CAB29F5E1352}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7C5ABBC-FFDE-456D-99E2-CAB29F5E1352}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7C5ABBC-FFDE-456D-99E2-CAB29F5E1352}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7C5ABBC-FFDE-456D-99E2-CAB29F5E1352}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
