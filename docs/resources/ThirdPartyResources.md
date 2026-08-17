@@ -70,11 +70,19 @@ Resources/Tts/English/Kokoro/
 
 默认英式女声为 `bf_emma`，Sherpa speaker id 为 `21`；合成使用 CPU、2 个线程和速度 `1.0`。构造、DI、TTS Host 启动和 Ping 都不加载模型，首次英语合成才检查并懒加载上述资源；运行时不联网补齐。生成的采样只在内存中转换为 RIFF/WAV 并通过命名管道返回，严禁调用 `SaveToWaveFile`、写入音频文件或创建缓存。英语发布子集只省略未使用的中文 `dict/`、中文 lexicon/FST 和 `lexicon-us-en.txt`；`voices.bin` 与 `espeak-ng-data/` 按官方包完整保留，不声称对其中内容做了裁剪。Apache-2.0 许可证及归属说明须随发布包保留。
 
+## 2.3 日语 JMdict 真实构建验收
+
+2026-08-17 使用用户提供的 `JMdict.gz` 完成真实构建验收。输入创建日期为 2026-08-14，大小为 22,155,996 bytes，SHA-256 为 `9C1DE325ED8E3D690F4DD9F9E1E114FB800ABE5B23782C43F89D9A9E44F431CF`。产物 metadata 为 `schema_version=1`、`generator_version=1.0.0.0`；统计为 `source_entries=218431`、`entries/senses=253103`、`PartsOfSpeech=321247`、`glosses=442059`、`forms=911050`。
+
+SQLite 产物大小为 275,595,264 bytes，SHA-256 为 `0176EFE63B808AED8BED6BDFBECDBC9AE587C0F26BBA2AC523CD3AB8BC62A381`；`PRAGMA integrity_check` 结果为 `ok`。无词形词条为 0，短语的非 Dictionary 活用为 0。代表性验证结果：`食べる` 为 `jmdict:1358280:1`，`行く` 为 `jmdict:1578850:1`，两者均包含普通形、礼貌形、て形、た形及适用汉字/假名；`掃除`/`掃除する` 为 `jmdict:1399790:1`，名词和 suru 动词形式属于同一组；不同义项保持不同 `EntryId`。
+
+SQLite 产物只在临时验收目录中生成，不提交 `.db` 或原始 `JMdict.gz`，文档不记录临时绝对路径。
+
 ## 3. 构建加工与发布取舍
 
-`Dictation.LexiconBuilder` 在构建阶段解析 JMdict 和 English WordNet，生成版本固定的只读 SQLite 词库：清洗重复项，按义项分组，关联日语普通/礼貌/`て`/`た` 等形式，标记常用汉字/罕见汉字/无汉字，关联英语规则、例外和直接派生的词性组，并生成可编辑中文释义及来源元数据。上述加工结果不是用户数据；用户的词条、集合、进度、错题和历史留在根目录 `DATA/`，更新 ZIP 不得覆盖。
+`Dictation.LexiconBuilder` 在构建阶段解析 JMdict 和 English WordNet，生成版本固定的只读 SQLite 词库：清洗重复项，按义项分组，关联日语普通/礼貌/`て`/`た` 等形式，标记常用汉字/罕见汉字/无汉字，关联英语规则、例外和直接派生的词性组，并保存 JMdict 原始 gloss 和来源元数据。运行时以 English gloss 作为义项的规范语义来源；后续中文翻译是独立切片，不能假定 JMdict 各语言 gloss 逐条对齐，也不支持中文反向查询。上述加工结果不是用户数据；用户的词条、集合、进度、错题和历史留在根目录 `DATA/`，更新 ZIP 不得覆盖。
 
-词库生成必须输出来源 commit/日期、生成器版本、许可证文件名和输入哈希。中文翻译模型尚未选定，不得在本清单或运行时宣称包含某个翻译模型；当前只要求构建阶段产出可编辑中文释义。
+词库生成必须输出来源 commit/日期、生成器版本、许可证文件名和输入哈希。当前工具没有翻译模型，也不生成中文释义；后续中文翻译不得依赖 JMdict 多语言 gloss 的逐条对齐。
 
 英语 TTS 后续切片仍需从 Kokoro 的 British voice 中选择并记录一个默认 speaker。日语 TTS 已固定使用上述 Piper Plus 资源布局和 CPU 运行时。OCR 切片需要验证 Windows CPU 推理依赖、模型是否裁剪以及运行时文件清单；本资源表不预先承诺识别效果。
 

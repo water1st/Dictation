@@ -15,7 +15,7 @@
 - 一个 `ent_seq + sense index` 是一个稳定学习词条；同义项的全部写法、读法和活用属于该词条。
 - JMdict 后续义项缺少 `<pos>` 时继承前一义项的词性；`stagk`、`stagr`、`re_restr` 和 `re_nokanji` 必须限制适用形式。
 - 短语只保留固定词形，不参与动词活用。罕见汉字保留用于浏览，但标记为 `Rare`，后续出题层按无汉字处理。
-- 词库保留 JMdict 的多语言 gloss；本计划不声称已经生成中文翻译，后续构建时翻译切片向同一 `Glosses` 表追加中文记录。
+- 词库保留 JMdict 原始多语言 gloss 供追溯，但只有含 English gloss 的 sense 建立学习词条；English gloss 是后续中文翻译的规范来源。不得假定其他语言 gloss 与英文逐条对齐。
 - 所有测试先红后绿；worker 不执行 Git 操作，提交由控制器在独立验收后完成。
 
 ---
