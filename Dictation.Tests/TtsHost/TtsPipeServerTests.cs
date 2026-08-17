@@ -257,16 +257,33 @@ namespace Dictation.Tests.TtsHost
         }
 
         [Fact]
-        public void HostOptions_OnlyAcceptsPipeNameArgument()
+        public void HostOptions_RequiresPipeAndParentProcessIdArguments()
         {
+            var parentProcessId = Environment.ProcessId.ToString();
             Assert.True(TtsHostOptions.TryParse(
-                new[] { "--pipe", CreatePipeName() },
+                new[] { "--pipe", CreatePipeName(), "--parent-process-id", parentProcessId },
                 out var options));
             Assert.NotNull(options);
+            Assert.Equal(Environment.ProcessId, options!.ParentProcessId);
 
             Assert.False(TtsHostOptions.TryParse(Array.Empty<string>(), out _));
             Assert.False(TtsHostOptions.TryParse(new[] { "--pipe" }, out _));
-            Assert.False(TtsHostOptions.TryParse(new[] { "--pipe", CreatePipeName(), "extra" }, out _));
+            Assert.False(TtsHostOptions.TryParse(new[] { "--pipe", CreatePipeName() }, out _));
+            Assert.False(TtsHostOptions.TryParse(
+                new[] { "--pipe", CreatePipeName(), "--parent-process-id" },
+                out _));
+            Assert.False(TtsHostOptions.TryParse(
+                new[] { "--pipe", CreatePipeName(), "--parent-process-id", "0" },
+                out _));
+            Assert.False(TtsHostOptions.TryParse(
+                new[] { "--pipe", CreatePipeName(), "--parent-process-id", "-1" },
+                out _));
+            Assert.False(TtsHostOptions.TryParse(
+                new[] { "--pipe", CreatePipeName(), "--parent-process-id", "not-a-number" },
+                out _));
+            Assert.False(TtsHostOptions.TryParse(
+                new[] { "--pipe", CreatePipeName(), "--parent-process-id", parentProcessId, "extra" },
+                out _));
             Assert.False(TtsHostOptions.TryParse(new[] { "--other", CreatePipeName() }, out _));
         }
 

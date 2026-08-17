@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Dictation.DataAccess\Dictation.DataAccess.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.10" />
   </ItemGroup>
 
 </Project>

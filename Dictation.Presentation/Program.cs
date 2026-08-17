@@ -63,6 +63,7 @@ namespace Dictation.Presentation
                     services
                         .AddDictationDataAccess(AppContext.BaseDirectory)
                         .AddDictationServices()
+                        .AddLocalTtsHost(Path.Combine(AppContext.BaseDirectory, "Dictation.TtsHost.exe"))
                         .AddDictationPresentation()
                         .AddDictationCore();
                 });

@@ -35,6 +35,7 @@
     <ProjectReference Include="..\Dictation.Core\Dictation.Core.csproj" />
     <ProjectReference Include="..\Dictation.DataAccess\Dictation.DataAccess.csproj" />
     <ProjectReference Include="..\Dictation.Services\Dictation.Services.csproj" />
+    <ProjectReference Include="..\Dictation.TtsHost\Dictation.TtsHost.csproj" />
   </ItemGroup>
 
   <ItemGroup>
