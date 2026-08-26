@@ -1909,6 +1909,181 @@ namespace Dictation.Tests.LexiconBuilder
         }
 
         [Theory]
+        [InlineData("spend", "spend", "spends", "spent", "spent", "spending")]
+        [InlineData("spill", "spill", "spills", "spilled;spilt", "spilled;spilt", "spilling")]
+        [InlineData("spin", "spin", "spins", "spun", "spun", "spinning")]
+        [InlineData("spit", "spit", "spits", "spit;spat;spitted", "spit;spat;spitted", "spitting")]
+        [InlineData("spoil", "spoil", "spoils", "spoiled;spoilt", "spoiled;spoilt", "spoiling")]
+        [InlineData("spotlight", "spotlight", "spotlights", "spotlighted;spotlit", "spotlighted;spotlit", "spotlighting")]
+        [InlineData("spring", "spring", "springs", "sprang;sprung", "sprung", "springing")]
+        [InlineData("squeegee", "squeegee;squilgee", "squeegees;squilgees", "squeegeed;squilgeed", "squeegeed;squilgeed", "squeegeeing;squilgeeing")]
+        [InlineData("stand", "stand", "stands", "stood", "stood", "standing")]
+        [InlineData("stave", "stave", "staves", "staved;stove", "staved;stove", "staving")]
+        [InlineData("steal", "steal", "steals", "stole", "stolen", "stealing")]
+        [InlineData("stick", "stick", "sticks", "stuck", "stuck", "sticking")]
+        [InlineData("sting", "sting", "stings", "stung", "stung", "stinging")]
+        [InlineData("stink", "stink", "stinks", "stank;stunk", "stunk", "stinking")]
+        [InlineData("strew", "strew", "strews", "strewed", "strewed;strewn", "strewing")]
+        [InlineData("stride", "stride", "strides", "strode", "stridden", "striding")]
+        [InlineData("strike", "strike", "strikes", "struck", "struck;stricken", "striking")]
+        [InlineData("string", "string", "strings", "strung", "strung", "stringing")]
+        [InlineData("strive", "strive", "strives", "strived;strove", "strived;striven", "striving")]
+        [InlineData("swear", "swear", "swears", "swore", "sworn", "swearing")]
+        [InlineData("sweep", "sweep", "sweeps", "swept", "swept", "sweeping")]
+        [InlineData("swell", "swell", "swells", "swelled", "swelled;swollen", "swelling")]
+        [InlineData("swim", "swim", "swims", "swam", "swum", "swimming")]
+        [InlineData("swing", "swing", "swings", "swung", "swung", "swinging")]
+        public void Generate_UsesCompleteS3Paradigms(
+            string lemma,
+            string baseFormsText,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(SortedSourceForms(baseFormsText), FormsOfKind(forms, EnglishFormKind.Base));
+            Assert.Equal(SortedSourceForms(thirdPerson), FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(SortedSourceForms(past), FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(SortedSourceForms(pastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(SortedSourceForms(presentParticiple), FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+        }
+
+        [Theory]
+        [InlineData("spend", "spent", "Past,PastParticiple")]
+        [InlineData("spill", "spilt", "Past,PastParticiple")]
+        [InlineData("spin", "spun", "Past,PastParticiple")]
+        [InlineData("spit", "spat", "Past,PastParticiple")]
+        [InlineData("spoil", "spoilt", "Past,PastParticiple")]
+        [InlineData("spotlight", "spotlit", "Past,PastParticiple")]
+        [InlineData("spring", "sprang", "Past")]
+        [InlineData("spring", "sprung", "Past,PastParticiple")]
+        [InlineData("squeegee", "squilgee", "Base")]
+        [InlineData("stand", "stood", "Past,PastParticiple")]
+        [InlineData("stave", "stove", "Past,PastParticiple")]
+        [InlineData("steal", "stole", "Past")]
+        [InlineData("steal", "stolen", "PastParticiple")]
+        [InlineData("stick", "stuck", "Past,PastParticiple")]
+        [InlineData("sting", "stung", "Past,PastParticiple")]
+        [InlineData("stink", "stank", "Past")]
+        [InlineData("stink", "stunk", "Past,PastParticiple")]
+        [InlineData("strew", "strewn", "PastParticiple")]
+        [InlineData("stride", "stridden", "PastParticiple")]
+        [InlineData("stride", "strode", "Past")]
+        [InlineData("strike", "struck", "Past,PastParticiple")]
+        [InlineData("string", "strung", "Past,PastParticiple")]
+        [InlineData("strive", "striven", "PastParticiple")]
+        [InlineData("strive", "strove", "Past")]
+        [InlineData("swear", "swore", "Past")]
+        [InlineData("swear", "sworn", "PastParticiple")]
+        [InlineData("sweep", "swept", "Past,PastParticiple")]
+        [InlineData("swell", "swollen", "PastParticiple")]
+        [InlineData("swim", "swam", "Past")]
+        [InlineData("swim", "swum", "PastParticiple")]
+        [InlineData("swing", "swung", "Past,PastParticiple")]
+        public void Generate_ClassifiesS3SourceFormsByExactFormKind(
+            string lemma,
+            string sourceForm,
+            string sourceKindsText)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { sourceForm }));
+            var expectedKinds = sourceKindsText
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(value => Enum.Parse<EnglishFormKind>(value, ignoreCase: false))
+                .OrderBy(value => value)
+                .ToArray();
+            var actualKinds = forms
+                .Where(form => form.Surface == sourceForm && form.SourceKind == EnglishFormSourceKind.Source)
+                .Select(form => form.Kind)
+                .OrderBy(value => value)
+                .ToArray();
+
+            Assert.Equal(expectedKinds, actualKinds);
+            foreach (var kind in expectedKinds)
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, kind, sourceForm).SourceKind);
+                Assert.Equal(1, forms.Count(form => form.Kind == kind && form.Surface == sourceForm));
+            }
+        }
+
+        [Fact]
+        public void Generate_PreservesS3AlternativesAndSeparatesBaseAndSharedKinds()
+        {
+            var generator = new EnglishFormGenerator();
+
+            var spit = generator.Generate(CreateLexeme("spit", "v", EnglishPartOfSpeech.Verb, new[] { "spat" }));
+            Assert.Equal(new[] { "spat", "spit", "spitted" }, FormsOfKind(spit, EnglishFormKind.Past));
+            Assert.Equal(new[] { "spat", "spit", "spitted" }, FormsOfKind(spit, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(spit, EnglishFormKind.Past, "spat").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(spit, EnglishFormKind.PastParticiple, "spat").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(spit, EnglishFormKind.Past, "spitted").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(spit, EnglishFormKind.PastParticiple, "spitted").SourceKind);
+
+            var squeegee = generator.Generate(CreateLexeme("squeegee", "v", EnglishPartOfSpeech.Verb, new[] { "squilgee" }));
+            Assert.Equal(new[] { "squeegee", "squilgee" }, FormsOfKind(squeegee, EnglishFormKind.Base));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(squeegee, EnglishFormKind.Base, "squilgee").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(squeegee, EnglishFormKind.Base, "squeegee").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(squeegee, EnglishFormKind.Past, "squeegeed").SourceKind);
+            Assert.DoesNotContain(squeegee, form => form.Kind != EnglishFormKind.Base && form.Surface == "squilgee");
+
+            var spring = generator.Generate(CreateLexeme("spring", "v", EnglishPartOfSpeech.Verb, new[] { "sprung" }));
+            Assert.Equal(new[] { "sprang", "sprung" }, FormsOfKind(spring, EnglishFormKind.Past));
+            Assert.Equal(new[] { "sprung" }, FormsOfKind(spring, EnglishFormKind.PastParticiple));
+            Assert.Equal(1, spring.Count(form => form.Kind == EnglishFormKind.Past && form.Surface == "sprung"));
+            Assert.Equal(1, spring.Count(form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "sprung"));
+
+            var strike = generator.Generate(CreateLexeme("strike", "v", EnglishPartOfSpeech.Verb, new[] { "struck" }));
+            Assert.Equal(new[] { "struck" }, FormsOfKind(strike, EnglishFormKind.Past));
+            Assert.Equal(new[] { "stricken", "struck" }, FormsOfKind(strike, EnglishFormKind.PastParticiple));
+            Assert.DoesNotContain(strike, form => form.Kind == EnglishFormKind.Past && form.Surface == "stricken");
+
+            var swim = generator.Generate(CreateLexeme("swim", "v", EnglishPartOfSpeech.Verb, new[] { "swum" }));
+            Assert.Equal(new[] { "swam" }, FormsOfKind(swim, EnglishFormKind.Past));
+            Assert.Equal(new[] { "swum" }, FormsOfKind(swim, EnglishFormKind.PastParticiple));
+            Assert.DoesNotContain(swim, form => form.Kind == EnglishFormKind.Past && form.Surface == "swum");
+
+            var swell = generator.Generate(CreateLexeme("swell", "v", EnglishPartOfSpeech.Verb, new[] { "swollen" }));
+            Assert.Equal(new[] { "swelled" }, FormsOfKind(swell, EnglishFormKind.Past));
+            Assert.Equal(new[] { "swelled", "swollen" }, FormsOfKind(swell, EnglishFormKind.PastParticiple));
+        }
+
+        [Theory]
+        [InlineData("spend", "spended")]
+        [InlineData("spin", "spined")]
+        [InlineData("spit", "spited")]
+        [InlineData("spring", "springed")]
+        [InlineData("stand", "standed")]
+        [InlineData("steal", "stealed")]
+        [InlineData("stick", "sticked")]
+        [InlineData("sting", "stinged")]
+        [InlineData("stink", "stinked")]
+        [InlineData("stride", "strided")]
+        [InlineData("strike", "striked")]
+        [InlineData("swear", "sweared")]
+        [InlineData("sweep", "sweeped")]
+        [InlineData("swim", "swimed")]
+        [InlineData("swing", "swinged")]
+        public void Generate_DoesNotEmitS3PseudoForms(string lemma, string pseudoForm)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.DoesNotContain(forms, form => form.Surface == pseudoForm);
+        }
+
+        [Theory]
         [InlineData("abide", "abode", "Past,PastParticiple")]
         [InlineData("aby", "abought;abye", "Past,PastParticiple;Base")]
         [InlineData("address", "addrest", "Past,PastParticiple")]
