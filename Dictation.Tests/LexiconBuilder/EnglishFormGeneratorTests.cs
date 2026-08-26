@@ -1747,6 +1747,168 @@ namespace Dictation.Tests.LexiconBuilder
         }
 
         [Theory]
+        [InlineData("sightsee", "sightsee", "sightsees", "sightsaw", "sightseen", "sightseeing")]
+        [InlineData("sing", "sing", "sings", "sang;sung", "sung", "singing")]
+        [InlineData("sink", "sink", "sinks", "sank;sunk", "sunk;sunken", "sinking")]
+        [InlineData("sit", "sit", "sits", "sat", "sat", "sitting")]
+        [InlineData("ski", "ski", "skis", "skied;ski'd", "skied;ski'd", "skiing")]
+        [InlineData("skydive", "skydive", "skydives", "skydived;skydove", "skydived", "skydiving")]
+        [InlineData("slay", "slay", "slays", "slew;slayed", "slain;slayed", "slaying")]
+        [InlineData("sleep", "sleep", "sleeps", "slept", "slept", "sleeping")]
+        [InlineData("slide", "slide", "slides", "slid", "slid;slidden", "sliding")]
+        [InlineData("sling", "sling", "slings", "slung", "slung", "slinging")]
+        [InlineData("slink", "slink", "slinks", "slinked;slunk", "slinked;slunk", "slinking")]
+        [InlineData("smell", "smell", "smells", "smelled;smelt", "smelled;smelt", "smelling")]
+        [InlineData("smite", "smite", "smites", "smit;smote", "smit;smitten;smote", "smiting")]
+        [InlineData("sneak", "sneak", "sneaks", "sneaked;snuck", "sneaked;snuck", "sneaking")]
+        [InlineData("sow", "sow", "sows", "sowed", "sowed;sown", "sowing")]
+        [InlineData("speak", "speak", "speaks", "spoke", "spoken", "speaking")]
+        [InlineData("spell", "spell", "spells", "spelled;spelt", "spelled;spelt", "spelling")]
+        [InlineData("spellbind", "spellbind", "spellbinds", "spellbound", "spellbound", "spellbinding")]
+        public void Generate_UsesCompleteS2Paradigms(
+            string lemma,
+            string baseFormsText,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(SortedSourceForms(baseFormsText), FormsOfKind(forms, EnglishFormKind.Base));
+            Assert.Equal(SortedSourceForms(thirdPerson), FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(SortedSourceForms(past), FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(SortedSourceForms(pastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(SortedSourceForms(presentParticiple), FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+        }
+
+        [Theory]
+        [InlineData("sightsee", "sightsaw", "Past")]
+        [InlineData("sightsee", "sightseen", "PastParticiple")]
+        [InlineData("sing", "sang", "Past")]
+        [InlineData("sing", "sung", "Past,PastParticiple")]
+        [InlineData("sink", "sank", "Past")]
+        [InlineData("sink", "sunk", "Past,PastParticiple")]
+        [InlineData("sink", "sunken", "PastParticiple")]
+        [InlineData("sit", "sat", "Past,PastParticiple")]
+        [InlineData("ski", "ski'd", "Past,PastParticiple")]
+        [InlineData("skydive", "skydove", "Past")]
+        [InlineData("slay", "slain", "PastParticiple")]
+        [InlineData("slay", "slew", "Past")]
+        [InlineData("sleep", "slept", "Past,PastParticiple")]
+        [InlineData("slide", "slid", "Past,PastParticiple")]
+        [InlineData("slide", "slidden", "PastParticiple")]
+        [InlineData("sling", "slung", "Past,PastParticiple")]
+        [InlineData("slink", "slunk", "Past,PastParticiple")]
+        [InlineData("smell", "smelt", "Past,PastParticiple")]
+        [InlineData("smite", "smit", "Past,PastParticiple")]
+        [InlineData("smite", "smitten", "PastParticiple")]
+        [InlineData("smite", "smote", "Past,PastParticiple")]
+        [InlineData("sneak", "snuck", "Past,PastParticiple")]
+        [InlineData("sow", "sown", "PastParticiple")]
+        [InlineData("speak", "spoke", "Past")]
+        [InlineData("speak", "spoken", "PastParticiple")]
+        [InlineData("spell", "spelt", "Past,PastParticiple")]
+        [InlineData("spellbind", "spellbound", "Past,PastParticiple")]
+        public void Generate_ClassifiesS2SourceFormsByExactFormKind(
+            string lemma,
+            string sourceForm,
+            string sourceKindsText)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { sourceForm }));
+            var expectedKinds = sourceKindsText
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(value => Enum.Parse<EnglishFormKind>(value, ignoreCase: false))
+                .OrderBy(value => value)
+                .ToArray();
+            var actualKinds = forms
+                .Where(form => form.Surface == sourceForm && form.SourceKind == EnglishFormSourceKind.Source)
+                .Select(form => form.Kind)
+                .OrderBy(value => value)
+                .ToArray();
+
+            Assert.Equal(expectedKinds, actualKinds);
+            foreach (var kind in expectedKinds)
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, kind, sourceForm).SourceKind);
+                Assert.Equal(1, forms.Count(form => form.Kind == kind && form.Surface == sourceForm));
+            }
+        }
+
+        [Fact]
+        public void Generate_PreservesS2AlternativesAndSeparatesSharedKinds()
+        {
+            var generator = new EnglishFormGenerator();
+
+            var sightsee = generator.Generate(CreateLexeme("sightsee", "v", EnglishPartOfSpeech.Verb, new[] { "sightseen" }));
+            Assert.Equal(new[] { "sightsaw" }, FormsOfKind(sightsee, EnglishFormKind.Past));
+            Assert.Equal(new[] { "sightseen" }, FormsOfKind(sightsee, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(sightsee, EnglishFormKind.PastParticiple, "sightseen").SourceKind);
+            Assert.DoesNotContain(sightsee, form => form.Kind == EnglishFormKind.Past && form.Surface == "sightseen");
+
+            var sing = generator.Generate(CreateLexeme("sing", "v", EnglishPartOfSpeech.Verb, new[] { "sung" }));
+            Assert.Equal(new[] { "sang", "sung" }, FormsOfKind(sing, EnglishFormKind.Past));
+            Assert.Equal(new[] { "sung" }, FormsOfKind(sing, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(sing, EnglishFormKind.Past, "sang").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(sing, EnglishFormKind.Past, "sung").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(sing, EnglishFormKind.PastParticiple, "sung").SourceKind);
+            Assert.Equal(1, sing.Count(form => form.Kind == EnglishFormKind.Past && form.Surface == "sung"));
+            Assert.Equal(1, sing.Count(form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "sung"));
+
+            var sink = generator.Generate(CreateLexeme("sink", "v", EnglishPartOfSpeech.Verb, new[] { "sunken" }));
+            Assert.Equal(new[] { "sank", "sunk" }, FormsOfKind(sink, EnglishFormKind.Past));
+            Assert.Equal(new[] { "sunk", "sunken" }, FormsOfKind(sink, EnglishFormKind.PastParticiple));
+            Assert.DoesNotContain(sink, form => form.Kind == EnglishFormKind.Past && form.Surface == "sunken");
+
+            var skydive = generator.Generate(CreateLexeme("skydive", "v", EnglishPartOfSpeech.Verb, new[] { "skydove" }));
+            Assert.Equal(new[] { "skydived", "skydove" }, FormsOfKind(skydive, EnglishFormKind.Past));
+            Assert.Equal(new[] { "skydived" }, FormsOfKind(skydive, EnglishFormKind.PastParticiple));
+            Assert.DoesNotContain(skydive, form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "skydove");
+
+            var smite = generator.Generate(CreateLexeme("smite", "v", EnglishPartOfSpeech.Verb, new[] { "smote" }));
+            Assert.Equal(new[] { "smit", "smote" }, FormsOfKind(smite, EnglishFormKind.Past));
+            Assert.Equal(new[] { "smit", "smitten", "smote" }, FormsOfKind(smite, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(smite, EnglishFormKind.Past, "smote").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(smite, EnglishFormKind.PastParticiple, "smote").SourceKind);
+
+            var spell = generator.Generate(CreateLexeme("spell", "v", EnglishPartOfSpeech.Verb, new[] { "spelt" }));
+            Assert.Equal(new[] { "spelled", "spelt" }, FormsOfKind(spell, EnglishFormKind.Past));
+            Assert.Equal(new[] { "spelled", "spelt" }, FormsOfKind(spell, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(spell, EnglishFormKind.Past, "spelt").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(spell, EnglishFormKind.PastParticiple, "spelt").SourceKind);
+        }
+
+        [Theory]
+        [InlineData("sightsee", "sightseed")]
+        [InlineData("sing", "singed")]
+        [InlineData("sink", "sinked")]
+        [InlineData("sit", "sited")]
+        [InlineData("sleep", "sleeped")]
+        [InlineData("slide", "slided")]
+        [InlineData("sling", "slinged")]
+        [InlineData("smite", "smited")]
+        [InlineData("speak", "speaked")]
+        [InlineData("spellbind", "spellbinded")]
+        public void Generate_DoesNotEmitS2PseudoForms(string lemma, string pseudoForm)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.DoesNotContain(forms, form => form.Surface == pseudoForm);
+        }
+
+        [Theory]
         [InlineData("abide", "abode", "Past,PastParticiple")]
         [InlineData("aby", "abought;abye", "Past,PastParticiple;Base")]
         [InlineData("address", "addrest", "Past,PastParticiple")]
