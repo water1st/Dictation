@@ -266,7 +266,55 @@ namespace Dictation.LexiconBuilder.WordNet
                     (EnglishFormKind.Past, "dwelt"),
                     (EnglishFormKind.PastParticiple, "dwelled"),
                     (EnglishFormKind.PastParticiple, "dwelt"),
-                    (EnglishFormKind.PresentParticiple, "dwelling"))
+                    (EnglishFormKind.PresentParticiple, "dwelling")),
+                [("eat", EnglishPartOfSpeech.Verb)] = CreateVerb("eats", "ate", "eaten", "eating"),
+                [("fall", EnglishPartOfSpeech.Verb)] = CreateVerb("falls", "fell", "fallen", "falling"),
+                [("feel", EnglishPartOfSpeech.Verb)] = CreateVerb("feels", "felt", "felt", "feeling"),
+                [("fight", EnglishPartOfSpeech.Verb)] = CreateVerb("fights", "fought", "fought", "fighting"),
+                [("find", EnglishPartOfSpeech.Verb)] = CreateVerb("finds", "found", "found", "finding"),
+                [("fling", EnglishPartOfSpeech.Verb)] = CreateVerb("flings", "flung", "flung", "flinging"),
+                [("floodlight", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "floodlights"),
+                    (EnglishFormKind.Past, "floodlighted"),
+                    (EnglishFormKind.Past, "floodlit"),
+                    (EnglishFormKind.PastParticiple, "floodlighted"),
+                    (EnglishFormKind.PastParticiple, "floodlit"),
+                    (EnglishFormKind.PresentParticiple, "floodlighting")),
+                [("fly", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "flies"),
+                    (EnglishFormKind.Past, "flied"),
+                    (EnglishFormKind.Past, "flew"),
+                    (EnglishFormKind.PastParticiple, "flied"),
+                    (EnglishFormKind.PastParticiple, "flown"),
+                    (EnglishFormKind.PresentParticiple, "flying")),
+                [("forbear", EnglishPartOfSpeech.Verb)] = CreateVerb("forbears", "forbore", "forborne", "forbearing"),
+                [("forbid", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "forbids"),
+                    (EnglishFormKind.Past, "forbad"),
+                    (EnglishFormKind.Past, "forbade"),
+                    (EnglishFormKind.PastParticiple, "forbidden"),
+                    (EnglishFormKind.PresentParticiple, "forbidding")),
+                [("forego", EnglishPartOfSpeech.Verb)] = CreateVerb("foregoes", "forewent", "foregone", "foregoing"),
+                [("foreknow", EnglishPartOfSpeech.Verb)] = CreateVerb("foreknows", "foreknew", "foreknown", "foreknowing"),
+                [("foresee", EnglishPartOfSpeech.Verb)] = CreateVerb("foresees", "foresaw", "foreseen", "foreseeing"),
+                [("foreshow", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "foreshows"),
+                    (EnglishFormKind.Past, "foreshowed"),
+                    (EnglishFormKind.PastParticiple, "foreshowed"),
+                    (EnglishFormKind.PastParticiple, "foreshown"),
+                    (EnglishFormKind.PresentParticiple, "foreshowing")),
+                [("foretell", EnglishPartOfSpeech.Verb)] = CreateVerb("foretells", "foretold", "foretold", "foretelling"),
+                [("forget", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "forgets"),
+                    (EnglishFormKind.Past, "forgot"),
+                    (EnglishFormKind.PastParticiple, "forgot"),
+                    (EnglishFormKind.PastParticiple, "forgotten"),
+                    (EnglishFormKind.PresentParticiple, "forgetting")),
+                [("forgive", EnglishPartOfSpeech.Verb)] = CreateVerb("forgives", "forgave", "forgiven", "forgiving"),
+                [("forgo", EnglishPartOfSpeech.Verb)] = CreateVerb("forgoes", "forwent", "forgone", "forgoing"),
+                [("forsake", EnglishPartOfSpeech.Verb)] = CreateVerb("forsakes", "forsook", "forsaken", "forsaking"),
+                [("forswear", EnglishPartOfSpeech.Verb)] = CreateVerb("forswears", "forswore", "forsworn", "forswearing"),
+                [("freeze", EnglishPartOfSpeech.Verb)] = CreateVerb("freezes", "froze", "frozen", "freezing")
             };
 
         internal static bool TryGetParadigm(

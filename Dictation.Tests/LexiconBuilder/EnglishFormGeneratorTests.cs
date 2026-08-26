@@ -407,6 +407,165 @@ namespace Dictation.Tests.LexiconBuilder
         }
 
         [Theory]
+        [InlineData("eat", "eat", "eats", "ate", "eaten", "eating")]
+        [InlineData("fall", "fall", "falls", "fell", "fallen", "falling")]
+        [InlineData("feel", "feel", "feels", "felt", "felt", "feeling")]
+        [InlineData("fight", "fight", "fights", "fought", "fought", "fighting")]
+        [InlineData("find", "find", "finds", "found", "found", "finding")]
+        [InlineData("fling", "fling", "flings", "flung", "flung", "flinging")]
+        [InlineData("floodlight", "floodlight", "floodlights", "floodlighted;floodlit", "floodlighted;floodlit", "floodlighting")]
+        [InlineData("fly", "fly", "flies", "flied;flew", "flied;flown", "flying")]
+        [InlineData("forbear", "forbear", "forbears", "forbore", "forborne", "forbearing")]
+        [InlineData("forbid", "forbid", "forbids", "forbad;forbade", "forbidden", "forbidding")]
+        [InlineData("forego", "forego", "foregoes", "forewent", "foregone", "foregoing")]
+        [InlineData("foreknow", "foreknow", "foreknows", "foreknew", "foreknown", "foreknowing")]
+        [InlineData("foresee", "foresee", "foresees", "foresaw", "foreseen", "foreseeing")]
+        [InlineData("foreshow", "foreshow", "foreshows", "foreshowed", "foreshowed;foreshown", "foreshowing")]
+        [InlineData("foretell", "foretell", "foretells", "foretold", "foretold", "foretelling")]
+        [InlineData("forget", "forget", "forgets", "forgot", "forgot;forgotten", "forgetting")]
+        [InlineData("forgive", "forgive", "forgives", "forgave", "forgiven", "forgiving")]
+        [InlineData("forgo", "forgo", "forgoes", "forwent", "forgone", "forgoing")]
+        [InlineData("forsake", "forsake", "forsakes", "forsook", "forsaken", "forsaking")]
+        [InlineData("forswear", "forswear", "forswears", "forswore", "forsworn", "forswearing")]
+        [InlineData("freeze", "freeze", "freezes", "froze", "frozen", "freezing")]
+        public void Generate_UsesCompleteEfParadigms(
+            string lemma,
+            string baseFormsText,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(SortedSourceForms(baseFormsText), FormsOfKind(forms, EnglishFormKind.Base));
+            Assert.Equal(SortedSourceForms(thirdPerson), FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(SortedSourceForms(past), FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(SortedSourceForms(pastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(SortedSourceForms(presentParticiple), FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+        }
+
+        [Theory]
+        [InlineData("eat", "ate", "Past")]
+        [InlineData("eat", "eaten", "PastParticiple")]
+        [InlineData("fall", "fallen", "PastParticiple")]
+        [InlineData("fall", "fell", "Past")]
+        [InlineData("feel", "felt", "Past,PastParticiple")]
+        [InlineData("fight", "fought", "Past,PastParticiple")]
+        [InlineData("find", "found", "Past,PastParticiple")]
+        [InlineData("fling", "flung", "Past,PastParticiple")]
+        [InlineData("floodlight", "floodlit", "Past,PastParticiple")]
+        [InlineData("fly", "flew", "Past")]
+        [InlineData("fly", "flown", "PastParticiple")]
+        [InlineData("forbear", "forbore", "Past")]
+        [InlineData("forbear", "forborne", "PastParticiple")]
+        [InlineData("forbid", "forbad", "Past")]
+        [InlineData("forbid", "forbade", "Past")]
+        [InlineData("forbid", "forbidden", "PastParticiple")]
+        [InlineData("forego", "foregone", "PastParticiple")]
+        [InlineData("forego", "forewent", "Past")]
+        [InlineData("foreknow", "foreknew", "Past")]
+        [InlineData("foreknow", "foreknown", "PastParticiple")]
+        [InlineData("foresee", "foresaw", "Past")]
+        [InlineData("foresee", "foreseen", "PastParticiple")]
+        [InlineData("foreshow", "foreshown", "PastParticiple")]
+        [InlineData("foretell", "foretold", "Past,PastParticiple")]
+        [InlineData("forget", "forgot", "Past,PastParticiple")]
+        [InlineData("forget", "forgotten", "PastParticiple")]
+        [InlineData("forgive", "forgave", "Past")]
+        [InlineData("forgive", "forgiven", "PastParticiple")]
+        [InlineData("forgo", "forgone", "PastParticiple")]
+        [InlineData("forgo", "forwent", "Past")]
+        [InlineData("forsake", "forsaken", "PastParticiple")]
+        [InlineData("forsake", "forsook", "Past")]
+        [InlineData("forswear", "forswore", "Past")]
+        [InlineData("forswear", "forsworn", "PastParticiple")]
+        [InlineData("freeze", "froze", "Past")]
+        [InlineData("freeze", "frozen", "PastParticiple")]
+        public void Generate_ClassifiesEfSourceFormsByExactFormKind(
+            string lemma,
+            string sourceForm,
+            string sourceKindsText)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { sourceForm }));
+            var expectedKinds = sourceKindsText
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(value => Enum.Parse<EnglishFormKind>(value, ignoreCase: false))
+                .OrderBy(value => value)
+                .ToArray();
+            var actualKinds = forms
+                .Where(form => form.Surface == sourceForm && form.SourceKind == EnglishFormSourceKind.Source)
+                .Select(form => form.Kind)
+                .OrderBy(value => value)
+                .ToArray();
+
+            Assert.Equal(expectedKinds, actualKinds);
+            foreach (var kind in expectedKinds)
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, kind, sourceForm).SourceKind);
+                Assert.Equal(1, forms.Count(form => form.Kind == kind && form.Surface == sourceForm));
+            }
+        }
+
+        [Fact]
+        public void Generate_PrefersEfSourceFormsOverRulesWithoutDroppingAlternatives()
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                "fly",
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { "flew" }));
+
+            Assert.Equal(new[] { "flew", "flied" }, FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(new[] { "flied", "flown" }, FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(forms, EnglishFormKind.Past, "flew").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(forms, EnglishFormKind.Past, "flied").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(forms, EnglishFormKind.PastParticiple, "flied").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(forms, EnglishFormKind.PastParticiple, "flown").SourceKind);
+            Assert.DoesNotContain(forms, form => form.Surface == "flew" && form.SourceKind == EnglishFormSourceKind.Rule);
+            Assert.Equal(1, forms.Count(form => form.Kind == EnglishFormKind.Past && form.Surface == "flew"));
+        }
+
+        [Theory]
+        [InlineData("eat", "eated")]
+        [InlineData("fall", "falled")]
+        [InlineData("feel", "feeled")]
+        [InlineData("fight", "fighted")]
+        [InlineData("find", "finded")]
+        [InlineData("fling", "flinged")]
+        [InlineData("fly", "flyed")]
+        [InlineData("forbear", "forbeared")]
+        [InlineData("forbid", "forbided")]
+        [InlineData("forego", "foregoed")]
+        [InlineData("foreknow", "foreknowed")]
+        [InlineData("foresee", "foreseed")]
+        [InlineData("foretell", "foretelled")]
+        [InlineData("forget", "forgetted")]
+        [InlineData("forgive", "forgived")]
+        [InlineData("forgo", "forgoed")]
+        [InlineData("forsake", "forsaked")]
+        [InlineData("forswear", "forsweared")]
+        [InlineData("freeze", "freezed")]
+        public void Generate_DoesNotEmitEfPseudoForms(string lemma, string pseudoForm)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.DoesNotContain(forms, form => form.Surface == pseudoForm);
+        }
+
+        [Theory]
         [InlineData("abide", "abode", "Past,PastParticiple")]
         [InlineData("aby", "abought;abye", "Past,PastParticiple;Base")]
         [InlineData("address", "addrest", "Past,PastParticiple")]
