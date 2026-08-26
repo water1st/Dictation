@@ -723,6 +723,154 @@ namespace Dictation.Tests.LexiconBuilder
         }
 
         [Theory]
+        [InlineData("indwell", "indwell", "indwells", "indwelled;indwelt", "indwelled;indwelt", "indwelling")]
+        [InlineData("inlay", "inlay", "inlays", "inlaid", "inlaid", "inlaying")]
+        [InlineData("interweave", "interweave", "interweaves", "interweaved;interwove", "interweaved;interwoven", "interweaving")]
+        [InlineData("inweave", "inweave", "inweaves", "inweaved;inwove", "inweaved;inwoven", "inweaving")]
+        [InlineData("keep", "keep", "keeps", "kept", "kept", "keeping")]
+        [InlineData("kneel", "kneel", "kneels", "kneeled;knelt", "kneeled;knelt", "kneeling")]
+        [InlineData("know", "know", "knows", "knew", "known", "knowing")]
+        [InlineData("lade", "lade", "lades", "laded", "laded;laden", "lading")]
+        [InlineData("lay", "lay", "lays", "laid", "laid", "laying")]
+        [InlineData("lean", "lean", "leans", "leaned;leant", "leaned;leant", "leaning")]
+        [InlineData("leap", "leap", "leaps", "leaped;leapt", "leaped;leapt", "leaping")]
+        [InlineData("learn", "learn", "learns", "learned;learnt", "learned;learnt", "learning")]
+        [InlineData("leave", "leave", "leaves", "left", "left", "leaving")]
+        [InlineData("lend", "lend", "lends", "lent", "lent", "lending")]
+        [InlineData("lie", "lie", "lies", "lay;lied", "lain;lied", "lying")]
+        [InlineData("light", "light", "lights", "lighted;lit", "lighted;lit", "lighting")]
+        [InlineData("lose", "lose", "loses", "lost", "lost", "losing")]
+        public void Generate_UsesCompleteIlParadigms(
+            string lemma,
+            string baseFormsText,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(SortedSourceForms(baseFormsText), FormsOfKind(forms, EnglishFormKind.Base));
+            Assert.Equal(SortedSourceForms(thirdPerson), FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(SortedSourceForms(past), FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(SortedSourceForms(pastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(SortedSourceForms(presentParticiple), FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+        }
+
+        [Theory]
+        [InlineData("indwell", "indwelt", "Past,PastParticiple")]
+        [InlineData("inlay", "inlaid", "Past,PastParticiple")]
+        [InlineData("interweave", "interwove", "Past")]
+        [InlineData("interweave", "interwoven", "PastParticiple")]
+        [InlineData("inweave", "inwove", "Past")]
+        [InlineData("inweave", "inwoven", "PastParticiple")]
+        [InlineData("keep", "kept", "Past,PastParticiple")]
+        [InlineData("kneel", "knelt", "Past,PastParticiple")]
+        [InlineData("know", "knew", "Past")]
+        [InlineData("know", "known", "PastParticiple")]
+        [InlineData("lade", "laden", "PastParticiple")]
+        [InlineData("lay", "laid", "Past,PastParticiple")]
+        [InlineData("lean", "leant", "Past,PastParticiple")]
+        [InlineData("leap", "leapt", "Past,PastParticiple")]
+        [InlineData("learn", "learnt", "Past,PastParticiple")]
+        [InlineData("leave", "left", "Past,PastParticiple")]
+        [InlineData("lend", "lent", "Past,PastParticiple")]
+        [InlineData("lie", "lain", "PastParticiple")]
+        [InlineData("lie", "lay", "Past")]
+        [InlineData("light", "lit", "Past,PastParticiple")]
+        [InlineData("lose", "lost", "Past,PastParticiple")]
+        public void Generate_ClassifiesIlSourceFormsByExactFormKind(
+            string lemma,
+            string sourceForm,
+            string sourceKindsText)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { sourceForm }));
+            var expectedKinds = sourceKindsText
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(value => Enum.Parse<EnglishFormKind>(value, ignoreCase: false))
+                .OrderBy(value => value)
+                .ToArray();
+            var actualKinds = forms
+                .Where(form => form.Surface == sourceForm && form.SourceKind == EnglishFormSourceKind.Source)
+                .Select(form => form.Kind)
+                .OrderBy(value => value)
+                .ToArray();
+
+            Assert.Equal(expectedKinds, actualKinds);
+            foreach (var kind in expectedKinds)
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, kind, sourceForm).SourceKind);
+                Assert.Equal(1, forms.Count(form => form.Kind == kind && form.Surface == sourceForm));
+            }
+        }
+
+        [Fact]
+        public void Generate_PreservesIlCatalogAlternativesAndLieSenses()
+        {
+            var generator = new EnglishFormGenerator();
+
+            var indwell = generator.Generate(CreateLexeme("indwell", "v", EnglishPartOfSpeech.Verb, new[] { "indwelt" }));
+            Assert.Equal(new[] { "indwelled", "indwelt" }, FormsOfKind(indwell, EnglishFormKind.Past));
+            Assert.Equal(new[] { "indwelled", "indwelt" }, FormsOfKind(indwell, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(indwell, EnglishFormKind.Past, "indwelt").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(indwell, EnglishFormKind.Past, "indwelled").SourceKind);
+
+            var interweave = generator.Generate(CreateLexeme("interweave", "v", EnglishPartOfSpeech.Verb, new[] { "interwove" }));
+            Assert.Equal(new[] { "interweaved", "interwove" }, FormsOfKind(interweave, EnglishFormKind.Past));
+            Assert.Equal(new[] { "interweaved", "interwoven" }, FormsOfKind(interweave, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(interweave, EnglishFormKind.Past, "interwove").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(interweave, EnglishFormKind.Past, "interweaved").SourceKind);
+
+            var inweave = generator.Generate(CreateLexeme("inweave", "v", EnglishPartOfSpeech.Verb, new[] { "inwove" }));
+            Assert.Equal(new[] { "inweaved", "inwove" }, FormsOfKind(inweave, EnglishFormKind.Past));
+            Assert.Equal(new[] { "inweaved", "inwoven" }, FormsOfKind(inweave, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(inweave, EnglishFormKind.Past, "inwove").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(inweave, EnglishFormKind.Past, "inweaved").SourceKind);
+
+            var lade = generator.Generate(CreateLexeme("lade", "v", EnglishPartOfSpeech.Verb, new[] { "laden" }));
+            Assert.Equal(new[] { "laded" }, FormsOfKind(lade, EnglishFormKind.Past));
+            Assert.Equal(new[] { "laded", "laden" }, FormsOfKind(lade, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(lade, EnglishFormKind.PastParticiple, "laden").SourceKind);
+            Assert.DoesNotContain(lade, form => form.Kind == EnglishFormKind.Past && form.Surface == "laden");
+
+            var lie = generator.Generate(CreateLexeme("lie", "v", EnglishPartOfSpeech.Verb, new[] { "lain", "lay", "lying" }));
+            Assert.Equal(new[] { "lay", "lied" }, FormsOfKind(lie, EnglishFormKind.Past));
+            Assert.Equal(new[] { "lain", "lied" }, FormsOfKind(lie, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(lie, EnglishFormKind.Past, "lay").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(lie, EnglishFormKind.Past, "lied").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(lie, EnglishFormKind.PastParticiple, "lain").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(lie, EnglishFormKind.PastParticiple, "lied").SourceKind);
+            Assert.Equal(1, lie.Count(form => form.Kind == EnglishFormKind.Past && form.Surface == "lied"));
+            Assert.Equal(1, lie.Count(form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "lied"));
+        }
+
+        [Theory]
+        [InlineData("keep", "keeped")]
+        [InlineData("know", "knowed")]
+        [InlineData("lay", "layed")]
+        [InlineData("leave", "leaved")]
+        [InlineData("lend", "lended")]
+        [InlineData("lose", "losed")]
+        public void Generate_DoesNotEmitIlPseudoForms(string lemma, string pseudoForm)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.DoesNotContain(forms, form => form.Surface == pseudoForm);
+        }
+
+        [Theory]
         [InlineData("abide", "abode", "Past,PastParticiple")]
         [InlineData("aby", "abought;abye", "Past,PastParticiple;Base")]
         [InlineData("address", "addrest", "Past,PastParticiple")]
