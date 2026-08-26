@@ -1310,6 +1310,118 @@ namespace Dictation.Tests.LexiconBuilder
         }
 
         [Theory]
+        [InlineData("partake", "partake", "partakes", "partook", "partaken", "partaking")]
+        [InlineData("pay", "pay", "pays", "paid", "paid", "paying")]
+        [InlineData("pen", "pen", "pens", "penned;pent", "penned;pent", "penning")]
+        [InlineData("prepay", "prepay", "prepays", "prepaid", "prepaid", "prepaying")]
+        [InlineData("prove", "prove", "proves", "proved", "proved;proven", "proving")]
+        [InlineData("quick-freeze", "quick-freeze", "quick-freezes", "quick-froze", "quick-frozen", "quick-freezing")]
+        public void Generate_UsesCompletePqParadigms(
+            string lemma,
+            string baseFormsText,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(SortedSourceForms(baseFormsText), FormsOfKind(forms, EnglishFormKind.Base));
+            Assert.Equal(SortedSourceForms(thirdPerson), FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(SortedSourceForms(past), FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(SortedSourceForms(pastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(SortedSourceForms(presentParticiple), FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+        }
+
+        [Theory]
+        [InlineData("partake", "partaken", "PastParticiple")]
+        [InlineData("partake", "partook", "Past")]
+        [InlineData("pay", "paid", "Past,PastParticiple")]
+        [InlineData("pen", "pent", "Past,PastParticiple")]
+        [InlineData("prepay", "prepaid", "Past,PastParticiple")]
+        [InlineData("prove", "proven", "PastParticiple")]
+        [InlineData("quick-freeze", "quick-froze", "Past")]
+        [InlineData("quick-freeze", "quick-frozen", "PastParticiple")]
+        public void Generate_ClassifiesPqSourceFormsByExactFormKind(
+            string lemma,
+            string sourceForm,
+            string sourceKindsText)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { sourceForm }));
+            var expectedKinds = sourceKindsText
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(value => Enum.Parse<EnglishFormKind>(value, ignoreCase: false))
+                .OrderBy(value => value)
+                .ToArray();
+            var actualKinds = forms
+                .Where(form => form.Surface == sourceForm && form.SourceKind == EnglishFormSourceKind.Source)
+                .Select(form => form.Kind)
+                .OrderBy(value => value)
+                .ToArray();
+
+            Assert.Equal(expectedKinds, actualKinds);
+            foreach (var kind in expectedKinds)
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, kind, sourceForm).SourceKind);
+                Assert.Equal(1, forms.Count(form => form.Kind == kind && form.Surface == sourceForm));
+            }
+        }
+
+        [Fact]
+        public void Generate_PreservesPqAlternativesAndSeparatesProvenAndPentKinds()
+        {
+            var generator = new EnglishFormGenerator();
+
+            var pen = generator.Generate(CreateLexeme("pen", "v", EnglishPartOfSpeech.Verb, new[] { "pent" }));
+            Assert.Equal(new[] { "penned", "pent" }, FormsOfKind(pen, EnglishFormKind.Past));
+            Assert.Equal(new[] { "penned", "pent" }, FormsOfKind(pen, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(pen, EnglishFormKind.Past, "pent").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(pen, EnglishFormKind.PastParticiple, "pent").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(pen, EnglishFormKind.Past, "penned").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(pen, EnglishFormKind.PastParticiple, "penned").SourceKind);
+            Assert.DoesNotContain(pen, form => form.Surface == "pened");
+
+            var prove = generator.Generate(CreateLexeme("prove", "v", EnglishPartOfSpeech.Verb, new[] { "proven" }));
+            Assert.Equal(new[] { "proved" }, FormsOfKind(prove, EnglishFormKind.Past));
+            Assert.Equal(new[] { "proved", "proven" }, FormsOfKind(prove, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(prove, EnglishFormKind.PastParticiple, "proven").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(prove, EnglishFormKind.Past, "proved").SourceKind);
+            Assert.DoesNotContain(prove, form => form.Kind == EnglishFormKind.Past && form.Surface == "proven");
+
+            var pay = generator.Generate(CreateLexeme("pay", "v", EnglishPartOfSpeech.Verb, new[] { "paid" }));
+            Assert.Equal(new[] { "paid" }, FormsOfKind(pay, EnglishFormKind.Past));
+            Assert.Equal(new[] { "paid" }, FormsOfKind(pay, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(pay, EnglishFormKind.Past, "paid").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(pay, EnglishFormKind.PastParticiple, "paid").SourceKind);
+            Assert.DoesNotContain(pay, form => form.Surface == "payed");
+        }
+
+        [Theory]
+        [InlineData("partake", "partaked")]
+        [InlineData("pay", "payed")]
+        [InlineData("pen", "pened")]
+        [InlineData("prepay", "prepayed")]
+        [InlineData("quick-freeze", "quick-freezed")]
+        public void Generate_DoesNotEmitPqPseudoForms(string lemma, string pseudoForm)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.DoesNotContain(forms, form => form.Surface == pseudoForm);
+        }
+
+        [Theory]
         [InlineData("abide", "abode", "Past,PastParticiple")]
         [InlineData("aby", "abought;abye", "Past,PastParticiple;Base")]
         [InlineData("address", "addrest", "Past,PastParticiple")]

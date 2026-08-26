@@ -560,7 +560,24 @@ namespace Dictation.LexiconBuilder.WordNet
                 [("overspend", EnglishPartOfSpeech.Verb)] = CreateVerb("overspends", "overspent", "overspent", "overspending"),
                 [("overtake", EnglishPartOfSpeech.Verb)] = CreateVerb("overtakes", "overtook", "overtaken", "overtaking"),
                 [("overthrow", EnglishPartOfSpeech.Verb)] = CreateVerb("overthrows", "overthrew", "overthrown", "overthrowing"),
-                [("overwrite", EnglishPartOfSpeech.Verb)] = CreateVerb("overwrites", "overwrote", "overwritten", "overwriting")
+                [("overwrite", EnglishPartOfSpeech.Verb)] = CreateVerb("overwrites", "overwrote", "overwritten", "overwriting"),
+                [("partake", EnglishPartOfSpeech.Verb)] = CreateVerb("partakes", "partook", "partaken", "partaking"),
+                [("pay", EnglishPartOfSpeech.Verb)] = CreateVerb("pays", "paid", "paid", "paying"),
+                [("pen", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "pens"),
+                    (EnglishFormKind.Past, "penned"),
+                    (EnglishFormKind.Past, "pent"),
+                    (EnglishFormKind.PastParticiple, "penned"),
+                    (EnglishFormKind.PastParticiple, "pent"),
+                    (EnglishFormKind.PresentParticiple, "penning")),
+                [("prepay", EnglishPartOfSpeech.Verb)] = CreateVerb("prepays", "prepaid", "prepaid", "prepaying"),
+                [("prove", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "proves"),
+                    (EnglishFormKind.Past, "proved"),
+                    (EnglishFormKind.PastParticiple, "proved"),
+                    (EnglishFormKind.PastParticiple, "proven"),
+                    (EnglishFormKind.PresentParticiple, "proving")),
+                [("quick-freeze", EnglishPartOfSpeech.Verb)] = CreateVerb("quick-freezes", "quick-froze", "quick-frozen", "quick-freezing")
             };
 
         internal static bool TryGetParadigm(
