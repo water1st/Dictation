@@ -265,6 +265,148 @@ namespace Dictation.Tests.LexiconBuilder
         }
 
         [Theory]
+        [InlineData("catch", "catch", "catches", "caught", "caught", "catching")]
+        [InlineData("chide", "chide", "chides", "chided;chid", "chided;chid;chidden", "chiding")]
+        [InlineData("choose", "choose", "chooses", "chose", "chosen", "choosing")]
+        [InlineData("cleave", "cleave", "cleaves", "cleaved;cleft;clove", "cleaved;cleft;cloven", "cleaving")]
+        [InlineData("cling", "cling", "clings", "clung", "clung", "clinging")]
+        [InlineData("clothe", "clothe", "clothes", "clad;clothed", "clad;clothed", "clothing")]
+        [InlineData("coordinate", "coordinate;co-ordinate", "coordinates;co-ordinates", "coordinated;co-ordinated", "coordinated;co-ordinated", "coordinating;co-ordinating")]
+        [InlineData("countersink", "countersink", "countersinks", "countersank;countersunk", "countersunk", "countersinking")]
+        [InlineData("creep", "creep", "creeps", "crept", "crept", "creeping")]
+        [InlineData("curse", "curse", "curses", "cursed;curst", "cursed;curst", "cursing")]
+        [InlineData("deal", "deal", "deals", "dealt", "dealt", "dealing")]
+        [InlineData("dig", "dig", "digs", "dug", "dug", "digging")]
+        [InlineData("dive", "dive", "dives", "dived;dove", "dived", "diving")]
+        [InlineData("draw", "draw", "draws", "drew", "drawn", "drawing")]
+        [InlineData("dream", "dream", "dreams", "dreamed;dreamt", "dreamed;dreamt", "dreaming")]
+        [InlineData("drink", "drink", "drinks", "drank", "drunk", "drinking")]
+        [InlineData("drive", "drive", "drives", "drove", "driven", "driving")]
+        [InlineData("dwell", "dwell", "dwells", "dwelled;dwelt", "dwelled;dwelt", "dwelling")]
+        public void Generate_UsesCompleteCdParadigms(
+            string lemma,
+            string baseFormsText,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(SortedSourceForms(baseFormsText), FormsOfKind(forms, EnglishFormKind.Base));
+            Assert.Equal(SortedSourceForms(thirdPerson), FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(SortedSourceForms(past), FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(SortedSourceForms(pastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(SortedSourceForms(presentParticiple), FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+        }
+
+        [Theory]
+        [InlineData("catch", "caught", "Past,PastParticiple")]
+        [InlineData("chide", "chid", "Past,PastParticiple")]
+        [InlineData("chide", "chidden", "PastParticiple")]
+        [InlineData("choose", "chose", "Past")]
+        [InlineData("choose", "chosen", "PastParticiple")]
+        [InlineData("cleave", "cleft", "Past,PastParticiple")]
+        [InlineData("cleave", "clove", "Past")]
+        [InlineData("cleave", "cloven", "PastParticiple")]
+        [InlineData("cling", "clung", "Past,PastParticiple")]
+        [InlineData("clothe", "clad", "Past,PastParticiple")]
+        [InlineData("coordinate", "co-ordinate", "Base")]
+        [InlineData("countersink", "countersank", "Past")]
+        [InlineData("countersink", "countersunk", "Past,PastParticiple")]
+        [InlineData("creep", "crept", "Past,PastParticiple")]
+        [InlineData("curse", "curst", "Past,PastParticiple")]
+        [InlineData("deal", "dealt", "Past,PastParticiple")]
+        [InlineData("dig", "dug", "Past,PastParticiple")]
+        [InlineData("dive", "dove", "Past")]
+        [InlineData("draw", "drawn", "PastParticiple")]
+        [InlineData("draw", "drew", "Past")]
+        [InlineData("dream", "dreamt", "Past,PastParticiple")]
+        [InlineData("drink", "drank", "Past")]
+        [InlineData("drink", "drunk", "PastParticiple")]
+        [InlineData("drive", "driven", "PastParticiple")]
+        [InlineData("drive", "drove", "Past")]
+        [InlineData("dwell", "dwelt", "Past,PastParticiple")]
+        public void Generate_ClassifiesCdSourceFormsByExactFormKind(
+            string lemma,
+            string sourceForm,
+            string sourceKindsText)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { sourceForm }));
+            var expectedKinds = sourceKindsText
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(value => Enum.Parse<EnglishFormKind>(value, ignoreCase: false))
+                .OrderBy(value => value)
+                .ToArray();
+            var actualKinds = forms
+                .Where(form => form.Surface == sourceForm && form.SourceKind == EnglishFormSourceKind.Source)
+                .Select(form => form.Kind)
+                .OrderBy(value => value)
+                .ToArray();
+
+            Assert.Equal(expectedKinds, actualKinds);
+            foreach (var kind in expectedKinds)
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, kind, sourceForm).SourceKind);
+                Assert.Equal(1, forms.Count(form => form.Kind == kind && form.Surface == sourceForm));
+            }
+        }
+
+        [Fact]
+        public void Generate_PrefersCdSourceFormsOverRulesWithoutDroppingAlternatives()
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                "chide",
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { "chid" }));
+
+            Assert.Equal(new[] { "chid", "chided" }, FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(new[] { "chid", "chidden", "chided" }, FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(forms, EnglishFormKind.Past, "chid").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(forms, EnglishFormKind.PastParticiple, "chid").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(forms, EnglishFormKind.Past, "chided").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(forms, EnglishFormKind.PastParticiple, "chided").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(forms, EnglishFormKind.PastParticiple, "chidden").SourceKind);
+            Assert.DoesNotContain(forms, form => form.Surface == "chid" && form.SourceKind == EnglishFormSourceKind.Rule);
+            Assert.Equal(1, forms.Count(form => form.Kind == EnglishFormKind.Past && form.Surface == "chid"));
+            Assert.Equal(1, forms.Count(form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "chid"));
+        }
+
+        [Theory]
+        [InlineData("catch", "catched")]
+        [InlineData("chide", "chideded")]
+        [InlineData("choose", "chosed")]
+        [InlineData("cleave", "cleaveded")]
+        [InlineData("cling", "clinged")]
+        [InlineData("clothe", "clotheded")]
+        [InlineData("countersink", "countersinked")]
+        [InlineData("creep", "creeped")]
+        [InlineData("deal", "dealed")]
+        [InlineData("dig", "digged")]
+        [InlineData("draw", "drawed")]
+        [InlineData("drink", "drinked")]
+        [InlineData("drive", "drived")]
+        public void Generate_DoesNotEmitCdPseudoForms(string lemma, string pseudoForm)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.DoesNotContain(forms, form => form.Surface == pseudoForm);
+        }
+
+        [Theory]
         [InlineData("abide", "abode", "Past,PastParticiple")]
         [InlineData("aby", "abought;abye", "Past,PastParticiple;Base")]
         [InlineData("address", "addrest", "Past,PastParticiple")]
@@ -479,6 +621,13 @@ namespace Dictation.Tests.LexiconBuilder
             return sourceFormsText.Length == 0
                 ? Array.Empty<string>()
                 : sourceFormsText.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        }
+
+        private static string[] SortedSourceForms(string sourceFormsText)
+        {
+            return SplitSourceForms(sourceFormsText)
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray();
         }
     }
 }
