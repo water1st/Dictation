@@ -314,7 +314,90 @@ namespace Dictation.LexiconBuilder.WordNet
                 [("forgo", EnglishPartOfSpeech.Verb)] = CreateVerb("forgoes", "forwent", "forgone", "forgoing"),
                 [("forsake", EnglishPartOfSpeech.Verb)] = CreateVerb("forsakes", "forsook", "forsaken", "forsaking"),
                 [("forswear", EnglishPartOfSpeech.Verb)] = CreateVerb("forswears", "forswore", "forsworn", "forswearing"),
-                [("freeze", EnglishPartOfSpeech.Verb)] = CreateVerb("freezes", "froze", "frozen", "freezing")
+                [("freeze", EnglishPartOfSpeech.Verb)] = CreateVerb("freezes", "froze", "frozen", "freezing"),
+                [("gainsay", EnglishPartOfSpeech.Verb)] = CreateVerb("gainsays", "gainsaid", "gainsaid", "gainsaying"),
+                [("geld", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "gelds"),
+                    (EnglishFormKind.Past, "gelded"),
+                    (EnglishFormKind.Past, "gelt"),
+                    (EnglishFormKind.PastParticiple, "gelded"),
+                    (EnglishFormKind.PastParticiple, "gelt"),
+                    (EnglishFormKind.PresentParticiple, "gelding")),
+                [("ghostwrite", EnglishPartOfSpeech.Verb)] = CreateVerb("ghostwrites", "ghostwrote", "ghostwritten", "ghostwriting"),
+                [("gild", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "gilds"),
+                    (EnglishFormKind.Past, "gilded"),
+                    (EnglishFormKind.Past, "gilt"),
+                    (EnglishFormKind.PastParticiple, "gilded"),
+                    (EnglishFormKind.PastParticiple, "gilt"),
+                    (EnglishFormKind.PresentParticiple, "gilding")),
+                [("gin", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "gins"),
+                    (EnglishFormKind.Past, "gan"),
+                    (EnglishFormKind.Past, "ginned"),
+                    (EnglishFormKind.PastParticiple, "ginned"),
+                    (EnglishFormKind.PresentParticiple, "ginning")),
+                [("gird", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "girds"),
+                    (EnglishFormKind.Past, "girded"),
+                    (EnglishFormKind.Past, "girt"),
+                    (EnglishFormKind.PastParticiple, "girded"),
+                    (EnglishFormKind.PastParticiple, "girt"),
+                    (EnglishFormKind.PresentParticiple, "girding")),
+                [("give", EnglishPartOfSpeech.Verb)] = CreateVerb("gives", "gave", "given", "giving"),
+                [("gnaw", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "gnaws"),
+                    (EnglishFormKind.Past, "gnawed"),
+                    (EnglishFormKind.PastParticiple, "gnawed"),
+                    (EnglishFormKind.PastParticiple, "gnawn"),
+                    (EnglishFormKind.PresentParticiple, "gnawing")),
+                [("grave", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "graves"),
+                    (EnglishFormKind.Past, "graved"),
+                    (EnglishFormKind.PastParticiple, "graved"),
+                    (EnglishFormKind.PastParticiple, "graven"),
+                    (EnglishFormKind.PresentParticiple, "graving")),
+                [("grind", EnglishPartOfSpeech.Verb)] = CreateVerb("grinds", "ground", "ground", "grinding"),
+                [("grip", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "grips"),
+                    (EnglishFormKind.Past, "gripped"),
+                    (EnglishFormKind.Past, "gript"),
+                    (EnglishFormKind.PastParticiple, "gripped"),
+                    (EnglishFormKind.PastParticiple, "gript"),
+                    (EnglishFormKind.PresentParticiple, "gripping")),
+                [("grow", EnglishPartOfSpeech.Verb)] = CreateVerb("grows", "grew", "grown", "growing"),
+                [("halfway", EnglishPartOfSpeech.Adjective)] = Create(
+                    (EnglishFormKind.Base, "halfway"),
+                    (EnglishFormKind.Base, "halfways")),
+                [("hamstring", EnglishPartOfSpeech.Verb)] = CreateVerb("hamstrings", "hamstrung", "hamstrung", "hamstringing"),
+                [("hang", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "hangs"),
+                    (EnglishFormKind.Past, "hanged"),
+                    (EnglishFormKind.Past, "hung"),
+                    (EnglishFormKind.PastParticiple, "hanged"),
+                    (EnglishFormKind.PastParticiple, "hung"),
+                    (EnglishFormKind.PresentParticiple, "hanging")),
+                [("hear", EnglishPartOfSpeech.Verb)] = CreateVerb("hears", "heard", "heard", "hearing"),
+                [("heave", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "heaves"),
+                    (EnglishFormKind.Past, "heaved"),
+                    (EnglishFormKind.Past, "hove"),
+                    (EnglishFormKind.PastParticiple, "heaved"),
+                    (EnglishFormKind.PastParticiple, "hove"),
+                    (EnglishFormKind.PresentParticiple, "heaving")),
+                [("hew", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "hews"),
+                    (EnglishFormKind.Past, "hewed"),
+                    (EnglishFormKind.PastParticiple, "hewed"),
+                    (EnglishFormKind.PastParticiple, "hewn"),
+                    (EnglishFormKind.PresentParticiple, "hewing")),
+                [("hide", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "hides"),
+                    (EnglishFormKind.Past, "hid"),
+                    (EnglishFormKind.PastParticiple, "hidden"),
+                    (EnglishFormKind.PastParticiple, "hid"),
+                    (EnglishFormKind.PresentParticiple, "hiding")),
+                [("hold", EnglishPartOfSpeech.Verb)] = CreateVerb("holds", "held", "held", "holding")
             };
 
         internal static bool TryGetParadigm(

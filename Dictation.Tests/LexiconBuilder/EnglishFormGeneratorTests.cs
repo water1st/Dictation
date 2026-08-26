@@ -566,6 +566,163 @@ namespace Dictation.Tests.LexiconBuilder
         }
 
         [Theory]
+        [InlineData("gainsay", "gainsay", "gainsays", "gainsaid", "gainsaid", "gainsaying")]
+        [InlineData("geld", "geld", "gelds", "gelded;gelt", "gelded;gelt", "gelding")]
+        [InlineData("ghostwrite", "ghostwrite", "ghostwrites", "ghostwrote", "ghostwritten", "ghostwriting")]
+        [InlineData("gild", "gild", "gilds", "gilded;gilt", "gilded;gilt", "gilding")]
+        [InlineData("gin", "gin", "gins", "gan;ginned", "ginned", "ginning")]
+        [InlineData("gird", "gird", "girds", "girded;girt", "girded;girt", "girding")]
+        [InlineData("give", "give", "gives", "gave", "given", "giving")]
+        [InlineData("gnaw", "gnaw", "gnaws", "gnawed", "gnawed;gnawn", "gnawing")]
+        [InlineData("grave", "grave", "graves", "graved", "graved;graven", "graving")]
+        [InlineData("grind", "grind", "grinds", "ground", "ground", "grinding")]
+        [InlineData("grip", "grip", "grips", "gripped;gript", "gripped;gript", "gripping")]
+        [InlineData("grow", "grow", "grows", "grew", "grown", "growing")]
+        [InlineData("halfway", "halfway;halfways", "", "", "", "")]
+        [InlineData("hamstring", "hamstring", "hamstrings", "hamstrung", "hamstrung", "hamstringing")]
+        [InlineData("hang", "hang", "hangs", "hanged;hung", "hanged;hung", "hanging")]
+        [InlineData("hear", "hear", "hears", "heard", "heard", "hearing")]
+        [InlineData("heave", "heave", "heaves", "heaved;hove", "heaved;hove", "heaving")]
+        [InlineData("hew", "hew", "hews", "hewed", "hewed;hewn", "hewing")]
+        [InlineData("hide", "hide", "hides", "hid", "hidden;hid", "hiding")]
+        [InlineData("hold", "hold", "holds", "held", "held", "holding")]
+        public void Generate_UsesCompleteGhParadigms(
+            string lemma,
+            string baseFormsText,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var partOfSpeech = lemma == "halfway"
+                ? EnglishPartOfSpeech.Adjective
+                : EnglishPartOfSpeech.Verb;
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                lemma == "halfway" ? "a" : "v",
+                partOfSpeech,
+                Array.Empty<string>()));
+
+            Assert.Equal(SortedSourceForms(baseFormsText), FormsOfKind(forms, EnglishFormKind.Base));
+            if (partOfSpeech == EnglishPartOfSpeech.Verb)
+            {
+                Assert.Equal(SortedSourceForms(thirdPerson), FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+                Assert.Equal(SortedSourceForms(past), FormsOfKind(forms, EnglishFormKind.Past));
+                Assert.Equal(SortedSourceForms(pastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+                Assert.Equal(SortedSourceForms(presentParticiple), FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+            }
+            else
+            {
+                Assert.Empty(FormsOfKind(forms, EnglishFormKind.Comparative));
+                Assert.Empty(FormsOfKind(forms, EnglishFormKind.Superlative));
+            }
+        }
+
+        [Theory]
+        [InlineData("gainsay", "gainsaid", "Past,PastParticiple")]
+        [InlineData("geld", "gelt", "Past,PastParticiple")]
+        [InlineData("ghostwrite", "ghostwrote", "Past")]
+        [InlineData("ghostwrite", "ghostwritten", "PastParticiple")]
+        [InlineData("gild", "gilt", "Past,PastParticiple")]
+        [InlineData("gin", "gan", "Past")]
+        [InlineData("gird", "girt", "Past,PastParticiple")]
+        [InlineData("give", "gave", "Past")]
+        [InlineData("give", "given", "PastParticiple")]
+        [InlineData("gnaw", "gnawn", "PastParticiple")]
+        [InlineData("grave", "graven", "PastParticiple")]
+        [InlineData("grind", "ground", "Past,PastParticiple")]
+        [InlineData("grip", "gript", "Past,PastParticiple")]
+        [InlineData("grow", "grew", "Past")]
+        [InlineData("grow", "grown", "PastParticiple")]
+        [InlineData("halfway", "halfways", "Base")]
+        [InlineData("hamstring", "hamstrung", "Past,PastParticiple")]
+        [InlineData("hang", "hung", "Past,PastParticiple")]
+        [InlineData("hear", "heard", "Past,PastParticiple")]
+        [InlineData("heave", "hove", "Past,PastParticiple")]
+        [InlineData("hew", "hewn", "PastParticiple")]
+        [InlineData("hide", "hid", "Past,PastParticiple")]
+        [InlineData("hide", "hidden", "PastParticiple")]
+        [InlineData("hold", "held", "Past,PastParticiple")]
+        public void Generate_ClassifiesGhSourceFormsByExactFormKind(
+            string lemma,
+            string sourceForm,
+            string sourceKindsText)
+        {
+            var partOfSpeech = lemma == "halfway"
+                ? EnglishPartOfSpeech.Adjective
+                : EnglishPartOfSpeech.Verb;
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                lemma == "halfway" ? "a" : "v",
+                partOfSpeech,
+                new[] { sourceForm }));
+            var expectedKinds = sourceKindsText
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(value => Enum.Parse<EnglishFormKind>(value, ignoreCase: false))
+                .OrderBy(value => value)
+                .ToArray();
+            var actualKinds = forms
+                .Where(form => form.Surface == sourceForm && form.SourceKind == EnglishFormSourceKind.Source)
+                .Select(form => form.Kind)
+                .OrderBy(value => value)
+                .ToArray();
+
+            Assert.Equal(expectedKinds, actualKinds);
+            foreach (var kind in expectedKinds)
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, kind, sourceForm).SourceKind);
+                Assert.Equal(1, forms.Count(form => form.Kind == kind && form.Surface == sourceForm));
+            }
+        }
+
+        [Fact]
+        public void Generate_PreservesGhCatalogAlternativesAndSpecialCases()
+        {
+            var generator = new EnglishFormGenerator();
+
+            var geld = generator.Generate(CreateLexeme("geld", "v", EnglishPartOfSpeech.Verb, new[] { "gelt" }));
+            Assert.Equal(new[] { "gelded", "gelt" }, FormsOfKind(geld, EnglishFormKind.Past));
+            Assert.Equal(new[] { "gelded", "gelt" }, FormsOfKind(geld, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(geld, EnglishFormKind.Past, "gelt").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(geld, EnglishFormKind.Past, "gelded").SourceKind);
+            Assert.Equal(1, geld.Count(form => form.Kind == EnglishFormKind.Past && form.Surface == "gelt"));
+            Assert.Equal(1, geld.Count(form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "gelt"));
+
+            var gin = generator.Generate(CreateLexeme("gin", "v", EnglishPartOfSpeech.Verb, new[] { "gan" }));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(gin, EnglishFormKind.Past, "gan").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(gin, EnglishFormKind.Past, "ginned").SourceKind);
+            Assert.DoesNotContain(gin, form => form.Surface == "gun");
+
+            var halfway = generator.Generate(CreateLexeme("halfway", "a", EnglishPartOfSpeech.Adjective, new[] { "halfways" }));
+            Assert.Equal(new[] { "halfway", "halfways" }, FormsOfKind(halfway, EnglishFormKind.Base));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(halfway, EnglishFormKind.Base, "halfways").SourceKind);
+            Assert.Empty(FormsOfKind(halfway, EnglishFormKind.Comparative));
+            Assert.Empty(FormsOfKind(halfway, EnglishFormKind.Superlative));
+        }
+
+        [Theory]
+        [InlineData("gainsay", "gainsayed")]
+        [InlineData("ghostwrite", "ghostwrited")]
+        [InlineData("gin", "gined")]
+        [InlineData("give", "gived")]
+        [InlineData("grind", "grinded")]
+        [InlineData("grow", "growed")]
+        [InlineData("hamstring", "hamstringed")]
+        [InlineData("hear", "heared")]
+        [InlineData("hide", "hided")]
+        [InlineData("hold", "holded")]
+        public void Generate_DoesNotEmitGhPseudoForms(string lemma, string pseudoForm)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.DoesNotContain(forms, form => form.Surface == pseudoForm);
+        }
+
+        [Theory]
         [InlineData("abide", "abode", "Past,PastParticiple")]
         [InlineData("aby", "abought;abye", "Past,PastParticiple;Base")]
         [InlineData("address", "addrest", "Past,PastParticiple")]
