@@ -577,7 +577,66 @@ namespace Dictation.LexiconBuilder.WordNet
                     (EnglishFormKind.PastParticiple, "proved"),
                     (EnglishFormKind.PastParticiple, "proven"),
                     (EnglishFormKind.PresentParticiple, "proving")),
-                [("quick-freeze", EnglishPartOfSpeech.Verb)] = CreateVerb("quick-freezes", "quick-froze", "quick-frozen", "quick-freezing")
+                [("quick-freeze", EnglishPartOfSpeech.Verb)] = CreateVerb("quick-freezes", "quick-froze", "quick-frozen", "quick-freezing"),
+                [("reave", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "reaves"),
+                    (EnglishFormKind.Past, "reaved"),
+                    (EnglishFormKind.Past, "reft"),
+                    (EnglishFormKind.PastParticiple, "reaved"),
+                    (EnglishFormKind.PastParticiple, "reft"),
+                    (EnglishFormKind.PresentParticiple, "reaving")),
+                [("rebuild", EnglishPartOfSpeech.Verb)] = CreateVerb("rebuilds", "rebuilt", "rebuilt", "rebuilding"),
+                [("redo", EnglishPartOfSpeech.Verb)] = CreateVerb("redoes", "redid", "redone", "redoing"),
+                [("reeve", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "reeves"),
+                    (EnglishFormKind.Past, "reeved"),
+                    (EnglishFormKind.Past, "rove"),
+                    (EnglishFormKind.PastParticiple, "reeved"),
+                    (EnglishFormKind.PastParticiple, "rove"),
+                    (EnglishFormKind.PresentParticiple, "reeving")),
+                [("rehear", EnglishPartOfSpeech.Verb)] = CreateVerb("rehears", "reheard", "reheard", "rehearing"),
+                [("remake", EnglishPartOfSpeech.Verb)] = CreateVerb("remakes", "remade", "remade", "remaking"),
+                [("rend", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "rends"),
+                    (EnglishFormKind.Past, "rent"),
+                    (EnglishFormKind.Past, "rended"),
+                    (EnglishFormKind.PastParticiple, "rent"),
+                    (EnglishFormKind.PastParticiple, "rended"),
+                    (EnglishFormKind.PresentParticiple, "rending")),
+                [("repay", EnglishPartOfSpeech.Verb)] = CreateVerb("repays", "repaid", "repaid", "repaying"),
+                [("rerun", EnglishPartOfSpeech.Verb)] = CreateVerb("reruns", "reran", "rerun", "rerunning"),
+                [("resew", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "resews"),
+                    (EnglishFormKind.Past, "resewed"),
+                    (EnglishFormKind.PastParticiple, "resewed"),
+                    (EnglishFormKind.PastParticiple, "resewn"),
+                    (EnglishFormKind.PresentParticiple, "resewing")),
+                [("retake", EnglishPartOfSpeech.Verb)] = CreateVerb("retakes", "retook", "retaken", "retaking"),
+                [("retell", EnglishPartOfSpeech.Verb)] = CreateVerb("retells", "retold", "retold", "retelling"),
+                [("rethink", EnglishPartOfSpeech.Verb)] = CreateVerb("rethinks", "rethought", "rethought", "rethinking"),
+                [("rewind", EnglishPartOfSpeech.Verb)] = CreateVerb("rewinds", "rewound", "rewound", "rewinding"),
+                [("rewrite", EnglishPartOfSpeech.Verb)] = CreateVerb("rewrites", "rewrote", "rewritten", "rewriting"),
+                [("ride", EnglishPartOfSpeech.Verb)] = CreateVerb("rides", "rode", "ridden", "riding"),
+                [("ring", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "rings"),
+                    (EnglishFormKind.Past, "rang"),
+                    (EnglishFormKind.Past, "ringed"),
+                    (EnglishFormKind.PastParticiple, "ringed"),
+                    (EnglishFormKind.PastParticiple, "rung"),
+                    (EnglishFormKind.PresentParticiple, "ringing")),
+                [("rise", EnglishPartOfSpeech.Verb)] = CreateVerb("rises", "rose", "risen", "rising"),
+                [("rive", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "rives"),
+                    (EnglishFormKind.Past, "rived"),
+                    (EnglishFormKind.PastParticiple, "rived"),
+                    (EnglishFormKind.PastParticiple, "riven"),
+                    (EnglishFormKind.PresentParticiple, "riving")),
+                [("rough-hew", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "rough-hews"),
+                    (EnglishFormKind.Past, "rough-hewed"),
+                    (EnglishFormKind.PastParticiple, "rough-hewed"),
+                    (EnglishFormKind.PastParticiple, "rough-hewn"),
+                    (EnglishFormKind.PresentParticiple, "rough-hewing"))
             };
 
         internal static bool TryGetParadigm(

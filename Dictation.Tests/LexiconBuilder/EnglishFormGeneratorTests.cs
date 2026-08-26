@@ -1422,6 +1422,176 @@ namespace Dictation.Tests.LexiconBuilder
         }
 
         [Theory]
+        [InlineData("reave", "reave", "reaves", "reaved;reft", "reaved;reft", "reaving")]
+        [InlineData("rebuild", "rebuild", "rebuilds", "rebuilt", "rebuilt", "rebuilding")]
+        [InlineData("redo", "redo", "redoes", "redid", "redone", "redoing")]
+        [InlineData("reeve", "reeve", "reeves", "reeved;rove", "reeved;rove", "reeving")]
+        [InlineData("rehear", "rehear", "rehears", "reheard", "reheard", "rehearing")]
+        [InlineData("remake", "remake", "remakes", "remade", "remade", "remaking")]
+        [InlineData("rend", "rend", "rends", "rent;rended", "rent;rended", "rending")]
+        [InlineData("repay", "repay", "repays", "repaid", "repaid", "repaying")]
+        [InlineData("rerun", "rerun", "reruns", "reran", "rerun", "rerunning")]
+        [InlineData("resew", "resew", "resews", "resewed", "resewed;resewn", "resewing")]
+        [InlineData("retake", "retake", "retakes", "retook", "retaken", "retaking")]
+        [InlineData("retell", "retell", "retells", "retold", "retold", "retelling")]
+        [InlineData("rethink", "rethink", "rethinks", "rethought", "rethought", "rethinking")]
+        [InlineData("rewind", "rewind", "rewinds", "rewound", "rewound", "rewinding")]
+        [InlineData("rewrite", "rewrite", "rewrites", "rewrote", "rewritten", "rewriting")]
+        [InlineData("ride", "ride", "rides", "rode", "ridden", "riding")]
+        [InlineData("ring", "ring", "rings", "rang;ringed", "ringed;rung", "ringing")]
+        [InlineData("rise", "rise", "rises", "rose", "risen", "rising")]
+        [InlineData("rive", "rive", "rives", "rived", "rived;riven", "riving")]
+        [InlineData("rough-hew", "rough-hew", "rough-hews", "rough-hewed", "rough-hewed;rough-hewn", "rough-hewing")]
+        public void Generate_UsesCompleteRParadigms(
+            string lemma,
+            string baseFormsText,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(SortedSourceForms(baseFormsText), FormsOfKind(forms, EnglishFormKind.Base));
+            Assert.Equal(SortedSourceForms(thirdPerson), FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(SortedSourceForms(past), FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(SortedSourceForms(pastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(SortedSourceForms(presentParticiple), FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+        }
+
+        [Theory]
+        [InlineData("reave", "reft", "Past,PastParticiple")]
+        [InlineData("rebuild", "rebuilt", "Past,PastParticiple")]
+        [InlineData("redo", "redid", "Past")]
+        [InlineData("redo", "redone", "PastParticiple")]
+        [InlineData("reeve", "rove", "Past,PastParticiple")]
+        [InlineData("rehear", "reheard", "Past,PastParticiple")]
+        [InlineData("remake", "remade", "Past,PastParticiple")]
+        [InlineData("rend", "rent", "Past,PastParticiple")]
+        [InlineData("repay", "repaid", "Past,PastParticiple")]
+        [InlineData("rerun", "reran", "Past")]
+        [InlineData("resew", "resewn", "PastParticiple")]
+        [InlineData("retake", "retaken", "PastParticiple")]
+        [InlineData("retake", "retook", "Past")]
+        [InlineData("retell", "retold", "Past,PastParticiple")]
+        [InlineData("rethink", "rethought", "Past,PastParticiple")]
+        [InlineData("rewind", "rewound", "Past,PastParticiple")]
+        [InlineData("rewrite", "rewritten", "PastParticiple")]
+        [InlineData("rewrite", "rewrote", "Past")]
+        [InlineData("ride", "ridden", "PastParticiple")]
+        [InlineData("ride", "rode", "Past")]
+        [InlineData("ring", "rang", "Past")]
+        [InlineData("ring", "rung", "PastParticiple")]
+        [InlineData("rise", "risen", "PastParticiple")]
+        [InlineData("rise", "rose", "Past")]
+        [InlineData("rive", "riven", "PastParticiple")]
+        [InlineData("rough-hew", "rough-hewn", "PastParticiple")]
+        public void Generate_ClassifiesRSourceFormsByExactFormKind(
+            string lemma,
+            string sourceForm,
+            string sourceKindsText)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { sourceForm }));
+            var expectedKinds = sourceKindsText
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(value => Enum.Parse<EnglishFormKind>(value, ignoreCase: false))
+                .OrderBy(value => value)
+                .ToArray();
+            var actualKinds = forms
+                .Where(form => form.Surface == sourceForm && form.SourceKind == EnglishFormSourceKind.Source)
+                .Select(form => form.Kind)
+                .OrderBy(value => value)
+                .ToArray();
+
+            Assert.Equal(expectedKinds, actualKinds);
+            foreach (var kind in expectedKinds)
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, kind, sourceForm).SourceKind);
+                Assert.Equal(1, forms.Count(form => form.Kind == kind && form.Surface == sourceForm));
+            }
+        }
+
+        [Fact]
+        public void Generate_PreservesRAlternativesAndSeparatesRingAndRerunKinds()
+        {
+            var generator = new EnglishFormGenerator();
+
+            var reave = generator.Generate(CreateLexeme("reave", "v", EnglishPartOfSpeech.Verb, new[] { "reft" }));
+            Assert.Equal(new[] { "reaved", "reft" }, FormsOfKind(reave, EnglishFormKind.Past));
+            Assert.Equal(new[] { "reaved", "reft" }, FormsOfKind(reave, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(reave, EnglishFormKind.Past, "reft").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(reave, EnglishFormKind.PastParticiple, "reft").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(reave, EnglishFormKind.Past, "reaved").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(reave, EnglishFormKind.PastParticiple, "reaved").SourceKind);
+
+            var ring = generator.Generate(CreateLexeme("ring", "v", EnglishPartOfSpeech.Verb, new[] { "rang" }));
+            Assert.Equal(new[] { "rang", "ringed" }, FormsOfKind(ring, EnglishFormKind.Past));
+            Assert.Equal(new[] { "ringed", "rung" }, FormsOfKind(ring, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(ring, EnglishFormKind.Past, "rang").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(ring, EnglishFormKind.Past, "ringed").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(ring, EnglishFormKind.PastParticiple, "ringed").SourceKind);
+            Assert.DoesNotContain(ring, form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "rang");
+            Assert.DoesNotContain(ring, form => form.Kind == EnglishFormKind.Past && form.Surface == "rung");
+
+            var rerun = generator.Generate(CreateLexeme("rerun", "v", EnglishPartOfSpeech.Verb, Array.Empty<string>()));
+            Assert.Equal(new[] { "rerun" }, FormsOfKind(rerun, EnglishFormKind.Base));
+            Assert.Equal(new[] { "rerun" }, FormsOfKind(rerun, EnglishFormKind.PastParticiple));
+            Assert.Equal(1, rerun.Count(form => form.Kind == EnglishFormKind.Base && form.Surface == "rerun"));
+            Assert.Equal(1, rerun.Count(form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "rerun"));
+
+            var resew = generator.Generate(CreateLexeme("resew", "v", EnglishPartOfSpeech.Verb, new[] { "resewn" }));
+            Assert.Equal(new[] { "resewed" }, FormsOfKind(resew, EnglishFormKind.Past));
+            Assert.Equal(new[] { "resewed", "resewn" }, FormsOfKind(resew, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(resew, EnglishFormKind.PastParticiple, "resewn").SourceKind);
+            Assert.DoesNotContain(resew, form => form.Kind == EnglishFormKind.Past && form.Surface == "resewn");
+
+            var rive = generator.Generate(CreateLexeme("rive", "v", EnglishPartOfSpeech.Verb, new[] { "riven" }));
+            Assert.Equal(new[] { "rived" }, FormsOfKind(rive, EnglishFormKind.Past));
+            Assert.Equal(new[] { "rived", "riven" }, FormsOfKind(rive, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(rive, EnglishFormKind.PastParticiple, "riven").SourceKind);
+            Assert.DoesNotContain(rive, form => form.Kind == EnglishFormKind.Past && form.Surface == "riven");
+
+            var roughHew = generator.Generate(CreateLexeme("rough-hew", "v", EnglishPartOfSpeech.Verb, new[] { "rough-hewn" }));
+            Assert.Equal(new[] { "rough-hewed" }, FormsOfKind(roughHew, EnglishFormKind.Past));
+            Assert.Equal(new[] { "rough-hewed", "rough-hewn" }, FormsOfKind(roughHew, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(roughHew, EnglishFormKind.PastParticiple, "rough-hewn").SourceKind);
+            Assert.DoesNotContain(roughHew, form => form.Kind == EnglishFormKind.Past && form.Surface == "rough-hewn");
+        }
+
+        [Theory]
+        [InlineData("rebuild", "rebuilded")]
+        [InlineData("redo", "redoed")]
+        [InlineData("rehear", "reheared")]
+        [InlineData("remake", "remaked")]
+        [InlineData("repay", "repayed")]
+        [InlineData("rerun", "reruned")]
+        [InlineData("retake", "retaked")]
+        [InlineData("retell", "retelled")]
+        [InlineData("rethink", "rethinked")]
+        [InlineData("rewind", "rewinded")]
+        [InlineData("rewrite", "rewrited")]
+        [InlineData("ride", "rided")]
+        [InlineData("rise", "rised")]
+        public void Generate_DoesNotEmitRPseudoForms(string lemma, string pseudoForm)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.DoesNotContain(forms, form => form.Surface == pseudoForm);
+        }
+
+        [Theory]
         [InlineData("abide", "abode", "Past,PastParticiple")]
         [InlineData("aby", "abought;abye", "Past,PastParticiple;Base")]
         [InlineData("address", "addrest", "Past,PastParticiple")]
