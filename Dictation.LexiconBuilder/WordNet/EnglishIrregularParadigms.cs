@@ -473,7 +473,34 @@ namespace Dictation.LexiconBuilder.WordNet
                     (EnglishFormKind.PastParticiple, "lighted"),
                     (EnglishFormKind.PastParticiple, "lit"),
                     (EnglishFormKind.PresentParticiple, "lighting")),
-                [("lose", EnglishPartOfSpeech.Verb)] = CreateVerb("loses", "lost", "lost", "losing")
+                [("lose", EnglishPartOfSpeech.Verb)] = CreateVerb("loses", "lost", "lost", "losing"),
+                [("mean", EnglishPartOfSpeech.Verb)] = CreateVerb("means", "meant", "meant", "meaning"),
+                [("meet", EnglishPartOfSpeech.Verb)] = CreateVerb("meets", "met", "met", "meeting"),
+                [("melt", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "melts"),
+                    (EnglishFormKind.Past, "melted"),
+                    (EnglishFormKind.PastParticiple, "melted"),
+                    (EnglishFormKind.PastParticiple, "molten"),
+                    (EnglishFormKind.PresentParticiple, "melting")),
+                [("misdeal", EnglishPartOfSpeech.Verb)] = CreateVerb("misdeals", "misdealt", "misdealt", "misdealing"),
+                [("misgive", EnglishPartOfSpeech.Verb)] = CreateVerb("misgives", "misgave", "misgiven", "misgiving"),
+                [("mislay", EnglishPartOfSpeech.Verb)] = CreateVerb("mislays", "mislaid", "mislaid", "mislaying"),
+                [("misspell", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "misspells"),
+                    (EnglishFormKind.Past, "misspelled"),
+                    (EnglishFormKind.Past, "misspelt"),
+                    (EnglishFormKind.PastParticiple, "misspelled"),
+                    (EnglishFormKind.PastParticiple, "misspelt"),
+                    (EnglishFormKind.PresentParticiple, "misspelling")),
+                [("misspend", EnglishPartOfSpeech.Verb)] = CreateVerb("misspends", "misspent", "misspent", "misspending"),
+                [("mistake", EnglishPartOfSpeech.Verb)] = CreateVerb("mistakes", "mistook", "mistaken", "mistaking"),
+                [("misunderstand", EnglishPartOfSpeech.Verb)] = CreateVerb("misunderstands", "misunderstood", "misunderstood", "misunderstanding"),
+                [("mow", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "mows"),
+                    (EnglishFormKind.Past, "mowed"),
+                    (EnglishFormKind.PastParticiple, "mowed"),
+                    (EnglishFormKind.PastParticiple, "mown"),
+                    (EnglishFormKind.PresentParticiple, "mowing"))
             };
 
         internal static bool TryGetParadigm(

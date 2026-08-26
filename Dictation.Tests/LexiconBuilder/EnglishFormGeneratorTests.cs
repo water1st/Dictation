@@ -871,6 +871,128 @@ namespace Dictation.Tests.LexiconBuilder
         }
 
         [Theory]
+        [InlineData("mean", "mean", "means", "meant", "meant", "meaning")]
+        [InlineData("meet", "meet", "meets", "met", "met", "meeting")]
+        [InlineData("melt", "melt", "melts", "melted", "melted;molten", "melting")]
+        [InlineData("misdeal", "misdeal", "misdeals", "misdealt", "misdealt", "misdealing")]
+        [InlineData("misgive", "misgive", "misgives", "misgave", "misgiven", "misgiving")]
+        [InlineData("mislay", "mislay", "mislays", "mislaid", "mislaid", "mislaying")]
+        [InlineData("misspell", "misspell", "misspells", "misspelled;misspelt", "misspelled;misspelt", "misspelling")]
+        [InlineData("misspend", "misspend", "misspends", "misspent", "misspent", "misspending")]
+        [InlineData("mistake", "mistake", "mistakes", "mistook", "mistaken", "mistaking")]
+        [InlineData("misunderstand", "misunderstand", "misunderstands", "misunderstood", "misunderstood", "misunderstanding")]
+        [InlineData("mow", "mow", "mows", "mowed", "mowed;mown", "mowing")]
+        public void Generate_UsesCompleteMParadigms(
+            string lemma,
+            string baseFormsText,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(SortedSourceForms(baseFormsText), FormsOfKind(forms, EnglishFormKind.Base));
+            Assert.Equal(SortedSourceForms(thirdPerson), FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(SortedSourceForms(past), FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(SortedSourceForms(pastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(SortedSourceForms(presentParticiple), FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+        }
+
+        [Theory]
+        [InlineData("mean", "meant", "Past,PastParticiple")]
+        [InlineData("meet", "met", "Past,PastParticiple")]
+        [InlineData("melt", "molten", "PastParticiple")]
+        [InlineData("misdeal", "misdealt", "Past,PastParticiple")]
+        [InlineData("misgive", "misgave", "Past")]
+        [InlineData("misgive", "misgiven", "PastParticiple")]
+        [InlineData("mislay", "mislaid", "Past,PastParticiple")]
+        [InlineData("misspell", "misspelt", "Past,PastParticiple")]
+        [InlineData("misspend", "misspent", "Past,PastParticiple")]
+        [InlineData("mistake", "mistaken", "PastParticiple")]
+        [InlineData("mistake", "mistook", "Past")]
+        [InlineData("misunderstand", "misunderstood", "Past,PastParticiple")]
+        [InlineData("mow", "mown", "PastParticiple")]
+        public void Generate_ClassifiesMSourceFormsByExactFormKind(
+            string lemma,
+            string sourceForm,
+            string sourceKindsText)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { sourceForm }));
+            var expectedKinds = sourceKindsText
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(value => Enum.Parse<EnglishFormKind>(value, ignoreCase: false))
+                .OrderBy(value => value)
+                .ToArray();
+            var actualKinds = forms
+                .Where(form => form.Surface == sourceForm && form.SourceKind == EnglishFormSourceKind.Source)
+                .Select(form => form.Kind)
+                .OrderBy(value => value)
+                .ToArray();
+
+            Assert.Equal(expectedKinds, actualKinds);
+            foreach (var kind in expectedKinds)
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, kind, sourceForm).SourceKind);
+                Assert.Equal(1, forms.Count(form => form.Kind == kind && form.Surface == sourceForm));
+            }
+        }
+
+        [Fact]
+        public void Generate_PreservesMCatalogAlternativesAndParticipleOnlyForms()
+        {
+            var generator = new EnglishFormGenerator();
+
+            var melt = generator.Generate(CreateLexeme("melt", "v", EnglishPartOfSpeech.Verb, new[] { "molten" }));
+            Assert.Equal(new[] { "melted" }, FormsOfKind(melt, EnglishFormKind.Past));
+            Assert.Equal(new[] { "melted", "molten" }, FormsOfKind(melt, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(melt, EnglishFormKind.PastParticiple, "molten").SourceKind);
+            Assert.DoesNotContain(melt, form => form.Kind == EnglishFormKind.Past && form.Surface == "molten");
+
+            var mow = generator.Generate(CreateLexeme("mow", "v", EnglishPartOfSpeech.Verb, new[] { "mown" }));
+            Assert.Equal(new[] { "mowed" }, FormsOfKind(mow, EnglishFormKind.Past));
+            Assert.Equal(new[] { "mowed", "mown" }, FormsOfKind(mow, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(mow, EnglishFormKind.PastParticiple, "mown").SourceKind);
+            Assert.DoesNotContain(mow, form => form.Kind == EnglishFormKind.Past && form.Surface == "mown");
+
+            var misspell = generator.Generate(CreateLexeme("misspell", "v", EnglishPartOfSpeech.Verb, new[] { "misspelt" }));
+            Assert.Equal(new[] { "misspelled", "misspelt" }, FormsOfKind(misspell, EnglishFormKind.Past));
+            Assert.Equal(new[] { "misspelled", "misspelt" }, FormsOfKind(misspell, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(misspell, EnglishFormKind.Past, "misspelt").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(misspell, EnglishFormKind.Past, "misspelled").SourceKind);
+            Assert.Equal(1, misspell.Count(form => form.Kind == EnglishFormKind.Past && form.Surface == "misspelt"));
+            Assert.Equal(1, misspell.Count(form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "misspelt"));
+        }
+
+        [Theory]
+        [InlineData("mean", "meaned")]
+        [InlineData("meet", "meeted")]
+        [InlineData("misdeal", "misdealed")]
+        [InlineData("misgive", "misgived")]
+        [InlineData("mislay", "mislayed")]
+        [InlineData("misspend", "misspended")]
+        [InlineData("mistake", "mistaked")]
+        [InlineData("misunderstand", "misunderstanded")]
+        public void Generate_DoesNotEmitMPseudoForms(string lemma, string pseudoForm)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.DoesNotContain(forms, form => form.Surface == pseudoForm);
+        }
+
+        [Theory]
         [InlineData("abide", "abode", "Past,PastParticiple")]
         [InlineData("aby", "abought;abye", "Past,PastParticiple;Base")]
         [InlineData("address", "addrest", "Past,PastParticiple")]
