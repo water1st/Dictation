@@ -105,6 +105,42 @@ namespace Dictation.Tests.LexiconBuilder
             Assert.DoesNotContain(forms, form => form.Surface == "played" && form.SourceKind == EnglishFormSourceKind.Rule);
         }
 
+        [Theory]
+        [InlineData("burn", "burnt", "burned", "burned;burnt", "burned;burnt")]
+        [InlineData("beseech", "besought", "beseeched", "beseeched;besought", "beseeched;besought")]
+        [InlineData("bestrew", "bestrewn", "bestrewed", "bestrewed", "bestrewed;bestrewn")]
+        public void Generate_PreservesAllCatalogAlternativesWhenSourceContainsOnlyException(
+            string lemma,
+            string sourceForm,
+            string expectedComplement,
+            string expectedPast,
+            string expectedPastParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { sourceForm }));
+
+            Assert.Equal(SplitSourceForms(expectedPast), FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(SplitSourceForms(expectedPastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            if (SplitSourceForms(expectedPast).Contains(sourceForm, StringComparer.Ordinal))
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, EnglishFormKind.Past, sourceForm).SourceKind);
+            }
+
+            if (SplitSourceForms(expectedPastParticiple).Contains(sourceForm, StringComparer.Ordinal))
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, EnglishFormKind.PastParticiple, sourceForm).SourceKind);
+            }
+
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(forms, EnglishFormKind.Past, expectedComplement).SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(forms, EnglishFormKind.PastParticiple, expectedComplement).SourceKind);
+            Assert.Equal(1, forms.Count(form => form.Kind == EnglishFormKind.Past && form.Surface == expectedComplement));
+            Assert.Equal(1, forms.Count(form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == sourceForm));
+            Assert.Equal(1, forms.Count(form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == expectedComplement));
+        }
+
         [Fact]
         public void Generate_VisitDoesNotDoubleItsMiddleConsonant()
         {
@@ -228,6 +264,139 @@ namespace Dictation.Tests.LexiconBuilder
             Assert.DoesNotContain(have, form => form.Surface == "haved");
         }
 
+        [Theory]
+        [InlineData("abide", "abode", "Past,PastParticiple")]
+        [InlineData("aby", "abought;abye", "Past,PastParticiple;Base")]
+        [InlineData("address", "addrest", "Past,PastParticiple")]
+        [InlineData("arise", "arisen;arose", "PastParticiple;Past")]
+        [InlineData("awake", "awoke;awoken", "Past,PastParticiple;PastParticiple")]
+        [InlineData("baby-sit", "baby-sat;baby-sitting", "Past,PastParticiple;PresentParticiple")]
+        [InlineData("backbite", "backbit;backbitten", "Past;PastParticiple")]
+        [InlineData("backslide", "backslid;backslidden", "Past,PastParticiple;PastParticiple")]
+        [InlineData("bad", "worse;worst", "Comparative;Superlative")]
+        [InlineData("bear", "bore;born;borne", "Past;PastParticiple;PastParticiple")]
+        [InlineData("befall", "befallen;befell", "PastParticiple;Past")]
+        [InlineData("beget", "begat;begetting;begot;begotten", "Past;PresentParticiple;Past,PastParticiple;PastParticiple")]
+        [InlineData("begin", "began;beginning;begun", "Past;PresentParticiple;PastParticiple")]
+        [InlineData("behold", "beheld;beholden", "Past,PastParticiple;PastParticiple")]
+        [InlineData("bend", "bent", "Past,PastParticiple")]
+        [InlineData("beseech", "besought", "Past,PastParticiple")]
+        [InlineData("bespeak", "bespoke;bespoken", "Past;PastParticiple")]
+        [InlineData("bestrew", "bestrewn", "PastParticiple")]
+        [InlineData("bestride", "bestrid;bestridden;bestrode", "Past;PastParticiple;Past")]
+        [InlineData("bethink", "bethought", "Past,PastParticiple")]
+        [InlineData("bid", "bade;bidden;bidding", "Past,PastParticiple;PastParticiple;PresentParticiple")]
+        [InlineData("bind", "bound", "Past,PastParticiple")]
+        [InlineData("bite", "bit;bitten", "Past;PastParticiple")]
+        [InlineData("bless", "blest", "Past,PastParticiple")]
+        [InlineData("blow", "blew;blown", "Past;PastParticiple")]
+        [InlineData("break", "broke;broken", "Past;PastParticiple")]
+        [InlineData("bring", "brought", "Past,PastParticiple")]
+        [InlineData("browbeat", "browbeaten", "PastParticiple")]
+        [InlineData("build", "built", "Past,PastParticiple")]
+        [InlineData("burn", "burnt", "Past,PastParticiple")]
+        [InlineData("buy", "bought", "Past,PastParticiple")]
+        [InlineData("bypass", "bypast", "Past,PastParticiple")]
+        public void Generate_ClassifiesAbSourceFormsByExplicitKind(
+            string lemma,
+            string sourceFormsText,
+            string sourceKindsText)
+        {
+            var sourceForms = SplitSourceForms(sourceFormsText);
+            var expectedKindGroups = sourceKindsText.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                lemma == "bad" ? EnglishPartOfSpeech.Adjective : EnglishPartOfSpeech.Verb,
+                sourceForms));
+
+            Assert.Equal(sourceForms.Length, expectedKindGroups.Length);
+            for (var index = 0; index < sourceForms.Length; index++)
+            {
+                var expectedKinds = expectedKindGroups[index]
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(value => Enum.Parse<EnglishFormKind>(value, ignoreCase: false))
+                    .OrderBy(value => value)
+                    .ToArray();
+                var actualKinds = forms
+                    .Where(form => form.SourceKind == EnglishFormSourceKind.Source && form.Surface == sourceForms[index])
+                    .Select(form => form.Kind)
+                    .OrderBy(value => value)
+                    .ToArray();
+
+                Assert.Equal(expectedKinds, actualKinds);
+            }
+        }
+
+        [Theory]
+        [InlineData("abide", "abides", "abided;abode", "abided;abode", "abiding")]
+        [InlineData("aby", "abyes;abys", "abought;abyed", "abought;abyed", "abyeing;abying")]
+        [InlineData("address", "addresses", "addressed;addrest", "addressed;addrest", "addressing")]
+        [InlineData("arise", "arises", "arose", "arisen", "arising")]
+        [InlineData("awake", "awakes", "awaked;awoke", "awaked;awoke;awoken", "awaking")]
+        [InlineData("baby-sit", "baby-sits", "baby-sat", "baby-sat", "baby-sitting")]
+        [InlineData("backbite", "backbites", "backbit", "backbitten", "backbiting")]
+        [InlineData("backslide", "backslides", "backslid", "backslid;backslidden", "backsliding")]
+        [InlineData("bear", "bears", "bore", "born;borne", "bearing")]
+        [InlineData("befall", "befalls", "befell", "befallen", "befalling")]
+        [InlineData("beget", "begets", "begat;begot", "begot;begotten", "begetting")]
+        [InlineData("begin", "begins", "began", "begun", "beginning")]
+        [InlineData("behold", "beholds", "beheld", "beheld;beholden", "beholding")]
+        [InlineData("bend", "bends", "bent", "bent", "bending")]
+        [InlineData("beseech", "beseeches", "beseeched;besought", "beseeched;besought", "beseeching")]
+        [InlineData("bespeak", "bespeaks", "bespoke", "bespoken", "bespeaking")]
+        [InlineData("bestrew", "bestrews", "bestrewed", "bestrewed;bestrewn", "bestrewing")]
+        [InlineData("bestride", "bestrides", "bestrid;bestrode", "bestridden", "bestriding")]
+        [InlineData("bethink", "bethinks", "bethought", "bethought", "bethinking")]
+        [InlineData("bid", "bids", "bade;bid", "bade;bid;bidden", "bidding")]
+        [InlineData("bind", "binds", "bound", "bound", "binding")]
+        [InlineData("bite", "bites", "bit", "bitten", "biting")]
+        [InlineData("bless", "blesses", "blessed;blest", "blessed;blest", "blessing")]
+        [InlineData("blow", "blows", "blew", "blown", "blowing")]
+        [InlineData("break", "breaks", "broke", "broken", "breaking")]
+        [InlineData("bring", "brings", "brought", "brought", "bringing")]
+        [InlineData("browbeat", "browbeats", "browbeat", "browbeaten", "browbeating")]
+        [InlineData("build", "builds", "built", "built", "building")]
+        [InlineData("burn", "burns", "burned;burnt", "burned;burnt", "burning")]
+        [InlineData("buy", "buys", "bought", "bought", "buying")]
+        [InlineData("bypass", "bypasses", "bypassed;bypast", "bypassed;bypast", "bypassing")]
+        public void Generate_UsesCompleteAbVerbParadigmsWithoutPseudoForms(
+            string lemma,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(SplitSourceForms(thirdPerson), FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(SplitSourceForms(past), FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(SplitSourceForms(pastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(SplitSourceForms(presentParticiple), FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+            Assert.DoesNotContain(forms, form => form.Surface is "arised" or "backbited" or "backslided" or "beated" or "becomed" or "bended" or "binded" or "bited" or "blowed" or "breaked" or "bringed" or "builded" or "buyed" or "abies");
+        }
+
+        [Fact]
+        public void Generate_AbyUsesBothBaseAndThirdPersonAlternativesWithoutAbies()
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                "aby",
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(new[] { "aby", "abye" }, FormsOfKind(forms, EnglishFormKind.Base));
+            Assert.Equal(new[] { "abyes", "abys" }, FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(new[] { "abought", "abyed" }, FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(new[] { "abought", "abyed" }, FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(new[] { "abyeing", "abying" }, FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+            Assert.DoesNotContain(forms, form => form.Surface == "abies");
+        }
+
         [Fact]
         public void Generate_DoesNotInflectPhrase()
         {
@@ -290,6 +459,11 @@ namespace Dictation.Tests.LexiconBuilder
         private static EnglishForm Find(IReadOnlyList<EnglishForm> forms, EnglishFormKind kind)
         {
             return forms.Single(form => form.Kind == kind);
+        }
+
+        private static EnglishForm Find(IReadOnlyList<EnglishForm> forms, EnglishFormKind kind, string surface)
+        {
+            return forms.Single(form => form.Kind == kind && form.Surface == surface);
         }
 
         private static IReadOnlyList<string> FormsOfKind(IReadOnlyList<EnglishForm> forms, EnglishFormKind kind)

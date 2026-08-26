@@ -23,6 +23,12 @@ namespace Dictation.LexiconBuilder.WordNet
                 return SortForms(forms);
             }
 
+            var explicitParadigmKinds = EnglishIrregularParadigms.TryGetParadigm(
+                lexeme.Lemma,
+                lexeme.PartOfSpeech,
+                out var explicitParadigm)
+                ? explicitParadigm.Keys.ToHashSet()
+                : new HashSet<EnglishFormKind>();
             var ruleForms = BuildRuleForms(lexeme.Lemma, lexeme.PartOfSpeech);
             var sourceKinds = new HashSet<EnglishFormKind>();
             foreach (var sourceForm in lexeme.SourceForms)
@@ -37,7 +43,8 @@ namespace Dictation.LexiconBuilder.WordNet
 
             foreach (var ruleForm in ruleForms)
             {
-                if (!sourceKinds.Contains(ruleForm.Kind))
+                if (explicitParadigmKinds.Contains(ruleForm.Kind)
+                    || !sourceKinds.Contains(ruleForm.Kind))
                 {
                     AddForm(forms, ruleForm.Surface, ruleForm.Kind, EnglishFormSourceKind.Rule);
                 }
