@@ -1126,6 +1126,190 @@ namespace Dictation.Tests.LexiconBuilder
         }
 
         [Theory]
+        [InlineData("overbear", "overbear", "overbears", "overbore", "overborne", "overbearing")]
+        [InlineData("overbid", "overbid", "overbids", "overbid", "overbid;overbidden", "overbidding")]
+        [InlineData("overdo", "overdo", "overdoes", "overdid", "overdone", "overdoing")]
+        [InlineData("overdraw", "overdraw", "overdraws", "overdrew", "overdrawn", "overdrawing")]
+        [InlineData("overdrive", "overdrive", "overdrives", "overdrove", "overdriven", "overdriving")]
+        [InlineData("overflow", "overflow", "overflows", "overflowed", "overflowed;overflown", "overflowing")]
+        [InlineData("overfly", "overfly", "overflies", "overflew", "overflown", "overflying")]
+        [InlineData("overgrow", "overgrow", "overgrows", "overgrew", "overgrown", "overgrowing")]
+        [InlineData("overhang", "overhang", "overhangs", "overhung", "overhung", "overhanging")]
+        [InlineData("overhear", "overhear", "overhears", "overheard", "overheard", "overhearing")]
+        [InlineData("overlay", "overlay", "overlays", "overlaid", "overlaid", "overlaying")]
+        [InlineData("overlie", "overlie", "overlies", "overlay", "overlain", "overlying")]
+        [InlineData("overpay", "overpay", "overpays", "overpaid", "overpaid", "overpaying")]
+        [InlineData("override", "override", "overrides", "overrode", "overridden", "overriding")]
+        [InlineData("overrun", "overrun", "overruns", "overran", "overrun", "overrunning")]
+        [InlineData("oversee", "oversee", "oversees", "oversaw", "overseen", "overseeing")]
+        [InlineData("oversew", "oversew", "oversews", "oversewed", "oversewed;oversewn", "oversewing")]
+        [InlineData("overshoot", "overshoot", "overshoots", "overshot", "overshot", "overshooting")]
+        [InlineData("oversleep", "oversleep", "oversleeps", "overslept", "overslept", "oversleeping")]
+        [InlineData("overspend", "overspend", "overspends", "overspent", "overspent", "overspending")]
+        [InlineData("overtake", "overtake", "overtakes", "overtook", "overtaken", "overtaking")]
+        [InlineData("overthrow", "overthrow", "overthrows", "overthrew", "overthrown", "overthrowing")]
+        [InlineData("overwrite", "overwrite", "overwrites", "overwrote", "overwritten", "overwriting")]
+        public void Generate_UsesCompleteOverParadigms(
+            string lemma,
+            string baseFormsText,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(SortedSourceForms(baseFormsText), FormsOfKind(forms, EnglishFormKind.Base));
+            Assert.Equal(SortedSourceForms(thirdPerson), FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(SortedSourceForms(past), FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(SortedSourceForms(pastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(SortedSourceForms(presentParticiple), FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+        }
+
+        [Theory]
+        [InlineData("overbear", "overbore", "Past")]
+        [InlineData("overbear", "overborne", "PastParticiple")]
+        [InlineData("overbid", "overbidden", "PastParticiple")]
+        [InlineData("overdo", "overdid", "Past")]
+        [InlineData("overdo", "overdone", "PastParticiple")]
+        [InlineData("overdraw", "overdrawn", "PastParticiple")]
+        [InlineData("overdraw", "overdrew", "Past")]
+        [InlineData("overdrive", "overdriven", "PastParticiple")]
+        [InlineData("overdrive", "overdrove", "Past")]
+        [InlineData("overflow", "overflown", "PastParticiple")]
+        [InlineData("overfly", "overflown", "PastParticiple")]
+        [InlineData("overfly", "overflew", "Past")]
+        [InlineData("overgrow", "overgrew", "Past")]
+        [InlineData("overgrow", "overgrown", "PastParticiple")]
+        [InlineData("overhang", "overhung", "Past,PastParticiple")]
+        [InlineData("overhear", "overheard", "Past,PastParticiple")]
+        [InlineData("overlay", "overlaid", "Past,PastParticiple")]
+        [InlineData("overlie", "overlay", "Past")]
+        [InlineData("overlie", "overlain", "PastParticiple")]
+        [InlineData("overpay", "overpaid", "Past,PastParticiple")]
+        [InlineData("override", "overridden", "PastParticiple")]
+        [InlineData("override", "overrode", "Past")]
+        [InlineData("overrun", "overran", "Past")]
+        [InlineData("oversee", "oversaw", "Past")]
+        [InlineData("oversee", "overseen", "PastParticiple")]
+        [InlineData("oversew", "oversewn", "PastParticiple")]
+        [InlineData("overshoot", "overshot", "Past,PastParticiple")]
+        [InlineData("oversleep", "overslept", "Past,PastParticiple")]
+        [InlineData("overspend", "overspent", "Past,PastParticiple")]
+        [InlineData("overtake", "overtaken", "PastParticiple")]
+        [InlineData("overtake", "overtook", "Past")]
+        [InlineData("overthrow", "overthrew", "Past")]
+        [InlineData("overthrow", "overthrown", "PastParticiple")]
+        [InlineData("overwrite", "overwritten", "PastParticiple")]
+        [InlineData("overwrite", "overwrote", "Past")]
+        public void Generate_ClassifiesOverSourceFormsByExactFormKind(
+            string lemma,
+            string sourceForm,
+            string sourceKindsText)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { sourceForm }));
+            var expectedKinds = sourceKindsText
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(value => Enum.Parse<EnglishFormKind>(value, ignoreCase: false))
+                .OrderBy(value => value)
+                .ToArray();
+            var actualKinds = forms
+                .Where(form => form.Surface == sourceForm && form.SourceKind == EnglishFormSourceKind.Source)
+                .Select(form => form.Kind)
+                .OrderBy(value => value)
+                .ToArray();
+
+            Assert.Equal(expectedKinds, actualKinds);
+            foreach (var kind in expectedKinds)
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, kind, sourceForm).SourceKind);
+                Assert.Equal(1, forms.Count(form => form.Kind == kind && form.Surface == sourceForm));
+            }
+        }
+
+        [Fact]
+        public void Generate_PreservesOverCatalogAlternativesAndSameSurfaceKinds()
+        {
+            var generator = new EnglishFormGenerator();
+
+            var overbid = generator.Generate(CreateLexeme("overbid", "v", EnglishPartOfSpeech.Verb, new[] { "overbid" }));
+            Assert.Equal(new[] { "overbid" }, FormsOfKind(overbid, EnglishFormKind.Past));
+            Assert.Equal(new[] { "overbid", "overbidden" }, FormsOfKind(overbid, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(overbid, EnglishFormKind.Past, "overbid").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(overbid, EnglishFormKind.PastParticiple, "overbid").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(overbid, EnglishFormKind.PastParticiple, "overbidden").SourceKind);
+            Assert.DoesNotContain(overbid, form => form.Kind == EnglishFormKind.Past && form.Surface == "overbidden");
+
+            var overflow = generator.Generate(CreateLexeme("overflow", "v", EnglishPartOfSpeech.Verb, new[] { "overflown" }));
+            Assert.Equal(new[] { "overflowed" }, FormsOfKind(overflow, EnglishFormKind.Past));
+            Assert.Equal(new[] { "overflowed", "overflown" }, FormsOfKind(overflow, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(overflow, EnglishFormKind.PastParticiple, "overflown").SourceKind);
+            Assert.DoesNotContain(overflow, form => form.Kind == EnglishFormKind.Past && form.Surface == "overflown");
+
+            var overlay = generator.Generate(CreateLexeme("overlay", "v", EnglishPartOfSpeech.Verb, new[] { "overlaid" }));
+            var overlie = generator.Generate(CreateLexeme("overlie", "v", EnglishPartOfSpeech.Verb, new[] { "overlay" }));
+            Assert.Equal(new[] { "overlaid" }, FormsOfKind(overlay, EnglishFormKind.Past));
+            Assert.Equal(new[] { "overlaid" }, FormsOfKind(overlay, EnglishFormKind.PastParticiple));
+            Assert.Equal(new[] { "overlay" }, FormsOfKind(overlie, EnglishFormKind.Past));
+            Assert.Equal(new[] { "overlain" }, FormsOfKind(overlie, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(overlay, EnglishFormKind.Past, "overlaid").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(overlie, EnglishFormKind.Past, "overlay").SourceKind);
+
+            var overrun = generator.Generate(CreateLexeme("overrun", "v", EnglishPartOfSpeech.Verb, Array.Empty<string>()));
+            Assert.Equal(new[] { "overrun" }, FormsOfKind(overrun, EnglishFormKind.Base));
+            Assert.Equal(new[] { "overrun" }, FormsOfKind(overrun, EnglishFormKind.PastParticiple));
+            Assert.Equal(1, overrun.Count(form => form.Kind == EnglishFormKind.Base && form.Surface == "overrun"));
+            Assert.Equal(1, overrun.Count(form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "overrun"));
+
+            var oversew = generator.Generate(CreateLexeme("oversew", "v", EnglishPartOfSpeech.Verb, new[] { "oversewn" }));
+            Assert.Equal(new[] { "oversewed" }, FormsOfKind(oversew, EnglishFormKind.Past));
+            Assert.Equal(new[] { "oversewed", "oversewn" }, FormsOfKind(oversew, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(oversew, EnglishFormKind.PastParticiple, "oversewn").SourceKind);
+            Assert.DoesNotContain(oversew, form => form.Kind == EnglishFormKind.Past && form.Surface == "oversewn");
+        }
+
+        [Theory]
+        [InlineData("overbear", "overbeared")]
+        [InlineData("overbid", "overbided")]
+        [InlineData("overdo", "overdoed")]
+        [InlineData("overdraw", "overdrawed")]
+        [InlineData("overdrive", "overdrived")]
+        [InlineData("overfly", "overflied")]
+        [InlineData("overgrow", "overgrowed")]
+        [InlineData("overhang", "overhanged")]
+        [InlineData("overhear", "overheared")]
+        [InlineData("overlay", "overlayed")]
+        [InlineData("overlie", "overlied")]
+        [InlineData("overpay", "overpayed")]
+        [InlineData("override", "overrided")]
+        [InlineData("overrun", "overruned")]
+        [InlineData("oversee", "overseed")]
+        [InlineData("overshoot", "overshooted")]
+        [InlineData("oversleep", "oversleeped")]
+        [InlineData("overspend", "overspended")]
+        [InlineData("overtake", "overtaked")]
+        [InlineData("overthrow", "overthrowed")]
+        [InlineData("overwrite", "overwrited")]
+        public void Generate_DoesNotEmitOverPseudoForms(string lemma, string pseudoForm)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.DoesNotContain(forms, form => form.Surface == pseudoForm);
+        }
+
+        [Theory]
         [InlineData("abide", "abode", "Past,PastParticiple")]
         [InlineData("aby", "abought;abye", "Past,PastParticiple;Base")]
         [InlineData("address", "addrest", "Past,PastParticiple")]

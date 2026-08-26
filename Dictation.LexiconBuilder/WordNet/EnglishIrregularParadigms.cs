@@ -522,7 +522,45 @@ namespace Dictation.LexiconBuilder.WordNet
                     (EnglishFormKind.PastParticiple, "outshined"),
                     (EnglishFormKind.PastParticiple, "outshone"),
                     (EnglishFormKind.PresentParticiple, "outshining")),
-                [("outwear", EnglishPartOfSpeech.Verb)] = CreateVerb("outwears", "outwore", "outworn", "outwearing")
+                [("outwear", EnglishPartOfSpeech.Verb)] = CreateVerb("outwears", "outwore", "outworn", "outwearing"),
+                [("overbear", EnglishPartOfSpeech.Verb)] = CreateVerb("overbears", "overbore", "overborne", "overbearing"),
+                [("overbid", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "overbids"),
+                    (EnglishFormKind.Past, "overbid"),
+                    (EnglishFormKind.PastParticiple, "overbid"),
+                    (EnglishFormKind.PastParticiple, "overbidden"),
+                    (EnglishFormKind.PresentParticiple, "overbidding")),
+                [("overdo", EnglishPartOfSpeech.Verb)] = CreateVerb("overdoes", "overdid", "overdone", "overdoing"),
+                [("overdraw", EnglishPartOfSpeech.Verb)] = CreateVerb("overdraws", "overdrew", "overdrawn", "overdrawing"),
+                [("overdrive", EnglishPartOfSpeech.Verb)] = CreateVerb("overdrives", "overdrove", "overdriven", "overdriving"),
+                [("overflow", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "overflows"),
+                    (EnglishFormKind.Past, "overflowed"),
+                    (EnglishFormKind.PastParticiple, "overflowed"),
+                    (EnglishFormKind.PastParticiple, "overflown"),
+                    (EnglishFormKind.PresentParticiple, "overflowing")),
+                [("overfly", EnglishPartOfSpeech.Verb)] = CreateVerb("overflies", "overflew", "overflown", "overflying"),
+                [("overgrow", EnglishPartOfSpeech.Verb)] = CreateVerb("overgrows", "overgrew", "overgrown", "overgrowing"),
+                [("overhang", EnglishPartOfSpeech.Verb)] = CreateVerb("overhangs", "overhung", "overhung", "overhanging"),
+                [("overhear", EnglishPartOfSpeech.Verb)] = CreateVerb("overhears", "overheard", "overheard", "overhearing"),
+                [("overlay", EnglishPartOfSpeech.Verb)] = CreateVerb("overlays", "overlaid", "overlaid", "overlaying"),
+                [("overlie", EnglishPartOfSpeech.Verb)] = CreateVerb("overlies", "overlay", "overlain", "overlying"),
+                [("overpay", EnglishPartOfSpeech.Verb)] = CreateVerb("overpays", "overpaid", "overpaid", "overpaying"),
+                [("override", EnglishPartOfSpeech.Verb)] = CreateVerb("overrides", "overrode", "overridden", "overriding"),
+                [("overrun", EnglishPartOfSpeech.Verb)] = CreateVerb("overruns", "overran", "overrun", "overrunning"),
+                [("oversee", EnglishPartOfSpeech.Verb)] = CreateVerb("oversees", "oversaw", "overseen", "overseeing"),
+                [("oversew", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "oversews"),
+                    (EnglishFormKind.Past, "oversewed"),
+                    (EnglishFormKind.PastParticiple, "oversewed"),
+                    (EnglishFormKind.PastParticiple, "oversewn"),
+                    (EnglishFormKind.PresentParticiple, "oversewing")),
+                [("overshoot", EnglishPartOfSpeech.Verb)] = CreateVerb("overshoots", "overshot", "overshot", "overshooting"),
+                [("oversleep", EnglishPartOfSpeech.Verb)] = CreateVerb("oversleeps", "overslept", "overslept", "oversleeping"),
+                [("overspend", EnglishPartOfSpeech.Verb)] = CreateVerb("overspends", "overspent", "overspent", "overspending"),
+                [("overtake", EnglishPartOfSpeech.Verb)] = CreateVerb("overtakes", "overtook", "overtaken", "overtaking"),
+                [("overthrow", EnglishPartOfSpeech.Verb)] = CreateVerb("overthrows", "overthrew", "overthrown", "overthrowing"),
+                [("overwrite", EnglishPartOfSpeech.Verb)] = CreateVerb("overwrites", "overwrote", "overwritten", "overwriting")
             };
 
         internal static bool TryGetParadigm(
