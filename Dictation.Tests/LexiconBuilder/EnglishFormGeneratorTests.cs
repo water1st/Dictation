@@ -1592,6 +1592,161 @@ namespace Dictation.Tests.LexiconBuilder
         }
 
         [Theory]
+        [InlineData("saw", "saw", "saws", "sawed", "sawed;sawn", "sawing")]
+        [InlineData("see", "see", "sees", "saw", "seen", "seeing")]
+        [InlineData("seek", "seek", "seeks", "sought", "sought", "seeking")]
+        [InlineData("sell", "sell", "sells", "sold", "sold", "selling")]
+        [InlineData("send", "send", "sends", "sent", "sent", "sending")]
+        [InlineData("sew", "sew", "sews", "sewed", "sewed;sewn", "sewing")]
+        [InlineData("shake", "shake", "shakes", "shook", "shaken", "shaking")]
+        [InlineData("shave", "shave", "shaves", "shaved", "shaved;shaven", "shaving")]
+        [InlineData("shew", "shew", "shews", "shewed", "shewed;shewn", "shewing")]
+        [InlineData("shine", "shine", "shines", "shined;shone", "shined;shone", "shining")]
+        [InlineData("shit", "shit", "shits", "shit;shat", "shit;shat", "shitting")]
+        [InlineData("shoe", "shoe", "shoes", "shod;shoed", "shod;shoed", "shoeing")]
+        [InlineData("shoot", "shoot", "shoots", "shot", "shot", "shooting")]
+        [InlineData("show", "show", "shows", "showed", "showed;shown", "showing")]
+        [InlineData("shrink", "shrink", "shrinks", "shrank;shrunk", "shrunk;shrunken", "shrinking")]
+        [InlineData("shrive", "shrive", "shrives", "shrived;shrove", "shrived;shriven", "shriving")]
+        public void Generate_UsesCompleteS1Paradigms(
+            string lemma,
+            string baseFormsText,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(SortedSourceForms(baseFormsText), FormsOfKind(forms, EnglishFormKind.Base));
+            Assert.Equal(SortedSourceForms(thirdPerson), FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(SortedSourceForms(past), FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(SortedSourceForms(pastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(SortedSourceForms(presentParticiple), FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+        }
+
+        [Theory]
+        [InlineData("saw", "sawn", "PastParticiple")]
+        [InlineData("see", "saw", "Past")]
+        [InlineData("see", "seen", "PastParticiple")]
+        [InlineData("seek", "sought", "Past,PastParticiple")]
+        [InlineData("sell", "sold", "Past,PastParticiple")]
+        [InlineData("send", "sent", "Past,PastParticiple")]
+        [InlineData("sew", "sewn", "PastParticiple")]
+        [InlineData("shake", "shaken", "PastParticiple")]
+        [InlineData("shake", "shook", "Past")]
+        [InlineData("shave", "shaven", "PastParticiple")]
+        [InlineData("shew", "shewn", "PastParticiple")]
+        [InlineData("shine", "shone", "Past,PastParticiple")]
+        [InlineData("shit", "shat", "Past,PastParticiple")]
+        [InlineData("shoe", "shod", "Past,PastParticiple")]
+        [InlineData("shoot", "shot", "Past,PastParticiple")]
+        [InlineData("show", "shown", "PastParticiple")]
+        [InlineData("shrink", "shrank", "Past")]
+        [InlineData("shrink", "shrunk", "Past,PastParticiple")]
+        [InlineData("shrink", "shrunken", "PastParticiple")]
+        [InlineData("shrive", "shriven", "PastParticiple")]
+        [InlineData("shrive", "shrove", "Past")]
+        public void Generate_ClassifiesS1SourceFormsByExactFormKind(
+            string lemma,
+            string sourceForm,
+            string sourceKindsText)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { sourceForm }));
+            var expectedKinds = sourceKindsText
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(value => Enum.Parse<EnglishFormKind>(value, ignoreCase: false))
+                .OrderBy(value => value)
+                .ToArray();
+            var actualKinds = forms
+                .Where(form => form.Surface == sourceForm && form.SourceKind == EnglishFormSourceKind.Source)
+                .Select(form => form.Kind)
+                .OrderBy(value => value)
+                .ToArray();
+
+            Assert.Equal(expectedKinds, actualKinds);
+            foreach (var kind in expectedKinds)
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, kind, sourceForm).SourceKind);
+                Assert.Equal(1, forms.Count(form => form.Kind == kind && form.Surface == sourceForm));
+            }
+        }
+
+        [Fact]
+        public void Generate_PreservesS1AlternativesAndSeparatesSharedSurfaces()
+        {
+            var generator = new EnglishFormGenerator();
+
+            var saw = generator.Generate(CreateLexeme("saw", "v", EnglishPartOfSpeech.Verb, new[] { "sawn" }));
+            Assert.Equal(new[] { "sawed" }, FormsOfKind(saw, EnglishFormKind.Past));
+            Assert.Equal(new[] { "sawed", "sawn" }, FormsOfKind(saw, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(saw, EnglishFormKind.PastParticiple, "sawn").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(saw, EnglishFormKind.PastParticiple, "sawed").SourceKind);
+            Assert.DoesNotContain(saw, form => form.Kind == EnglishFormKind.Past && form.Surface == "sawn");
+
+            var shine = generator.Generate(CreateLexeme("shine", "v", EnglishPartOfSpeech.Verb, new[] { "shone" }));
+            Assert.Equal(new[] { "shined", "shone" }, FormsOfKind(shine, EnglishFormKind.Past));
+            Assert.Equal(new[] { "shined", "shone" }, FormsOfKind(shine, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(shine, EnglishFormKind.Past, "shone").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(shine, EnglishFormKind.PastParticiple, "shone").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(shine, EnglishFormKind.Past, "shined").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(shine, EnglishFormKind.PastParticiple, "shined").SourceKind);
+
+            var shit = generator.Generate(CreateLexeme("shit", "v", EnglishPartOfSpeech.Verb, Array.Empty<string>()));
+            Assert.Equal(new[] { "shit" }, FormsOfKind(shit, EnglishFormKind.Base));
+            Assert.Equal(1, shit.Count(form => form.Kind == EnglishFormKind.Base && form.Surface == "shit"));
+            Assert.Equal(new[] { "shat", "shit" }, FormsOfKind(shit, EnglishFormKind.Past));
+            Assert.Equal(new[] { "shat", "shit" }, FormsOfKind(shit, EnglishFormKind.PastParticiple));
+            Assert.Equal(1, shit.Count(form => form.Kind == EnglishFormKind.Past && form.Surface == "shit"));
+            Assert.Equal(1, shit.Count(form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "shit"));
+
+            var shoe = generator.Generate(CreateLexeme("shoe", "v", EnglishPartOfSpeech.Verb, new[] { "shod" }));
+            Assert.Equal(new[] { "shod", "shoed" }, FormsOfKind(shoe, EnglishFormKind.Past));
+            Assert.Equal(new[] { "shod", "shoed" }, FormsOfKind(shoe, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(shoe, EnglishFormKind.Past, "shod").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(shoe, EnglishFormKind.PastParticiple, "shod").SourceKind);
+
+            var shrink = generator.Generate(CreateLexeme("shrink", "v", EnglishPartOfSpeech.Verb, new[] { "shrunk" }));
+            Assert.Equal(new[] { "shrank", "shrunk" }, FormsOfKind(shrink, EnglishFormKind.Past));
+            Assert.Equal(new[] { "shrunk", "shrunken" }, FormsOfKind(shrink, EnglishFormKind.PastParticiple));
+            Assert.DoesNotContain(shrink, form => form.Kind == EnglishFormKind.Past && form.Surface == "shrunken");
+
+            var shrive = generator.Generate(CreateLexeme("shrive", "v", EnglishPartOfSpeech.Verb, new[] { "shrove" }));
+            Assert.Equal(new[] { "shrived", "shrove" }, FormsOfKind(shrive, EnglishFormKind.Past));
+            Assert.Equal(new[] { "shrived", "shriven" }, FormsOfKind(shrive, EnglishFormKind.PastParticiple));
+            Assert.DoesNotContain(shrive, form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "shrove");
+        }
+
+        [Theory]
+        [InlineData("see", "seed")]
+        [InlineData("seek", "seeked")]
+        [InlineData("sell", "selled")]
+        [InlineData("send", "sended")]
+        [InlineData("shake", "shaked")]
+        [InlineData("shit", "shited")]
+        [InlineData("shit", "shiting")]
+        [InlineData("shoot", "shooted")]
+        [InlineData("shrink", "shrinked")]
+        public void Generate_DoesNotEmitS1PseudoForms(string lemma, string pseudoForm)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.DoesNotContain(forms, form => form.Surface == pseudoForm);
+        }
+
+        [Theory]
         [InlineData("abide", "abode", "Past,PastParticiple")]
         [InlineData("aby", "abought;abye", "Past,PastParticiple;Base")]
         [InlineData("address", "addrest", "Past,PastParticiple")]

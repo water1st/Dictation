@@ -636,7 +636,78 @@ namespace Dictation.LexiconBuilder.WordNet
                     (EnglishFormKind.Past, "rough-hewed"),
                     (EnglishFormKind.PastParticiple, "rough-hewed"),
                     (EnglishFormKind.PastParticiple, "rough-hewn"),
-                    (EnglishFormKind.PresentParticiple, "rough-hewing"))
+                    (EnglishFormKind.PresentParticiple, "rough-hewing")),
+                [("saw", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "saws"),
+                    (EnglishFormKind.Past, "sawed"),
+                    (EnglishFormKind.PastParticiple, "sawed"),
+                    (EnglishFormKind.PastParticiple, "sawn"),
+                    (EnglishFormKind.PresentParticiple, "sawing")),
+                [("see", EnglishPartOfSpeech.Verb)] = CreateVerb("sees", "saw", "seen", "seeing"),
+                [("seek", EnglishPartOfSpeech.Verb)] = CreateVerb("seeks", "sought", "sought", "seeking"),
+                [("sell", EnglishPartOfSpeech.Verb)] = CreateVerb("sells", "sold", "sold", "selling"),
+                [("send", EnglishPartOfSpeech.Verb)] = CreateVerb("sends", "sent", "sent", "sending"),
+                [("sew", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "sews"),
+                    (EnglishFormKind.Past, "sewed"),
+                    (EnglishFormKind.PastParticiple, "sewed"),
+                    (EnglishFormKind.PastParticiple, "sewn"),
+                    (EnglishFormKind.PresentParticiple, "sewing")),
+                [("shake", EnglishPartOfSpeech.Verb)] = CreateVerb("shakes", "shook", "shaken", "shaking"),
+                [("shave", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "shaves"),
+                    (EnglishFormKind.Past, "shaved"),
+                    (EnglishFormKind.PastParticiple, "shaved"),
+                    (EnglishFormKind.PastParticiple, "shaven"),
+                    (EnglishFormKind.PresentParticiple, "shaving")),
+                [("shew", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "shews"),
+                    (EnglishFormKind.Past, "shewed"),
+                    (EnglishFormKind.PastParticiple, "shewed"),
+                    (EnglishFormKind.PastParticiple, "shewn"),
+                    (EnglishFormKind.PresentParticiple, "shewing")),
+                [("shine", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "shines"),
+                    (EnglishFormKind.Past, "shined"),
+                    (EnglishFormKind.Past, "shone"),
+                    (EnglishFormKind.PastParticiple, "shined"),
+                    (EnglishFormKind.PastParticiple, "shone"),
+                    (EnglishFormKind.PresentParticiple, "shining")),
+                [("shit", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "shits"),
+                    (EnglishFormKind.Past, "shit"),
+                    (EnglishFormKind.Past, "shat"),
+                    (EnglishFormKind.PastParticiple, "shit"),
+                    (EnglishFormKind.PastParticiple, "shat"),
+                    (EnglishFormKind.PresentParticiple, "shitting")),
+                [("shoe", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "shoes"),
+                    (EnglishFormKind.Past, "shod"),
+                    (EnglishFormKind.Past, "shoed"),
+                    (EnglishFormKind.PastParticiple, "shod"),
+                    (EnglishFormKind.PastParticiple, "shoed"),
+                    (EnglishFormKind.PresentParticiple, "shoeing")),
+                [("shoot", EnglishPartOfSpeech.Verb)] = CreateVerb("shoots", "shot", "shot", "shooting"),
+                [("show", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "shows"),
+                    (EnglishFormKind.Past, "showed"),
+                    (EnglishFormKind.PastParticiple, "showed"),
+                    (EnglishFormKind.PastParticiple, "shown"),
+                    (EnglishFormKind.PresentParticiple, "showing")),
+                [("shrink", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "shrinks"),
+                    (EnglishFormKind.Past, "shrank"),
+                    (EnglishFormKind.Past, "shrunk"),
+                    (EnglishFormKind.PastParticiple, "shrunk"),
+                    (EnglishFormKind.PastParticiple, "shrunken"),
+                    (EnglishFormKind.PresentParticiple, "shrinking")),
+                [("shrive", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "shrives"),
+                    (EnglishFormKind.Past, "shrived"),
+                    (EnglishFormKind.Past, "shrove"),
+                    (EnglishFormKind.PastParticiple, "shrived"),
+                    (EnglishFormKind.PastParticiple, "shriven"),
+                    (EnglishFormKind.PresentParticiple, "shriving"))
             };
 
         internal static bool TryGetParadigm(
