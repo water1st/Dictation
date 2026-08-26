@@ -993,6 +993,139 @@ namespace Dictation.Tests.LexiconBuilder
         }
 
         [Theory]
+        [InlineData("outbid", "outbid", "outbids", "outbid", "outbid;outbidden", "outbidding")]
+        [InlineData("outdo", "outdo", "outdoes", "outdid", "outdone", "outdoing")]
+        [InlineData("outdraw", "outdraw", "outdraws", "outdrew", "outdrawn", "outdrawing")]
+        [InlineData("outfight", "outfight", "outfights", "outfought", "outfought", "outfighting")]
+        [InlineData("outgo", "outgo", "outgoes", "outwent", "outgone", "outgoing")]
+        [InlineData("outgrow", "outgrow", "outgrows", "outgrew", "outgrown", "outgrowing")]
+        [InlineData("outride", "outride", "outrides", "outrode", "outridden", "outriding")]
+        [InlineData("outrun", "outrun", "outruns", "outran", "outrun", "outrunning")]
+        [InlineData("outsell", "outsell", "outsells", "outsold", "outsold", "outselling")]
+        [InlineData("outshine", "outshine", "outshines", "outshined;outshone", "outshined;outshone", "outshining")]
+        [InlineData("outwear", "outwear", "outwears", "outwore", "outworn", "outwearing")]
+        public void Generate_UsesCompleteOutParadigms(
+            string lemma,
+            string baseFormsText,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(SortedSourceForms(baseFormsText), FormsOfKind(forms, EnglishFormKind.Base));
+            Assert.Equal(SortedSourceForms(thirdPerson), FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(SortedSourceForms(past), FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(SortedSourceForms(pastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(SortedSourceForms(presentParticiple), FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+        }
+
+        [Theory]
+        [InlineData("outbid", "outbidden", "PastParticiple")]
+        [InlineData("outdo", "outdid", "Past")]
+        [InlineData("outdo", "outdone", "PastParticiple")]
+        [InlineData("outdraw", "outdrawn", "PastParticiple")]
+        [InlineData("outdraw", "outdrew", "Past")]
+        [InlineData("outfight", "outfought", "Past,PastParticiple")]
+        [InlineData("outgo", "outgone", "PastParticiple")]
+        [InlineData("outgo", "outwent", "Past")]
+        [InlineData("outgrow", "outgrew", "Past")]
+        [InlineData("outgrow", "outgrown", "PastParticiple")]
+        [InlineData("outride", "outridden", "PastParticiple")]
+        [InlineData("outride", "outrode", "Past")]
+        [InlineData("outrun", "outran", "Past")]
+        [InlineData("outsell", "outsold", "Past,PastParticiple")]
+        [InlineData("outshine", "outshone", "Past,PastParticiple")]
+        [InlineData("outwear", "outwore", "Past")]
+        [InlineData("outwear", "outworn", "PastParticiple")]
+        public void Generate_ClassifiesOutSourceFormsByExactFormKind(
+            string lemma,
+            string sourceForm,
+            string sourceKindsText)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                new[] { sourceForm }));
+            var expectedKinds = sourceKindsText
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(value => Enum.Parse<EnglishFormKind>(value, ignoreCase: false))
+                .OrderBy(value => value)
+                .ToArray();
+            var actualKinds = forms
+                .Where(form => form.Surface == sourceForm && form.SourceKind == EnglishFormSourceKind.Source)
+                .Select(form => form.Kind)
+                .OrderBy(value => value)
+                .ToArray();
+
+            Assert.Equal(expectedKinds, actualKinds);
+            foreach (var kind in expectedKinds)
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, kind, sourceForm).SourceKind);
+                Assert.Equal(1, forms.Count(form => form.Kind == kind && form.Surface == sourceForm));
+            }
+        }
+
+        [Fact]
+        public void Generate_PreservesOutCatalogAlternativesAndSameSurfaceKinds()
+        {
+            var generator = new EnglishFormGenerator();
+
+            var outbid = generator.Generate(CreateLexeme("outbid", "v", EnglishPartOfSpeech.Verb, new[] { "outbid" }));
+            Assert.Equal(new[] { "outbid" }, FormsOfKind(outbid, EnglishFormKind.Past));
+            Assert.Equal(new[] { "outbid", "outbidden" }, FormsOfKind(outbid, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(outbid, EnglishFormKind.Past, "outbid").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(outbid, EnglishFormKind.PastParticiple, "outbid").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(outbid, EnglishFormKind.PastParticiple, "outbidden").SourceKind);
+            Assert.Equal(1, outbid.Count(form => form.Kind == EnglishFormKind.Past && form.Surface == "outbid"));
+            Assert.Equal(1, outbid.Count(form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "outbid"));
+
+            var outshine = generator.Generate(CreateLexeme("outshine", "v", EnglishPartOfSpeech.Verb, new[] { "outshone" }));
+            Assert.Equal(new[] { "outshined", "outshone" }, FormsOfKind(outshine, EnglishFormKind.Past));
+            Assert.Equal(new[] { "outshined", "outshone" }, FormsOfKind(outshine, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(outshine, EnglishFormKind.Past, "outshone").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(outshine, EnglishFormKind.PastParticiple, "outshone").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(outshine, EnglishFormKind.Past, "outshined").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(outshine, EnglishFormKind.PastParticiple, "outshined").SourceKind);
+            Assert.Equal(1, outshine.Count(form => form.Kind == EnglishFormKind.Past && form.Surface == "outshone"));
+            Assert.Equal(1, outshine.Count(form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "outshone"));
+
+            var outrun = generator.Generate(CreateLexeme("outrun", "v", EnglishPartOfSpeech.Verb, Array.Empty<string>()));
+            Assert.Equal(new[] { "outrun" }, FormsOfKind(outrun, EnglishFormKind.Base));
+            Assert.Equal(new[] { "outrun" }, FormsOfKind(outrun, EnglishFormKind.PastParticiple));
+            Assert.Equal(1, outrun.Count(form => form.Kind == EnglishFormKind.Base && form.Surface == "outrun"));
+            Assert.Equal(1, outrun.Count(form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "outrun"));
+        }
+
+        [Theory]
+        [InlineData("outbid", "outbided")]
+        [InlineData("outdo", "outdoed")]
+        [InlineData("outdraw", "outdrawed")]
+        [InlineData("outfight", "outfighted")]
+        [InlineData("outgo", "outgoed")]
+        [InlineData("outgrow", "outgrowed")]
+        [InlineData("outride", "outrided")]
+        [InlineData("outrun", "outruned")]
+        [InlineData("outsell", "outselled")]
+        [InlineData("outwear", "outweared")]
+        public void Generate_DoesNotEmitOutPseudoForms(string lemma, string pseudoForm)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.DoesNotContain(forms, form => form.Surface == pseudoForm);
+        }
+
+        [Theory]
         [InlineData("abide", "abode", "Past,PastParticiple")]
         [InlineData("aby", "abought;abye", "Past,PastParticiple;Base")]
         [InlineData("address", "addrest", "Past,PastParticiple")]

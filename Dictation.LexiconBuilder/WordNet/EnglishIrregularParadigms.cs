@@ -500,7 +500,29 @@ namespace Dictation.LexiconBuilder.WordNet
                     (EnglishFormKind.Past, "mowed"),
                     (EnglishFormKind.PastParticiple, "mowed"),
                     (EnglishFormKind.PastParticiple, "mown"),
-                    (EnglishFormKind.PresentParticiple, "mowing"))
+                    (EnglishFormKind.PresentParticiple, "mowing")),
+                [("outbid", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "outbids"),
+                    (EnglishFormKind.Past, "outbid"),
+                    (EnglishFormKind.PastParticiple, "outbid"),
+                    (EnglishFormKind.PastParticiple, "outbidden"),
+                    (EnglishFormKind.PresentParticiple, "outbidding")),
+                [("outdo", EnglishPartOfSpeech.Verb)] = CreateVerb("outdoes", "outdid", "outdone", "outdoing"),
+                [("outdraw", EnglishPartOfSpeech.Verb)] = CreateVerb("outdraws", "outdrew", "outdrawn", "outdrawing"),
+                [("outfight", EnglishPartOfSpeech.Verb)] = CreateVerb("outfights", "outfought", "outfought", "outfighting"),
+                [("outgo", EnglishPartOfSpeech.Verb)] = CreateVerb("outgoes", "outwent", "outgone", "outgoing"),
+                [("outgrow", EnglishPartOfSpeech.Verb)] = CreateVerb("outgrows", "outgrew", "outgrown", "outgrowing"),
+                [("outride", EnglishPartOfSpeech.Verb)] = CreateVerb("outrides", "outrode", "outridden", "outriding"),
+                [("outrun", EnglishPartOfSpeech.Verb)] = CreateVerb("outruns", "outran", "outrun", "outrunning"),
+                [("outsell", EnglishPartOfSpeech.Verb)] = CreateVerb("outsells", "outsold", "outsold", "outselling"),
+                [("outshine", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "outshines"),
+                    (EnglishFormKind.Past, "outshined"),
+                    (EnglishFormKind.Past, "outshone"),
+                    (EnglishFormKind.PastParticiple, "outshined"),
+                    (EnglishFormKind.PastParticiple, "outshone"),
+                    (EnglishFormKind.PresentParticiple, "outshining")),
+                [("outwear", EnglishPartOfSpeech.Verb)] = CreateVerb("outwears", "outwore", "outworn", "outwearing")
             };
 
         internal static bool TryGetParadigm(
