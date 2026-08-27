@@ -6,15 +6,25 @@ namespace Dictation.Presentation
     public sealed partial class HomeWindow : System.Windows.Window
     {
         private readonly HomeViewModel viewModel;
+        private readonly LexiconLookupWindowFactory lexiconLookupWindowFactory;
 
-        public HomeWindow(HomeViewModel viewModel)
+        public HomeWindow(
+            HomeViewModel viewModel,
+            LexiconLookupWindowFactory lexiconLookupWindowFactory)
         {
             this.viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+            this.lexiconLookupWindowFactory = lexiconLookupWindowFactory
+                ?? throw new ArgumentNullException(nameof(lexiconLookupWindowFactory));
             InitializeComponent();
             DataContext = this.viewModel;
         }
 
         public HomeViewModel ViewModel => viewModel;
+
+        private void OpenLexiconLookup(object sender, System.Windows.RoutedEventArgs e)
+        {
+            lexiconLookupWindowFactory.ShowDialog(this, viewModel.SelectedLanguage);
+        }
 
         public void RestoreAndActivate()
         {

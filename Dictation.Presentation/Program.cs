@@ -25,6 +25,7 @@ namespace Dictation.Presentation
                 return;
             }
 
+            var application = host.Services.GetRequiredService<App>();
             var homeWindow = host.Services.GetRequiredService<HomeWindow>();
             Action activationHandler = homeWindow.RestoreAndActivate;
             var hostStarted = false;
@@ -43,7 +44,6 @@ namespace Dictation.Presentation
                 var viewModel = host.Services.GetRequiredService<ViewModels.HomeViewModel>();
                 viewModel.InitializeAsync().GetAwaiter().GetResult();
 
-                var application = host.Services.GetRequiredService<App>();
                 application.Run(homeWindow);
             }
             finally

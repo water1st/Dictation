@@ -84,6 +84,18 @@ SQLite 产物只在临时验收目录中生成，不提交 `.db` 或原始 `JMdi
 
 SQLite 产物大小为 89,214,976 bytes，SHA-256 为 `A1381CE697FA0E8352395B310AB14256D0209D5F1CFD8D564D7A3C847ED0E010`；`PRAGMA integrity_check` 结果为 `ok`。直接查库验证 `go/goes/went/gone/going`、`do/does/did/done/doing`、`child/children`、`good/better/best` 均完整；`go%v` 的 30 个 SenseId 共用一个 LexemeId 与 5 个词形；短语非 Base 词形数量为 0；`conversion/convert` 与 `execution/execute` 保持不同 LexemeId，仅通过直接 derivation 边关联。产物只在临时验收目录中生成，不提交 `.db` 或原始 YAML，完成查询后由控制器清理。
 
+## 2.5 运行时词库布局与查词行为
+
+发布根目录固定提供由构建器生成的只读词库，运行时不在线下载或修改：
+
+```text
+Resources/Lexicons/
+├── JapaneseLexicon.db
+└── EnglishLexicon.db
+```
+
+词库缺失或不可读时，查词窗口显示中文错误，主程序仍可启动；真实数据库不提交到仓库。
+
 ## 3. 构建加工与发布取舍
 
 `Dictation.LexiconBuilder` 在构建阶段解析 JMdict 和 English WordNet，生成版本固定的只读 SQLite 词库：清洗重复项，按义项分组，关联日语普通/礼貌/`て`/`た` 等形式，标记常用汉字/罕见汉字/无汉字，关联英语规则、例外和直接派生的词性组，并保存 JMdict 原始 gloss 和来源元数据。运行时以 English gloss 作为义项的规范语义来源；后续中文翻译是独立切片，不能假定 JMdict 各语言 gloss 逐条对齐，也不支持中文反向查询。上述加工结果不是用户数据；用户的词条、集合、进度、错题和历史留在根目录 `DATA/`，更新 ZIP 不得覆盖。

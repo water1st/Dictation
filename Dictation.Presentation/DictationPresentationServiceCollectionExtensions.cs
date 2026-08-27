@@ -16,6 +16,10 @@ namespace Dictation.Presentation
             services.AddSingleton<ThemeManager>();
             services.AddSingleton<ISystemThemeProvider, WindowsSystemThemeProvider>();
 
+            services.AddTransient<LexiconLookupViewModel>();
+            services.AddTransient<LexiconLookupWindow>();
+            services.AddSingleton<LexiconLookupWindowFactory>();
+
             services.AddSingleton<MainWindow>();
             services.AddTransient<DictationWindow>();
             services.AddTransient<ResultWindow>();
