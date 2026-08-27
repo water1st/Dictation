@@ -78,6 +78,12 @@ SQLite 产物大小为 275,595,264 bytes，SHA-256 为 `0176EFE63B808AED8BED6BDF
 
 SQLite 产物只在临时验收目录中生成，不提交 `.db` 或原始 `JMdict.gz`，文档不记录临时绝对路径。
 
+## 2.4 英语 Open English WordNet 真实构建验收
+
+2026-08-27 使用用户提供的 `english-wordnet` 完成真实构建验收；输入 Git 工作树 clean，commit 为 `02ff9f3f5bc0a25592e7263ffdbc9bcb6564936b`，describe 为 `2025-edition-160-g02ff9f3`，source tree fingerprint SHA-256 为 `a837c7e4bc2e6eff42c5bac07c4e8fc35464cfb5c49e0283a67d186904e221fa`。产物 metadata 为 `schema_version=1`、`generator_version=1.0.0.0`、`source_files=72`、`unclassified_source_forms=0`；统计为 `lexemes=135994`、`senses=185149`、`synsets=107525`、`definitions=107530`、`examples=50023`、`forms=221746`、`derivations=73514`。
+
+SQLite 产物大小为 89,214,976 bytes，SHA-256 为 `A1381CE697FA0E8352395B310AB14256D0209D5F1CFD8D564D7A3C847ED0E010`；`PRAGMA integrity_check` 结果为 `ok`。直接查库验证 `go/goes/went/gone/going`、`do/does/did/done/doing`、`child/children`、`good/better/best` 均完整；`go%v` 的 30 个 SenseId 共用一个 LexemeId 与 5 个词形；短语非 Base 词形数量为 0；`conversion/convert` 与 `execution/execute` 保持不同 LexemeId，仅通过直接 derivation 边关联。产物只在临时验收目录中生成，不提交 `.db` 或原始 YAML，完成查询后由控制器清理。
+
 ## 3. 构建加工与发布取舍
 
 `Dictation.LexiconBuilder` 在构建阶段解析 JMdict 和 English WordNet，生成版本固定的只读 SQLite 词库：清洗重复项，按义项分组，关联日语普通/礼貌/`て`/`た` 等形式，标记常用汉字/罕见汉字/无汉字，关联英语规则、例外和直接派生的词性组，并保存 JMdict 原始 gloss 和来源元数据。运行时以 English gloss 作为义项的规范语义来源；后续中文翻译是独立切片，不能假定 JMdict 各语言 gloss 逐条对齐，也不支持中文反向查询。上述加工结果不是用户数据；用户的词条、集合、进度、错题和历史留在根目录 `DATA/`，更新 ZIP 不得覆盖。
