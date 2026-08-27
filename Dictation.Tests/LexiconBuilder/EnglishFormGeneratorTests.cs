@@ -2084,6 +2084,150 @@ namespace Dictation.Tests.LexiconBuilder
         }
 
         [Theory]
+        [InlineData("take", "take", "takes", "took", "taken", "taking")]
+        [InlineData("teach", "teach", "teaches", "taught", "taught", "teaching")]
+        [InlineData("tear", "tear", "tears", "tore", "torn", "tearing")]
+        [InlineData("tell", "tell", "tells", "told", "told", "telling")]
+        [InlineData("think", "think", "thinks", "thought", "thought", "thinking")]
+        [InlineData("thrive", "thrive", "thrives", "thrived;throve", "thrived;thriven", "thriving")]
+        [InlineData("throw", "throw", "throws", "threw", "thrown", "throwing")]
+        [InlineData("transfix", "transfix", "transfixes", "transfixed;transfixt", "transfixed;transfixt", "transfixing")]
+        [InlineData("transship", "tranship;transship", "tranships;transships", "transhipped;transshipped", "transhipped;transshipped", "transhipping;transshipping")]
+        [InlineData("tread", "tread", "treads", "trod", "trod;trodden", "treading")]
+        [InlineData("typewrite", "typewrite", "typewrites", "typewrote", "typewritten", "typewriting")]
+        public void Generate_UsesCompleteTParadigms(
+            string lemma,
+            string baseFormsText,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(SortedSourceForms(baseFormsText), FormsOfKind(forms, EnglishFormKind.Base));
+            Assert.Equal(SortedSourceForms(thirdPerson), FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(SortedSourceForms(past), FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(SortedSourceForms(pastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(SortedSourceForms(presentParticiple), FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+        }
+
+        [Theory]
+        [InlineData("take", "v", "taken", "PastParticiple")]
+        [InlineData("take", "v", "took", "Past")]
+        [InlineData("teach", "v", "taught", "Past,PastParticiple")]
+        [InlineData("tear", "v-1", "tore", "Past")]
+        [InlineData("tear", "v-1", "torn", "PastParticiple")]
+        [InlineData("tear", "v-2", "tore", "Past")]
+        [InlineData("tear", "v-2", "torn", "PastParticiple")]
+        [InlineData("tell", "v", "told", "Past,PastParticiple")]
+        [InlineData("think", "v", "thought", "Past,PastParticiple")]
+        [InlineData("thrive", "v", "thriven", "PastParticiple")]
+        [InlineData("thrive", "v", "throve", "Past")]
+        [InlineData("throw", "v", "threw", "Past")]
+        [InlineData("throw", "v", "thrown", "PastParticiple")]
+        [InlineData("transfix", "v", "transfixt", "Past,PastParticiple")]
+        [InlineData("transship", "v", "tranship", "Base")]
+        [InlineData("tread", "v", "trod", "Past,PastParticiple")]
+        [InlineData("tread", "v", "trodden", "PastParticiple")]
+        [InlineData("typewrite", "v", "typewritten", "PastParticiple")]
+        [InlineData("typewrite", "v", "typewrote", "Past")]
+        public void Generate_ClassifiesTSourceFormsByExactFormKind(
+            string lemma,
+            string sourceEntryKey,
+            string sourceForm,
+            string sourceKindsText)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                sourceEntryKey,
+                EnglishPartOfSpeech.Verb,
+                new[] { sourceForm }));
+            var expectedKinds = sourceKindsText
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(value => Enum.Parse<EnglishFormKind>(value, ignoreCase: false))
+                .OrderBy(value => value)
+                .ToArray();
+            var actualKinds = forms
+                .Where(form => form.Surface == sourceForm && form.SourceKind == EnglishFormSourceKind.Source)
+                .Select(form => form.Kind)
+                .OrderBy(value => value)
+                .ToArray();
+
+            Assert.Equal(expectedKinds, actualKinds);
+            foreach (var kind in expectedKinds)
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, kind, sourceForm).SourceKind);
+                Assert.Equal(1, forms.Count(form => form.Kind == kind && form.Surface == sourceForm));
+            }
+        }
+
+        [Fact]
+        public void Generate_PreservesTAlternativesSeparatesTransshipBaseAndKeepsTearLexemesDistinct()
+        {
+            var generator = new EnglishFormGenerator();
+
+            var transfix = generator.Generate(CreateLexeme("transfix", "v", EnglishPartOfSpeech.Verb, new[] { "transfixt" }));
+            Assert.Equal(new[] { "transfixed", "transfixt" }, FormsOfKind(transfix, EnglishFormKind.Past));
+            Assert.Equal(new[] { "transfixed", "transfixt" }, FormsOfKind(transfix, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(transfix, EnglishFormKind.Past, "transfixt").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(transfix, EnglishFormKind.PastParticiple, "transfixt").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(transfix, EnglishFormKind.Past, "transfixed").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(transfix, EnglishFormKind.PastParticiple, "transfixed").SourceKind);
+
+            var transship = generator.Generate(CreateLexeme("transship", "v", EnglishPartOfSpeech.Verb, new[] { "tranship" }));
+            Assert.Equal(new[] { "tranship", "transship" }, FormsOfKind(transship, EnglishFormKind.Base));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(transship, EnglishFormKind.Base, "tranship").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(transship, EnglishFormKind.Base, "transship").SourceKind);
+            Assert.DoesNotContain(transship, form => form.Kind != EnglishFormKind.Base && form.Surface == "tranship");
+
+            var tread = generator.Generate(CreateLexeme("tread", "v", EnglishPartOfSpeech.Verb, new[] { "trod" }));
+            Assert.Equal(new[] { "trod" }, FormsOfKind(tread, EnglishFormKind.Past));
+            Assert.Equal(new[] { "trod", "trodden" }, FormsOfKind(tread, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(tread, EnglishFormKind.Past, "trod").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(tread, EnglishFormKind.PastParticiple, "trod").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(tread, EnglishFormKind.PastParticiple, "trodden").SourceKind);
+            Assert.Equal(1, tread.Count(form => form.Surface == "trod" && form.Kind == EnglishFormKind.Past));
+            Assert.Equal(1, tread.Count(form => form.Surface == "trod" && form.Kind == EnglishFormKind.PastParticiple));
+
+            var tearV1 = CreateLexeme("tear", "v-1", EnglishPartOfSpeech.Verb, Array.Empty<string>());
+            var tearV2 = CreateLexeme("tear", "v-2", EnglishPartOfSpeech.Verb, Array.Empty<string>());
+            Assert.NotEqual(tearV1.LexemeId, tearV2.LexemeId);
+            foreach (var lexeme in new[] { tearV1, tearV2 })
+            {
+                var forms = generator.Generate(lexeme);
+                Assert.Equal(new[] { "tore" }, FormsOfKind(forms, EnglishFormKind.Past));
+                Assert.Equal(new[] { "torn" }, FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            }
+        }
+
+        [Theory]
+        [InlineData("take", "taked")]
+        [InlineData("teach", "teached")]
+        [InlineData("tear", "teared")]
+        [InlineData("tell", "telled")]
+        [InlineData("think", "thinked")]
+        [InlineData("throw", "throwed")]
+        [InlineData("transship", "transshiped")]
+        [InlineData("transship", "transshiping")]
+        [InlineData("tread", "treaded")]
+        [InlineData("typewrite", "typewrited")]
+        public void Generate_DoesNotEmitTPseudoForms(string lemma, string pseudoForm)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.DoesNotContain(forms, form => form.Surface == pseudoForm);
+        }
+
+        [Theory]
         [InlineData("abide", "abode", "Past,PastParticiple")]
         [InlineData("aby", "abought;abye", "Past,PastParticiple;Base")]
         [InlineData("address", "addrest", "Past,PastParticiple")]

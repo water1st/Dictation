@@ -891,7 +891,45 @@ namespace Dictation.LexiconBuilder.WordNet
                     (EnglishFormKind.PastParticiple, "swollen"),
                     (EnglishFormKind.PresentParticiple, "swelling")),
                 [("swim", EnglishPartOfSpeech.Verb)] = CreateVerb("swims", "swam", "swum", "swimming"),
-                [("swing", EnglishPartOfSpeech.Verb)] = CreateVerb("swings", "swung", "swung", "swinging")
+                [("swing", EnglishPartOfSpeech.Verb)] = CreateVerb("swings", "swung", "swung", "swinging"),
+                [("take", EnglishPartOfSpeech.Verb)] = CreateVerb("takes", "took", "taken", "taking"),
+                [("teach", EnglishPartOfSpeech.Verb)] = CreateVerb("teaches", "taught", "taught", "teaching"),
+                [("tear", EnglishPartOfSpeech.Verb)] = CreateVerb("tears", "tore", "torn", "tearing"),
+                [("tell", EnglishPartOfSpeech.Verb)] = CreateVerb("tells", "told", "told", "telling"),
+                [("think", EnglishPartOfSpeech.Verb)] = CreateVerb("thinks", "thought", "thought", "thinking"),
+                [("thrive", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "thrives"),
+                    (EnglishFormKind.Past, "thrived"),
+                    (EnglishFormKind.Past, "throve"),
+                    (EnglishFormKind.PastParticiple, "thrived"),
+                    (EnglishFormKind.PastParticiple, "thriven"),
+                    (EnglishFormKind.PresentParticiple, "thriving")),
+                [("throw", EnglishPartOfSpeech.Verb)] = CreateVerb("throws", "threw", "thrown", "throwing"),
+                [("transfix", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "transfixes"),
+                    (EnglishFormKind.Past, "transfixed"),
+                    (EnglishFormKind.Past, "transfixt"),
+                    (EnglishFormKind.PastParticiple, "transfixed"),
+                    (EnglishFormKind.PastParticiple, "transfixt"),
+                    (EnglishFormKind.PresentParticiple, "transfixing")),
+                [("transship", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.Base, "transship"),
+                    (EnglishFormKind.Base, "tranship"),
+                    (EnglishFormKind.ThirdPersonSingular, "transships"),
+                    (EnglishFormKind.ThirdPersonSingular, "tranships"),
+                    (EnglishFormKind.Past, "transshipped"),
+                    (EnglishFormKind.Past, "transhipped"),
+                    (EnglishFormKind.PastParticiple, "transshipped"),
+                    (EnglishFormKind.PastParticiple, "transhipped"),
+                    (EnglishFormKind.PresentParticiple, "transshipping"),
+                    (EnglishFormKind.PresentParticiple, "transhipping")),
+                [("tread", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "treads"),
+                    (EnglishFormKind.Past, "trod"),
+                    (EnglishFormKind.PastParticiple, "trod"),
+                    (EnglishFormKind.PastParticiple, "trodden"),
+                    (EnglishFormKind.PresentParticiple, "treading")),
+                [("typewrite", EnglishPartOfSpeech.Verb)] = CreateVerb("typewrites", "typewrote", "typewritten", "typewriting")
             };
 
         internal static bool TryGetParadigm(
