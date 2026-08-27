@@ -2228,6 +2228,194 @@ namespace Dictation.Tests.LexiconBuilder
         }
 
         [Theory]
+        [InlineData("unbend", "unbend", "unbends", "unbent", "unbent", "unbending")]
+        [InlineData("unbind", "unbind", "unbinds", "unbound", "unbound", "unbinding")]
+        [InlineData("unclothe", "unclothe", "unclothes", "unclad;unclothed", "unclad;unclothed", "unclothing")]
+        [InlineData("undergird", "undergird", "undergirds", "undergirded;undergirt", "undergirded;undergirt", "undergirding")]
+        [InlineData("undergo", "undergo", "undergoes", "underwent", "undergone", "undergoing")]
+        [InlineData("underlay", "underlay", "underlays", "underlaid", "underlaid", "underlaying")]
+        [InlineData("underlie", "underlie", "underlies", "underlay", "underlain", "underlying")]
+        [InlineData("underpay", "underpay", "underpays", "underpaid", "underpaid", "underpaying")]
+        [InlineData("undersell", "undersell", "undersells", "undersold", "undersold", "underselling")]
+        [InlineData("undershoot", "undershoot", "undershoots", "undershot", "undershot", "undershooting")]
+        [InlineData("understand", "understand", "understands", "understood", "understood", "understanding")]
+        [InlineData("undertake", "undertake", "undertakes", "undertook", "undertaken", "undertaking")]
+        [InlineData("underwrite", "underwrite", "underwrites", "underwrote", "underwritten", "underwriting")]
+        [InlineData("undo", "undo", "undoes", "undid", "undone", "undoing")]
+        [InlineData("unfreeze", "unfreeze", "unfreezes", "unfroze", "unfrozen", "unfreezing")]
+        [InlineData("unlearn", "unlearn", "unlearns", "unlearned;unlearnt", "unlearned;unlearnt", "unlearning")]
+        [InlineData("unmake", "unmake", "unmakes", "unmade", "unmade", "unmaking")]
+        [InlineData("unsay", "unsay", "unsays", "unsaid", "unsaid", "unsaying")]
+        [InlineData("unstring", "unstring", "unstrings", "unstrung", "unstrung", "unstringing")]
+        [InlineData("unteach", "unteach", "unteaches", "untaught", "untaught", "unteaching")]
+        [InlineData("unwind", "unwind", "unwinds", "unwound", "unwound", "unwinding")]
+        [InlineData("upheave", "upheave", "upheaves", "upheaved;uphove", "upheaved;uphove", "upheaving")]
+        [InlineData("uphold", "uphold", "upholds", "upheld", "upheld", "upholding")]
+        [InlineData("uprise", "uprise", "uprises", "uprose", "uprisen", "uprising")]
+        public void Generate_UsesCompleteUParadigms(
+            string lemma,
+            string baseFormsText,
+            string thirdPerson,
+            string past,
+            string pastParticiple,
+            string presentParticiple)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.Equal(SortedSourceForms(baseFormsText), FormsOfKind(forms, EnglishFormKind.Base));
+            Assert.Equal(SortedSourceForms(thirdPerson), FormsOfKind(forms, EnglishFormKind.ThirdPersonSingular));
+            Assert.Equal(SortedSourceForms(past), FormsOfKind(forms, EnglishFormKind.Past));
+            Assert.Equal(SortedSourceForms(pastParticiple), FormsOfKind(forms, EnglishFormKind.PastParticiple));
+            Assert.Equal(SortedSourceForms(presentParticiple), FormsOfKind(forms, EnglishFormKind.PresentParticiple));
+        }
+
+        [Theory]
+        [InlineData("unbend", "v", "unbent", "Past,PastParticiple")]
+        [InlineData("unbind", "v", "unbound", "Past,PastParticiple")]
+        [InlineData("unclothe", "v", "unclad", "Past,PastParticiple")]
+        [InlineData("undergird", "v", "undergirt", "Past,PastParticiple")]
+        [InlineData("undergo", "v", "undergone", "PastParticiple")]
+        [InlineData("undergo", "v", "underwent", "Past")]
+        [InlineData("underlay", "v", "underlaid", "Past,PastParticiple")]
+        [InlineData("underlie", "v", "underlain", "PastParticiple")]
+        [InlineData("underlie", "v", "underlay", "Past")]
+        [InlineData("underpay", "v", "underpaid", "Past,PastParticiple")]
+        [InlineData("undersell", "v", "undersold", "Past,PastParticiple")]
+        [InlineData("undershoot", "v", "undershot", "Past,PastParticiple")]
+        [InlineData("understand", "v", "understood", "Past,PastParticiple")]
+        [InlineData("undertake", "v", "undertaken", "PastParticiple")]
+        [InlineData("undertake", "v", "undertook", "Past")]
+        [InlineData("underwrite", "v", "underwritten", "PastParticiple")]
+        [InlineData("underwrite", "v", "underwrote", "Past")]
+        [InlineData("undo", "v", "undid", "Past")]
+        [InlineData("undo", "v", "undone", "PastParticiple")]
+        [InlineData("unfreeze", "v", "unfroze", "Past")]
+        [InlineData("unfreeze", "v", "unfrozen", "PastParticiple")]
+        [InlineData("unlearn", "v", "unlearnt", "Past,PastParticiple")]
+        [InlineData("unmake", "v", "unmade", "Past,PastParticiple")]
+        [InlineData("unsay", "v", "unsaid", "Past,PastParticiple")]
+        [InlineData("unstring", "v", "unstrung", "Past,PastParticiple")]
+        [InlineData("unteach", "v", "untaught", "Past,PastParticiple")]
+        [InlineData("unwind", "v", "unwound", "Past,PastParticiple")]
+        [InlineData("upheave", "v", "uphove", "Past,PastParticiple")]
+        [InlineData("uphold", "v", "upheld", "Past,PastParticiple")]
+        [InlineData("uprise", "v", "uprisen", "PastParticiple")]
+        [InlineData("uprise", "v", "uprose", "Past")]
+        public void Generate_ClassifiesUSourceFormsByExactFormKind(
+            string lemma,
+            string sourceEntryKey,
+            string sourceForm,
+            string sourceKindsText)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                sourceEntryKey,
+                EnglishPartOfSpeech.Verb,
+                new[] { sourceForm }));
+            var expectedKinds = sourceKindsText
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(value => Enum.Parse<EnglishFormKind>(value, ignoreCase: false))
+                .OrderBy(value => value)
+                .ToArray();
+            var actualKinds = forms
+                .Where(form => form.Surface == sourceForm && form.SourceKind == EnglishFormSourceKind.Source)
+                .Select(form => form.Kind)
+                .OrderBy(value => value)
+                .ToArray();
+
+            Assert.Equal(expectedKinds, actualKinds);
+            foreach (var kind in expectedKinds)
+            {
+                Assert.Equal(EnglishFormSourceKind.Source, Find(forms, kind, sourceForm).SourceKind);
+                Assert.Equal(1, forms.Count(form => form.Kind == kind && form.Surface == sourceForm));
+            }
+        }
+
+        [Fact]
+        public void Generate_PreservesUAlternativesAndSeparatesUnderlayAndUnderlieKinds()
+        {
+            var generator = new EnglishFormGenerator();
+
+            var unclothe = generator.Generate(CreateLexeme("unclothe", "v", EnglishPartOfSpeech.Verb, new[] { "unclad" }));
+            Assert.Equal(new[] { "unclad", "unclothed" }, FormsOfKind(unclothe, EnglishFormKind.Past));
+            Assert.Equal(new[] { "unclad", "unclothed" }, FormsOfKind(unclothe, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(unclothe, EnglishFormKind.Past, "unclad").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(unclothe, EnglishFormKind.PastParticiple, "unclad").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(unclothe, EnglishFormKind.Past, "unclothed").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(unclothe, EnglishFormKind.PastParticiple, "unclothed").SourceKind);
+
+            var underlay = generator.Generate(CreateLexeme("underlay", "v", EnglishPartOfSpeech.Verb, new[] { "underlaid" }));
+            Assert.Equal(new[] { "underlaid" }, FormsOfKind(underlay, EnglishFormKind.Past));
+            Assert.Equal(new[] { "underlaid" }, FormsOfKind(underlay, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(underlay, EnglishFormKind.Past, "underlaid").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(underlay, EnglishFormKind.PastParticiple, "underlaid").SourceKind);
+
+            var underlie = generator.Generate(CreateLexeme("underlie", "v", EnglishPartOfSpeech.Verb, new[] { "underlay" }));
+            Assert.Equal(new[] { "underlay" }, FormsOfKind(underlie, EnglishFormKind.Past));
+            Assert.Equal(new[] { "underlain" }, FormsOfKind(underlie, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(underlie, EnglishFormKind.Past, "underlay").SourceKind);
+            Assert.DoesNotContain(underlie, form => form.Kind == EnglishFormKind.PastParticiple && form.Surface == "underlay");
+
+            var undergo = generator.Generate(CreateLexeme("undergo", "v", EnglishPartOfSpeech.Verb, new[] { "undergone" }));
+            Assert.Equal(new[] { "underwent" }, FormsOfKind(undergo, EnglishFormKind.Past));
+            Assert.Equal(new[] { "undergone" }, FormsOfKind(undergo, EnglishFormKind.PastParticiple));
+            Assert.DoesNotContain(undergo, form => form.Kind == EnglishFormKind.Past && form.Surface == "undergone");
+
+            var undo = generator.Generate(CreateLexeme("undo", "v", EnglishPartOfSpeech.Verb, new[] { "undone" }));
+            Assert.Equal(new[] { "undid" }, FormsOfKind(undo, EnglishFormKind.Past));
+            Assert.Equal(new[] { "undone" }, FormsOfKind(undo, EnglishFormKind.PastParticiple));
+            Assert.DoesNotContain(undo, form => form.Kind == EnglishFormKind.Past && form.Surface == "undone");
+
+            var unlearn = generator.Generate(CreateLexeme("unlearn", "v", EnglishPartOfSpeech.Verb, new[] { "unlearnt" }));
+            Assert.Equal(new[] { "unlearned", "unlearnt" }, FormsOfKind(unlearn, EnglishFormKind.Past));
+            Assert.Equal(new[] { "unlearned", "unlearnt" }, FormsOfKind(unlearn, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(unlearn, EnglishFormKind.Past, "unlearnt").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Rule, Find(unlearn, EnglishFormKind.Past, "unlearned").SourceKind);
+
+            var upheave = generator.Generate(CreateLexeme("upheave", "v", EnglishPartOfSpeech.Verb, new[] { "uphove" }));
+            Assert.Equal(new[] { "upheaved", "uphove" }, FormsOfKind(upheave, EnglishFormKind.Past));
+            Assert.Equal(new[] { "upheaved", "uphove" }, FormsOfKind(upheave, EnglishFormKind.PastParticiple));
+            Assert.Equal(EnglishFormSourceKind.Source, Find(upheave, EnglishFormKind.Past, "uphove").SourceKind);
+            Assert.Equal(EnglishFormSourceKind.Source, Find(upheave, EnglishFormKind.PastParticiple, "uphove").SourceKind);
+        }
+
+        [Theory]
+        [InlineData("unbend", "unbended")]
+        [InlineData("unbind", "unbinded")]
+        [InlineData("undergo", "undergoed")]
+        [InlineData("underlay", "underlayed")]
+        [InlineData("underlie", "underlied")]
+        [InlineData("underpay", "underpayed")]
+        [InlineData("undersell", "underselled")]
+        [InlineData("undershoot", "undershooted")]
+        [InlineData("understand", "understanded")]
+        [InlineData("undertake", "undertaked")]
+        [InlineData("underwrite", "underwrited")]
+        [InlineData("undo", "undoed")]
+        [InlineData("unfreeze", "unfreezed")]
+        [InlineData("unmake", "unmaked")]
+        [InlineData("unsay", "unsayed")]
+        [InlineData("unstring", "unstringed")]
+        [InlineData("unteach", "unteached")]
+        [InlineData("unwind", "unwinded")]
+        [InlineData("uphold", "upholded")]
+        [InlineData("uprise", "uprised")]
+        public void Generate_DoesNotEmitUPseudoForms(string lemma, string pseudoForm)
+        {
+            var forms = new EnglishFormGenerator().Generate(CreateLexeme(
+                lemma,
+                "v",
+                EnglishPartOfSpeech.Verb,
+                Array.Empty<string>()));
+
+            Assert.DoesNotContain(forms, form => form.Surface == pseudoForm);
+        }
+
+        [Theory]
         [InlineData("abide", "abode", "Past,PastParticiple")]
         [InlineData("aby", "abought;abye", "Past,PastParticiple;Base")]
         [InlineData("address", "addrest", "Past,PastParticiple")]
