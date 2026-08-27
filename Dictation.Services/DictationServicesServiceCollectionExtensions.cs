@@ -1,4 +1,5 @@
 using Dictation.Services.Configuration;
+using Dictation.Services.Lexicon;
 using Dictation.Services.SingleInstance;
 using Dictation.Services.Startup;
 using Dictation.Services.Tts;
@@ -15,6 +16,7 @@ namespace Dictation.Services
             services.AddSingleton<StartupInitializer>();
             services.AddSingleton<SingleInstanceCoordinator>();
             services.AddSingleton<TtsService>();
+            services.AddSingleton<LexiconLookupService>();
             return services;
         }
     }

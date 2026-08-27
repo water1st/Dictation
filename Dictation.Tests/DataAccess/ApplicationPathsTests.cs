@@ -14,6 +14,10 @@ namespace Dictation.Tests.DataAccess
             paths.EnsureRuntimeDirectories();
 
             Assert.Equal(temporaryDirectory.Path, paths.Root);
+            Assert.Equal(System.IO.Path.Combine(temporaryDirectory.Path, "Resources"), paths.Resources);
+            Assert.Equal(System.IO.Path.Combine(temporaryDirectory.Path, "Resources", "Lexicons"), paths.Lexicons);
+            Assert.Equal(System.IO.Path.Combine(paths.Lexicons, "JapaneseLexicon.db"), paths.JapaneseLexiconDatabase);
+            Assert.Equal(System.IO.Path.Combine(paths.Lexicons, "EnglishLexicon.db"), paths.EnglishLexiconDatabase);
             Assert.Equal(System.IO.Path.Combine(temporaryDirectory.Path, "CONFIG"), paths.Config);
             Assert.Equal(System.IO.Path.Combine(temporaryDirectory.Path, "DATA"), paths.Data);
             Assert.Equal(System.IO.Path.Combine(temporaryDirectory.Path, "LOGS"), paths.Logs);
@@ -22,6 +26,7 @@ namespace Dictation.Tests.DataAccess
             Assert.True(Directory.Exists(paths.Data));
             Assert.True(Directory.Exists(paths.Logs));
             Assert.True(Directory.Exists(paths.Backups));
+            Assert.False(Directory.Exists(paths.Lexicons));
             Assert.Equal(System.IO.Path.Combine(paths.Config, "settings.json"), paths.SettingsFile);
             Assert.Equal(System.IO.Path.Combine(paths.Data, "UserData.db"), paths.UserDataDatabase);
         }

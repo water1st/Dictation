@@ -11,6 +11,10 @@ namespace Dictation.DataAccess.Runtime
             }
 
             Root = Path.GetFullPath(rootDirectory);
+            Resources = Path.Combine(Root, "Resources");
+            Lexicons = Path.Combine(Resources, "Lexicons");
+            JapaneseLexiconDatabase = Path.Combine(Lexicons, "JapaneseLexicon.db");
+            EnglishLexiconDatabase = Path.Combine(Lexicons, "EnglishLexicon.db");
             Config = Path.Combine(Root, "CONFIG");
             Data = Path.Combine(Root, "DATA");
             Logs = Path.Combine(Root, "LOGS");
@@ -21,6 +25,14 @@ namespace Dictation.DataAccess.Runtime
         }
 
         public string Root { get; }
+
+        public string Resources { get; }
+
+        public string Lexicons { get; }
+
+        public string JapaneseLexiconDatabase { get; }
+
+        public string EnglishLexiconDatabase { get; }
 
         public string Config { get; }
 
