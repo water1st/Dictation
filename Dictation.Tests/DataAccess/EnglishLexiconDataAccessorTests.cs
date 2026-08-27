@@ -148,6 +148,65 @@ namespace Dictation.Tests.DataAccess
             Assert.NotNull(exception.InnerException);
         }
 
+        [Fact]
+        public async Task GetSenseGroupAsync_UsesOneLayerUndirectedDerivationsAndExcludesPhrases()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            LexiconTestDatabases.CreateEnglish(paths);
+            var accessor = CreateAccessor(paths);
+
+            var result = await accessor.GetSenseGroupAsync(
+                "go%2:01:00::",
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                new[] { "go%2:01:00::", "convert%2:30:00::" },
+                result.Select(item => item.SenseId));
+            Assert.DoesNotContain(result, item => item.SenseId == "conversion%1:04:00::");
+            Assert.DoesNotContain(result, item => item.SenseId == "go%2:02:00::");
+            Assert.DoesNotContain(result, item => item.IsPhrase);
+            Assert.Contains(result, item => item.Lemma == "convert");
+            Assert.Empty(await accessor.GetSenseGroupAsync(
+                "missing-sense",
+                TestContext.Current.CancellationToken));
+            Assert.Empty(await accessor.GetSenseGroupAsync(
+                "to move from one place to another",
+                TestContext.Current.CancellationToken));
+        }
+
+        [Fact]
+        public async Task GetSenseGroupAsync_PhraseAnchorReturnsOnlyAnchor()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            LexiconTestDatabases.CreateEnglish(paths);
+            var accessor = CreateAccessor(paths);
+
+            var result = await accessor.GetSenseGroupAsync(
+                "take_off%2:38:00::",
+                TestContext.Current.CancellationToken);
+
+            var item = Assert.Single(result);
+            Assert.Equal("take off", item.Lemma);
+            Assert.True(item.IsPhrase);
+        }
+
+        [Fact]
+        public async Task GetSenseGroupAsync_PreCanceledToken_PropagatesCancellation()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            LexiconTestDatabases.CreateEnglish(paths);
+            var accessor = CreateAccessor(paths);
+            using var cancellation = new CancellationTokenSource();
+            cancellation.Cancel();
+
+            await Assert.ThrowsAsync<OperationCanceledException>(() => accessor.GetSenseGroupAsync(
+                "go%2:01:00::",
+                cancellation.Token));
+        }
+
         private static EnglishLexiconDataAccessor CreateAccessor(ApplicationPaths paths)
         {
             return new EnglishLexiconDataAccessor(new LexiconSqliteConnectionFactory(paths));

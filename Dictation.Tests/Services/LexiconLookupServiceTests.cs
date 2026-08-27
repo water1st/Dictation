@@ -195,6 +195,96 @@ namespace Dictation.Tests.Services
                 cancellation.Token));
         }
 
+        [Fact]
+        public async Task GetImportGroupAsync_ReturnsMappedJapaneseEntryAndEnglishGroup()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            LexiconTestDatabases.CreateBoth(paths);
+            var service = CreateService(paths);
+
+            var japanese = Assert.Single(await service.GetImportGroupAsync(
+                LearningLanguage.Japanese,
+                "jmdict:1:1",
+                TestContext.Current.CancellationToken));
+            Assert.Equal("动词", japanese.PartOfSpeechLabel);
+            Assert.Contains("二类动词（一段）", japanese.AttributeLabel, StringComparison.Ordinal);
+            Assert.Contains("常用汉字", japanese.AttributeLabel, StringComparison.Ordinal);
+            Assert.Contains(japanese.Forms, form =>
+                form.Surface == "食べる"
+                && form.FormLabel == "普通形"
+                && form.DetailLabel == "汉字 · 动词");
+
+            var english = await service.GetImportGroupAsync(
+                LearningLanguage.English,
+                "go%2:01:00::",
+                TestContext.Current.CancellationToken);
+            Assert.Equal(
+                new[] { "go%2:01:00::", "convert%2:30:00::" },
+                english.Select(item => item.SourceSenseId));
+            var go = Assert.Single(english, item => item.SourceSenseId == "go%2:01:00::");
+            Assert.Equal("动词", go.PartOfSpeechLabel);
+            Assert.Contains(go.Forms, form => form.Surface == "go" && form.FormLabel == "原形");
+            Assert.Contains(go.Forms, form => form.Surface == "went" && form.FormLabel == "过去式");
+
+            var convert = Assert.Single(english, item => item.SourceSenseId == "convert%2:30:00::");
+            Assert.Equal("动词", convert.PartOfSpeechLabel);
+            Assert.Contains(convert.Forms, form => form.Surface == "convert" && form.FormLabel == "原形");
+            Assert.Contains(convert.Forms, form => form.Surface == "converted" && form.FormLabel == "过去式");
+        }
+
+        [Fact]
+        public async Task GetImportGroupAsync_ReturnsEmptyForUnknownSourceSense()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            LexiconTestDatabases.CreateBoth(paths);
+            var service = CreateService(paths);
+
+            Assert.Empty(await service.GetImportGroupAsync(
+                LearningLanguage.Japanese,
+                "missing-entry",
+                TestContext.Current.CancellationToken));
+            Assert.Empty(await service.GetImportGroupAsync(
+                LearningLanguage.English,
+                "missing-sense",
+                TestContext.Current.CancellationToken));
+        }
+
+        [Fact]
+        public async Task GetImportGroupAsync_RejectsUndefinedOrEmptySourceSense()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            LexiconTestDatabases.CreateBoth(paths);
+            var service = CreateService(paths);
+
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.GetImportGroupAsync(
+                (LearningLanguage)99,
+                "source-sense",
+                TestContext.Current.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.GetImportGroupAsync(
+                LearningLanguage.English,
+                " ",
+                TestContext.Current.CancellationToken));
+        }
+
+        [Fact]
+        public async Task GetImportGroupAsync_PreCanceledToken_PropagatesCancellation()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            LexiconTestDatabases.CreateBoth(paths);
+            var service = CreateService(paths);
+            using var cancellation = new CancellationTokenSource();
+            cancellation.Cancel();
+
+            await Assert.ThrowsAsync<OperationCanceledException>(() => service.GetImportGroupAsync(
+                LearningLanguage.English,
+                "go%2:01:00::",
+                cancellation.Token));
+        }
+
         private static LexiconLookupService CreateService(ApplicationPaths paths)
         {
             var factory = new LexiconSqliteConnectionFactory(paths);

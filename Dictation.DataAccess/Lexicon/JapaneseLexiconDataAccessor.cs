@@ -55,95 +55,7 @@ namespace Dictation.DataAccess.Lexicon
                     return Array.Empty<JapaneseLexiconLookupPo>();
                 }
 
-                var parameters = new { EntryIds = entryIds };
-                var entries = (await connection.QueryAsync<EntryRow>(new CommandDefinition(
-                    """
-                    SELECT EntryId, PrimaryWritten, PrimaryReading, LexicalCategory,
-                           VerbClass, Transitivity, KanjiUsage, IsPhrase
-                    FROM Entries
-                    WHERE EntryId IN @EntryIds;
-                    """,
-                    parameters,
-                    cancellationToken: cancellationToken))).ToDictionary(
-                    row => row.EntryId,
-                    StringComparer.Ordinal);
-                var partsOfSpeech = (await connection.QueryAsync<PartOfSpeechRow>(new CommandDefinition(
-                    """
-                    SELECT EntryId, SortIndex, Value
-                    FROM PartsOfSpeech
-                    WHERE EntryId IN @EntryIds
-                    ORDER BY EntryId, SortIndex;
-                    """,
-                    parameters,
-                    cancellationToken: cancellationToken)))
-                    .GroupBy(row => row.EntryId, StringComparer.Ordinal)
-                    .ToDictionary(
-                        group => group.Key,
-                        group => (IReadOnlyList<string>)group.Select(row => row.Value).ToArray(),
-                        StringComparer.Ordinal);
-                var meanings = (await connection.QueryAsync<MeaningRow>(new CommandDefinition(
-                    """
-                    SELECT EntryId, Text
-                    FROM Glosses
-                    WHERE EntryId IN @EntryIds AND Language = 'eng'
-                    ORDER BY EntryId, GlossIndex;
-                    """,
-                    parameters,
-                    cancellationToken: cancellationToken)))
-                    .GroupBy(row => row.EntryId, StringComparer.Ordinal)
-                    .ToDictionary(
-                        group => group.Key,
-                        group => (IReadOnlyList<string>)group.Select(row => row.Text).ToArray(),
-                        StringComparer.Ordinal);
-                var forms = (await connection.QueryAsync<FormRow>(new CommandDefinition(
-                    """
-                    SELECT EntryId, Surface, Reading, FormKind, ScriptKind, LexicalRole, IsCommon, IsPrimary
-                    FROM Forms
-                    WHERE EntryId IN @EntryIds
-                    ORDER BY EntryId, FormId;
-                    """,
-                    parameters,
-                    cancellationToken: cancellationToken)))
-                    .GroupBy(row => row.EntryId, StringComparer.Ordinal)
-                    .ToDictionary(
-                        group => group.Key,
-                        group => (IReadOnlyList<JapaneseLexiconLookupFormPo>)group
-                            .Select(row => new JapaneseLexiconLookupFormPo(
-                                row.Surface,
-                                row.Reading,
-                                row.FormKind,
-                                row.ScriptKind,
-                                row.LexicalRole,
-                                row.IsCommon != 0,
-                                row.IsPrimary != 0))
-                            .ToArray(),
-                        StringComparer.Ordinal);
-
-                return entryIds
-                    .Where(entries.ContainsKey)
-                    .Select(entryId =>
-                    {
-                        var entry = entries[entryId];
-                        return new JapaneseLexiconLookupPo(
-                            entry.EntryId,
-                            entry.PrimaryWritten,
-                            entry.PrimaryReading,
-                            entry.LexicalCategory,
-                            entry.VerbClass,
-                            entry.Transitivity,
-                            entry.KanjiUsage,
-                            entry.IsPhrase != 0,
-                            partsOfSpeech.TryGetValue(entryId, out var entryPartsOfSpeech)
-                                ? entryPartsOfSpeech
-                                : Array.Empty<string>(),
-                            meanings.TryGetValue(entryId, out var entryMeanings)
-                                ? entryMeanings
-                                : Array.Empty<string>(),
-                            forms.TryGetValue(entryId, out var entryForms)
-                                ? entryForms
-                                : Array.Empty<JapaneseLexiconLookupFormPo>());
-                    })
-                    .ToArray();
+                return await LoadEntriesAsync(connection, entryIds, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -157,6 +69,144 @@ namespace Dictation.DataAccess.Lexicon
             {
                 throw LexiconSqliteQuerySupport.WrapQueryFailure("日语", exception);
             }
+        }
+
+        public async Task<JapaneseLexiconLookupPo?> GetByEntryIdAsync(
+            string entryId,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(entryId);
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await using var connection = connectionFactory.CreateJapaneseConnection();
+                await connection.OpenAsync(cancellationToken);
+                await LexiconSqliteQuerySupport.EnsureSchemaVersionAsync(
+                    connection,
+                    "日语",
+                    cancellationToken);
+                var exists = await connection.ExecuteScalarAsync<long?>(new CommandDefinition(
+                    "SELECT 1 FROM Entries WHERE EntryId = @EntryId LIMIT 1;",
+                    new { EntryId = entryId },
+                    cancellationToken: cancellationToken));
+                if (exists is null)
+                {
+                    return null;
+                }
+
+                return (await LoadEntriesAsync(
+                    connection,
+                    new[] { entryId },
+                    cancellationToken)).Single();
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (LexiconDataAccessException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw LexiconSqliteQuerySupport.WrapQueryFailure("日语", exception);
+            }
+        }
+
+        private static async Task<IReadOnlyList<JapaneseLexiconLookupPo>> LoadEntriesAsync(
+            Microsoft.Data.Sqlite.SqliteConnection connection,
+            IReadOnlyList<string> entryIds,
+            CancellationToken cancellationToken)
+        {
+            var parameters = new { EntryIds = entryIds };
+            var entries = (await connection.QueryAsync<EntryRow>(new CommandDefinition(
+                """
+                SELECT EntryId, PrimaryWritten, PrimaryReading, LexicalCategory,
+                       VerbClass, Transitivity, KanjiUsage, IsPhrase
+                FROM Entries
+                WHERE EntryId IN @EntryIds;
+                """,
+                parameters,
+                cancellationToken: cancellationToken))).ToDictionary(
+                row => row.EntryId,
+                StringComparer.Ordinal);
+            var partsOfSpeech = (await connection.QueryAsync<PartOfSpeechRow>(new CommandDefinition(
+                """
+                SELECT EntryId, SortIndex, Value
+                FROM PartsOfSpeech
+                WHERE EntryId IN @EntryIds
+                ORDER BY EntryId, SortIndex;
+                """,
+                parameters,
+                cancellationToken: cancellationToken)))
+                .GroupBy(row => row.EntryId, StringComparer.Ordinal)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlyList<string>)group.Select(row => row.Value).ToArray(),
+                    StringComparer.Ordinal);
+            var meanings = (await connection.QueryAsync<MeaningRow>(new CommandDefinition(
+                """
+                SELECT EntryId, Text
+                FROM Glosses
+                WHERE EntryId IN @EntryIds AND Language = 'eng'
+                ORDER BY EntryId, GlossIndex;
+                """,
+                parameters,
+                cancellationToken: cancellationToken)))
+                .GroupBy(row => row.EntryId, StringComparer.Ordinal)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlyList<string>)group.Select(row => row.Text).ToArray(),
+                    StringComparer.Ordinal);
+            var forms = (await connection.QueryAsync<FormRow>(new CommandDefinition(
+                """
+                SELECT EntryId, Surface, Reading, FormKind, ScriptKind, LexicalRole, IsCommon, IsPrimary
+                FROM Forms
+                WHERE EntryId IN @EntryIds
+                ORDER BY EntryId, FormId;
+                """,
+                parameters,
+                cancellationToken: cancellationToken)))
+                .GroupBy(row => row.EntryId, StringComparer.Ordinal)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlyList<JapaneseLexiconLookupFormPo>)group
+                        .Select(row => new JapaneseLexiconLookupFormPo(
+                            row.Surface,
+                            row.Reading,
+                            row.FormKind,
+                            row.ScriptKind,
+                            row.LexicalRole,
+                            row.IsCommon != 0,
+                            row.IsPrimary != 0))
+                        .ToArray(),
+                    StringComparer.Ordinal);
+
+            return entryIds
+                .Where(entries.ContainsKey)
+                .Select(entryId =>
+                {
+                    var entry = entries[entryId];
+                    return new JapaneseLexiconLookupPo(
+                        entry.EntryId,
+                        entry.PrimaryWritten,
+                        entry.PrimaryReading,
+                        entry.LexicalCategory,
+                        entry.VerbClass,
+                        entry.Transitivity,
+                        entry.KanjiUsage,
+                        entry.IsPhrase != 0,
+                        partsOfSpeech.TryGetValue(entryId, out var entryPartsOfSpeech)
+                            ? entryPartsOfSpeech
+                            : Array.Empty<string>(),
+                        meanings.TryGetValue(entryId, out var entryMeanings)
+                            ? entryMeanings
+                            : Array.Empty<string>(),
+                        forms.TryGetValue(entryId, out var entryForms)
+                            ? entryForms
+                            : Array.Empty<JapaneseLexiconLookupFormPo>());
+                })
+                .ToArray();
         }
 
         private sealed class EntryRow

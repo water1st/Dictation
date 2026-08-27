@@ -253,7 +253,75 @@ namespace Dictation.DataAccess.Runtime
                 new SchemaMigration(
                     1,
                     "创建迁移元数据",
-                    "CREATE TABLE IF NOT EXISTS SchemaMigrations (Version INTEGER NOT NULL PRIMARY KEY, Name TEXT NOT NULL, AppliedAtUtc TEXT NOT NULL);")
+                    "CREATE TABLE IF NOT EXISTS SchemaMigrations (Version INTEGER NOT NULL PRIMARY KEY, Name TEXT NOT NULL, AppliedAtUtc TEXT NOT NULL);"),
+                new SchemaMigration(
+                    2,
+                    "创建导入收件箱和词组快照",
+                    """
+                    CREATE TABLE ImportBatches (
+                        BatchId TEXT NOT NULL PRIMARY KEY,
+                        Language TEXT NOT NULL CHECK (Language IN ('Japanese', 'English')),
+                        SourceKind TEXT NOT NULL CHECK (SourceKind IN ('Manual', 'Text', 'Mcp')),
+                        Status TEXT NOT NULL CHECK (Status IN ('Pending', 'Completed')),
+                        CreatedAtUtc TEXT NOT NULL,
+                        CompletedAtUtc TEXT NULL
+                    );
+                    CREATE TABLE WordGroups (
+                        WordGroupId TEXT NOT NULL PRIMARY KEY,
+                        Language TEXT NOT NULL CHECK (Language IN ('Japanese', 'English')),
+                        AnchorSourceSenseId TEXT NOT NULL,
+                        Placement TEXT NOT NULL CHECK (Placement IN ('Inbox', 'Learning', 'Review')),
+                        CreatedAtUtc TEXT NOT NULL
+                    );
+                    CREATE TABLE ImportBatchItems (
+                        ItemId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        BatchId TEXT NOT NULL,
+                        SourceText TEXT NOT NULL,
+                        AnchorSourceSenseId TEXT NOT NULL,
+                        WordGroupId TEXT NULL,
+                        Decision TEXT NOT NULL CHECK (Decision IN ('Pending', 'Duplicate', 'Learning', 'Review', 'Discard')),
+                        FOREIGN KEY (BatchId) REFERENCES ImportBatches (BatchId) ON DELETE CASCADE,
+                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE SET NULL
+                    );
+                    CREATE TABLE WordGroupMembers (
+                        MemberId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        WordGroupId TEXT NOT NULL,
+                        Language TEXT NOT NULL CHECK (Language IN ('Japanese', 'English')),
+                        SourceSenseId TEXT NOT NULL,
+                        SourceLexemeId TEXT NOT NULL,
+                        Headword TEXT NOT NULL,
+                        Reading TEXT NULL,
+                        PartOfSpeechLabel TEXT NOT NULL,
+                        AttributeLabel TEXT NOT NULL,
+                        IsPhrase INTEGER NOT NULL CHECK (IsPhrase IN (0, 1)),
+                        SortOrder INTEGER NOT NULL,
+                        UNIQUE (Language, SourceSenseId),
+                        UNIQUE (WordGroupId, SortOrder),
+                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE
+                    );
+                    CREATE TABLE WordGroupMeanings (
+                        MemberId INTEGER NOT NULL,
+                        MeaningIndex INTEGER NOT NULL,
+                        Text TEXT NOT NULL,
+                        PRIMARY KEY (MemberId, MeaningIndex),
+                        FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE
+                    );
+                    CREATE TABLE WordGroupForms (
+                        MemberId INTEGER NOT NULL,
+                        FormIndex INTEGER NOT NULL,
+                        Surface TEXT NOT NULL,
+                        Reading TEXT NULL,
+                        FormLabel TEXT NOT NULL,
+                        DetailLabel TEXT NOT NULL,
+                        IsCommon INTEGER NOT NULL CHECK (IsCommon IN (0, 1)),
+                        IsPrimary INTEGER NOT NULL CHECK (IsPrimary IN (0, 1)),
+                        PRIMARY KEY (MemberId, FormIndex),
+                        FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE
+                    );
+                    CREATE INDEX IX_ImportBatches_StatusLanguage ON ImportBatches (Status, Language);
+                    CREATE INDEX IX_ImportBatchItems_BatchDecision ON ImportBatchItems (BatchId, Decision);
+                    CREATE INDEX IX_ImportBatchItems_WordGroupId ON ImportBatchItems (WordGroupId);
+                    """)
             };
         }
     }

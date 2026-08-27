@@ -137,6 +137,43 @@ namespace Dictation.Tests.DataAccess
             Assert.NotNull(exception.InnerException);
         }
 
+        [Fact]
+        public async Task GetByEntryIdAsync_ReturnsOneCompleteEntryWithoutSearchingGlosses()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            LexiconTestDatabases.CreateJapanese(paths);
+            var accessor = CreateAccessor(paths);
+
+            var result = await accessor.GetByEntryIdAsync(
+                "jmdict:1:1",
+                TestContext.Current.CancellationToken);
+
+            Assert.NotNull(result);
+            Assert.Equal("jmdict:1:1", result!.EntryId);
+            Assert.Equal("食べる", result.PrimaryWritten);
+            Assert.Contains("to eat", result.Meanings[0], StringComparison.Ordinal);
+            Assert.Equal(8, result.Forms.Count);
+            Assert.Null(await accessor.GetByEntryIdAsync(
+                "to eat",
+                TestContext.Current.CancellationToken));
+        }
+
+        [Fact]
+        public async Task GetByEntryIdAsync_PreCanceledTokenPropagatesCancellation()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            LexiconTestDatabases.CreateJapanese(paths);
+            var accessor = CreateAccessor(paths);
+            using var cancellation = new CancellationTokenSource();
+            cancellation.Cancel();
+
+            await Assert.ThrowsAsync<OperationCanceledException>(() => accessor.GetByEntryIdAsync(
+                "jmdict:1:1",
+                cancellation.Token));
+        }
+
         private static JapaneseLexiconDataAccessor CreateAccessor(ApplicationPaths paths)
         {
             return new JapaneseLexiconDataAccessor(new LexiconSqliteConnectionFactory(paths));

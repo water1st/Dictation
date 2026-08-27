@@ -25,8 +25,19 @@ namespace Dictation.Tests.Services
             Assert.True(Directory.Exists(paths.Backups));
             Assert.False(Directory.Exists(paths.Cache));
             Assert.True(File.Exists(paths.UserDataDatabase));
-            Assert.Equal(new[] { "SchemaMigrations" }, await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(
+                new[]
+                {
+                    "ImportBatchItems",
+                    "ImportBatches",
+                    "SchemaMigrations",
+                    "WordGroupForms",
+                    "WordGroupMeanings",
+                    "WordGroupMembers",
+                    "WordGroups"
+                },
+                await ReadTableNamesAsync(paths));
+            Assert.Equal(new[] { 1, 2 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]
@@ -40,8 +51,19 @@ namespace Dictation.Tests.Services
             await initializer.InitializeAsync(TestContext.Current.CancellationToken);
 
             Assert.Empty(Directory.GetFiles(paths.Backups));
-            Assert.Equal(new[] { "SchemaMigrations" }, await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(
+                new[]
+                {
+                    "ImportBatchItems",
+                    "ImportBatches",
+                    "SchemaMigrations",
+                    "WordGroupForms",
+                    "WordGroupMeanings",
+                    "WordGroupMembers",
+                    "WordGroups"
+                },
+                await ReadTableNamesAsync(paths));
+            Assert.Equal(new[] { 1, 2 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]
@@ -58,8 +80,19 @@ namespace Dictation.Tests.Services
 
             await initializer.InitializeAsync(TestContext.Current.CancellationToken);
 
-            Assert.Equal(new[] { "SchemaMigrations" }, await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(
+                new[]
+                {
+                    "ImportBatchItems",
+                    "ImportBatches",
+                    "SchemaMigrations",
+                    "WordGroupForms",
+                    "WordGroupMeanings",
+                    "WordGroupMembers",
+                    "WordGroups"
+                },
+                await ReadTableNamesAsync(paths));
+            Assert.Equal(new[] { 1, 2 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]

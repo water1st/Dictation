@@ -44,6 +44,34 @@ namespace Dictation.Services.Lexicon
             };
         }
 
+        public async Task<IReadOnlyList<LexiconLookupResultDto>> GetImportGroupAsync(
+            LearningLanguage language,
+            string sourceSenseId,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(sourceSenseId);
+            if (!Enum.IsDefined(language))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(language),
+                    language,
+                    "不支持的学习语言。");
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            var normalizedSourceSenseId = sourceSenseId.Trim().Normalize(NormalizationForm.FormC);
+            return language switch
+            {
+                LearningLanguage.Japanese => await MapJapaneseImportGroupAsync(
+                    normalizedSourceSenseId,
+                    cancellationToken),
+                LearningLanguage.English => (await englishAccessor.GetSenseGroupAsync(
+                    normalizedSourceSenseId,
+                    cancellationToken)).Select(MapEnglish).ToArray(),
+                _ => throw new ArgumentOutOfRangeException(nameof(language), language, "不支持的学习语言。")
+            };
+        }
+
         private static string NormalizeQuery(LearningLanguage language, string query)
         {
             ArgumentNullException.ThrowIfNull(query);
@@ -97,6 +125,16 @@ namespace Dictation.Services.Lexicon
                     MapEnglishFormSourceKind(form.FormSourceKind),
                     true,
                     string.Equals(form.FormKind, "Base", StringComparison.Ordinal))).ToArray());
+        }
+
+        private async Task<IReadOnlyList<LexiconLookupResultDto>> MapJapaneseImportGroupAsync(
+            string sourceSenseId,
+            CancellationToken cancellationToken)
+        {
+            var value = await japaneseAccessor.GetByEntryIdAsync(sourceSenseId, cancellationToken);
+            return value is null
+                ? Array.Empty<LexiconLookupResultDto>()
+                : new[] { MapJapanese(value) };
         }
 
         private static string MapJapaneseCategory(string category)

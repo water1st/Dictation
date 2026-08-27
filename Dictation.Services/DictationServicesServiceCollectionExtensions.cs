@@ -1,4 +1,5 @@
 using Dictation.Services.Configuration;
+using Dictation.Services.Importing;
 using Dictation.Services.Lexicon;
 using Dictation.Services.SingleInstance;
 using Dictation.Services.Startup;
@@ -17,6 +18,7 @@ namespace Dictation.Services
             services.AddSingleton<SingleInstanceCoordinator>();
             services.AddSingleton<TtsService>();
             services.AddSingleton<LexiconLookupService>();
+            services.AddSingleton<ImportInboxService>();
             return services;
         }
     }

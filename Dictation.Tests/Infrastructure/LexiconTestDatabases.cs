@@ -294,16 +294,22 @@ namespace Dictation.Tests.Infrastructure
                 ("$schemaVersion", schemaVersion));
 
             AddEnglishLexeme(connection, "go%v", "go", "v", "v", false);
+            AddEnglishLexeme(connection, "convert%v", "convert", "v", "v", false);
+            AddEnglishLexeme(connection, "conversion%n", "conversion", "n", "n", false);
             AddEnglishLexeme(connection, "take off%v", "take off", "v", "v", true);
             AddEnglishLexeme(connection, "symbols%v", "symbols", "v", "v", false);
 
             AddEnglishSynset(connection, "go-synset-1", "v", "to move from one place to another", "go quickly");
             AddEnglishSynset(connection, "go-synset-2", "v", "to operate or function", null);
+            AddEnglishSynset(connection, "convert-synset", "v", "to change into another form", null);
+            AddEnglishSynset(connection, "conversion-synset", "n", "the act of converting", null);
             AddEnglishSynset(connection, "take-off-synset", "v", "to leave the ground", null);
             AddEnglishSynset(connection, "symbols-synset", "v", "a definition containing percent", null);
 
             AddEnglishSense(connection, "go%2:01:00::", "go%v", "go-synset-1", 1);
             AddEnglishSense(connection, "go%2:02:00::", "go%v", "go-synset-2", 2);
+            AddEnglishSense(connection, "convert%2:30:00::", "convert%v", "convert-synset", 1);
+            AddEnglishSense(connection, "conversion%1:04:00::", "conversion%n", "conversion-synset", 1);
             AddEnglishSense(connection, "take_off%2:38:00::", "take off%v", "take-off-synset", 1);
             AddEnglishSense(connection, "symbols%2:30:00::", "symbols%v", "symbols-synset", 1);
 
@@ -312,10 +318,20 @@ namespace Dictation.Tests.Infrastructure
             AddEnglishForm(connection, "go%v", "went", "Past", "Source");
             AddEnglishForm(connection, "go%v", "gone", "PastParticiple", "Source");
             AddEnglishForm(connection, "go%v", "going", "PresentParticiple", "Rule");
+            AddEnglishForm(connection, "convert%v", "convert", "Base", "Rule");
+            AddEnglishForm(connection, "convert%v", "converts", "ThirdPersonSingular", "Rule");
+            AddEnglishForm(connection, "convert%v", "converted", "Past", "Rule");
+            AddEnglishForm(connection, "convert%v", "converted", "PastParticiple", "Rule");
+            AddEnglishForm(connection, "convert%v", "converting", "PresentParticiple", "Rule");
+            AddEnglishForm(connection, "conversion%n", "conversion", "Base", "Rule");
             AddEnglishForm(connection, "take off%v", "take off", "Base", "Rule");
             AddEnglishForm(connection, "symbols%v", "%", "Base", "Source");
             AddEnglishForm(connection, "symbols%v", "_", "ThirdPersonSingular", "Source");
             AddEnglishForm(connection, "symbols%v", "\\", "Past", "Source");
+
+            AddEnglishDerivation(connection, "go%2:01:00::", "convert%2:30:00::");
+            AddEnglishDerivation(connection, "convert%2:30:00::", "conversion%1:04:00::");
+            AddEnglishDerivation(connection, "go%2:01:00::", "take_off%2:38:00::");
         }
 
         private static SqliteConnection OpenForWrite(string path)
@@ -471,6 +487,17 @@ namespace Dictation.Tests.Infrastructure
                 ("$surface", surface),
                 ("$formKind", formKind),
                 ("$formSourceKind", formSourceKind));
+        }
+
+        private static void AddEnglishDerivation(
+            SqliteConnection connection,
+            string sourceSenseId,
+            string targetSenseId)
+        {
+            Execute(connection,
+                "INSERT INTO Derivations (SourceSenseId, TargetSenseId) VALUES ($sourceSenseId, $targetSenseId);",
+                ("$sourceSenseId", sourceSenseId),
+                ("$targetSenseId", targetSenseId));
         }
 
         private static void Execute(

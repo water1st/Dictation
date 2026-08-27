@@ -52,7 +52,7 @@ namespace Dictation.Tests.DataAccess
         }
 
         [Fact]
-        public async Task MigrateAsync_NewDatabase_CreatesOnlyMetadataAndOneMigrationWithoutBackup()
+        public async Task MigrateAsync_NewDatabase_CreatesMetadataAndImportTablesWithoutBackup()
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = CreateRuntimePaths(temporaryDirectory);
@@ -61,9 +61,41 @@ namespace Dictation.Tests.DataAccess
             await runner.MigrateAsync(TestContext.Current.CancellationToken);
 
             Assert.True(File.Exists(paths.UserDataDatabase));
-            Assert.Equal(new[] { "SchemaMigrations" }, await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(
+                new[]
+                {
+                    "ImportBatchItems",
+                    "ImportBatches",
+                    "SchemaMigrations",
+                    "WordGroupForms",
+                    "WordGroupMeanings",
+                    "WordGroupMembers",
+                    "WordGroups"
+                },
+                await ReadTableNamesAsync(paths));
+            Assert.Equal(new[] { 1, 2 }, await ReadAppliedVersionsAsync(paths));
             Assert.Empty(Directory.GetFiles(paths.Backups));
+        }
+
+        [Fact]
+        public async Task MigrateAsync_UpgradesV1Database_AndV2ConstraintsAreActive()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = CreateRuntimePaths(temporaryDirectory);
+            await new SchemaMigrationRunner(
+                paths,
+                new SqliteConnectionFactory(paths),
+                new[] { CreateInitialMigration() }).MigrateAsync(TestContext.Current.CancellationToken);
+
+            await CreateRunner(paths).MigrateAsync(TestContext.Current.CancellationToken);
+
+            await using var connection = new SqliteConnection($"Data Source={paths.UserDataDatabase};Pooling=False;Foreign Keys=True");
+            await connection.OpenAsync(TestContext.Current.CancellationToken);
+            Assert.Equal(1L, await ExecuteScalarAsync<long>(connection, "PRAGMA foreign_keys;"));
+            await Assert.ThrowsAsync<SqliteException>(() => ExecuteAsync(
+                connection,
+                "INSERT INTO ImportBatches (BatchId, Language, SourceKind, Status, CreatedAtUtc) VALUES ('bad', 'Japanese', 'Manual', 'Unknown', 'now');"));
+            Assert.Equal(new[] { 1, 2 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]
@@ -331,6 +363,21 @@ namespace Dictation.Tests.DataAccess
             await using var command = connection.CreateCommand();
             command.CommandText = sql;
             await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+        }
+
+        private static async Task ExecuteAsync(SqliteConnection connection, string sql)
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = sql;
+            await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+        }
+
+        private static async Task<T> ExecuteScalarAsync<T>(SqliteConnection connection, string sql)
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = sql;
+            return (T)(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken)
+                ?? throw new InvalidOperationException("SQL 未返回值。"));
         }
     }
 }
