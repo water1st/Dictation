@@ -977,7 +977,51 @@ namespace Dictation.LexiconBuilder.WordNet
                     (EnglishFormKind.PastParticiple, "uphove"),
                     (EnglishFormKind.PresentParticiple, "upheaving")),
                 [("uphold", EnglishPartOfSpeech.Verb)] = CreateVerb("upholds", "upheld", "upheld", "upholding"),
-                [("uprise", EnglishPartOfSpeech.Verb)] = CreateVerb("uprises", "uprose", "uprisen", "uprising")
+                [("uprise", EnglishPartOfSpeech.Verb)] = CreateVerb("uprises", "uprose", "uprisen", "uprising"),
+                [("wake", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "wakes"),
+                    (EnglishFormKind.Past, "waked"),
+                    (EnglishFormKind.Past, "woke"),
+                    (EnglishFormKind.PastParticiple, "waked"),
+                    (EnglishFormKind.PastParticiple, "woke"),
+                    (EnglishFormKind.PastParticiple, "woken"),
+                    (EnglishFormKind.PresentParticiple, "waking")),
+                [("waylay", EnglishPartOfSpeech.Verb)] = CreateVerb("waylays", "waylaid", "waylaid", "waylaying"),
+                [("wear", EnglishPartOfSpeech.Verb)] = CreateVerb("wears", "wore", "worn", "wearing"),
+                [("weave", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "weaves"),
+                    (EnglishFormKind.Past, "weaved"),
+                    (EnglishFormKind.Past, "wove"),
+                    (EnglishFormKind.PastParticiple, "weaved"),
+                    (EnglishFormKind.PastParticiple, "woven"),
+                    (EnglishFormKind.PresentParticiple, "weaving")),
+                [("weep", EnglishPartOfSpeech.Verb)] = CreateVerb("weeps", "wept", "wept", "weeping"),
+                [("whipsaw", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "whipsaws"),
+                    (EnglishFormKind.Past, "whipsawed"),
+                    (EnglishFormKind.PastParticiple, "whipsawed"),
+                    (EnglishFormKind.PastParticiple, "whipsawn"),
+                    (EnglishFormKind.PresentParticiple, "whipsawing")),
+                [("win", EnglishPartOfSpeech.Verb)] = CreateVerb("wins", "won", "won", "winning"),
+                [("wind", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "winds"),
+                    (EnglishFormKind.Past, "winded"),
+                    (EnglishFormKind.Past, "wound"),
+                    (EnglishFormKind.PastParticiple, "winded"),
+                    (EnglishFormKind.PastParticiple, "wound"),
+                    (EnglishFormKind.PresentParticiple, "winding")),
+                [("withdraw", EnglishPartOfSpeech.Verb)] = CreateVerb("withdraws", "withdrew", "withdrawn", "withdrawing"),
+                [("withhold", EnglishPartOfSpeech.Verb)] = CreateVerb("withholds", "withheld", "withheld", "withholding"),
+                [("withstand", EnglishPartOfSpeech.Verb)] = CreateVerb("withstands", "withstood", "withstood", "withstanding"),
+                [("work", EnglishPartOfSpeech.Verb)] = Create(
+                    (EnglishFormKind.ThirdPersonSingular, "works"),
+                    (EnglishFormKind.Past, "worked"),
+                    (EnglishFormKind.Past, "wrought"),
+                    (EnglishFormKind.PastParticiple, "worked"),
+                    (EnglishFormKind.PastParticiple, "wrought"),
+                    (EnglishFormKind.PresentParticiple, "working")),
+                [("wring", EnglishPartOfSpeech.Verb)] = CreateVerb("wrings", "wrung", "wrung", "wringing"),
+                [("write", EnglishPartOfSpeech.Verb)] = CreateVerb("writes", "wrote", "written", "writing")
             };
 
         internal static bool TryGetParadigm(
