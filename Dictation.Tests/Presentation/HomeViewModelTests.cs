@@ -1,8 +1,15 @@
+using Dictation.DataAccess;
+using Dictation.DataAccess.Importing;
+using Dictation.DataAccess.Lexicon;
 using Dictation.DataAccess.Runtime;
+using Dictation.Presentation.Navigation;
 using Dictation.Presentation.ViewModels;
 using Dictation.Services.Configuration;
+using Dictation.Services.Importing;
+using Dictation.Services.Lexicon;
 using Dictation.Tests.Infrastructure;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Presentation
 {
@@ -143,6 +150,55 @@ namespace Dictation.Tests.Presentation
             Assert.Null(viewModel.ErrorMessage);
         }
 
+        [Fact]
+        public async Task OpenLexiconLookupCommand_UsesCurrentHomeLanguage()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            using var provider = CreateNavigationProvider(paths);
+            using var navigation = new NavigationService(
+                provider.GetRequiredService<IServiceScopeFactory>());
+            var viewModel = new HomeViewModel(
+                CreateSettingsService(paths),
+                navigation);
+            navigation.InitializeHome(viewModel);
+            await viewModel.SelectLanguageAsync(LearningLanguage.English, CancellationToken.None);
+            var reachedPage = new TaskCompletionSource<object?>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            navigation.TransitionRequested += (_, args) => reachedPage.TrySetResult(args.CurrentPage);
+
+            viewModel.OpenLexiconLookupCommand.Execute(null);
+            var page = await reachedPage.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+            var lookupViewModel = Assert.IsType<LexiconLookupViewModel>(page);
+            Assert.Equal(LearningLanguage.English, lookupViewModel.SelectedLanguage);
+            navigation.CompleteTransition();
+        }
+
+        [Fact]
+        public async Task OpenImportInboxCommand_UsesCurrentHomeLanguage()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            using var provider = CreateNavigationProvider(paths);
+            using var navigation = new NavigationService(
+                provider.GetRequiredService<IServiceScopeFactory>());
+            var viewModel = new HomeViewModel(
+                CreateSettingsService(paths),
+                navigation);
+            navigation.InitializeHome(viewModel);
+            var reachedPage = new TaskCompletionSource<object?>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            navigation.TransitionRequested += (_, args) => reachedPage.TrySetResult(args.CurrentPage);
+
+            viewModel.OpenImportInboxCommand.Execute(null);
+            var page = await reachedPage.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+            var inboxViewModel = Assert.IsType<ImportInboxViewModel>(page);
+            Assert.Equal(LearningLanguage.Japanese, inboxViewModel.SelectedLanguage);
+            navigation.CompleteTransition();
+        }
+
         private static HomeViewModel CreateViewModel(
             ApplicationPaths paths,
             bool ignoreConfigurationLoadErrors = false)
@@ -155,6 +211,27 @@ namespace Dictation.Tests.Presentation
         private static SettingsService CreateSettingsService(ApplicationPaths paths)
         {
             return new SettingsService(BuildConfiguration(paths), paths);
+        }
+
+        private static ServiceProvider CreateNavigationProvider(ApplicationPaths paths)
+        {
+            var services = new ServiceCollection();
+            services.AddScoped<LexiconLookupService>(_ => CreateLexiconService(paths));
+            services.AddScoped<ImportInboxService>(serviceProvider =>
+                new ImportInboxService(
+                    serviceProvider.GetRequiredService<LexiconLookupService>(),
+                    new ImportInboxDataAccessor(new SqliteConnectionFactory(paths))));
+            services.AddScoped<LexiconLookupViewModel>();
+            services.AddScoped<ImportInboxViewModel>();
+            return services.BuildServiceProvider();
+        }
+
+        private static LexiconLookupService CreateLexiconService(ApplicationPaths paths)
+        {
+            var factory = new LexiconSqliteConnectionFactory(paths);
+            return new LexiconLookupService(
+                new JapaneseLexiconDataAccessor(factory),
+                new EnglishLexiconDataAccessor(factory));
         }
 
         private static IConfigurationRoot BuildConfiguration(

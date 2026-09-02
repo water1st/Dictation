@@ -26,14 +26,11 @@ namespace Dictation.Presentation
             }
 
             var application = host.Services.GetRequiredService<App>();
-            var homeWindow = host.Services.GetRequiredService<HomeWindow>();
-            Action activationHandler = homeWindow.RestoreAndActivate;
+            var homeWindow = default(HomeWindow);
+            Action? activationHandler = null;
             var hostStarted = false;
             try
             {
-                instanceCoordinator.ActivationRequested += activationHandler;
-                _ = instanceCoordinator.StartListeningAsync();
-
                 host.StartAsync().GetAwaiter().GetResult();
                 hostStarted = true;
                 host.Services.GetRequiredService<StartupInitializer>()
@@ -43,12 +40,21 @@ namespace Dictation.Presentation
 
                 var viewModel = host.Services.GetRequiredService<ViewModels.HomeViewModel>();
                 viewModel.InitializeAsync().GetAwaiter().GetResult();
+                var navigationService = host.Services.GetRequiredService<Navigation.NavigationService>();
+                navigationService.InitializeHome(viewModel);
+                homeWindow = host.Services.GetRequiredService<HomeWindow>();
+                activationHandler = homeWindow.RestoreAndActivate;
+                instanceCoordinator.ActivationRequested += activationHandler;
+                _ = instanceCoordinator.StartListeningAsync();
 
                 application.Run(homeWindow);
             }
             finally
             {
-                instanceCoordinator.ActivationRequested -= activationHandler;
+                if (activationHandler is not null)
+                {
+                    instanceCoordinator.ActivationRequested -= activationHandler;
+                }
                 if (hostStarted)
                 {
                     host.StopAsync().GetAwaiter().GetResult();

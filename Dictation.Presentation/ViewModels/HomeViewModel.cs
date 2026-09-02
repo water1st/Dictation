@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Dictation.Presentation.Navigation;
 using Dictation.Services.Configuration;
 
 namespace Dictation.Presentation.ViewModels
@@ -8,6 +9,7 @@ namespace Dictation.Presentation.ViewModels
     public sealed class HomeViewModel : INotifyPropertyChanged
     {
         private readonly SettingsService settingsService;
+        private readonly NavigationService? navigationService;
         private readonly SemaphoreSlim persistenceGate = new(1, 1);
         private ThemeMode selectedThemeMode = ThemeMode.System;
         private LearningLanguage selectedLanguage = LearningLanguage.Japanese;
@@ -15,14 +17,24 @@ namespace Dictation.Presentation.ViewModels
         private bool isInitialized;
 
         public HomeViewModel(SettingsService settingsService)
+            : this(settingsService, null)
+        {
+        }
+
+        public HomeViewModel(
+            SettingsService settingsService,
+            NavigationService? navigationService)
         {
             this.settingsService = settingsService
                 ?? throw new ArgumentNullException(nameof(settingsService));
+            this.navigationService = navigationService;
             SelectJapaneseCommand = new AsyncCommand(() => SelectLanguageAsync(LearningLanguage.Japanese));
             SelectEnglishCommand = new AsyncCommand(() => SelectLanguageAsync(LearningLanguage.English));
             SelectSystemThemeCommand = new AsyncCommand(() => SelectThemeAsync(ThemeMode.System));
             SelectLightThemeCommand = new AsyncCommand(() => SelectThemeAsync(ThemeMode.Light));
             SelectDarkThemeCommand = new AsyncCommand(() => SelectThemeAsync(ThemeMode.Dark));
+            OpenLexiconLookupCommand = new AsyncCommand(() => OpenLexiconLookupAsync());
+            OpenImportInboxCommand = new AsyncCommand(() => OpenImportInboxAsync());
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -69,6 +81,10 @@ namespace Dictation.Presentation.ViewModels
         public ICommand SelectLightThemeCommand { get; }
 
         public ICommand SelectDarkThemeCommand { get; }
+
+        public ICommand OpenLexiconLookupCommand { get; }
+
+        public ICommand OpenImportInboxCommand { get; }
 
         public async Task InitializeAsync(CancellationToken cancellationToken = default)
         {
@@ -122,6 +138,20 @@ namespace Dictation.Presentation.ViewModels
         {
             ValidateThemeMode(themeMode);
             return SaveSettingsAsync(selectedLanguage, themeMode, cancellationToken);
+        }
+
+        public Task OpenLexiconLookupAsync(CancellationToken cancellationToken = default)
+        {
+            return GetNavigationService().OpenLexiconLookupAsync(
+                selectedLanguage,
+                cancellationToken);
+        }
+
+        public Task OpenImportInboxAsync(CancellationToken cancellationToken = default)
+        {
+            return GetNavigationService().OpenImportInboxAsync(
+                selectedLanguage,
+                cancellationToken);
         }
 
         private async Task SaveSettingsAsync(
@@ -202,6 +232,12 @@ namespace Dictation.Presentation.ViewModels
             {
                 throw new ArgumentOutOfRangeException(nameof(themeMode), themeMode, "主题值无效。");
             }
+        }
+
+        private NavigationService GetNavigationService()
+        {
+            return navigationService
+                ?? throw new InvalidOperationException("首页导航服务尚未配置。");
         }
 
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

@@ -1,5 +1,7 @@
 using Dictation.Presentation.Theme;
 using Dictation.Presentation.ViewModels;
+using Dictation.Presentation.Navigation;
+using Dictation.Presentation.Shell;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Presentation
@@ -12,13 +14,17 @@ namespace Dictation.Presentation
 
             services.AddSingleton<App>();
             services.AddSingleton<HomeViewModel>();
+            services.AddSingleton<NavigationService>();
+            services.AddSingleton<OverlayService>();
+            services.AddSingleton<ShellViewModel>();
             services.AddSingleton<HomeWindow>();
             services.AddSingleton<ThemeManager>();
             services.AddSingleton<ISystemThemeProvider, WindowsSystemThemeProvider>();
 
-            services.AddTransient<LexiconLookupViewModel>();
+            services.AddScoped<LexiconLookupViewModel>();
             services.AddTransient<LexiconLookupWindow>();
             services.AddSingleton<LexiconLookupWindowFactory>();
+            services.AddScoped<ImportInboxViewModel>();
 
             services.AddSingleton<MainWindow>();
             services.AddTransient<DictationWindow>();
