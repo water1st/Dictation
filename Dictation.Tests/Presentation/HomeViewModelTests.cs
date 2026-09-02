@@ -3,6 +3,7 @@ using Dictation.DataAccess.Importing;
 using Dictation.DataAccess.Lexicon;
 using Dictation.DataAccess.Runtime;
 using Dictation.Presentation.Navigation;
+using Dictation.Presentation.Shell;
 using Dictation.Presentation.ViewModels;
 using Dictation.Services.Configuration;
 using Dictation.Services.Importing;
@@ -156,8 +157,7 @@ namespace Dictation.Tests.Presentation
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = new ApplicationPaths(temporaryDirectory.Path);
             using var provider = CreateNavigationProvider(paths);
-            using var navigation = new NavigationService(
-                provider.GetRequiredService<IServiceScopeFactory>());
+            var navigation = provider.GetRequiredService<NavigationService>();
             var viewModel = new HomeViewModel(
                 CreateSettingsService(paths),
                 navigation);
@@ -181,8 +181,7 @@ namespace Dictation.Tests.Presentation
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = new ApplicationPaths(temporaryDirectory.Path);
             using var provider = CreateNavigationProvider(paths);
-            using var navigation = new NavigationService(
-                provider.GetRequiredService<IServiceScopeFactory>());
+            var navigation = provider.GetRequiredService<NavigationService>();
             var viewModel = new HomeViewModel(
                 CreateSettingsService(paths),
                 navigation);
@@ -216,6 +215,8 @@ namespace Dictation.Tests.Presentation
         private static ServiceProvider CreateNavigationProvider(ApplicationPaths paths)
         {
             var services = new ServiceCollection();
+            services.AddSingleton<NavigationService>();
+            services.AddSingleton<OverlayService>();
             services.AddScoped<LexiconLookupService>(_ => CreateLexiconService(paths));
             services.AddScoped<ImportInboxService>(serviceProvider =>
                 new ImportInboxService(

@@ -43,13 +43,44 @@ namespace Dictation.Tests.Presentation
             var lookup = Assert.IsType<LexiconLookupViewModel>(fixture.Navigation.CurrentPage);
             Assert.Equal(LearningLanguage.English, lookup.SelectedLanguage);
             Assert.Equal(NavigationDirection.Forward, fixture.Navigation.LastDirection);
-            Assert.True(fixture.Navigation.CanGoBack);
+            Assert.False(fixture.Navigation.CanGoBack);
             var transition = Assert.Single(transitions);
             Assert.Same(fixture.HomeViewModel, transition.PreviousPage);
             Assert.Same(lookup, transition.CurrentPage);
             Assert.Equal(NavigationDirection.Forward, transition.Direction);
 
             fixture.Navigation.CompleteTransition();
+            Assert.True(fixture.Navigation.CanGoBack);
+        }
+
+        [Fact]
+        public async Task GoBackDuringTransition_IsIgnoredUntilTransitionCompletes()
+        {
+            using var fixture = new NavigationFixture();
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese);
+
+            var lookup = Assert.IsType<LexiconLookupViewModel>(fixture.Navigation.CurrentPage);
+            var canGoBackChanges = new List<string?>();
+            fixture.Navigation.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(NavigationService.CanGoBack))
+                {
+                    canGoBackChanges.Add(args.PropertyName);
+                }
+            };
+
+            Assert.False(fixture.Navigation.CanGoBack);
+            await fixture.Navigation.GoBackAsync();
+
+            Assert.Same(lookup, fixture.Navigation.CurrentPage);
+            Assert.False(fixture.Navigation.CanGoBack);
+
+            fixture.Navigation.CompleteTransition();
+
+            Assert.True(fixture.Navigation.CanGoBack);
+            Assert.Contains(nameof(NavigationService.CanGoBack), canGoBackChanges);
         }
 
         [Fact]
@@ -222,6 +253,10 @@ namespace Dictation.Tests.Presentation
             {
                 var paths = new ApplicationPaths(temporaryDirectory.Path);
                 var services = new ServiceCollection();
+                services.AddSingleton<NavigationService>(serviceProvider =>
+                    new NavigationService(
+                        serviceProvider.GetRequiredService<IServiceScopeFactory>()));
+                services.AddSingleton<OverlayService>();
                 services.AddScoped<ScopeProbe>();
                 services.AddScoped<LexiconLookupService>(_ => CreateLexiconService(paths));
                 services.AddScoped<ImportInboxService>(serviceProvider =>
@@ -241,8 +276,7 @@ namespace Dictation.Tests.Presentation
                     return ActivatorUtilities.CreateInstance<ImportInboxViewModel>(serviceProvider);
                 });
                 ServiceProvider = services.BuildServiceProvider();
-                Navigation = new NavigationService(
-                    ServiceProvider.GetRequiredService<IServiceScopeFactory>());
+                Navigation = ServiceProvider.GetRequiredService<NavigationService>();
                 HomeViewModel = new HomeViewModel(
                     new SettingsService(new ConfigurationBuilder().Build(), paths),
                     Navigation);

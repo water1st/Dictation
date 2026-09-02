@@ -8,5 +8,8 @@
         <DataTemplate DataType="{x:Type viewModels:HomeViewModel}">
             <views:HomePage />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:LexiconLookupViewModel}">
+            <views:LexiconLookupPage />
+        </DataTemplate>
     </Application.Resources>
 </Application>

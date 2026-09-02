@@ -22,8 +22,6 @@ namespace Dictation.Presentation
             services.AddSingleton<ISystemThemeProvider, WindowsSystemThemeProvider>();
 
             services.AddScoped<LexiconLookupViewModel>();
-            services.AddTransient<LexiconLookupWindow>();
-            services.AddSingleton<LexiconLookupWindowFactory>();
             services.AddScoped<ImportInboxViewModel>();
 
             services.AddSingleton<MainWindow>();

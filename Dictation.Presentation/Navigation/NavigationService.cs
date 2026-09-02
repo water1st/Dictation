@@ -31,7 +31,7 @@ namespace Dictation.Presentation.Navigation
 
         public string PageTitle => currentEntry?.Title ?? string.Empty;
 
-        public bool CanGoBack => backStack.Count > 0;
+        public bool CanGoBack => backStack.Count > 0 && !transitionPending;
 
         public NavigationDirection LastDirection { get; private set; } = NavigationDirection.Forward;
 
@@ -160,6 +160,7 @@ namespace Dictation.Presentation.Navigation
             transitionPending = false;
             DisposeEntries(pendingDisposals);
             pendingDisposals.Clear();
+            OnPropertyChanged(nameof(CanGoBack));
         }
 
         public void Dispose()
