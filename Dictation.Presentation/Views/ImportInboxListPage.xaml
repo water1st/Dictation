@@ -285,6 +285,9 @@
                        Text="{Binding ErrorMessage}"
                        TextWrapping="Wrap" />
             <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Command="{Binding OpenSelectedDetailCommand}"
+                        Content="查看详情"
+                        Style="{StaticResource InboxButtonStyle}" />
                 <Button Command="{Binding SendToLearningCommand}"
                         Content="送入学习"
                         IsEnabled="{Binding CanDecide}"

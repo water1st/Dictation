@@ -14,5 +14,8 @@
         <DataTemplate DataType="{x:Type viewModels:ImportInboxListViewModel}">
             <views:ImportInboxListPage />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:ImportInboxDetailViewModel}">
+            <views:ImportInboxDetailPage />
+        </DataTemplate>
     </Application.Resources>
 </Application>

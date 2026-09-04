@@ -77,6 +77,55 @@ namespace Dictation.Tests.Presentation
             });
         }
 
+        [Fact]
+        public void ListPage_ExposesTheSelectedItemDetailCommand()
+        {
+            RunOnSta(() =>
+            {
+                using var environment = new TestEnvironment();
+                var viewModel = environment.CreateListViewModel();
+                viewModel.Initialize(LearningLanguage.English);
+                var batch = CreateBatch();
+                viewModel.Batches.Add(batch);
+                viewModel.SelectedBatch = batch;
+
+                var page = new ImportInboxListPage { DataContext = viewModel };
+                RenderControl(page);
+                var detailButton = Assert.Single(
+                    FindVisualChildren<Button>(page),
+                    button => string.Equals(button.Content as string, "查看详情", StringComparison.Ordinal));
+
+                Assert.Same(viewModel.OpenSelectedDetailCommand, detailButton.Command);
+            });
+        }
+
+        [Fact]
+        public void DetailPage_RendersEveryMemberFormAndEditableChineseDraft()
+        {
+            RunOnSta(() =>
+            {
+                var batch = CreateBatch();
+                var viewModel = new ImportInboxDetailViewModel();
+                viewModel.Initialize(batch, 1);
+
+                var page = new ImportInboxDetailPage { DataContext = viewModel };
+                RenderControl(page);
+                var text = FindText(page);
+                var meaningEditors = FindVisualChildren<TextBox>(page).ToArray();
+
+                Assert.True(typeof(UserControl).IsAssignableFrom(typeof(ImportInboxDetailPage)));
+                Assert.Contains(text, value => value.Contains("go", StringComparison.Ordinal));
+                Assert.Contains(text, value => value.Contains("不规则动词", StringComparison.Ordinal));
+                Assert.Contains(text, value => value.Contains("另一个成员", StringComparison.Ordinal));
+                Assert.Contains(text, value => value.Contains("过去式", StringComparison.Ordinal));
+                Assert.Contains(text, value => value.Contains("went", StringComparison.Ordinal));
+                Assert.Equal(2, meaningEditors.Length);
+                Assert.Contains(meaningEditors, editor => editor.Text.Contains("去", StringComparison.Ordinal));
+                Assert.Contains(meaningEditors, editor => string.IsNullOrEmpty(editor.Text));
+                Assert.All(meaningEditors, editor => Assert.False(editor.IsReadOnly));
+            });
+        }
+
         private static ImportBatchDto CreateBatch()
         {
             return new ImportBatchDto(
