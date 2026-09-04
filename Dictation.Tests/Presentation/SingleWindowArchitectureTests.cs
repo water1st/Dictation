@@ -28,6 +28,36 @@ namespace Dictation.Tests.Presentation
         }
 
         [Fact]
+        public void PresentationUsesOnlyHomeWindowAndFeatureUserControls()
+        {
+            var windows = typeof(HomeWindow).Assembly
+                .GetTypes()
+                .Where(type => !type.IsAbstract && typeof(Window).IsAssignableFrom(type))
+                .ToArray();
+
+            Assert.Equal(typeof(HomeWindow), Assert.Single(windows));
+            Assert.True(typeof(UserControl).IsAssignableFrom(typeof(HomePage)));
+            Assert.True(typeof(UserControl).IsAssignableFrom(typeof(LexiconLookupPage)));
+            Assert.True(typeof(UserControl).IsAssignableFrom(typeof(ImportInboxListPage)));
+            Assert.True(typeof(UserControl).IsAssignableFrom(typeof(ImportInboxDetailPage)));
+        }
+
+        [Fact]
+        public void LegacyWinFormsWindowsAreNotRegisteredInTheActiveContainer()
+        {
+            var services = new ServiceCollection();
+
+            services.AddDictationPresentation();
+
+            Assert.DoesNotContain(
+                services,
+                descriptor => typeof(System.Windows.Forms.Form).IsAssignableFrom(descriptor.ServiceType));
+            Assert.DoesNotContain(
+                services,
+                descriptor => descriptor.ServiceType == typeof(WindowFactory));
+        }
+
+        [Fact]
         public void HomeWindow_ContainsNamedCurrentPagePresenter()
         {
             RunOnSta(() =>

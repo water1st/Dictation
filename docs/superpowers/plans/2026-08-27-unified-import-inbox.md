@@ -1,5 +1,7 @@
 # 统一 Import Inbox Implementation Plan
 
+> **状态（2026-09-04）：** 本计划中的 WPF 窗口、查词／收件箱页面和中文运行时词库部分，已由 `2026-08-31-single-window-chinese-lexicon-design.md`、`2026-08-31-single-window-navigation.md` 与 `2026-08-31-chinese-runtime-lexicons.md` 接管。本文保留为导入数据链路及后续批量入口的历史依据，不得据此恢复独立业务窗口。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans task-by-task.
 
 **Goal:** 建立日语、英语共用的导入收件箱业务链路：任意词形解析为完整学习组，重复项静默跳过，用户按批选择后送入学习库、复习库或丢弃；手动、文本文件、拖放、启动参数以及后续 MCP 只调用同一个 Service。

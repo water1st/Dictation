@@ -25,13 +25,6 @@ namespace Dictation.Presentation
             services.AddScoped<ImportInboxListViewModel>();
             services.AddScoped<ImportInboxDetailViewModel>();
 
-            services.AddSingleton<MainWindow>();
-            services.AddTransient<DictationWindow>();
-            services.AddTransient<ResultWindow>();
-            services.AddTransient<ReviewWindow>();
-
-            services.AddTransient<WindowFactory>();
-
             return services;
         }
     }
