@@ -47,7 +47,7 @@ namespace Dictation.Presentation.Navigation
                 throw new InvalidOperationException("首页已经初始化，不能重复初始化。");
             }
 
-            currentEntry = new NavigationEntry(homeViewModel, "首页", null, null);
+            currentEntry = new NavigationEntry(homeViewModel, "首页", null, null, null);
             isInitialized = true;
             OnPropertyChanged(nameof(CurrentPage));
             OnPropertyChanged(nameof(PageTitle));
@@ -73,7 +73,7 @@ namespace Dictation.Presentation.Navigation
                 viewModel.Initialize(language);
                 cancellationToken.ThrowIfCancellationRequested();
                 NavigateForward(
-                    new NavigationEntry(viewModel, viewModel.WindowTitle, language, scope));
+                    new NavigationEntry(viewModel, viewModel.WindowTitle, language, scope, null));
             }
             catch
             {
@@ -107,7 +107,12 @@ namespace Dictation.Presentation.Navigation
                     await viewModel.RefreshAsync(cancellationToken);
                     cancellationToken.ThrowIfCancellationRequested();
                     NavigateForward(
-                        new NavigationEntry(viewModel, viewModel.WindowTitle, language, scope));
+                        new NavigationEntry(
+                            viewModel,
+                            viewModel.WindowTitle,
+                            language,
+                            scope,
+                            viewModel.RefreshPreservingStateAsync));
                 }
                 catch
                 {
@@ -130,37 +135,83 @@ namespace Dictation.Presentation.Navigation
             ArgumentNullException.ThrowIfNull(batch);
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(itemId);
             cancellationToken.ThrowIfCancellationRequested();
-            EnsureInitialized();
-            throw new NotSupportedException("导入收件箱详情页将在收件箱页面化检查点实现。");
+            ValidateLanguage(batch.Language);
+            if (!TryPrepareForwardNavigation())
+            {
+                return Task.CompletedTask;
+            }
+
+            if (currentEntry?.ViewModel is not ImportInboxListViewModel
+                || currentEntry.Language != batch.Language)
+            {
+                throw new InvalidOperationException("导入详情只能从相同语言的收件箱列表打开。");
+            }
+
+            var scope = scopeFactory.CreateScope();
+            try
+            {
+                var viewModel = scope.ServiceProvider.GetRequiredService<ImportInboxDetailViewModel>();
+                viewModel.Initialize(batch, itemId);
+                cancellationToken.ThrowIfCancellationRequested();
+                NavigateForward(
+                    new NavigationEntry(
+                        viewModel,
+                        viewModel.WindowTitle,
+                        batch.Language,
+                        scope,
+                        null));
+            }
+            catch
+            {
+                scope.Dispose();
+                throw;
+            }
+
+            return Task.CompletedTask;
         }
 
-        public Task GoBackAsync(CancellationToken cancellationToken = default)
+        public async Task GoBackAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             EnsureInitialized();
             if (!CanGoBack)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             EnsureTransitionCompleted();
-            var poppedEntry = currentEntry!;
             var previousEntry = backStack[^1];
-            backStack.RemoveAt(backStack.Count - 1);
-            currentEntry = previousEntry;
-            pendingDisposals.Add(poppedEntry);
-            LastDirection = NavigationDirection.Backward;
-            transitionPending = true;
-            RaiseNavigationChanged();
-            TransitionRequested?.Invoke(
-                this,
-                new NavigationTransitionEventArgs(
-                    poppedEntry.ViewModel,
-                    poppedEntry.Title,
-                    previousEntry.ViewModel,
-                    previousEntry.Title,
-                    LastDirection));
-            return Task.CompletedTask;
+            navigationOperationPending = true;
+            OnPropertyChanged(nameof(CanGoBack));
+            try
+            {
+                if (previousEntry.ResumeAsync is not null)
+                {
+                    await previousEntry.ResumeAsync(cancellationToken);
+                    cancellationToken.ThrowIfCancellationRequested();
+                }
+
+                var poppedEntry = currentEntry!;
+                backStack.RemoveAt(backStack.Count - 1);
+                currentEntry = previousEntry;
+                pendingDisposals.Add(poppedEntry);
+                LastDirection = NavigationDirection.Backward;
+                transitionPending = true;
+                RaiseNavigationChanged();
+                TransitionRequested?.Invoke(
+                    this,
+                    new NavigationTransitionEventArgs(
+                        poppedEntry.ViewModel,
+                        poppedEntry.Title,
+                        previousEntry.ViewModel,
+                        previousEntry.Title,
+                        LastDirection));
+            }
+            finally
+            {
+                navigationOperationPending = false;
+                OnPropertyChanged(nameof(CanGoBack));
+            }
         }
 
         public void CompleteTransition()
@@ -283,6 +334,7 @@ namespace Dictation.Presentation.Navigation
             object ViewModel,
             string Title,
             LearningLanguage? Language,
-            IServiceScope? Scope);
+            IServiceScope? Scope,
+            Func<CancellationToken, Task>? ResumeAsync);
     }
 }

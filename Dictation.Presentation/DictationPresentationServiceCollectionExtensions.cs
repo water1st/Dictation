@@ -23,6 +23,7 @@ namespace Dictation.Presentation
 
             services.AddScoped<LexiconLookupViewModel>();
             services.AddScoped<ImportInboxListViewModel>();
+            services.AddScoped<ImportInboxDetailViewModel>();
 
             services.AddSingleton<MainWindow>();
             services.AddTransient<DictationWindow>();

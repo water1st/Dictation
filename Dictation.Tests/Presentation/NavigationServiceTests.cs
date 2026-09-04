@@ -265,6 +265,51 @@ namespace Dictation.Tests.Presentation
             fixture.Navigation.CompleteTransition();
         }
 
+        [Fact]
+        public async Task InboxDetailBack_RestoresTheSameListAndRefreshesItsDtoState()
+        {
+            using var fixture = new NavigationFixture();
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            await fixture.ImportInboxService.StageAsync(
+                new StageImportBatchRequestDto(
+                    LearningLanguage.English,
+                    ImportSourceKind.Manual,
+                    new[] { new ImportSelectionDto("symbols", "symbols%2:30:00::") }));
+            await fixture.ImportInboxService.StageAsync(
+                new StageImportBatchRequestDto(
+                    LearningLanguage.English,
+                    ImportSourceKind.Manual,
+                    new[] { new ImportSelectionDto("go", "go%2:02:00::") }));
+            await fixture.Navigation.OpenImportInboxAsync(LearningLanguage.English);
+            fixture.Navigation.CompleteTransition();
+            var list = Assert.IsType<ImportInboxListViewModel>(fixture.Navigation.CurrentPage);
+            var selectedBatch = list.Batches.Single(batch => batch.Items[0].SourceText == "go");
+            list.SelectedBatch = selectedBatch;
+            var selectedItem = Assert.Single(list.Items);
+            selectedItem.IsSelected = true;
+            list.FilterText = "go";
+            list.ScrollOffset = 91.25;
+
+            await list.OpenSelectedDetailAsync();
+            var detail = Assert.IsType<ImportInboxDetailViewModel>(fixture.Navigation.CurrentPage);
+            Assert.Equal("go", detail.SourceText);
+            fixture.Navigation.CompleteTransition();
+            var detailProbe = fixture.ScopeProbes[^1];
+
+            await fixture.Navigation.GoBackAsync();
+
+            Assert.Same(list, fixture.Navigation.CurrentPage);
+            Assert.Equal(selectedBatch.BatchId, list.SelectedBatch?.BatchId);
+            Assert.Equal("go", list.FilterText);
+            Assert.Equal(91.25, list.ScrollOffset);
+            var refreshedItem = Assert.Single(list.Items);
+            Assert.NotSame(selectedItem, refreshedItem);
+            Assert.True(refreshedItem.IsSelected);
+            Assert.False(detailProbe.IsDisposed);
+            fixture.Navigation.CompleteTransition();
+            Assert.True(detailProbe.IsDisposed);
+        }
+
         private static async Task WaitForOverlayAsync(OverlayService overlay)
         {
             var deadline = DateTime.UtcNow.AddSeconds(5);
@@ -315,9 +360,16 @@ namespace Dictation.Tests.Presentation
                     ScopeProbes.Add(probe);
                     return ActivatorUtilities.CreateInstance<ImportInboxListViewModel>(serviceProvider);
                 });
+                services.AddScoped<ImportInboxDetailViewModel>(serviceProvider =>
+                {
+                    var probe = serviceProvider.GetRequiredService<ScopeProbe>();
+                    ScopeProbes.Add(probe);
+                    return ActivatorUtilities.CreateInstance<ImportInboxDetailViewModel>(serviceProvider);
+                });
                 ServiceProvider = services.BuildServiceProvider();
                 Navigation = ServiceProvider.GetRequiredService<NavigationService>();
                 Overlay = ServiceProvider.GetRequiredService<OverlayService>();
+                ImportInboxService = ServiceProvider.GetRequiredService<ImportInboxService>();
                 HomeViewModel = new HomeViewModel(
                     new SettingsService(new ConfigurationBuilder().Build(), paths),
                     Navigation);
@@ -330,6 +382,8 @@ namespace Dictation.Tests.Presentation
             public NavigationService Navigation { get; }
 
             public OverlayService Overlay { get; }
+
+            public ImportInboxService ImportInboxService { get; }
 
             public HomeViewModel HomeViewModel { get; }
 
