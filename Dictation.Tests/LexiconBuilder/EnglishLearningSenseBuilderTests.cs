@@ -114,6 +114,32 @@ namespace Dictation.Tests.LexiconBuilder
         }
 
         [Fact]
+        public void Build_RejectsAsciiOnlyCowAndEcdictMeanings()
+        {
+            using var directory = new TemporaryDirectory();
+            var ecdictPath = EcdictTranslationReaderTests.CreateDatabase(
+                directory.Path,
+                new Dictionary<string, string> { ["go"] = "v. = allegorize" });
+            using var ecdict = new EcdictTranslationReader(ecdictPath);
+            var meanings = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+            {
+                ["i12345"] = new[] { "CD" }
+            };
+
+            var results = new EnglishLearningSenseBuilder().Build(
+                CreateGoLexicon(includeExactIli: true),
+                meanings,
+                ecdict);
+
+            var missing = Assert.Single(results);
+            Assert.Equal("missing:go:v", missing.LearningSenseId);
+            Assert.Equal("Missing", missing.MeaningSource);
+            Assert.Equal("Missing", missing.MeaningPrecision);
+            Assert.Equal(3, missing.SourceSenseIds.Count);
+            Assert.Empty(missing.Meanings);
+        }
+
+        [Fact]
         public void Build_RejectsNullDependencies()
         {
             using var directory = new TemporaryDirectory();

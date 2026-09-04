@@ -93,7 +93,8 @@ namespace Dictation.LexiconBuilder.WordNet
             EcdictTranslationReader ecdict,
             int sortOrder)
         {
-            var meanings = ecdict.Read(family.NormalizedLemma, family.PartOfSpeech);
+            var meanings = NormalizeChineseMeanings(
+                ecdict.Read(family.NormalizedLemma, family.PartOfSpeech));
             var hasMeanings = meanings.Count > 0;
             var partOfSpeechCode = ToCode(family.PartOfSpeech);
             return new EnglishLearningSense(
@@ -118,9 +119,15 @@ namespace Dictation.LexiconBuilder.WordNet
                 return Array.Empty<string>();
             }
 
+            return NormalizeChineseMeanings(sourceMeanings);
+        }
+
+        private static IReadOnlyList<string> NormalizeChineseMeanings(IEnumerable<string> sourceMeanings)
+        {
             return sourceMeanings
                 .Where(meaning => !string.IsNullOrWhiteSpace(meaning))
                 .Select(meaning => meaning.Trim().Normalize(NormalizationForm.FormC))
+                .Where(meaning => meaning.Any(character => character > 0x7f))
                 .Distinct(StringComparer.Ordinal)
                 .ToArray();
         }
