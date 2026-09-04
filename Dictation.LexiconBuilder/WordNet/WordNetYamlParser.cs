@@ -169,7 +169,7 @@ namespace Dictation.LexiconBuilder.WordNet
                 }
 
                 synsets.Add(new ParsedSynset(
-                    new EnglishSynset(synsetId, partOfSpeech, definitions, examples),
+                    new EnglishSynset(synsetId, partOfSpeech, definitions, examples, rawSynset.Ili),
                     sourceFile.RelativePath));
             }
         }
@@ -505,6 +505,9 @@ namespace Dictation.LexiconBuilder.WordNet
 
             [YamlMember(Alias = "example")]
             public List<object>? Examples { get; set; }
+
+            [YamlMember(Alias = "ili")]
+            public string? Ili { get; set; }
 
             [YamlMember(Alias = "partOfSpeech")]
             public string? PartOfSpeech { get; set; }

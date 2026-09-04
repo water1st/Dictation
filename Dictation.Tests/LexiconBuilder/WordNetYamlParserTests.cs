@@ -44,6 +44,7 @@ namespace Dictation.Tests.LexiconBuilder
                   - a first sense
                   example:
                   - a first example
+                  ili: i12345
                   partOfSpeech: n
                 00000002-n:
                   definition:
@@ -78,6 +79,8 @@ namespace Dictation.Tests.LexiconBuilder
             Assert.Equal(new[] { "zed%2:41:00::" }, nounVariant.Senses.Single().DerivationSenseIds);
             Assert.Equal("a first sense", result.Synsets.Single(synset => synset.SynsetId == "00000001-n").Definitions.Single());
             Assert.Equal("a first example", result.Synsets.Single(synset => synset.SynsetId == "00000001-n").Examples.Single());
+            Assert.Equal("i12345", result.Synsets.Single(synset => synset.SynsetId == "00000001-n").Ili);
+            Assert.Null(result.Synsets.Single(synset => synset.SynsetId == "00000002-n").Ili);
             Assert.Equal(EnglishPartOfSpeech.AdjectiveSatellite, result.Synsets.Single(synset => synset.SynsetId == "00000004-s").PartOfSpeech);
         }
 
