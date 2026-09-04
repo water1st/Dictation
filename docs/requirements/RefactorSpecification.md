@@ -31,7 +31,9 @@
 
 整组删除会从用户学习库、复习库移除，并删除该组全部学习进度、FSRS 状态、错题和历史，不存在“归档”。仅从某个自定义词集移除时只删除 membership，不删除词条或其它集合中的 membership。
 
-手动输入、TXT、拖放、启动参数和 MCP 均先进入统一 Import Inbox。用户在 Inbox 界面逐批确认送入学习库、复习库或丢弃；MCP 不能替用户确认。只按源语言正向查词，禁止中文反向查词。日语使用 JMdict 与构建时规则生成元数据和词形；英语使用 English WordNet、规则与例外生成词形及派生关系。中文释义在构建阶段生成后可由用户编辑，运行时离线可用。
+手动输入、TXT、拖放、启动参数和 MCP 均先进入统一 Import Inbox。用户在 Inbox 界面逐批确认送入学习库、复习库或丢弃；MCP 不能替用户确认。只按源语言正向查词，禁止中文反向查词。日语以 JMdict 生成结构和词形，并按 `entry_id + sense ordinal` 从 Tomoshi 加入精确中文；英语以 Open English WordNet 生成结构和词形，通过 Chinese Open WordNet ILI 加入精确中文，再由 ECDICT 为未覆盖的 lemma+POS 提供至多一个宽泛中文。JMdict 英文 gloss 与 OEWN definition/example 只供审计，绝不进入 UI `Meanings` 或作为缺失中文的回退；纯 ASCII 英文文本不得写入学习释义。
+
+运行时词库固定为 schema v2，由 `scripts/Build-Lexicons.ps1` 使用显式输入、解压和输出目录离线生成。构建必须校验固定哈希、COW/OEWN ILI 覆盖、代表词形、中文释义、`PRAGMA integrity_check` 与两次确定性输出；原始 JMdict、Tomoshi、OEWN、COW、ECDICT 输入不进入发布 ZIP。
 
 ## 5. 日语内容与出题
 

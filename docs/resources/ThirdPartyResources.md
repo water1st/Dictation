@@ -11,7 +11,10 @@
 | 资源 | 已核验版本或来源 | 大小与 SHA-256 | 许可证/归属 | 当前结论 |
 | --- | --- | --- | --- | --- |
 | `JMdict.gz` | 创建日期 2026-08-14 | 22,155,996 bytes；`9C1DE325ED8E3D690F4DD9F9E1E114FB800ABE5B23782C43F89D9A9E44F431CF` | EDRDG JMdict，CC BY-SA 4.0；发布物须保留 EDRDG/JMdict 归属、许可副本或有效链接，并满足对应再分发义务 | 构建时解析并清洗；运行时使用生成的只读日语词库 |
+| `tomoshi-dict-open.db` | Tomoshi `v2026-08-12` 原始 SQLite | 570,077,184 bytes；`C935FFD8E030F496C251B38819BF63005729D2DBC98BA0AF8C55DE507A455290` | `zh_defs` 为 CC BY-SA 4.0；发布归属固定写入 `Resources/Attribution/Lexicons/Tomoshi.txt` 并附许可 | 只按 JMdict `entry_id + sense ordinal` 提取中文；原库不进入发布 ZIP |
 | `english-wordnet` | `https://github.com/globalwordnet/english-wordnet.git`；commit `02ff9f3f5bc0a25592e7263ffdbc9bcb6564936b`；`2025-edition-160-g02ff9f3`；工作树 clean | 本次以 commit 固定，不把嵌套 Git 元数据作为发布输入 | Open English WordNet CC BY 4.0；同时保留底层 Princeton WordNet 许可证归属 | 构建时提取 synset、词性、义项和关系；具体运行表结构在词库切片固定 |
+| `omw-cmn-2.0.tar.xz` | Chinese Open WordNet 2.0 | 1,705,740 bytes；`7D07AF60A6CED0CEDC4CA114D0B60A796D3F138DF0F3BE21F6322E53D004E91C` | 归档内 `omw-cmn/LICENSE`、`omw-cmn/citation.bib`；发布时复制到 `Resources/Attribution/Lexicons/ChineseOpenWordNet/` | 通过 ILI 提供精确中文；原始 XML 与归档不进入发布 ZIP |
+| `ecdict-sqlite-28.zip` | ECDICT SQLite 1.0.28 | 216,765,132 bytes；`EA01F76A3B3351021CE47077E89234465CC9441C8793054495320D06C0C3F3F6` | 上游 MIT；归档仅含数据库，发布归属固定写入 `Resources/Attribution/Lexicons/ECDICT.txt` 并附 MIT 文本 | 只为未获精确中文的 lemma+POS 生成一个宽泛回退；原库不进入发布 ZIP |
 | `Kokoro-82M` | `https://huggingface.co/hexgrad/Kokoro-82M`；commit `f3ff3571791e39611d31c381e3a41a3af07b4987`；工作树 clean | `kokoro-v1_0.pth`：327,212,226 bytes；`496DBA118D1A58F5F3DB2EFC88DBDC216E0483FC89FE6E47EE1F2C53F18AD1E4` | 模型卡标记 Apache-2.0；随发布保留模型卡与适用归属文本 | 仅作为原始模型输入和归属参考；纯 .NET 运行时不直接加载 `.pth`，发布使用下方 Sherpa-ONNX 转换资源子集 |
 | `piper-plus-css10-ja-6lang` | `https://huggingface.co/ayousanz/piper-plus-css10-ja-6lang`；commit `bd0d812d4db9182ecdb907ef074becf9e230c17f`；工作树 clean | ONNX：39,652,717 bytes；`5EBC51DBF897238523F3DF0D6E0F6C93033BC5CDA3F8602A8379EBE2A4738C42`；`config.json`：`1328B76E67B7D785E57D0ECF1E76571F6E931B5B9313C88AFE9D0017049CB692` | 模型卡标记 CSS10 public domain；要求使用 Piper Plus PR #320 之后的运行时 | 供日语发音使用；运行时固定使用 `PiperPlus.Core` 0.4.0 与 OpenJTalk 词典 |
 | `PP-OCRv5_server_rec_infer.tar` | PaddleOCR PP-OCRv5 server recognition inference 输入 | 84,869,120 bytes；`D99BE2FFD348943AB52876179168BE4FB5B14F5F0812F2AE4C76D89EC2EA750A` | PaddleOCR 项目 Apache-2.0；随发布保留项目许可和归属 | 已确认包含 `inference.yml`、`inference.pdiparams`、`inference.json`；Windows CPU 运行时、模型裁剪和推理参数留给 OCR 切片验证 |
@@ -70,21 +73,25 @@ Resources/Tts/English/Kokoro/
 
 默认英式女声为 `bf_emma`，Sherpa speaker id 为 `21`；合成使用 CPU、2 个线程和速度 `1.0`。构造、DI、TTS Host 启动和 Ping 都不加载模型，首次英语合成才检查并懒加载上述资源；运行时不联网补齐。生成的采样只在内存中转换为 RIFF/WAV 并通过命名管道返回，严禁调用 `SaveToWaveFile`、写入音频文件或创建缓存。英语发布子集只省略未使用的中文 `dict/`、中文 lexicon/FST 和 `lexicon-us-en.txt`；`voices.bin` 与 `espeak-ng-data/` 按官方包完整保留，不声称对其中内容做了裁剪。Apache-2.0 许可证及归属说明须随发布包保留。
 
-## 2.3 日语 JMdict 真实构建验收
+## 2.3 日中词库真实构建验收
 
-2026-08-17 使用用户提供的 `JMdict.gz` 完成真实构建验收。输入创建日期为 2026-08-14，大小为 22,155,996 bytes，SHA-256 为 `9C1DE325ED8E3D690F4DD9F9E1E114FB800ABE5B23782C43F89D9A9E44F431CF`。产物 metadata 为 `schema_version=1`、`generator_version=1.0.0.0`；统计为 `source_entries=218431`、`entries/senses=253103`、`PartsOfSpeech=321247`、`glosses=442059`、`forms=911050`。
+2026-09-04 使用固定的 `JMdict.gz` 与 Tomoshi 数据库连续构建两次。产物 metadata 完全一致：`schema_version=2`、`generator_version=1.0.0.0`、`source_entries=218431`、`entries/senses=253103`、`source_glosses=442059`、`chinese_meanings=251373`、`missing_chinese_entries=1730`、`forms=911050`。
 
-SQLite 产物大小为 275,595,264 bytes，SHA-256 为 `0176EFE63B808AED8BED6BDFBECDBC9AE587C0F26BBA2AC523CD3AB8BC62A381`；`PRAGMA integrity_check` 结果为 `ok`。无词形词条为 0，短语的非 Dictionary 活用为 0。代表性验证结果：`食べる` 为 `jmdict:1358280:1`，`行く` 为 `jmdict:1578850:1`，两者均包含普通形、礼貌形、て形、た形及适用汉字/假名；`掃除`/`掃除する` 为 `jmdict:1399790:1`，名词和 suru 动词形式属于同一组；不同义项保持不同 `EntryId`。
+两次 SQLite 均为 300,396,544 bytes，SHA-256 均为 `EE4411EA2766AFCD3261BFAEC7599DFD6F42AB184C3391C23496D1504999C734`，`PRAGMA integrity_check=ok`。`食べる`（`jmdict:1358280:1`）、`行く`（`jmdict:1578850:1`）和 `掃除`（`jmdict:1399790:1`）都有中文；前两者覆盖普通形、礼貌形、て形、た形，`掃除` 与 `掃除する/します/して/した` 保持同组。
 
-SQLite 产物只在临时验收目录中生成，不提交 `.db` 或原始 `JMdict.gz`，文档不记录临时绝对路径。
+原始英文 gloss 只留在 `SourceGlosses` 供审计，运行时仅查询 `ChineseMeanings`；缺少中文时返回明确缺失状态，不回退显示英文。
 
-## 2.4 英语 Open English WordNet 真实构建验收
+## 2.4 英中词库真实构建验收
 
-2026-08-27 使用用户提供的 `english-wordnet` 完成真实构建验收；输入 Git 工作树 clean，commit 为 `02ff9f3f5bc0a25592e7263ffdbc9bcb6564936b`，describe 为 `2025-edition-160-g02ff9f3`，source tree fingerprint SHA-256 为 `a837c7e4bc2e6eff42c5bac07c4e8fc35464cfb5c49e0283a67d186904e221fa`。产物 metadata 为 `schema_version=1`、`generator_version=1.0.0.0`、`source_files=72`、`unclassified_source_forms=0`；统计为 `lexemes=135994`、`senses=185149`、`synsets=107525`、`definitions=107530`、`examples=50023`、`forms=221746`、`derivations=73514`。
+2026-09-04 使用 clean commit `02ff9f3f5bc0a25592e7263ffdbc9bcb6564936b` 的 OEWN YAML、COW 2.0 与 ECDICT 1.0.28 连续构建两次。当前 YAML 工作树字节指纹为 `f6fa481a5b29d9f33e2178dbee74d0d1664eb513782ca483be88e925942bca77`；解压后的 COW XML 与 ECDICT SQLite 哈希分别为 `c02b74ef813380f2a1de089d6d5aad6c58b50bb06a3ed3c4a8d963160ac40909`、`2b5b40c2bdba04da0a51c8672e090f166987d5d895f32eb3fbfc5a516455fc75`。
 
-SQLite 产物大小为 89,214,976 bytes，SHA-256 为 `A1381CE697FA0E8352395B310AB14256D0209D5F1CFD8D564D7A3C847ED0E010`；`PRAGMA integrity_check` 结果为 `ok`。直接查库验证 `go/goes/went/gone/going`、`do/does/did/done/doing`、`child/children`、`good/better/best` 均完整；`go%v` 的 30 个 SenseId 共用一个 LexemeId 与 5 个词形；短语非 Base 词形数量为 0；`conversion/convert` 与 `execution/execute` 保持不同 LexemeId，仅通过直接 derivation 边关联。产物只在临时验收目录中生成，不提交 `.db` 或原始 YAML，完成查询后由控制器清理。
+产物 metadata 完全一致：`schema_version=2`、`lexemes=135994`、`senses=185149`、`synsets=107525`、`definitions=107530`、`examples=50023`、`forms=221746`、`derivations=73514`、`learning_senses=161298`，其中精确 70,969、宽泛 46,630、缺失 43,699。COW 有 42,300 个唯一 ILI，OEWN 有 104,314 个，交集 38,867（37.26%）；`LearningMeanings` 中纯 ASCII 英文释义为 0。
+
+两次 SQLite 均为 154,562,560 bytes，SHA-256 均为 `151F960A23FFE0008E445F893892321131466921E4A8FBB68A32972135A8302B`，`PRAGMA integrity_check=ok`。`go/goes/went/gone/going`、`do/does/did/done/doing`、`child/children`、`good/better/best` 的词形和中文释义均通过门禁。OEWN `Definitions/Examples` 只供构建审计，运行时只读 `LearningSenses/LearningMeanings`。
 
 ## 2.5 运行时词库布局与查词行为
+
+[`scripts/Build-Lexicons.ps1`](../../scripts/Build-Lexicons.ps1) 接收五项显式输入、一个显式解压目录和一个显式输出目录；它复用 .NET SDK、Windows `tar`、PowerShell `Expand-Archive` 与 `sqlite3`，不下载资源、不使用隐式临时输入，并拒绝向 `CONFIG/`、`DATA/`、`LOGS/`、`BACKUPS/` 或 `CACHE/` 写入。脚本固定校验输入哈希、schema v2、完整性、覆盖率、代表词和中文门禁。两次复现输出位于源码仓库外，生成数据库与解压副本不提交。
 
 发布根目录固定提供由构建器生成的只读词库，运行时不在线下载或修改：
 
@@ -98,9 +105,9 @@ Resources/Lexicons/
 
 ## 3. 构建加工与发布取舍
 
-`Dictation.LexiconBuilder` 在构建阶段解析 JMdict 和 English WordNet，生成版本固定的只读 SQLite 词库：清洗重复项，按义项分组，关联日语普通/礼貌/`て`/`た` 等形式，标记常用汉字/罕见汉字/无汉字，关联英语规则、例外和直接派生的词性组，并保存 JMdict 原始 gloss 和来源元数据。运行时以 English gloss 作为义项的规范语义来源；后续中文翻译是独立切片，不能假定 JMdict 各语言 gloss 逐条对齐，也不支持中文反向查询。上述加工结果不是用户数据；用户的词条、集合、进度、错题和历史留在根目录 `DATA/`，更新 ZIP 不得覆盖。
+`Dictation.LexiconBuilder` 在构建阶段生成版本固定的只读日中、英中 SQLite：日语以 JMdict 定义结构和词形，以 Tomoshi 精确补入中文；英语以 OEWN 定义结构和词形，以 COW ILI 提供精确中文，再以 ECDICT 为未覆盖的 lemma+POS 提供一个宽泛中文。JMdict 原始 gloss、OEWN definition/example 只作为审计数据，绝不成为 UI 释义或缺失中文时的回退。系统只支持源语言正向查询，不支持中文反向查询。
 
-词库生成必须输出来源 commit/日期、生成器版本、许可证文件名和输入哈希。当前工具没有翻译模型，也不生成中文释义；后续中文翻译不得依赖 JMdict 多语言 gloss 的逐条对齐。
+词库生成输出来源 commit/日期、生成器版本、输入哈希、中文覆盖与缺失数量。上述加工结果不是用户数据；用户词条、集合、进度、错题和历史留在根目录 `DATA/`，更新 ZIP 不得覆盖。
 
 英语 TTS 后续切片仍需从 Kokoro 的 British voice 中选择并记录一个默认 speaker。日语 TTS 已固定使用上述 Piper Plus 资源布局和 CPU 运行时。OCR 切片需要验证 Windows CPU 推理依赖、模型是否裁剪以及运行时文件清单；本资源表不预先承诺识别效果。
 
