@@ -73,12 +73,12 @@ namespace Dictation.Tests.DataAccess
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3 }, await ReadAppliedVersionsAsync(paths));
             Assert.Empty(Directory.GetFiles(paths.Backups));
         }
 
         [Fact]
-        public async Task MigrateAsync_UpgradesV1Database_AndV2ConstraintsAreActive()
+        public async Task MigrateAsync_UpgradesV1Database_AndLatestConstraintsAreActive()
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = CreateRuntimePaths(temporaryDirectory);
@@ -95,7 +95,13 @@ namespace Dictation.Tests.DataAccess
             await Assert.ThrowsAsync<SqliteException>(() => ExecuteAsync(
                 connection,
                 "INSERT INTO ImportBatches (BatchId, Language, SourceKind, Status, CreatedAtUtc) VALUES ('bad', 'Japanese', 'Manual', 'Unknown', 'now');"));
-            Assert.Equal(new[] { 1, 2 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3 }, await ReadAppliedVersionsAsync(paths));
+
+            await ExecuteAsync(connection, "INSERT INTO WordGroups (WordGroupId, Language, AnchorSourceSenseId, Placement, CreatedAtUtc) VALUES ('legacy-group', 'Japanese', 'legacy', 'Inbox', '2026-01-01T00:00:00Z');");
+            await ExecuteAsync(connection, "INSERT INTO WordGroupMembers (WordGroupId, Language, SourceSenseId, SourceLexemeId, Headword, PartOfSpeechLabel, AttributeLabel, IsPhrase, SortOrder) VALUES ('legacy-group', 'Japanese', 'legacy', 'legacy', '旧词', '其他', '其他', 0, 0);");
+            Assert.Equal(
+                "und|Legacy|Missing",
+                await ExecuteScalarAsync<string>(connection, "SELECT MeaningLanguage || '|' || MeaningSource || '|' || MeaningPrecision FROM WordGroupMembers WHERE SourceSenseId = 'legacy';"));
         }
 
         [Fact]

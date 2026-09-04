@@ -40,7 +40,13 @@ namespace Dictation.Services.Importing
 
     public sealed record ImportSelectionDto(
         string SourceText,
-        string SourceSenseId);
+        string SourceSenseId,
+        IReadOnlyList<string>? ChineseMeaningOverride = null);
+
+    public sealed record UpdateImportMeaningsRequestDto(
+        string WordGroupId,
+        string SourceSenseId,
+        IReadOnlyList<string> Meanings);
 
     public sealed record StageImportBatchRequestDto(
         LearningLanguage Language,
@@ -180,7 +186,9 @@ namespace Dictation.Services.Importing
             string attributeLabel,
             bool isPhrase,
             IReadOnlyList<string> meanings,
-            IReadOnlyList<ImportWordGroupFormDto> forms)
+            IReadOnlyList<ImportWordGroupFormDto> forms,
+            Lexicon.LexiconMeaningSource meaningSource = Lexicon.LexiconMeaningSource.Missing,
+            Lexicon.LexiconMeaningPrecision meaningPrecision = Lexicon.LexiconMeaningPrecision.Missing)
         {
             Language = language;
             SourceSenseId = sourceSenseId;
@@ -192,6 +200,8 @@ namespace Dictation.Services.Importing
             IsPhrase = isPhrase;
             Meanings = meanings ?? throw new ArgumentNullException(nameof(meanings));
             Forms = forms ?? throw new ArgumentNullException(nameof(forms));
+            MeaningSource = meaningSource;
+            MeaningPrecision = meaningPrecision;
         }
 
         public string Language { get; }
@@ -213,6 +223,12 @@ namespace Dictation.Services.Importing
         public IReadOnlyList<string> Meanings { get; }
 
         public IReadOnlyList<ImportWordGroupFormDto> Forms { get; }
+
+        public Lexicon.LexiconMeaningSource MeaningSource { get; }
+
+        public Lexicon.LexiconMeaningPrecision MeaningPrecision { get; }
+
+        public bool HasChineseMeaning => Meanings.Any(meaning => !string.IsNullOrWhiteSpace(meaning));
     }
 
     public sealed class ImportWordGroupFormDto

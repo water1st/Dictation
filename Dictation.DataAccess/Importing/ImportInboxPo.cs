@@ -24,6 +24,9 @@ namespace Dictation.DataAccess.Importing
         string PartOfSpeechLabel,
         string AttributeLabel,
         bool IsPhrase,
+        string MeaningLanguage,
+        string MeaningSource,
+        string MeaningPrecision,
         IReadOnlyList<string> Meanings,
         IReadOnlyList<ImportWordGroupFormPo> Forms);
 

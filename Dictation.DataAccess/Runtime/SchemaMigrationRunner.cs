@@ -321,6 +321,14 @@ namespace Dictation.DataAccess.Runtime
                     CREATE INDEX IX_ImportBatches_StatusLanguage ON ImportBatches (Status, Language);
                     CREATE INDEX IX_ImportBatchItems_BatchDecision ON ImportBatchItems (BatchId, Decision);
                     CREATE INDEX IX_ImportBatchItems_WordGroupId ON ImportBatchItems (WordGroupId);
+                    """),
+                new SchemaMigration(
+                    3,
+                    "标记导入快照的中文释义来源",
+                    """
+                    ALTER TABLE WordGroupMembers ADD COLUMN MeaningLanguage TEXT NOT NULL DEFAULT 'und';
+                    ALTER TABLE WordGroupMembers ADD COLUMN MeaningSource TEXT NOT NULL DEFAULT 'Legacy';
+                    ALTER TABLE WordGroupMembers ADD COLUMN MeaningPrecision TEXT NOT NULL DEFAULT 'Missing';
                     """)
             };
         }

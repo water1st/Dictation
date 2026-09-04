@@ -206,6 +206,129 @@ namespace Dictation.DataAccess.Importing
             }
         }
 
+        public async Task<ImportBatchPo> GetBatchAsync(
+            string batchId,
+            CancellationToken cancellationToken = default)
+        {
+            RequireText(batchId, nameof(batchId));
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await using var connection = connectionFactory.CreateConnection();
+                await connection.OpenAsync(cancellationToken);
+                return await LoadBatchAsync(connection, batchId, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (ImportInboxDataAccessException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw new ImportInboxDataAccessException("读取导入批次失败。", exception);
+            }
+        }
+
+        public async Task UpdateMeaningsAsync(
+            string wordGroupId,
+            string sourceSenseId,
+            IReadOnlyList<string> meanings,
+            CancellationToken cancellationToken = default)
+        {
+            RequireText(wordGroupId, nameof(wordGroupId));
+            RequireText(sourceSenseId, nameof(sourceSenseId));
+            if (meanings is null || meanings.Count == 0 || meanings.Any(string.IsNullOrWhiteSpace))
+            {
+                throw new ArgumentException("中文释义不能为空。", nameof(meanings));
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await using var connection = connectionFactory.CreateConnection();
+                await connection.OpenAsync(cancellationToken);
+                await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+                try
+                {
+                    var member = await connection.QuerySingleOrDefaultAsync<EditableMemberRow>(new CommandDefinition(
+                        """
+                        SELECT WordGroupMembers.MemberId, WordGroups.Placement
+                        FROM WordGroupMembers
+                        INNER JOIN WordGroups ON WordGroups.WordGroupId = WordGroupMembers.WordGroupId
+                        WHERE WordGroupMembers.WordGroupId = @WordGroupId
+                          AND WordGroupMembers.SourceSenseId = @SourceSenseId;
+                        """,
+                        new { WordGroupId = wordGroupId, SourceSenseId = sourceSenseId },
+                        transaction,
+                        cancellationToken: cancellationToken));
+                    if (member is null)
+                    {
+                        throw InvalidRequest("收件箱词组或成员不存在。");
+                    }
+
+                    if (!string.Equals(member.Placement, "Inbox", StringComparison.Ordinal))
+                    {
+                        throw InvalidRequest("只有收件箱中的词组可以修改释义。");
+                    }
+
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        "DELETE FROM WordGroupMeanings WHERE MemberId = @MemberId;",
+                        new { member.MemberId },
+                        transaction,
+                        cancellationToken: cancellationToken));
+                    for (var index = 0; index < meanings.Count; index++)
+                    {
+                        await connection.ExecuteAsync(new CommandDefinition(
+                            "INSERT INTO WordGroupMeanings (MemberId, MeaningIndex, Text) VALUES (@MemberId, @MeaningIndex, @Text);",
+                            new { member.MemberId, MeaningIndex = index, Text = meanings[index] },
+                            transaction,
+                            cancellationToken: cancellationToken));
+                    }
+
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        """
+                        UPDATE WordGroupMembers
+                        SET MeaningLanguage = 'zh-CN', MeaningSource = 'User', MeaningPrecision = 'UserProvided'
+                        WHERE MemberId = @MemberId;
+                        """,
+                        new { member.MemberId },
+                        transaction,
+                        cancellationToken: cancellationToken));
+                    await transaction.CommitAsync(cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    await TryRollbackAsync(transaction);
+                    throw;
+                }
+                catch (ImportInboxDataAccessException)
+                {
+                    await TryRollbackAsync(transaction);
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    await TryRollbackAsync(transaction);
+                    throw new ImportInboxDataAccessException("修改中文释义失败，事务已回滚。", exception);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (ImportInboxDataAccessException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw new ImportInboxDataAccessException("修改中文释义失败。", exception);
+            }
+        }
+
         public async Task DecideAsync(
             string batchId,
             IReadOnlyList<long> itemIds,
@@ -381,10 +504,12 @@ namespace Dictation.DataAccess.Importing
                     """
                     INSERT INTO WordGroupMembers (
                         WordGroupId, Language, SourceSenseId, SourceLexemeId, Headword, Reading,
-                        PartOfSpeechLabel, AttributeLabel, IsPhrase, SortOrder)
+                        PartOfSpeechLabel, AttributeLabel, IsPhrase, SortOrder,
+                        MeaningLanguage, MeaningSource, MeaningPrecision)
                     VALUES (
                         @WordGroupId, @Language, @SourceSenseId, @SourceLexemeId, @Headword, @Reading,
-                        @PartOfSpeechLabel, @AttributeLabel, @IsPhrase, @SortOrder);
+                        @PartOfSpeechLabel, @AttributeLabel, @IsPhrase, @SortOrder,
+                        @MeaningLanguage, @MeaningSource, @MeaningPrecision);
                     SELECT last_insert_rowid();
                     """,
                     new
@@ -397,6 +522,9 @@ namespace Dictation.DataAccess.Importing
                         member.Reading,
                         member.PartOfSpeechLabel,
                         member.AttributeLabel,
+                        member.MeaningLanguage,
+                        member.MeaningSource,
+                        member.MeaningPrecision,
                         IsPhrase = member.IsPhrase ? 1 : 0,
                         SortOrder = sortOrder
                     },
@@ -512,7 +640,8 @@ namespace Dictation.DataAccess.Importing
                 : (await connection.QueryAsync<MemberRow>(new CommandDefinition(
                     """
                     SELECT MemberId, WordGroupId, Language, SourceSenseId, SourceLexemeId, Headword, Reading,
-                           PartOfSpeechLabel, AttributeLabel, IsPhrase, SortOrder
+                           PartOfSpeechLabel, AttributeLabel, IsPhrase, SortOrder,
+                           MeaningLanguage, MeaningSource, MeaningPrecision
                     FROM WordGroupMembers
                     WHERE WordGroupId IN @GroupIds
                     ORDER BY WordGroupId, SortOrder;
@@ -592,6 +721,9 @@ namespace Dictation.DataAccess.Importing
                             member.PartOfSpeechLabel,
                             member.AttributeLabel,
                             member.IsPhrase != 0,
+                            member.MeaningLanguage,
+                            member.MeaningSource,
+                            member.MeaningPrecision,
                             meaningsByMember.TryGetValue(member.MemberId, out var memberMeanings)
                                 ? memberMeanings
                                 : Array.Empty<string>(),
@@ -882,6 +1014,19 @@ namespace Dictation.DataAccess.Importing
             public int IsPhrase { get; set; }
 
             public int SortOrder { get; set; }
+
+            public string MeaningLanguage { get; set; } = string.Empty;
+
+            public string MeaningSource { get; set; } = string.Empty;
+
+            public string MeaningPrecision { get; set; } = string.Empty;
+        }
+
+        private sealed class EditableMemberRow
+        {
+            public long MemberId { get; set; }
+
+            public string Placement { get; set; } = string.Empty;
         }
 
         private sealed class MeaningRow

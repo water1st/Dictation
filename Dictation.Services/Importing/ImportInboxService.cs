@@ -29,7 +29,8 @@ namespace Dictation.Services.Importing
             var selections = request.Selections
                 .Select(selection => new ImportSelectionDto(
                     NormalizeText(selection.SourceText, "来源词形"),
-                    NormalizeText(selection.SourceSenseId, "来源义项")))
+                    NormalizeText(selection.SourceSenseId, "来源义项"),
+                    NormalizeMeaningList(selection.ChineseMeaningOverride, allowNull: true)))
                 .GroupBy(selection => selection.SourceSenseId, StringComparer.Ordinal)
                 .Select(group => group.First())
                 .ToArray();
@@ -51,7 +52,11 @@ namespace Dictation.Services.Importing
                 var snapshot = new ImportWordGroupSnapshotPo(
                     request.Language.ToString(),
                     selection.SourceSenseId,
-                    group.Select(MapMember).ToArray());
+                    group.Select(member => MapMember(
+                        member,
+                        string.Equals(member.SourceSenseId, selection.SourceSenseId, StringComparison.Ordinal)
+                            ? selection.ChineseMeaningOverride
+                            : null)).ToArray());
                 stageItems.Add(new ImportBatchStageItemPo(
                     selection.SourceText,
                     selection.SourceSenseId,
@@ -104,6 +109,26 @@ namespace Dictation.Services.Importing
                     "导入决定不受支持。");
             }
 
+            if (request.Decision is ImportDecision.Learning or ImportDecision.Review)
+            {
+                var batch = await importInboxAccessor.GetBatchAsync(request.BatchId, cancellationToken);
+                var selectedItems = batch.Items
+                    .Where(item => request.ItemIds.Contains(item.ItemId))
+                    .ToArray();
+                if (selectedItems.Length != request.ItemIds.Count
+                    || selectedItems.Any(item => item.WordGroup is null))
+                {
+                    throw new ArgumentException("选择的批次项目不存在或没有词组。", nameof(request.ItemIds));
+                }
+
+                if (selectedItems
+                    .SelectMany(item => item.WordGroup!.Members)
+                    .Any(member => !HasChineseMeaning(member)))
+                {
+                    throw new InvalidOperationException("词组仍有成员缺少中文释义，不能进入学习或复习。");
+                }
+            }
+
             await importInboxAccessor.DecideAsync(
                 request.BatchId,
                 request.ItemIds,
@@ -111,8 +136,26 @@ namespace Dictation.Services.Importing
                 cancellationToken);
         }
 
-        private static ImportWordGroupMemberPo MapMember(LexiconLookupResultDto value)
+        public Task UpdateMeaningsAsync(
+            UpdateImportMeaningsRequestDto request,
+            CancellationToken cancellationToken = default)
         {
+            ArgumentNullException.ThrowIfNull(request);
+            var wordGroupId = NormalizeText(request.WordGroupId, "词组编号");
+            var sourceSenseId = NormalizeText(request.SourceSenseId, "来源义项");
+            var meanings = NormalizeMeaningList(request.Meanings, allowNull: false)!;
+            return importInboxAccessor.UpdateMeaningsAsync(
+                wordGroupId,
+                sourceSenseId,
+                meanings,
+                cancellationToken);
+        }
+
+        private static ImportWordGroupMemberPo MapMember(
+            LexiconLookupResultDto value,
+            IReadOnlyList<string>? meaningOverride)
+        {
+            var isUserOverride = meaningOverride is not null;
             return new ImportWordGroupMemberPo(
                 value.Language.ToString(),
                 value.SourceSenseId,
@@ -122,7 +165,10 @@ namespace Dictation.Services.Importing
                 value.PartOfSpeechLabel,
                 value.AttributeLabel,
                 value.IsPhrase,
-                value.Meanings,
+                "zh-CN",
+                isUserOverride ? LexiconMeaningSource.User.ToString() : value.MeaningSource.ToString(),
+                isUserOverride ? LexiconMeaningPrecision.UserProvided.ToString() : value.MeaningPrecision.ToString(),
+                meaningOverride ?? value.Meanings,
                 value.Forms.Select(form => new ImportWordGroupFormPo(
                     form.Surface,
                     form.Reading,
@@ -184,14 +230,18 @@ namespace Dictation.Services.Importing
                     member.PartOfSpeechLabel,
                     member.AttributeLabel,
                     member.IsPhrase,
-                    member.Meanings,
+                    string.Equals(member.MeaningLanguage, "zh-CN", StringComparison.Ordinal)
+                        ? member.Meanings
+                        : Array.Empty<string>(),
                     member.Forms.Select(form => new ImportWordGroupFormDto(
                         form.Surface,
                         form.Reading,
                         form.FormLabel,
                         form.DetailLabel,
                         form.IsCommon,
-                        form.IsPrimary)).ToArray())).ToArray());
+                        form.IsPrimary)).ToArray(),
+                    ParseMeaningSource(member.MeaningSource),
+                    ParseMeaningPrecision(member.MeaningPrecision))).ToArray());
         }
 
         private static void ValidateStageRequest(StageImportBatchRequestDto request)
@@ -220,7 +270,52 @@ namespace Dictation.Services.Importing
 
                 NormalizeText(selection.SourceText, "来源词形");
                 NormalizeText(selection.SourceSenseId, "来源义项");
+                NormalizeMeaningList(selection.ChineseMeaningOverride, allowNull: true);
             }
+        }
+
+        private static IReadOnlyList<string>? NormalizeMeaningList(
+            IReadOnlyList<string>? meanings,
+            bool allowNull)
+        {
+            if (meanings is null)
+            {
+                return allowNull
+                    ? null
+                    : throw new ArgumentNullException(nameof(meanings));
+            }
+
+            if (meanings.Count == 0)
+            {
+                throw new ArgumentException("至少需要一个中文释义。", nameof(meanings));
+            }
+
+            return meanings
+                .Select(meaning => NormalizeText(meaning, "中文释义"))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+        }
+
+        private static bool HasChineseMeaning(ImportWordGroupMemberPo member)
+        {
+            return string.Equals(member.MeaningLanguage, "zh-CN", StringComparison.Ordinal)
+                && member.Meanings.Any(meaning => !string.IsNullOrWhiteSpace(meaning));
+        }
+
+        private static LexiconMeaningSource ParseMeaningSource(string value)
+        {
+            return Enum.TryParse<LexiconMeaningSource>(value, out var parsed)
+                && Enum.IsDefined(parsed)
+                    ? parsed
+                    : LexiconMeaningSource.Missing;
+        }
+
+        private static LexiconMeaningPrecision ParseMeaningPrecision(string value)
+        {
+            return Enum.TryParse<LexiconMeaningPrecision>(value, out var parsed)
+                && Enum.IsDefined(parsed)
+                    ? parsed
+                    : LexiconMeaningPrecision.Missing;
         }
 
         private static void ValidateLanguage(LearningLanguage language)

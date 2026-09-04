@@ -133,7 +133,7 @@ namespace Dictation.Tests.Presentation
             await StageAsync(
                 environment.ImportInboxService,
                 new ImportSelectionDto("went", "go%2:01:00::"),
-                new ImportSelectionDto("symbols", "missing:symbols:v"));
+                new ImportSelectionDto("take off", "take_off%2:38:00::"));
             var viewModel = environment.CreateViewModel();
             viewModel.Initialize(LearningLanguage.English);
             await viewModel.RefreshAsync();
@@ -146,6 +146,7 @@ namespace Dictation.Tests.Presentation
             Assert.Equal(batchId, viewModel.SelectedBatch?.BatchId);
             Assert.False(Assert.Single(viewModel.Items, item => item.ItemId == first.ItemId).IsSelectable);
             var remaining = Assert.Single(viewModel.Items, item => item.IsSelectable);
+            Assert.Equal("take off", remaining.SourceText);
             Assert.Equal(ImportItemDecision.Pending, remaining.Decision);
 
             remaining.IsSelected = true;

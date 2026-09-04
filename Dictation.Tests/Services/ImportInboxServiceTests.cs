@@ -6,6 +6,7 @@ using Dictation.Services.Configuration;
 using Dictation.Services.Importing;
 using Dictation.Services.Lexicon;
 using Dictation.Tests.Infrastructure;
+using System.Security.Cryptography;
 
 namespace Dictation.Tests.Services
 {
@@ -85,6 +86,109 @@ namespace Dictation.Tests.Services
                 Assert.Contains(member.Forms, form => form.FormLabel == "原形");
                 Assert.Contains(member.Forms, form => form.FormLabel == "过去式");
             });
+        }
+
+        [Fact]
+        public async Task StageAsync_UserOverrideNormalizesOnlySelectedAnchor()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = await CreateEnvironmentAsync(temporaryDirectory);
+            var service = CreateService(paths);
+
+            var result = await service.StageAsync(
+                new StageImportBatchRequestDto(
+                    LearningLanguage.English,
+                    ImportSourceKind.Manual,
+                    new[] { new ImportSelectionDto("went", "go%2:01:00::", new[] { " カ\u3099 ", "ガ" }) }),
+                TestContext.Current.CancellationToken);
+
+            var members = Assert.Single(result.Items).WordGroup!.Members;
+            var anchor = Assert.Single(members, member => member.SourceSenseId == "go%2:01:00::");
+            Assert.Equal(new[] { "ガ" }, anchor.Meanings);
+            Assert.Equal(LexiconMeaningSource.User, anchor.MeaningSource);
+            Assert.Equal(LexiconMeaningPrecision.UserProvided, anchor.MeaningPrecision);
+            var related = Assert.Single(members, member => member.SourceSenseId == "convert%2:30:00::");
+            Assert.Equal(new[] { "转换" }, related.Meanings);
+            Assert.Equal(LexiconMeaningSource.ChineseOpenWordNet, related.MeaningSource);
+            Assert.Equal(LexiconMeaningPrecision.Exact, related.MeaningPrecision);
+        }
+
+        [Theory]
+        [InlineData(ImportDecision.Learning)]
+        [InlineData(ImportDecision.Review)]
+        public async Task MissingMeaning_StaysPendingUntilEditedThenAllowsDestinationWithoutChangingLexicons(
+            ImportDecision decision)
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = await CreateEnvironmentAsync(temporaryDirectory);
+            var service = CreateService(paths);
+            var japaneseHash = HashFile(paths.JapaneseLexiconDatabase);
+            var englishHash = HashFile(paths.EnglishLexiconDatabase);
+            var staged = await service.StageAsync(
+                new StageImportBatchRequestDto(
+                    LearningLanguage.English,
+                    ImportSourceKind.Manual,
+                    new[] { new ImportSelectionDto("%", "missing:symbols:v") }),
+                TestContext.Current.CancellationToken);
+            var item = Assert.Single(staged.Items);
+            var member = Assert.Single(item.WordGroup!.Members);
+
+            Assert.False(member.HasChineseMeaning);
+            Assert.Equal(LexiconMeaningSource.Missing, member.MeaningSource);
+            await Assert.ThrowsAsync<InvalidOperationException>(() => service.DecideAsync(
+                new DecideImportBatchRequestDto(staged.BatchId, new[] { item.ItemId }, ImportDecision.Learning),
+                TestContext.Current.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateMeaningsAsync(
+                new UpdateImportMeaningsRequestDto(item.WordGroup.WordGroupId, member.SourceSenseId, new[] { " " }),
+                TestContext.Current.CancellationToken));
+            await Assert.ThrowsAsync<ImportInboxDataAccessException>(() => service.UpdateMeaningsAsync(
+                new UpdateImportMeaningsRequestDto(item.WordGroup.WordGroupId, "wrong-member", new[] { "释义" }),
+                TestContext.Current.CancellationToken));
+
+            await service.UpdateMeaningsAsync(
+                new UpdateImportMeaningsRequestDto(item.WordGroup.WordGroupId, member.SourceSenseId, new[] { " 符号 ", "符号" }),
+                TestContext.Current.CancellationToken);
+            var updated = Assert.Single(Assert.Single(await service.GetPendingBatchesAsync(
+                LearningLanguage.English,
+                TestContext.Current.CancellationToken)).Items).WordGroup!;
+            var updatedMember = Assert.Single(updated.Members);
+            Assert.Equal(new[] { "符号" }, updatedMember.Meanings);
+            Assert.Equal(LexiconMeaningSource.User, updatedMember.MeaningSource);
+            Assert.Equal(LexiconMeaningPrecision.UserProvided, updatedMember.MeaningPrecision);
+
+            await service.DecideAsync(
+                new DecideImportBatchRequestDto(staged.BatchId, new[] { item.ItemId }, decision),
+                TestContext.Current.CancellationToken);
+            await Assert.ThrowsAsync<ImportInboxDataAccessException>(() => service.UpdateMeaningsAsync(
+                new UpdateImportMeaningsRequestDto(item.WordGroup.WordGroupId, member.SourceSenseId, new[] { "新释义" }),
+                TestContext.Current.CancellationToken));
+            Assert.Equal(japaneseHash, HashFile(paths.JapaneseLexiconDatabase));
+            Assert.Equal(englishHash, HashFile(paths.EnglishLexiconDatabase));
+        }
+
+        [Fact]
+        public async Task MissingMeaning_DiscardRemainsAllowed()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = await CreateEnvironmentAsync(temporaryDirectory);
+            var service = CreateService(paths);
+            var staged = await service.StageAsync(
+                new StageImportBatchRequestDto(
+                    LearningLanguage.English,
+                    ImportSourceKind.Manual,
+                    new[] { new ImportSelectionDto("%", "missing:symbols:v") }),
+                TestContext.Current.CancellationToken);
+
+            await service.DecideAsync(
+                new DecideImportBatchRequestDto(
+                    staged.BatchId,
+                    new[] { Assert.Single(staged.Items).ItemId },
+                    ImportDecision.Discard),
+                TestContext.Current.CancellationToken);
+
+            Assert.Empty(await service.GetPendingBatchesAsync(
+                LearningLanguage.English,
+                TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -241,6 +345,12 @@ namespace Dictation.Tests.Services
                     new JapaneseLexiconDataAccessor(factory),
                     new EnglishLexiconDataAccessor(factory)),
                 new ImportInboxDataAccessor(new SqliteConnectionFactory(paths)));
+        }
+
+        private static string HashFile(string path)
+        {
+            using var stream = File.OpenRead(path);
+            return Convert.ToHexString(SHA256.HashData(stream));
         }
     }
 }

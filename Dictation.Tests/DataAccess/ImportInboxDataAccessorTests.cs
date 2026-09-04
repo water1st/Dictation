@@ -396,6 +396,9 @@ namespace Dictation.Tests.DataAccess
                 "动词",
                 "属性",
                 false,
+                "zh-CN",
+                "User",
+                "UserProvided",
                 new[] { meaning },
                 new[]
                 {
