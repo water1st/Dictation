@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 
 using Dictation.LexiconBuilder;
 using Microsoft.Data.Sqlite;
@@ -11,7 +12,7 @@ namespace Dictation.LexiconBuilder.WordNet
 {
     internal sealed class EnglishLexiconDatabaseBuilder
     {
-        internal const string SchemaVersion = "1";
+        internal const string SchemaVersion = "2";
 
         internal EnglishLexiconBuildSummary Build(BuilderOptions options)
         {
@@ -22,10 +23,18 @@ namespace Dictation.LexiconBuilder.WordNet
             }
 
             var sourceRoot = Path.GetFullPath(options.SourcePath);
+            var cowPath = Path.GetFullPath(
+                options.ChineseWordNetXmlPath
+                    ?? throw new ArgumentException("英语构建器需要 Chinese Open WordNet。", nameof(options)));
+            var ecdictPath = Path.GetFullPath(
+                options.EcdictDatabasePath
+                    ?? throw new ArgumentException("英语构建器需要 ECDICT。", nameof(options)));
             var outputPath = Path.GetFullPath(options.OutputPath);
-            ValidatePaths(sourceRoot, outputPath);
+            ValidatePaths(sourceRoot, cowPath, ecdictPath, outputPath);
             var sourceFiles = WordNetSourceFiles.Enumerate(sourceRoot);
             var sourceFingerprint = WordNetSourceFiles.ComputeFingerprint(sourceFiles);
+            var cowSha256 = ComputeSha256(cowPath);
+            var ecdictSha256 = ComputeSha256(ecdictPath);
             var outputDirectory = Path.GetDirectoryName(outputPath)!;
             var temporaryPath = Path.Combine(
                 outputDirectory,
@@ -40,8 +49,12 @@ namespace Dictation.LexiconBuilder.WordNet
                 var summary = BuildTemporaryDatabase(
                     sourceRoot,
                     sourceFiles,
+                    cowPath,
+                    ecdictPath,
                     temporaryPath,
                     sourceFingerprint,
+                    cowSha256,
+                    ecdictSha256,
                     outputPath);
                 File.Move(temporaryPath, outputPath, overwrite: true);
                 return summary;
@@ -58,11 +71,18 @@ namespace Dictation.LexiconBuilder.WordNet
         private static EnglishLexiconBuildSummary BuildTemporaryDatabase(
             string sourceRoot,
             IReadOnlyList<WordNetSourceFile> sourceFiles,
+            string cowPath,
+            string ecdictPath,
             string temporaryPath,
             string sourceFingerprint,
+            string cowSha256,
+            string ecdictSha256,
             string outputPath)
         {
             var lexicon = new WordNetYamlParser().ParseDirectory(sourceRoot);
+            var chineseMeaningsByIli = new ChineseOpenWordNetParser().ParseByIli(cowPath);
+            using var ecdict = new EcdictTranslationReader(ecdictPath);
+            var learningSenses = new EnglishLearningSenseBuilder().Build(lexicon, chineseMeaningsByIli, ecdict);
             var generator = new EnglishFormGenerator();
 
             using var connection = new SqliteConnection($"Data Source={temporaryPath};Mode=ReadWriteCreate;Pooling=False");
@@ -116,15 +136,54 @@ namespace Dictation.LexiconBuilder.WordNet
                 }
             }
 
+            foreach (var learningSense in learningSenses.OrderBy(item => item.SortOrder))
+            {
+                InsertLearningSense(connection, transaction, learningSense);
+                foreach (var sourceSenseId in learningSense.SourceSenseIds)
+                {
+                    InsertLearningSenseSource(
+                        connection,
+                        transaction,
+                        learningSense.LearningSenseId,
+                        sourceSenseId);
+                }
+
+                for (var index = 0; index < learningSense.Meanings.Count; index++)
+                {
+                    InsertLearningMeaning(
+                        connection,
+                        transaction,
+                        learningSense.LearningSenseId,
+                        index,
+                        learningSense.Meanings[index]);
+                }
+            }
+
             var senseCount = lexicon.Lexemes.Sum(lexeme => lexeme.Senses.Count);
             var definitionCount = lexicon.Synsets.Sum(synset => synset.Definitions.Count);
             var exampleCount = lexicon.Synsets.Sum(synset => synset.Examples.Count);
+            var exactLearningSenseCount = learningSenses.Count(item => item.MeaningPrecision == "Exact");
+            var broadLearningSenseCount = learningSenses.Count(item => item.MeaningPrecision == "Broad");
+            var missingLearningSenseCount = learningSenses.Count(item => item.MeaningPrecision == "Missing");
+            var oewnIlis = lexicon.Synsets
+                .Select(synset => synset.Ili)
+                .Where(ili => !string.IsNullOrWhiteSpace(ili))
+                .Select(ili => ili!)
+                .ToHashSet(StringComparer.Ordinal);
+            var exactIliCount = oewnIlis.Count(ili =>
+                chineseMeaningsByIli.TryGetValue(ili, out var meanings)
+                && meanings.Any(meaning => !string.IsNullOrWhiteSpace(meaning)));
+            var exactIliCoverage = oewnIlis.Count == 0
+                ? 0m
+                : decimal.Round(exactIliCount * 100m / oewnIlis.Count, 2, MidpointRounding.AwayFromZero);
             var metadata = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["schema_version"] = SchemaVersion,
                 ["generator_version"] = typeof(EnglishLexiconDatabaseBuilder).Assembly.GetName().Version?.ToString() ?? "unknown",
                 ["source_name"] = "Open English WordNet",
                 ["source_fingerprint_sha256"] = sourceFingerprint,
+                ["cow_sha256"] = cowSha256,
+                ["ecdict_sha256"] = ecdictSha256,
                 ["source_files"] = sourceFiles.Count.ToString(CultureInfo.InvariantCulture),
                 ["lexemes"] = lexicon.Lexemes.Count.ToString(CultureInfo.InvariantCulture),
                 ["senses"] = senseCount.ToString(CultureInfo.InvariantCulture),
@@ -133,6 +192,13 @@ namespace Dictation.LexiconBuilder.WordNet
                 ["examples"] = exampleCount.ToString(CultureInfo.InvariantCulture),
                 ["forms"] = formCount.ToString(CultureInfo.InvariantCulture),
                 ["derivations"] = derivationCount.ToString(CultureInfo.InvariantCulture),
+                ["learning_senses"] = learningSenses.Count.ToString(CultureInfo.InvariantCulture),
+                ["exact_learning_senses"] = exactLearningSenseCount.ToString(CultureInfo.InvariantCulture),
+                ["broad_learning_senses"] = broadLearningSenseCount.ToString(CultureInfo.InvariantCulture),
+                ["missing_learning_senses"] = missingLearningSenseCount.ToString(CultureInfo.InvariantCulture),
+                ["oewn_ili_count"] = oewnIlis.Count.ToString(CultureInfo.InvariantCulture),
+                ["cow_exact_ili_count"] = exactIliCount.ToString(CultureInfo.InvariantCulture),
+                ["exact_ili_coverage_percent"] = exactIliCoverage.ToString("F2", CultureInfo.InvariantCulture),
                 ["unclassified_source_forms"] = "0"
             };
             InsertMetadata(connection, transaction, metadata);
@@ -147,16 +213,36 @@ namespace Dictation.LexiconBuilder.WordNet
                 exampleCount,
                 formCount,
                 derivationCount,
+                learningSenses.Count,
+                exactLearningSenseCount,
+                broadLearningSenseCount,
+                missingLearningSenseCount,
                 0,
                 sourceFingerprint,
+                cowSha256,
+                ecdictSha256,
                 outputPath);
         }
 
-        private static void ValidatePaths(string sourceRoot, string outputPath)
+        private static void ValidatePaths(
+            string sourceRoot,
+            string cowPath,
+            string ecdictPath,
+            string outputPath)
         {
             if (!Directory.Exists(sourceRoot))
             {
                 throw new DirectoryNotFoundException($"WordNet 输入目录不存在：{sourceRoot}。");
+            }
+
+            if (!File.Exists(cowPath))
+            {
+                throw new FileNotFoundException($"Chinese Open WordNet 文件不存在：{cowPath}。", cowPath);
+            }
+
+            if (!File.Exists(ecdictPath))
+            {
+                throw new FileNotFoundException($"ECDICT 数据库不存在：{ecdictPath}。", ecdictPath);
             }
 
             if (Directory.Exists(outputPath))
@@ -174,6 +260,19 @@ namespace Dictation.LexiconBuilder.WordNet
             {
                 throw new ArgumentException("输出数据库不能放在 WordNet 输入目录内。", nameof(outputPath));
             }
+
+            if (string.Equals(outputPath, cowPath, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(outputPath, ecdictPath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException("输出数据库不能覆盖中文来源文件。", nameof(outputPath));
+            }
+        }
+
+        private static string ComputeSha256(string path)
+        {
+            using var stream = File.OpenRead(path);
+            using var sha256 = SHA256.Create();
+            return Convert.ToHexString(sha256.ComputeHash(stream)).ToLowerInvariant();
         }
 
         private static bool IsInsideDirectory(string directoryPath, string candidatePath)
@@ -207,7 +306,8 @@ namespace Dictation.LexiconBuilder.WordNet
                 );
                 CREATE TABLE Synsets (
                     SynsetId TEXT NOT NULL PRIMARY KEY,
-                    PartOfSpeech TEXT NOT NULL
+                    PartOfSpeech TEXT NOT NULL,
+                    Ili TEXT NULL
                 );
                 CREATE TABLE Senses (
                     SenseId TEXT NOT NULL PRIMARY KEY,
@@ -247,10 +347,36 @@ namespace Dictation.LexiconBuilder.WordNet
                     FOREIGN KEY (SourceSenseId) REFERENCES Senses (SenseId),
                     FOREIGN KEY (TargetSenseId) REFERENCES Senses (SenseId)
                 );
+                CREATE TABLE LearningSenses (
+                    LearningSenseId TEXT NOT NULL PRIMARY KEY,
+                    SourceLexemeId TEXT NOT NULL,
+                    Headword TEXT NOT NULL,
+                    PartOfSpeech TEXT NOT NULL,
+                    IsPhrase INTEGER NOT NULL CHECK (IsPhrase IN (0, 1)),
+                    MeaningSource TEXT NOT NULL CHECK (MeaningSource IN ('ChineseOpenWordNet', 'Ecdict', 'Missing')),
+                    MeaningPrecision TEXT NOT NULL CHECK (MeaningPrecision IN ('Exact', 'Broad', 'Missing')),
+                    SortOrder INTEGER NOT NULL
+                );
+                CREATE TABLE LearningSenseSources (
+                    LearningSenseId TEXT NOT NULL,
+                    SenseId TEXT NOT NULL,
+                    PRIMARY KEY (LearningSenseId, SenseId),
+                    FOREIGN KEY (LearningSenseId) REFERENCES LearningSenses (LearningSenseId),
+                    FOREIGN KEY (SenseId) REFERENCES Senses (SenseId)
+                );
+                CREATE TABLE LearningMeanings (
+                    LearningSenseId TEXT NOT NULL,
+                    MeaningIndex INTEGER NOT NULL,
+                    Text TEXT NOT NULL,
+                    PRIMARY KEY (LearningSenseId, MeaningIndex),
+                    FOREIGN KEY (LearningSenseId) REFERENCES LearningSenses (LearningSenseId)
+                );
                 CREATE INDEX IX_Lexemes_Lemma ON Lexemes (Lemma);
                 CREATE INDEX IX_Forms_Surface ON Forms (Surface);
                 CREATE INDEX IX_Senses_SynsetId ON Senses (SynsetId);
                 CREATE INDEX IX_Derivations_TargetSenseId ON Derivations (TargetSenseId);
+                CREATE INDEX IX_LearningSenses_Headword ON LearningSenses (Headword, PartOfSpeech, SortOrder);
+                CREATE INDEX IX_LearningSenseSources_SenseId ON LearningSenseSources (SenseId);
                 """);
         }
 
@@ -299,9 +425,66 @@ namespace Dictation.LexiconBuilder.WordNet
         {
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
-            command.CommandText = "INSERT INTO Synsets (SynsetId, PartOfSpeech) VALUES ($synsetId, $partOfSpeech);";
+            command.CommandText = "INSERT INTO Synsets (SynsetId, PartOfSpeech, Ili) VALUES ($synsetId, $partOfSpeech, $ili);";
             command.Parameters.AddWithValue("$synsetId", synset.SynsetId);
             command.Parameters.AddWithValue("$partOfSpeech", ToCode(synset.PartOfSpeech));
+            command.Parameters.AddWithValue("$ili", (object?)synset.Ili ?? DBNull.Value);
+            command.ExecuteNonQuery();
+        }
+
+        private static void InsertLearningSense(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            EnglishLearningSense learningSense)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = """
+                INSERT INTO LearningSenses (
+                    LearningSenseId, SourceLexemeId, Headword, PartOfSpeech, IsPhrase,
+                    MeaningSource, MeaningPrecision, SortOrder)
+                VALUES (
+                    $learningSenseId, $sourceLexemeId, $headword, $partOfSpeech, $isPhrase,
+                    $meaningSource, $meaningPrecision, $sortOrder);
+                """;
+            command.Parameters.AddWithValue("$learningSenseId", learningSense.LearningSenseId);
+            command.Parameters.AddWithValue("$sourceLexemeId", learningSense.SourceLexemeId);
+            command.Parameters.AddWithValue("$headword", learningSense.Headword);
+            command.Parameters.AddWithValue("$partOfSpeech", ToCode(learningSense.PartOfSpeech));
+            command.Parameters.AddWithValue("$isPhrase", learningSense.IsPhrase ? 1 : 0);
+            command.Parameters.AddWithValue("$meaningSource", learningSense.MeaningSource);
+            command.Parameters.AddWithValue("$meaningPrecision", learningSense.MeaningPrecision);
+            command.Parameters.AddWithValue("$sortOrder", learningSense.SortOrder);
+            command.ExecuteNonQuery();
+        }
+
+        private static void InsertLearningSenseSource(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            string learningSenseId,
+            string senseId)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = "INSERT INTO LearningSenseSources (LearningSenseId, SenseId) VALUES ($learningSenseId, $senseId);";
+            command.Parameters.AddWithValue("$learningSenseId", learningSenseId);
+            command.Parameters.AddWithValue("$senseId", senseId);
+            command.ExecuteNonQuery();
+        }
+
+        private static void InsertLearningMeaning(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            string learningSenseId,
+            int meaningIndex,
+            string text)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = "INSERT INTO LearningMeanings (LearningSenseId, MeaningIndex, Text) VALUES ($learningSenseId, $meaningIndex, $text);";
+            command.Parameters.AddWithValue("$learningSenseId", learningSenseId);
+            command.Parameters.AddWithValue("$meaningIndex", meaningIndex);
+            command.Parameters.AddWithValue("$text", text);
             command.ExecuteNonQuery();
         }
 

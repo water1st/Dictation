@@ -10,16 +10,13 @@ namespace Dictation.LexiconBuilder
 
     internal sealed class BuilderOptions
     {
-        internal BuilderOptions(LexiconSourceKind sourceKind, string sourcePath, string outputPath)
-            : this(sourceKind, sourcePath, outputPath, null)
-        {
-        }
-
         private BuilderOptions(
             LexiconSourceKind sourceKind,
             string sourcePath,
             string outputPath,
-            string? tomoshiDatabasePath)
+            string? tomoshiDatabasePath,
+            string? chineseWordNetXmlPath,
+            string? ecdictDatabasePath)
         {
             if (!Enum.IsDefined(sourceKind))
             {
@@ -32,6 +29,12 @@ namespace Dictation.LexiconBuilder
             TomoshiDatabasePath = tomoshiDatabasePath is null
                 ? null
                 : RequirePath(tomoshiDatabasePath, nameof(tomoshiDatabasePath));
+            ChineseWordNetXmlPath = chineseWordNetXmlPath is null
+                ? null
+                : RequirePath(chineseWordNetXmlPath, nameof(chineseWordNetXmlPath));
+            EcdictDatabasePath = ecdictDatabasePath is null
+                ? null
+                : RequirePath(ecdictDatabasePath, nameof(ecdictDatabasePath));
         }
 
         internal static BuilderOptions ForJapanese(
@@ -43,7 +46,24 @@ namespace Dictation.LexiconBuilder
                 LexiconSourceKind.JmDict,
                 jmDictPath,
                 outputPath,
-                tomoshiDatabasePath);
+                tomoshiDatabasePath,
+                null,
+                null);
+        }
+
+        internal static BuilderOptions ForEnglish(
+            string wordNetDirectory,
+            string chineseWordNetXmlPath,
+            string ecdictDatabasePath,
+            string outputPath)
+        {
+            return new BuilderOptions(
+                LexiconSourceKind.WordNet,
+                wordNetDirectory,
+                outputPath,
+                null,
+                chineseWordNetXmlPath,
+                ecdictDatabasePath);
         }
 
         internal LexiconSourceKind SourceKind { get; }
@@ -53,6 +73,10 @@ namespace Dictation.LexiconBuilder
         internal string OutputPath { get; }
 
         internal string? TomoshiDatabasePath { get; }
+
+        internal string? ChineseWordNetXmlPath { get; }
+
+        internal string? EcdictDatabasePath { get; }
 
         private static string RequirePath(string path, string parameterName)
         {

@@ -40,7 +40,7 @@ namespace Dictation.LexiconBuilder
                     var summary = new EnglishLexiconDatabaseBuilder().Build(options);
                     stopwatch.Stop();
                     output.WriteLine(
-                        $"词库构建完成：source=wordnet source_files={summary.SourceFileCount} lexemes={summary.LexemeCount} senses={summary.SenseCount} synsets={summary.SynsetCount} definitions={summary.DefinitionCount} examples={summary.ExampleCount} forms={summary.FormCount} derivations={summary.DerivationCount} unclassified_source_forms={summary.UnclassifiedSourceFormCount} source_fingerprint_sha256={summary.SourceFingerprintSha256} output={summary.OutputPath} elapsed_ms={stopwatch.ElapsedMilliseconds}");
+                        $"词库构建完成：source=wordnet source_files={summary.SourceFileCount} lexemes={summary.LexemeCount} senses={summary.SenseCount} synsets={summary.SynsetCount} definitions={summary.DefinitionCount} examples={summary.ExampleCount} forms={summary.FormCount} derivations={summary.DerivationCount} learning_senses={summary.LearningSenseCount} exact={summary.ExactLearningSenseCount} broad={summary.BroadLearningSenseCount} missing={summary.MissingLearningSenseCount} unclassified_source_forms={summary.UnclassifiedSourceFormCount} source_fingerprint_sha256={summary.SourceFingerprintSha256} output={summary.OutputPath} elapsed_ms={stopwatch.ElapsedMilliseconds}");
                 }
 
                 return 0;
@@ -87,11 +87,13 @@ namespace Dictation.LexiconBuilder
             LexiconSourceKind? sourceKind = null;
             string? sourcePath = null;
             string? tomoshiDatabasePath = null;
+            string? chineseWordNetXmlPath = null;
+            string? ecdictDatabasePath = null;
             string? outputPath = null;
             for (var index = 0; index < args.Count; index++)
             {
                 var option = args[index];
-                if (option is not "--jmdict" and not "--wordnet" and not "--tomoshi" and not "--output")
+                if (option is not "--jmdict" and not "--wordnet" and not "--tomoshi" and not "--cow" and not "--ecdict" and not "--output")
                 {
                     throw new ArgumentException($"不支持的参数：{option}。", nameof(args));
                 }
@@ -125,6 +127,24 @@ namespace Dictation.LexiconBuilder
 
                     tomoshiDatabasePath = value;
                 }
+                else if (option == "--cow")
+                {
+                    if (chineseWordNetXmlPath is not null)
+                    {
+                        throw new ArgumentException("--cow 不能重复。", nameof(args));
+                    }
+
+                    chineseWordNetXmlPath = value;
+                }
+                else if (option == "--ecdict")
+                {
+                    if (ecdictDatabasePath is not null)
+                    {
+                        throw new ArgumentException("--ecdict 不能重复。", nameof(args));
+                    }
+
+                    ecdictDatabasePath = value;
+                }
                 else
                 {
                     if (outputPath is not null)
@@ -148,6 +168,11 @@ namespace Dictation.LexiconBuilder
                     throw new ArgumentException("--jmdict 必须同时提供且只提供一个 --tomoshi。", nameof(args));
                 }
 
+                if (chineseWordNetXmlPath is not null || ecdictDatabasePath is not null)
+                {
+                    throw new ArgumentException("--cow 和 --ecdict 只能与 --wordnet 一起使用。", nameof(args));
+                }
+
                 return BuilderOptions.ForJapanese(sourcePath, tomoshiDatabasePath, outputPath);
             }
 
@@ -156,7 +181,12 @@ namespace Dictation.LexiconBuilder
                 throw new ArgumentException("--tomoshi 只能与 --jmdict 一起使用。", nameof(args));
             }
 
-            return new BuilderOptions(sourceKind.Value, sourcePath, outputPath);
+            if (chineseWordNetXmlPath is null || ecdictDatabasePath is null)
+            {
+                throw new ArgumentException("--wordnet 必须同时提供且只提供一个 --cow 和 --ecdict。", nameof(args));
+            }
+
+            return BuilderOptions.ForEnglish(sourcePath, chineseWordNetXmlPath, ecdictDatabasePath, outputPath);
         }
     }
 }
