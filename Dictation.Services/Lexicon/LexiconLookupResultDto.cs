@@ -2,6 +2,23 @@ using Dictation.Services.Configuration;
 
 namespace Dictation.Services.Lexicon
 {
+    public enum LexiconMeaningSource
+    {
+        Tomoshi,
+        ChineseOpenWordNet,
+        Ecdict,
+        User,
+        Missing
+    }
+
+    public enum LexiconMeaningPrecision
+    {
+        Exact,
+        Broad,
+        UserProvided,
+        Missing
+    }
+
     public sealed class LexiconLookupResultDto
     {
         public LexiconLookupResultDto(
@@ -14,7 +31,9 @@ namespace Dictation.Services.Lexicon
             string attributeLabel,
             bool isPhrase,
             IReadOnlyList<string> meanings,
-            IReadOnlyList<LexiconLookupFormDto> forms)
+            IReadOnlyList<LexiconLookupFormDto> forms,
+            LexiconMeaningSource meaningSource = LexiconMeaningSource.Missing,
+            LexiconMeaningPrecision meaningPrecision = LexiconMeaningPrecision.Missing)
         {
             Language = language;
             SourceSenseId = RequireText(sourceSenseId, nameof(sourceSenseId));
@@ -26,6 +45,8 @@ namespace Dictation.Services.Lexicon
             IsPhrase = isPhrase;
             Meanings = meanings ?? throw new ArgumentNullException(nameof(meanings));
             Forms = forms ?? throw new ArgumentNullException(nameof(forms));
+            MeaningSource = meaningSource;
+            MeaningPrecision = meaningPrecision;
         }
 
         public LearningLanguage Language { get; }
@@ -47,6 +68,12 @@ namespace Dictation.Services.Lexicon
         public IReadOnlyList<string> Meanings { get; }
 
         public IReadOnlyList<LexiconLookupFormDto> Forms { get; }
+
+        public LexiconMeaningSource MeaningSource { get; }
+
+        public LexiconMeaningPrecision MeaningPrecision { get; }
+
+        public bool HasChineseMeaning => Meanings.Any(meaning => !string.IsNullOrWhiteSpace(meaning));
 
         private static string RequireText(string value, string parameterName)
         {

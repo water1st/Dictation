@@ -12,6 +12,8 @@ namespace Dictation.DataAccess.Lexicon
             string kanjiUsage,
             bool isPhrase,
             IReadOnlyList<string> partsOfSpeech,
+            string meaningSource,
+            string meaningPrecision,
             IReadOnlyList<string> meanings,
             IReadOnlyList<JapaneseLexiconLookupFormPo> forms)
         {
@@ -24,6 +26,8 @@ namespace Dictation.DataAccess.Lexicon
             KanjiUsage = RequireText(kanjiUsage, nameof(kanjiUsage));
             IsPhrase = isPhrase;
             PartsOfSpeech = partsOfSpeech ?? throw new ArgumentNullException(nameof(partsOfSpeech));
+            MeaningSource = RequireText(meaningSource, nameof(meaningSource));
+            MeaningPrecision = RequireText(meaningPrecision, nameof(meaningPrecision));
             Meanings = meanings ?? throw new ArgumentNullException(nameof(meanings));
             Forms = forms ?? throw new ArgumentNullException(nameof(forms));
         }
@@ -45,6 +49,10 @@ namespace Dictation.DataAccess.Lexicon
         public bool IsPhrase { get; }
 
         public IReadOnlyList<string> PartsOfSpeech { get; }
+
+        public string MeaningSource { get; }
+
+        public string MeaningPrecision { get; }
 
         public IReadOnlyList<string> Meanings { get; }
 

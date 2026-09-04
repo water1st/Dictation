@@ -31,14 +31,18 @@ namespace Dictation.DataAccess.Lexicon
                     cancellationToken);
 
                 var escapedQuery = LexiconSqliteQuerySupport.EscapeLikePattern(normalizedQuery);
-                var lexemeIds = (await connection.QueryAsync<string>(new CommandDefinition(
+                var learningSenseIds = (await connection.QueryAsync<string>(new CommandDefinition(
                     """
-                    SELECT LexemeId
+                    SELECT LearningSenses.LearningSenseId
                     FROM Forms
-                    WHERE Surface = @Query
-                       OR Surface LIKE @Prefix ESCAPE '\'
-                    GROUP BY LexemeId
-                    ORDER BY MIN(CASE WHEN Surface = @Query THEN 0 ELSE 1 END), LexemeId
+                    INNER JOIN Senses ON Senses.LexemeId = Forms.LexemeId
+                    INNER JOIN LearningSenseSources ON LearningSenseSources.SenseId = Senses.SenseId
+                    INNER JOIN LearningSenses ON LearningSenses.LearningSenseId = LearningSenseSources.LearningSenseId
+                    WHERE Forms.Surface = @Query
+                       OR Forms.Surface LIKE @Prefix ESCAPE '\'
+                    GROUP BY LearningSenses.LearningSenseId, LearningSenses.SortOrder
+                    ORDER BY MIN(CASE WHEN Forms.Surface = @Query THEN 0 ELSE 1 END),
+                             LearningSenses.SortOrder, LearningSenses.LearningSenseId
                     LIMIT @Limit;
                     """,
                     new
@@ -48,27 +52,7 @@ namespace Dictation.DataAccess.Lexicon
                         Limit = limit
                     },
                     cancellationToken: cancellationToken))).ToArray();
-                if (lexemeIds.Length == 0)
-                {
-                    return Array.Empty<EnglishLexiconLookupPo>();
-                }
-
-                var parameters = new { LexemeIds = lexemeIds };
-                var senses = (await connection.QueryAsync<SenseRow>(new CommandDefinition(
-                    """
-                    SELECT SenseId, LexemeId, SynsetId, SenseOrder
-                    FROM Senses
-                    WHERE LexemeId IN @LexemeIds
-                    ORDER BY LexemeId, SenseOrder, SenseId;
-                    """,
-                    parameters,
-                    cancellationToken: cancellationToken))).ToArray();
-                return await LoadSensesAsync(
-                    connection,
-                    senses,
-                    senses.Select(sense => sense.SenseId).ToArray(),
-                    limit,
-                    cancellationToken);
+                return await LoadLearningSensesAsync(connection, learningSenseIds, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -85,10 +69,10 @@ namespace Dictation.DataAccess.Lexicon
         }
 
         public async Task<IReadOnlyList<EnglishLexiconLookupPo>> GetSenseGroupAsync(
-            string sourceSenseId,
+            string learningSenseId,
             CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(sourceSenseId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(learningSenseId);
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
@@ -99,66 +83,61 @@ namespace Dictation.DataAccess.Lexicon
                     "英语",
                     cancellationToken);
 
-                var anchor = await connection.QuerySingleOrDefaultAsync<AnchorRow>(new CommandDefinition(
+                var anchor = await connection.QuerySingleOrDefaultAsync<LearningSenseRow>(new CommandDefinition(
                     """
-                    SELECT Senses.SenseId, Lexemes.IsPhrase
-                    FROM Senses
-                    INNER JOIN Lexemes ON Lexemes.LexemeId = Senses.LexemeId
-                    WHERE Senses.SenseId = @SourceSenseId;
+                    SELECT LearningSenseId, SourceLexemeId, Headword, PartOfSpeech, IsPhrase,
+                           MeaningSource, MeaningPrecision, SortOrder
+                    FROM LearningSenses
+                    WHERE LearningSenseId = @LearningSenseId;
                     """,
-                    new { SourceSenseId = sourceSenseId },
+                    new { LearningSenseId = learningSenseId },
                     cancellationToken: cancellationToken));
                 if (anchor is null)
                 {
                     return Array.Empty<EnglishLexiconLookupPo>();
                 }
 
-                var senseIds = new List<string> { sourceSenseId };
+                var groupIds = new List<string> { learningSenseId };
                 if (anchor.IsPhrase == 0)
                 {
                     var neighborIds = (await connection.QueryAsync<string>(new CommandDefinition(
                         """
-                        SELECT CASE
-                            WHEN Derivations.SourceSenseId = @SourceSenseId THEN Derivations.TargetSenseId
-                            ELSE Derivations.SourceSenseId
-                        END
-                        FROM Derivations
-                        INNER JOIN Senses AS Neighbor
-                            ON Neighbor.SenseId = CASE
-                                WHEN Derivations.SourceSenseId = @SourceSenseId THEN Derivations.TargetSenseId
+                        WITH AnchorSources AS (
+                            SELECT SenseId
+                            FROM LearningSenseSources
+                            WHERE LearningSenseId = @LearningSenseId
+                        ), NeighborSources AS (
+                            SELECT CASE
+                                WHEN Derivations.SourceSenseId = AnchorSources.SenseId THEN Derivations.TargetSenseId
                                 ELSE Derivations.SourceSenseId
-                            END
-                        INNER JOIN Lexemes AS NeighborLexeme ON NeighborLexeme.LexemeId = Neighbor.LexemeId
-                        WHERE (Derivations.SourceSenseId = @SourceSenseId
-                            OR Derivations.TargetSenseId = @SourceSenseId)
-                          AND NeighborLexeme.IsPhrase = 0
-                        ORDER BY Neighbor.SenseOrder, Neighbor.SenseId;
+                            END AS SenseId
+                            FROM AnchorSources
+                            INNER JOIN Derivations
+                                ON Derivations.SourceSenseId = AnchorSources.SenseId
+                                OR Derivations.TargetSenseId = AnchorSources.SenseId
+                        )
+                        SELECT LearningSenses.LearningSenseId
+                        FROM NeighborSources
+                        INNER JOIN LearningSenseSources
+                            ON LearningSenseSources.SenseId = NeighborSources.SenseId
+                        INNER JOIN LearningSenses
+                            ON LearningSenses.LearningSenseId = LearningSenseSources.LearningSenseId
+                        WHERE LearningSenses.IsPhrase = 0
+                        GROUP BY LearningSenses.LearningSenseId, LearningSenses.SortOrder
+                        ORDER BY LearningSenses.SortOrder, LearningSenses.LearningSenseId;
                         """,
-                        new { SourceSenseId = sourceSenseId },
+                        new { LearningSenseId = learningSenseId },
                         cancellationToken: cancellationToken))).ToArray();
                     foreach (var neighborId in neighborIds)
                     {
-                        if (!senseIds.Contains(neighborId, StringComparer.Ordinal))
+                        if (!groupIds.Contains(neighborId, StringComparer.Ordinal))
                         {
-                            senseIds.Add(neighborId);
+                            groupIds.Add(neighborId);
                         }
                     }
                 }
 
-                var senses = (await connection.QueryAsync<SenseRow>(new CommandDefinition(
-                    """
-                    SELECT SenseId, LexemeId, SynsetId, SenseOrder
-                    FROM Senses
-                    WHERE SenseId IN @SenseIds;
-                    """,
-                    new { SenseIds = senseIds },
-                    cancellationToken: cancellationToken))).ToArray();
-                return await LoadSensesAsync(
-                    connection,
-                    senses,
-                    senseIds,
-                    null,
-                    cancellationToken);
+                return await LoadLearningSensesAsync(connection, groupIds, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -174,146 +153,121 @@ namespace Dictation.DataAccess.Lexicon
             }
         }
 
-        private static async Task<IReadOnlyList<EnglishLexiconLookupPo>> LoadSensesAsync(
+        private static async Task<IReadOnlyList<EnglishLexiconLookupPo>> LoadLearningSensesAsync(
             Microsoft.Data.Sqlite.SqliteConnection connection,
-            IReadOnlyList<SenseRow> senses,
-            IReadOnlyList<string> orderedSenseIds,
-            int? limit,
+            IReadOnlyList<string> orderedLearningSenseIds,
             CancellationToken cancellationToken)
         {
-            if (senses.Count == 0)
+            if (orderedLearningSenseIds.Count == 0)
             {
                 return Array.Empty<EnglishLexiconLookupPo>();
             }
 
-            var lexemeIds = senses
-                .Select(sense => sense.LexemeId)
-                .Distinct(StringComparer.Ordinal)
-                .ToArray();
-            var parameters = new { LexemeIds = lexemeIds };
-            var lexemes = (await connection.QueryAsync<LexemeRow>(new CommandDefinition(
+            var parameters = new { LearningSenseIds = orderedLearningSenseIds };
+            var learningSenses = (await connection.QueryAsync<LearningSenseRow>(new CommandDefinition(
                 """
-                SELECT LexemeId, Lemma, SourceEntryKey, PartOfSpeech, IsPhrase
-                FROM Lexemes
-                WHERE LexemeId IN @LexemeIds;
+                SELECT LearningSenseId, SourceLexemeId, Headword, PartOfSpeech, IsPhrase,
+                       MeaningSource, MeaningPrecision, SortOrder
+                FROM LearningSenses
+                WHERE LearningSenseId IN @LearningSenseIds;
                 """,
                 parameters,
                 cancellationToken: cancellationToken))).ToDictionary(
-                row => row.LexemeId,
+                row => row.LearningSenseId,
                 StringComparer.Ordinal);
-            var synsetIds = senses
-                .Select(sense => sense.SynsetId)
-                .Distinct(StringComparer.Ordinal)
-                .ToArray();
-            var definitions = (await connection.QueryAsync<DefinitionRow>(new CommandDefinition(
+            var meanings = (await connection.QueryAsync<MeaningRow>(new CommandDefinition(
                 """
-                SELECT SynsetId, DefinitionIndex, Text
-                FROM Definitions
-                WHERE SynsetId IN @SynsetIds
-                ORDER BY SynsetId, DefinitionIndex;
+                SELECT LearningSenseId, MeaningIndex, Text
+                FROM LearningMeanings
+                WHERE LearningSenseId IN @LearningSenseIds
+                ORDER BY LearningSenseId, MeaningIndex;
                 """,
-                new { SynsetIds = synsetIds },
+                parameters,
                 cancellationToken: cancellationToken)))
-                .GroupBy(row => row.SynsetId, StringComparer.Ordinal)
+                .GroupBy(row => row.LearningSenseId, StringComparer.Ordinal)
                 .ToDictionary(
                     group => group.Key,
                     group => (IReadOnlyList<string>)group.Select(row => row.Text).ToArray(),
                     StringComparer.Ordinal);
-            var forms = (await connection.QueryAsync<FormRow>(new CommandDefinition(
+            var forms = (await connection.QueryAsync<LearningFormRow>(new CommandDefinition(
                 """
-                SELECT LexemeId, FormId, Surface, FormKind, FormSourceKind
-                FROM Forms
-                WHERE LexemeId IN @LexemeIds
-                ORDER BY LexemeId, FormId;
+                SELECT LearningSenseSources.LearningSenseId, Forms.FormId, Forms.Surface,
+                       Forms.FormKind, Forms.FormSourceKind
+                FROM LearningSenseSources
+                INNER JOIN Senses ON Senses.SenseId = LearningSenseSources.SenseId
+                INNER JOIN Forms ON Forms.LexemeId = Senses.LexemeId
+                WHERE LearningSenseSources.LearningSenseId IN @LearningSenseIds
+                ORDER BY LearningSenseSources.LearningSenseId,
+                         LearningSenseSources.SenseId, Forms.FormId;
                 """,
                 parameters,
                 cancellationToken: cancellationToken)))
-                .GroupBy(row => row.LexemeId, StringComparer.Ordinal)
+                .GroupBy(row => row.LearningSenseId, StringComparer.Ordinal)
                 .ToDictionary(
                     group => group.Key,
                     group => (IReadOnlyList<EnglishLexiconLookupFormPo>)group
+                        .DistinctBy(row => (row.Surface, row.FormKind))
                         .Select(row => new EnglishLexiconLookupFormPo(
                             row.Surface,
                             row.FormKind,
                             row.FormSourceKind))
                         .ToArray(),
                     StringComparer.Ordinal);
-            var sensesById = senses.ToDictionary(sense => sense.SenseId, StringComparer.Ordinal);
-            var result = new List<EnglishLexiconLookupPo>();
-            foreach (var senseId in orderedSenseIds)
-            {
-                if (!sensesById.TryGetValue(senseId, out var sense)
-                    || !lexemes.TryGetValue(sense.LexemeId, out var lexeme))
-                {
-                    continue;
-                }
 
-                var lexemeForms = forms.TryGetValue(lexeme.LexemeId, out var formsForLexeme)
-                    ? formsForLexeme
-                    : Array.Empty<EnglishLexiconLookupFormPo>();
-                result.Add(new EnglishLexiconLookupPo(
-                    sense.SenseId,
-                    lexeme.LexemeId,
-                    lexeme.Lemma,
-                    lexeme.SourceEntryKey,
-                    lexeme.PartOfSpeech,
-                    lexeme.IsPhrase != 0,
-                    definitions.TryGetValue(sense.SynsetId, out var senseDefinitions)
-                        ? senseDefinitions
-                        : Array.Empty<string>(),
-                    lexemeForms));
-                if (limit is not null && result.Count >= limit.Value)
+            return orderedLearningSenseIds
+                .Where(learningSenses.ContainsKey)
+                .Select(id =>
                 {
-                    break;
-                }
-            }
-
-            return result;
+                    var value = learningSenses[id];
+                    return new EnglishLexiconLookupPo(
+                        value.LearningSenseId,
+                        value.SourceLexemeId,
+                        value.Headword,
+                        value.PartOfSpeech,
+                        value.IsPhrase != 0,
+                        value.MeaningSource,
+                        value.MeaningPrecision,
+                        meanings.TryGetValue(id, out var learningMeanings)
+                            ? learningMeanings
+                            : Array.Empty<string>(),
+                        forms.TryGetValue(id, out var learningForms)
+                            ? learningForms
+                            : Array.Empty<EnglishLexiconLookupFormPo>());
+                })
+                .ToArray();
         }
 
-        private sealed class LexemeRow
+        private sealed class LearningSenseRow
         {
-            public string LexemeId { get; set; } = string.Empty;
+            public string LearningSenseId { get; set; } = string.Empty;
 
-            public string Lemma { get; set; } = string.Empty;
+            public string SourceLexemeId { get; set; } = string.Empty;
 
-            public string SourceEntryKey { get; set; } = string.Empty;
+            public string Headword { get; set; } = string.Empty;
 
             public string PartOfSpeech { get; set; } = string.Empty;
 
             public int IsPhrase { get; set; }
+
+            public string MeaningSource { get; set; } = string.Empty;
+
+            public string MeaningPrecision { get; set; } = string.Empty;
+
+            public int SortOrder { get; set; }
         }
 
-        private sealed class AnchorRow
+        private sealed class MeaningRow
         {
-            public string SenseId { get; set; } = string.Empty;
+            public string LearningSenseId { get; set; } = string.Empty;
 
-            public int IsPhrase { get; set; }
-        }
-
-        private sealed class SenseRow
-        {
-            public string SenseId { get; set; } = string.Empty;
-
-            public string LexemeId { get; set; } = string.Empty;
-
-            public string SynsetId { get; set; } = string.Empty;
-
-            public int SenseOrder { get; set; }
-        }
-
-        private sealed class DefinitionRow
-        {
-            public string SynsetId { get; set; } = string.Empty;
-
-            public int DefinitionIndex { get; set; }
+            public int MeaningIndex { get; set; }
 
             public string Text { get; set; } = string.Empty;
         }
 
-        private sealed class FormRow
+        private sealed class LearningFormRow
         {
-            public string LexemeId { get; set; } = string.Empty;
+            public string LearningSenseId { get; set; } = string.Empty;
 
             public long FormId { get; set; }
 

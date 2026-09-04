@@ -7,7 +7,7 @@ namespace Dictation.Tests.DataAccess
     public sealed class JapaneseLexiconDataAccessorTests
     {
         [Fact]
-        public async Task SearchAsync_ExactPoliteForm_ReturnsIndependentEntriesWithEnglishMeaningsAndFullForms()
+        public async Task SearchAsync_ExactPoliteForm_ReturnsIndependentEntriesWithChineseMeaningsAndFullForms()
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = new ApplicationPaths(temporaryDirectory.Path);
@@ -28,12 +28,15 @@ namespace Dictation.Tests.DataAccess
                 Assert.Equal("Common", result.KanjiUsage);
                 Assert.False(result.IsPhrase);
                 Assert.Contains("Ichidan verb", result.PartsOfSpeech);
-                Assert.Contains("to", result.Meanings[0], StringComparison.Ordinal);
-                Assert.DoesNotContain(result.Meanings, meaning => meaning == "essen");
+                Assert.All(result.Meanings, meaning => Assert.DoesNotContain("to ", meaning, StringComparison.Ordinal));
+                Assert.Equal("Tomoshi", result.MeaningSource);
+                Assert.Equal("Exact", result.MeaningPrecision);
                 Assert.Equal(
                     new[] { "食べる", "たべる", "食べます", "たべます", "食べて", "たべて", "食べた", "たべた" },
                     result.Forms.Select(form => form.Surface));
             });
+            Assert.Equal(new[] { "吃", "吃饭" }, results[0].Meanings);
+            Assert.Equal(new[] { "用餐" }, results[1].Meanings);
         }
 
         [Fact]
@@ -111,14 +114,14 @@ namespace Dictation.Tests.DataAccess
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = new ApplicationPaths(temporaryDirectory.Path);
-            LexiconTestDatabases.CreateJapanese(paths, "2");
+            LexiconTestDatabases.CreateJapanese(paths, "1");
             var accessor = CreateAccessor(paths);
 
             var exception = await Assert.ThrowsAsync<LexiconDataAccessException>(() => accessor.SearchAsync(
                 "食べる", 20, TestContext.Current.CancellationToken));
 
             Assert.Contains("schema_version", exception.Message, StringComparison.Ordinal);
-            Assert.Contains("1", exception.Message, StringComparison.Ordinal);
+            Assert.Contains("2", exception.Message, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -152,7 +155,8 @@ namespace Dictation.Tests.DataAccess
             Assert.NotNull(result);
             Assert.Equal("jmdict:1:1", result!.EntryId);
             Assert.Equal("食べる", result.PrimaryWritten);
-            Assert.Contains("to eat", result.Meanings[0], StringComparison.Ordinal);
+            Assert.Equal(new[] { "吃", "吃饭" }, result.Meanings);
+            Assert.DoesNotContain(result.Meanings, meaning => meaning.Contains("to eat", StringComparison.Ordinal));
             Assert.Equal(8, result.Forms.Count);
             Assert.Null(await accessor.GetByEntryIdAsync(
                 "to eat",

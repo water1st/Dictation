@@ -25,16 +25,22 @@ namespace Dictation.Tests.Services
             Assert.All(results, result =>
             {
                 Assert.Equal(LearningLanguage.English, result.Language);
-                Assert.Equal("go%v", result.SourceLexemeId);
                 Assert.Equal("go", result.Headword);
                 Assert.Null(result.Reading);
                 Assert.Equal("动词", result.PartOfSpeechLabel);
                 Assert.Equal("动词", result.AttributeLabel);
                 Assert.False(result.IsPhrase);
+                Assert.True(result.HasChineseMeaning);
                 Assert.Equal(
                     new[] { "原形", "第三人称单数", "过去式", "过去分词", "现在分词" },
                     result.Forms.Select(form => form.FormLabel));
             });
+            Assert.Equal(LexiconMeaningSource.ChineseOpenWordNet, results[0].MeaningSource);
+            Assert.Equal(LexiconMeaningPrecision.Exact, results[0].MeaningPrecision);
+            Assert.Equal(new[] { "去", "行走" }, results[0].Meanings);
+            Assert.Equal(LexiconMeaningSource.Ecdict, results[1].MeaningSource);
+            Assert.Equal(LexiconMeaningPrecision.Broad, results[1].MeaningPrecision);
+            Assert.DoesNotContain(results.SelectMany(result => result.Meanings), meaning => meaning.Contains("to ", StringComparison.Ordinal));
         }
 
         [Fact]
@@ -58,6 +64,9 @@ namespace Dictation.Tests.Services
             Assert.Equal("其他", result.PartOfSpeechLabel);
             Assert.Equal("无汉字", result.AttributeLabel);
             Assert.Contains(result.Forms, form => form.Surface == "ガ" && form.DetailLabel == "假名 · 其他");
+            Assert.False(result.HasChineseMeaning);
+            Assert.Equal(LexiconMeaningSource.Missing, result.MeaningSource);
+            Assert.Equal(LexiconMeaningPrecision.Missing, result.MeaningPrecision);
         }
 
         [Fact]
@@ -214,6 +223,9 @@ namespace Dictation.Tests.Services
                 form.Surface == "食べる"
                 && form.FormLabel == "普通形"
                 && form.DetailLabel == "汉字 · 动词");
+            Assert.Equal(new[] { "吃", "吃饭" }, japanese.Meanings);
+            Assert.Equal(LexiconMeaningSource.Tomoshi, japanese.MeaningSource);
+            Assert.Equal(LexiconMeaningPrecision.Exact, japanese.MeaningPrecision);
 
             var english = await service.GetImportGroupAsync(
                 LearningLanguage.English,

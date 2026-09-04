@@ -12,7 +12,7 @@ namespace Dictation.Tests.Infrastructure
             CreateEnglish(paths);
         }
 
-        public static void CreateJapanese(ApplicationPaths paths, string schemaVersion = "1")
+        public static void CreateJapanese(ApplicationPaths paths, string schemaVersion = "2")
         {
             ArgumentNullException.ThrowIfNull(paths);
             Directory.CreateDirectory(paths.Lexicons);
@@ -41,13 +41,22 @@ namespace Dictation.Tests.Infrastructure
                     PRIMARY KEY (EntryId, SortIndex),
                     FOREIGN KEY (EntryId) REFERENCES Entries (EntryId) ON DELETE CASCADE
                 );
-                CREATE TABLE Glosses (
+                CREATE TABLE SourceGlosses (
                     EntryId TEXT NOT NULL,
                     Language TEXT NOT NULL,
                     GlossIndex INTEGER NOT NULL,
                     GlossType TEXT NULL,
                     Text TEXT NOT NULL,
                     PRIMARY KEY (EntryId, Language, GlossIndex),
+                    FOREIGN KEY (EntryId) REFERENCES Entries (EntryId) ON DELETE CASCADE
+                );
+                CREATE TABLE ChineseMeanings (
+                    EntryId TEXT NOT NULL,
+                    MeaningIndex INTEGER NOT NULL,
+                    Text TEXT NOT NULL,
+                    MeaningSource TEXT NOT NULL,
+                    MeaningPrecision TEXT NOT NULL,
+                    PRIMARY KEY (EntryId, MeaningIndex),
                     FOREIGN KEY (EntryId) REFERENCES Entries (EntryId) ON DELETE CASCADE
                 );
                 CREATE TABLE Forms (
@@ -94,7 +103,8 @@ namespace Dictation.Tests.Infrastructure
                 false,
                 new[] { "Ichidan verb", "transitive verb" },
                 new[] { ("eng", "to eat"), ("eng", "to consume food"), ("deu", "essen") },
-                verbForms);
+                verbForms,
+                new[] { "吃", "吃饭" });
             AddJapaneseEntry(
                 connection,
                 "jmdict:1:2",
@@ -109,7 +119,8 @@ namespace Dictation.Tests.Infrastructure
                 false,
                 new[] { "Ichidan verb", "transitive verb" },
                 new[] { ("eng", "to have a meal") },
-                verbForms);
+                verbForms,
+                new[] { "用餐" });
 
             AddJapaneseEntry(
                 connection,
@@ -125,7 +136,8 @@ namespace Dictation.Tests.Infrastructure
                 false,
                 new[] { "noun" },
                 new[] { ("eng", "before a meal") },
-                new[] { ("食前", "しょくぜん", "Dictionary", "Kanji", "Noun", true, true), ("しょくぜん", "しょくぜん", "Dictionary", "Kana", "Noun", true, false) });
+                new[] { ("食前", "しょくぜん", "Dictionary", "Kanji", "Noun", true, true), ("しょくぜん", "しょくぜん", "Dictionary", "Kana", "Noun", true, false) },
+                new[] { "饭前" });
 
             AddJapaneseEntry(
                 connection,
@@ -141,7 +153,8 @@ namespace Dictation.Tests.Infrastructure
                 false,
                 new[] { "noun" },
                 new[] { ("eng", "meal") },
-                new[] { ("食事", "しょくじ", "Dictionary", "Kanji", "Noun", true, true), ("しょくじ", "しょくじ", "Dictionary", "Kana", "Noun", true, false) });
+                new[] { ("食事", "しょくじ", "Dictionary", "Kanji", "Noun", true, true), ("しょくじ", "しょくじ", "Dictionary", "Kana", "Noun", true, false) },
+                new[] { "吃饭" });
 
             AddJapaneseEntry(
                 connection,
@@ -163,7 +176,8 @@ namespace Dictation.Tests.Infrastructure
                     ("_", "_", "Dictionary", "Kana", "Other", false, false),
                     ("\\", "\\", "Dictionary", "Kana", "Other", false, false),
                     ("ガ", "ガ", "Dictionary", "Kana", "Other", false, false)
-                });
+                },
+                Array.Empty<string>());
 
             AddJapaneseEntry(
                 connection,
@@ -183,7 +197,8 @@ namespace Dictation.Tests.Infrastructure
                 {
                     ("書く", "かく", "Dictionary", "Kanji", "Verb", true, true),
                     ("かく", "かく", "Dictionary", "Kana", "Verb", true, false)
-                });
+                },
+                new[] { "写" });
 
             AddJapaneseEntry(
                 connection,
@@ -203,7 +218,8 @@ namespace Dictation.Tests.Infrastructure
                 {
                     ("跪く", "ひざまずく", "Dictionary", "Kanji", "Verb", true, true),
                     ("ひざまずく", "ひざまずく", "Dictionary", "Kana", "Verb", true, false)
-                });
+                },
+                new[] { "跪下" });
 
             AddJapaneseEntry(
                 connection,
@@ -225,10 +241,11 @@ namespace Dictation.Tests.Infrastructure
                     ("べんきょう", "べんきょう", "Dictionary", "Kana", "Noun", true, false),
                     ("勉強する", "べんきょうする", "Dictionary", "Kanji", "Verb", true, true),
                     ("べんきょうする", "べんきょうする", "Dictionary", "Kana", "Verb", true, false)
-                });
+                },
+                new[] { "学习" });
         }
 
-        public static void CreateEnglish(ApplicationPaths paths, string schemaVersion = "1")
+        public static void CreateEnglish(ApplicationPaths paths, string schemaVersion = "2")
         {
             ArgumentNullException.ThrowIfNull(paths);
             Directory.CreateDirectory(paths.Lexicons);
@@ -247,7 +264,8 @@ namespace Dictation.Tests.Infrastructure
                 );
                 CREATE TABLE Synsets (
                     SynsetId TEXT NOT NULL PRIMARY KEY,
-                    PartOfSpeech TEXT NOT NULL
+                    PartOfSpeech TEXT NOT NULL,
+                    Ili TEXT NULL
                 );
                 CREATE TABLE Senses (
                     SenseId TEXT NOT NULL PRIMARY KEY,
@@ -287,6 +305,30 @@ namespace Dictation.Tests.Infrastructure
                     FOREIGN KEY (SourceSenseId) REFERENCES Senses (SenseId),
                     FOREIGN KEY (TargetSenseId) REFERENCES Senses (SenseId)
                 );
+                CREATE TABLE LearningSenses (
+                    LearningSenseId TEXT NOT NULL PRIMARY KEY,
+                    SourceLexemeId TEXT NOT NULL,
+                    Headword TEXT NOT NULL,
+                    PartOfSpeech TEXT NOT NULL,
+                    IsPhrase INTEGER NOT NULL,
+                    MeaningSource TEXT NOT NULL,
+                    MeaningPrecision TEXT NOT NULL,
+                    SortOrder INTEGER NOT NULL
+                );
+                CREATE TABLE LearningSenseSources (
+                    LearningSenseId TEXT NOT NULL,
+                    SenseId TEXT NOT NULL,
+                    PRIMARY KEY (LearningSenseId, SenseId),
+                    FOREIGN KEY (LearningSenseId) REFERENCES LearningSenses (LearningSenseId),
+                    FOREIGN KEY (SenseId) REFERENCES Senses (SenseId)
+                );
+                CREATE TABLE LearningMeanings (
+                    LearningSenseId TEXT NOT NULL,
+                    MeaningIndex INTEGER NOT NULL,
+                    Text TEXT NOT NULL,
+                    PRIMARY KEY (LearningSenseId, MeaningIndex),
+                    FOREIGN KEY (LearningSenseId) REFERENCES LearningSenses (LearningSenseId)
+                );
                 CREATE INDEX IX_Forms_Surface ON Forms (Surface);
                 """);
             Execute(connection,
@@ -301,6 +343,7 @@ namespace Dictation.Tests.Infrastructure
 
             AddEnglishSynset(connection, "go-synset-1", "v", "to move from one place to another", "go quickly");
             AddEnglishSynset(connection, "go-synset-2", "v", "to operate or function", null);
+            AddEnglishSynset(connection, "go-synset-3", "v", "to happen", null);
             AddEnglishSynset(connection, "convert-synset", "v", "to change into another form", null);
             AddEnglishSynset(connection, "conversion-synset", "n", "the act of converting", null);
             AddEnglishSynset(connection, "take-off-synset", "v", "to leave the ground", null);
@@ -308,6 +351,7 @@ namespace Dictation.Tests.Infrastructure
 
             AddEnglishSense(connection, "go%2:01:00::", "go%v", "go-synset-1", 1);
             AddEnglishSense(connection, "go%2:02:00::", "go%v", "go-synset-2", 2);
+            AddEnglishSense(connection, "go%2:03:00::", "go%v", "go-synset-3", 3);
             AddEnglishSense(connection, "convert%2:30:00::", "convert%v", "convert-synset", 1);
             AddEnglishSense(connection, "conversion%1:04:00::", "conversion%n", "conversion-synset", 1);
             AddEnglishSense(connection, "take_off%2:38:00::", "take off%v", "take-off-synset", 1);
@@ -332,6 +376,13 @@ namespace Dictation.Tests.Infrastructure
             AddEnglishDerivation(connection, "go%2:01:00::", "convert%2:30:00::");
             AddEnglishDerivation(connection, "convert%2:30:00::", "conversion%1:04:00::");
             AddEnglishDerivation(connection, "go%2:01:00::", "take_off%2:38:00::");
+
+            AddEnglishLearningSense(connection, "go%2:01:00::", "go%v", "go", "v", false, "ChineseOpenWordNet", "Exact", 0, new[] { "go%2:01:00::" }, new[] { "去", "行走" });
+            AddEnglishLearningSense(connection, "ecdict:go:v", "oewn:go:v", "go", "v", false, "Ecdict", "Broad", 1, new[] { "go%2:02:00::", "go%2:03:00::" }, new[] { "运行", "运转" });
+            AddEnglishLearningSense(connection, "convert%2:30:00::", "convert%v", "convert", "v", false, "ChineseOpenWordNet", "Exact", 2, new[] { "convert%2:30:00::" }, new[] { "转换" });
+            AddEnglishLearningSense(connection, "missing:conversion:n", "oewn:conversion:n", "conversion", "n", false, "Missing", "Missing", 3, new[] { "conversion%1:04:00::" }, Array.Empty<string>());
+            AddEnglishLearningSense(connection, "take_off%2:38:00::", "take off%v", "take off", "v", true, "ChineseOpenWordNet", "Exact", 4, new[] { "take_off%2:38:00::" }, new[] { "起飞" });
+            AddEnglishLearningSense(connection, "missing:symbols:v", "oewn:symbols:v", "symbols", "v", false, "Missing", "Missing", 5, new[] { "symbols%2:30:00::" }, Array.Empty<string>());
         }
 
         private static SqliteConnection OpenForWrite(string path)
@@ -361,7 +412,8 @@ namespace Dictation.Tests.Infrastructure
             bool isPhrase,
             IReadOnlyList<string> partsOfSpeech,
             IReadOnlyList<(string Language, string Text)> glosses,
-            IReadOnlyList<(string Surface, string Reading, string FormKind, string ScriptKind, string LexicalRole, bool IsCommon, bool IsPrimary)> forms)
+            IReadOnlyList<(string Surface, string Reading, string FormKind, string ScriptKind, string LexicalRole, bool IsCommon, bool IsPrimary)> forms,
+            IReadOnlyList<string> chineseMeanings)
         {
             Execute(connection, """
                 INSERT INTO Entries (
@@ -393,11 +445,20 @@ namespace Dictation.Tests.Infrastructure
             for (var index = 0; index < glosses.Count; index++)
             {
                 Execute(connection,
-                    "INSERT INTO Glosses (EntryId, Language, GlossIndex, GlossType, Text) VALUES ($entryId, $language, $glossIndex, NULL, $text);",
+                    "INSERT INTO SourceGlosses (EntryId, Language, GlossIndex, GlossType, Text) VALUES ($entryId, $language, $glossIndex, NULL, $text);",
                     ("$entryId", entryId),
                     ("$language", glosses[index].Language),
                     ("$glossIndex", index),
                     ("$text", glosses[index].Text));
+            }
+
+            for (var index = 0; index < chineseMeanings.Count; index++)
+            {
+                Execute(connection,
+                    "INSERT INTO ChineseMeanings (EntryId, MeaningIndex, Text, MeaningSource, MeaningPrecision) VALUES ($entryId, $meaningIndex, $text, 'Tomoshi', 'Exact');",
+                    ("$entryId", entryId),
+                    ("$meaningIndex", index),
+                    ("$text", chineseMeanings[index]));
             }
 
             foreach (var form in forms)
@@ -498,6 +559,53 @@ namespace Dictation.Tests.Infrastructure
                 "INSERT INTO Derivations (SourceSenseId, TargetSenseId) VALUES ($sourceSenseId, $targetSenseId);",
                 ("$sourceSenseId", sourceSenseId),
                 ("$targetSenseId", targetSenseId));
+        }
+
+        private static void AddEnglishLearningSense(
+            SqliteConnection connection,
+            string learningSenseId,
+            string sourceLexemeId,
+            string headword,
+            string partOfSpeech,
+            bool isPhrase,
+            string meaningSource,
+            string meaningPrecision,
+            int sortOrder,
+            IReadOnlyList<string> sourceSenseIds,
+            IReadOnlyList<string> meanings)
+        {
+            Execute(connection, """
+                INSERT INTO LearningSenses (
+                    LearningSenseId, SourceLexemeId, Headword, PartOfSpeech, IsPhrase,
+                    MeaningSource, MeaningPrecision, SortOrder)
+                VALUES ($learningSenseId, $sourceLexemeId, $headword, $partOfSpeech, $isPhrase,
+                    $meaningSource, $meaningPrecision, $sortOrder);
+                """,
+                ("$learningSenseId", learningSenseId),
+                ("$sourceLexemeId", sourceLexemeId),
+                ("$headword", headword),
+                ("$partOfSpeech", partOfSpeech),
+                ("$isPhrase", isPhrase ? 1 : 0),
+                ("$meaningSource", meaningSource),
+                ("$meaningPrecision", meaningPrecision),
+                ("$sortOrder", sortOrder));
+
+            foreach (var sourceSenseId in sourceSenseIds)
+            {
+                Execute(connection,
+                    "INSERT INTO LearningSenseSources (LearningSenseId, SenseId) VALUES ($learningSenseId, $senseId);",
+                    ("$learningSenseId", learningSenseId),
+                    ("$senseId", sourceSenseId));
+            }
+
+            for (var index = 0; index < meanings.Count; index++)
+            {
+                Execute(connection,
+                    "INSERT INTO LearningMeanings (LearningSenseId, MeaningIndex, Text) VALUES ($learningSenseId, $meaningIndex, $text);",
+                    ("$learningSenseId", learningSenseId),
+                    ("$meaningIndex", index),
+                    ("$text", meanings[index]));
+            }
         }
 
         private static void Execute(

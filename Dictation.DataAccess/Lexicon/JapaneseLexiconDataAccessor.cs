@@ -146,17 +146,17 @@ namespace Dictation.DataAccess.Lexicon
                     StringComparer.Ordinal);
             var meanings = (await connection.QueryAsync<MeaningRow>(new CommandDefinition(
                 """
-                SELECT EntryId, Text
-                FROM Glosses
-                WHERE EntryId IN @EntryIds AND Language = 'eng'
-                ORDER BY EntryId, GlossIndex;
+                SELECT EntryId, MeaningIndex, Text, MeaningSource, MeaningPrecision
+                FROM ChineseMeanings
+                WHERE EntryId IN @EntryIds
+                ORDER BY EntryId, MeaningIndex;
                 """,
                 parameters,
                 cancellationToken: cancellationToken)))
                 .GroupBy(row => row.EntryId, StringComparer.Ordinal)
                 .ToDictionary(
                     group => group.Key,
-                    group => (IReadOnlyList<string>)group.Select(row => row.Text).ToArray(),
+                    group => (IReadOnlyList<MeaningRow>)group.ToArray(),
                     StringComparer.Ordinal);
             var forms = (await connection.QueryAsync<FormRow>(new CommandDefinition(
                 """
@@ -187,6 +187,9 @@ namespace Dictation.DataAccess.Lexicon
                 .Select(entryId =>
                 {
                     var entry = entries[entryId];
+                    var entryMeaningRows = meanings.TryGetValue(entryId, out var foundMeanings)
+                        ? foundMeanings
+                        : Array.Empty<MeaningRow>();
                     return new JapaneseLexiconLookupPo(
                         entry.EntryId,
                         entry.PrimaryWritten,
@@ -199,9 +202,9 @@ namespace Dictation.DataAccess.Lexicon
                         partsOfSpeech.TryGetValue(entryId, out var entryPartsOfSpeech)
                             ? entryPartsOfSpeech
                             : Array.Empty<string>(),
-                        meanings.TryGetValue(entryId, out var entryMeanings)
-                            ? entryMeanings
-                            : Array.Empty<string>(),
+                        entryMeaningRows.FirstOrDefault()?.MeaningSource ?? "Missing",
+                        entryMeaningRows.FirstOrDefault()?.MeaningPrecision ?? "Missing",
+                        entryMeaningRows.Select(row => row.Text).ToArray(),
                         forms.TryGetValue(entryId, out var entryForms)
                             ? entryForms
                             : Array.Empty<JapaneseLexiconLookupFormPo>());
@@ -241,9 +244,13 @@ namespace Dictation.DataAccess.Lexicon
         {
             public string EntryId { get; set; } = string.Empty;
 
-            public int GlossIndex { get; set; }
+            public int MeaningIndex { get; set; }
 
             public string Text { get; set; } = string.Empty;
+
+            public string MeaningSource { get; set; } = string.Empty;
+
+            public string MeaningPrecision { get; set; } = string.Empty;
         }
 
         private sealed class FormRow

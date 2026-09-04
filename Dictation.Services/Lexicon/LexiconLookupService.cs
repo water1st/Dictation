@@ -102,7 +102,9 @@ namespace Dictation.Services.Lexicon
                     MapJapaneseFormKind(form.FormKind),
                     MapJapaneseFormDetail(form),
                     form.IsCommon,
-                    form.IsPrimary)).ToArray());
+                    form.IsPrimary)).ToArray(),
+                ParseMeaningSource(value.MeaningSource),
+                ParseMeaningPrecision(value.MeaningPrecision));
         }
 
         private static LexiconLookupResultDto MapEnglish(EnglishLexiconLookupPo value)
@@ -110,9 +112,9 @@ namespace Dictation.Services.Lexicon
             var partOfSpeechLabel = MapEnglishPartOfSpeech(value.PartOfSpeech);
             return new LexiconLookupResultDto(
                 LearningLanguage.English,
-                value.SenseId,
-                value.LexemeId,
-                value.Lemma,
+                value.LearningSenseId,
+                value.SourceLexemeId,
+                value.Headword,
                 null,
                 partOfSpeechLabel,
                 partOfSpeechLabel,
@@ -124,7 +126,31 @@ namespace Dictation.Services.Lexicon
                     MapEnglishFormKind(form.FormKind),
                     MapEnglishFormSourceKind(form.FormSourceKind),
                     true,
-                    string.Equals(form.FormKind, "Base", StringComparison.Ordinal))).ToArray());
+                    string.Equals(form.FormKind, "Base", StringComparison.Ordinal))).ToArray(),
+                ParseMeaningSource(value.MeaningSource),
+                ParseMeaningPrecision(value.MeaningPrecision));
+        }
+
+        private static LexiconMeaningSource ParseMeaningSource(string value)
+        {
+            return Enum.TryParse<LexiconMeaningSource>(value, out var source)
+                ? source
+                : throw CreateInvalidMeaningMetadataException("来源", value);
+        }
+
+        private static LexiconMeaningPrecision ParseMeaningPrecision(string value)
+        {
+            return Enum.TryParse<LexiconMeaningPrecision>(value, out var precision)
+                ? precision
+                : throw CreateInvalidMeaningMetadataException("精度", value);
+        }
+
+        private static LexiconDataAccessException CreateInvalidMeaningMetadataException(
+            string fieldName,
+            string value)
+        {
+            var reason = new InvalidDataException($"不支持的中文释义{fieldName}：{value}。");
+            return new LexiconDataAccessException("词库包含无效的中文释义元数据。", reason);
         }
 
         private async Task<IReadOnlyList<LexiconLookupResultDto>> MapJapaneseImportGroupAsync(

@@ -274,12 +274,12 @@ namespace Dictation.Tests.Presentation
                 new StageImportBatchRequestDto(
                     LearningLanguage.English,
                     ImportSourceKind.Manual,
-                    new[] { new ImportSelectionDto("symbols", "symbols%2:30:00::") }));
+                    new[] { new ImportSelectionDto("symbols", "missing:symbols:v") }));
             await fixture.ImportInboxService.StageAsync(
                 new StageImportBatchRequestDto(
                     LearningLanguage.English,
                     ImportSourceKind.Manual,
-                    new[] { new ImportSelectionDto("go", "go%2:02:00::") }));
+                    new[] { new ImportSelectionDto("go", "ecdict:go:v") }));
             await fixture.Navigation.OpenImportInboxAsync(LearningLanguage.English);
             fixture.Navigation.CompleteTransition();
             var list = Assert.IsType<ImportInboxListViewModel>(fixture.Navigation.CurrentPage);

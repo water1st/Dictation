@@ -3,36 +3,40 @@ namespace Dictation.DataAccess.Lexicon
     public sealed class EnglishLexiconLookupPo
     {
         public EnglishLexiconLookupPo(
-            string senseId,
-            string lexemeId,
-            string lemma,
-            string sourceEntryKey,
+            string learningSenseId,
+            string sourceLexemeId,
+            string headword,
             string partOfSpeech,
             bool isPhrase,
+            string meaningSource,
+            string meaningPrecision,
             IReadOnlyList<string> meanings,
             IReadOnlyList<EnglishLexiconLookupFormPo> forms)
         {
-            SenseId = RequireText(senseId, nameof(senseId));
-            LexemeId = RequireText(lexemeId, nameof(lexemeId));
-            Lemma = RequireText(lemma, nameof(lemma));
-            SourceEntryKey = RequireText(sourceEntryKey, nameof(sourceEntryKey));
+            LearningSenseId = RequireText(learningSenseId, nameof(learningSenseId));
+            SourceLexemeId = RequireText(sourceLexemeId, nameof(sourceLexemeId));
+            Headword = RequireText(headword, nameof(headword));
             PartOfSpeech = RequireText(partOfSpeech, nameof(partOfSpeech));
             IsPhrase = isPhrase;
+            MeaningSource = RequireText(meaningSource, nameof(meaningSource));
+            MeaningPrecision = RequireText(meaningPrecision, nameof(meaningPrecision));
             Meanings = meanings ?? throw new ArgumentNullException(nameof(meanings));
             Forms = forms ?? throw new ArgumentNullException(nameof(forms));
         }
 
-        public string SenseId { get; }
+        public string LearningSenseId { get; }
 
-        public string LexemeId { get; }
+        public string SourceLexemeId { get; }
 
-        public string Lemma { get; }
-
-        public string SourceEntryKey { get; }
+        public string Headword { get; }
 
         public string PartOfSpeech { get; }
 
         public bool IsPhrase { get; }
+
+        public string MeaningSource { get; }
+
+        public string MeaningPrecision { get; }
 
         public IReadOnlyList<string> Meanings { get; }
 

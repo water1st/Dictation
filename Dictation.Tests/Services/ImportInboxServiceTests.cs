@@ -39,7 +39,7 @@ namespace Dictation.Tests.Services
             Assert.Equal("动词", member.PartOfSpeechLabel);
             Assert.Contains("二类动词（一段）", member.AttributeLabel, StringComparison.Ordinal);
             Assert.Contains("常用汉字", member.AttributeLabel, StringComparison.Ordinal);
-            Assert.Contains("to eat", member.Meanings[0], StringComparison.Ordinal);
+            Assert.Equal("吃", member.Meanings[0]);
             Assert.Contains(member.Forms, form =>
                 form.Surface == "食べます"
                 && form.FormLabel == "礼貌形"

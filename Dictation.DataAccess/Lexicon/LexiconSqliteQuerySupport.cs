@@ -22,12 +22,12 @@ namespace Dictation.DataAccess.Lexicon
             var schemaVersion = await connection.ExecuteScalarAsync<string?>(new CommandDefinition(
                 "SELECT Value FROM BuildMetadata WHERE Key = 'schema_version' LIMIT 1;",
                 cancellationToken: cancellationToken));
-            if (!string.Equals(schemaVersion, "1", StringComparison.Ordinal))
+            if (!string.Equals(schemaVersion, "2", StringComparison.Ordinal))
             {
                 var reason = new InvalidOperationException(
-                    $"schema_version={schemaVersion ?? "(缺失)"}，要求为 1。");
+                    $"schema_version={schemaVersion ?? "(缺失)"}，要求为 2。");
                 throw new LexiconDataAccessException(
-                    $"{languageName}词库 schema_version 必须为 1。",
+                    $"{languageName}词库 schema_version 必须为 2。",
                     reason);
             }
         }

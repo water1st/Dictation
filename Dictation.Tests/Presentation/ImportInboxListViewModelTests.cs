@@ -103,7 +103,7 @@ namespace Dictation.Tests.Presentation
             await StageAsync(
                 service,
                 new ImportSelectionDto("went", "go%2:01:00::"),
-                new ImportSelectionDto("symbols", "symbols%2:30:00::"));
+                new ImportSelectionDto("symbols", "missing:symbols:v"));
 
             var viewModel = environment.CreateViewModel();
             viewModel.Initialize(LearningLanguage.English);
@@ -133,7 +133,7 @@ namespace Dictation.Tests.Presentation
             await StageAsync(
                 environment.ImportInboxService,
                 new ImportSelectionDto("went", "go%2:01:00::"),
-                new ImportSelectionDto("symbols", "symbols%2:30:00::"));
+                new ImportSelectionDto("symbols", "missing:symbols:v"));
             var viewModel = environment.CreateViewModel();
             viewModel.Initialize(LearningLanguage.English);
             await viewModel.RefreshAsync();

@@ -17,19 +17,25 @@ namespace Dictation.Tests.DataAccess
             var results = await accessor.SearchAsync("went", 20, TestContext.Current.CancellationToken);
 
             Assert.Equal(2, results.Count);
-            Assert.NotEqual(results[0].SenseId, results[1].SenseId);
+            Assert.NotEqual(results[0].LearningSenseId, results[1].LearningSenseId);
             Assert.All(results, result =>
             {
-                Assert.Equal("go%v", result.LexemeId);
-                Assert.Equal("go", result.Lemma);
-                Assert.Equal("v", result.SourceEntryKey);
+                Assert.Equal("go", result.Headword);
                 Assert.Equal("v", result.PartOfSpeech);
                 Assert.False(result.IsPhrase);
                 Assert.NotEmpty(result.Meanings);
+                Assert.DoesNotContain(result.Meanings, meaning => meaning.Contains("to ", StringComparison.Ordinal));
                 Assert.Equal(new[] { "go", "goes", "went", "gone", "going" }, result.Forms.Select(form => form.Surface));
             });
-            Assert.Contains("move", results[0].Meanings[0], StringComparison.Ordinal);
-            Assert.Contains("operate", results[1].Meanings[0], StringComparison.Ordinal);
+            Assert.Equal("go%v", results[0].SourceLexemeId);
+            Assert.Equal("ChineseOpenWordNet", results[0].MeaningSource);
+            Assert.Equal("Exact", results[0].MeaningPrecision);
+            Assert.Equal(new[] { "去", "行走" }, results[0].Meanings);
+            Assert.Equal("oewn:go:v", results[1].SourceLexemeId);
+            Assert.Equal("Ecdict", results[1].MeaningSource);
+            Assert.Equal("Broad", results[1].MeaningPrecision);
+            Assert.Equal(new[] { "运行", "运转" }, results[1].Meanings);
+            Assert.Single(results, result => result.LearningSenseId == "ecdict:go:v");
         }
 
         [Fact]
@@ -44,10 +50,10 @@ namespace Dictation.Tests.DataAccess
             var limited = await accessor.SearchAsync("go", 1, TestContext.Current.CancellationToken);
             var repeated = await accessor.SearchAsync("go", 20, TestContext.Current.CancellationToken);
 
-            Assert.Equal(new[] { "go%2:01:00::", "go%2:02:00::" }, first.Select(result => result.SenseId));
+            Assert.Equal(new[] { "go%2:01:00::", "ecdict:go:v" }, first.Select(result => result.LearningSenseId));
             Assert.Single(limited);
-            Assert.Equal("go%2:01:00::", limited[0].SenseId);
-            Assert.Equal(first.Select(result => result.SenseId), repeated.Select(result => result.SenseId));
+            Assert.Equal("go%2:01:00::", limited[0].LearningSenseId);
+            Assert.Equal(first.Select(result => result.LearningSenseId), repeated.Select(result => result.LearningSenseId));
         }
 
         [Fact]
@@ -64,11 +70,14 @@ namespace Dictation.Tests.DataAccess
             var definition = await accessor.SearchAsync("to move from one place to another", 20, TestContext.Current.CancellationToken);
 
             Assert.Single(percent);
-            Assert.Equal("symbols%2:30:00::", percent[0].SenseId);
+            Assert.Equal("missing:symbols:v", percent[0].LearningSenseId);
             Assert.Single(underscore);
-            Assert.Equal("symbols%2:30:00::", underscore[0].SenseId);
+            Assert.Equal("missing:symbols:v", underscore[0].LearningSenseId);
             Assert.Single(backslash);
-            Assert.Equal("symbols%2:30:00::", backslash[0].SenseId);
+            Assert.Equal("missing:symbols:v", backslash[0].LearningSenseId);
+            Assert.Empty(percent[0].Meanings);
+            Assert.Equal("Missing", percent[0].MeaningSource);
+            Assert.Equal("Missing", percent[0].MeaningPrecision);
             Assert.Empty(definition);
         }
 
@@ -122,14 +131,14 @@ namespace Dictation.Tests.DataAccess
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = new ApplicationPaths(temporaryDirectory.Path);
-            LexiconTestDatabases.CreateEnglish(paths, "2");
+            LexiconTestDatabases.CreateEnglish(paths, "1");
             var accessor = CreateAccessor(paths);
 
             var exception = await Assert.ThrowsAsync<LexiconDataAccessException>(() => accessor.SearchAsync(
                 "went", 20, TestContext.Current.CancellationToken));
 
             Assert.Contains("schema_version", exception.Message, StringComparison.Ordinal);
-            Assert.Contains("1", exception.Message, StringComparison.Ordinal);
+            Assert.Contains("2", exception.Message, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -149,7 +158,7 @@ namespace Dictation.Tests.DataAccess
         }
 
         [Fact]
-        public async Task GetSenseGroupAsync_UsesOneLayerUndirectedDerivationsAndExcludesPhrases()
+        public async Task GetSenseGroupAsync_UsesLearningSenseAnchorOneLayerUndirectedDerivationsAndExcludesPhrases()
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = new ApplicationPaths(temporaryDirectory.Path);
@@ -162,11 +171,11 @@ namespace Dictation.Tests.DataAccess
 
             Assert.Equal(
                 new[] { "go%2:01:00::", "convert%2:30:00::" },
-                result.Select(item => item.SenseId));
-            Assert.DoesNotContain(result, item => item.SenseId == "conversion%1:04:00::");
-            Assert.DoesNotContain(result, item => item.SenseId == "go%2:02:00::");
+                result.Select(item => item.LearningSenseId));
+            Assert.DoesNotContain(result, item => item.LearningSenseId == "missing:conversion:n");
+            Assert.DoesNotContain(result, item => item.LearningSenseId == "ecdict:go:v");
             Assert.DoesNotContain(result, item => item.IsPhrase);
-            Assert.Contains(result, item => item.Lemma == "convert");
+            Assert.Contains(result, item => item.Headword == "convert");
             Assert.Empty(await accessor.GetSenseGroupAsync(
                 "missing-sense",
                 TestContext.Current.CancellationToken));
@@ -188,7 +197,7 @@ namespace Dictation.Tests.DataAccess
                 TestContext.Current.CancellationToken);
 
             var item = Assert.Single(result);
-            Assert.Equal("take off", item.Lemma);
+            Assert.Equal("take off", item.Headword);
             Assert.True(item.IsPhrase);
         }
 
