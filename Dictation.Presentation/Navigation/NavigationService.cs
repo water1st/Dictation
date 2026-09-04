@@ -15,6 +15,7 @@ namespace Dictation.Presentation.Navigation
         private NavigationEntry? currentEntry;
         private bool isInitialized;
         private bool transitionPending;
+        private bool navigationOperationPending;
         private bool isDisposed;
 
         public NavigationService(IServiceScopeFactory scopeFactory)
@@ -31,7 +32,9 @@ namespace Dictation.Presentation.Navigation
 
         public string PageTitle => currentEntry?.Title ?? string.Empty;
 
-        public bool CanGoBack => backStack.Count > 0 && !transitionPending;
+        public bool CanGoBack => backStack.Count > 0
+            && !transitionPending
+            && !navigationOperationPending;
 
         public NavigationDirection LastDirection { get; private set; } = NavigationDirection.Forward;
 
@@ -58,7 +61,10 @@ namespace Dictation.Presentation.Navigation
         {
             ValidateLanguage(language);
             cancellationToken.ThrowIfCancellationRequested();
-            EnsureReadyForNavigation();
+            if (!TryPrepareForwardNavigation())
+            {
+                return Task.CompletedTask;
+            }
 
             var scope = scopeFactory.CreateScope();
             try
@@ -78,30 +84,42 @@ namespace Dictation.Presentation.Navigation
             return Task.CompletedTask;
         }
 
-        public Task OpenImportInboxAsync(
+        public async Task OpenImportInboxAsync(
             LearningLanguage language,
             CancellationToken cancellationToken = default)
         {
             ValidateLanguage(language);
             cancellationToken.ThrowIfCancellationRequested();
-            EnsureReadyForNavigation();
+            if (!TryPrepareForwardNavigation())
+            {
+                return;
+            }
 
-            var scope = scopeFactory.CreateScope();
+            navigationOperationPending = true;
+            OnPropertyChanged(nameof(CanGoBack));
             try
             {
-                var viewModel = scope.ServiceProvider.GetRequiredService<ImportInboxViewModel>();
-                viewModel.Initialize(language);
-                cancellationToken.ThrowIfCancellationRequested();
-                NavigateForward(
-                    new NavigationEntry(viewModel, viewModel.WindowTitle, language, scope));
+                var scope = scopeFactory.CreateScope();
+                try
+                {
+                    var viewModel = scope.ServiceProvider.GetRequiredService<ImportInboxListViewModel>();
+                    viewModel.Initialize(language);
+                    await viewModel.RefreshAsync(cancellationToken);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    NavigateForward(
+                        new NavigationEntry(viewModel, viewModel.WindowTitle, language, scope));
+                }
+                catch
+                {
+                    scope.Dispose();
+                    throw;
+                }
             }
-            catch
+            finally
             {
-                scope.Dispose();
-                throw;
+                navigationOperationPending = false;
+                OnPropertyChanged(nameof(CanGoBack));
             }
-
-            return Task.CompletedTask;
         }
 
         public Task OpenImportInboxDetailAsync(
@@ -203,10 +221,16 @@ namespace Dictation.Presentation.Navigation
                     LastDirection));
         }
 
-        private void EnsureReadyForNavigation()
+        private bool TryPrepareForwardNavigation()
         {
             EnsureInitialized();
+            if (navigationOperationPending)
+            {
+                return false;
+            }
+
             EnsureTransitionCompleted();
+            return true;
         }
 
         private void EnsureInitialized()

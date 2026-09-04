@@ -193,7 +193,7 @@ namespace Dictation.Tests.Presentation
             viewModel.OpenImportInboxCommand.Execute(null);
             var page = await reachedPage.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-            var inboxViewModel = Assert.IsType<ImportInboxViewModel>(page);
+            var inboxViewModel = Assert.IsType<ImportInboxListViewModel>(page);
             Assert.Equal(LearningLanguage.Japanese, inboxViewModel.SelectedLanguage);
             navigation.CompleteTransition();
         }
@@ -214,6 +214,11 @@ namespace Dictation.Tests.Presentation
 
         private static ServiceProvider CreateNavigationProvider(ApplicationPaths paths)
         {
+            paths.EnsureRuntimeDirectories();
+            LexiconTestDatabases.CreateBoth(paths);
+            new SchemaMigrationRunner(
+                paths,
+                new SqliteConnectionFactory(paths)).MigrateAsync().GetAwaiter().GetResult();
             var services = new ServiceCollection();
             services.AddSingleton<NavigationService>();
             services.AddSingleton<OverlayService>();
@@ -223,7 +228,7 @@ namespace Dictation.Tests.Presentation
                     serviceProvider.GetRequiredService<LexiconLookupService>(),
                     new ImportInboxDataAccessor(new SqliteConnectionFactory(paths))));
             services.AddScoped<LexiconLookupViewModel>();
-            services.AddScoped<ImportInboxViewModel>();
+            services.AddScoped<ImportInboxListViewModel>();
             return services.BuildServiceProvider();
         }
 

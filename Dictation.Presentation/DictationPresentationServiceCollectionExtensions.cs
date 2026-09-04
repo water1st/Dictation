@@ -22,7 +22,7 @@ namespace Dictation.Presentation
             services.AddSingleton<ISystemThemeProvider, WindowsSystemThemeProvider>();
 
             services.AddScoped<LexiconLookupViewModel>();
-            services.AddScoped<ImportInboxViewModel>();
+            services.AddScoped<ImportInboxListViewModel>();
 
             services.AddSingleton<MainWindow>();
             services.AddTransient<DictationWindow>();

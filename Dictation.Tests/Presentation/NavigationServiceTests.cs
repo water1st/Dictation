@@ -245,13 +245,53 @@ namespace Dictation.Tests.Presentation
             fixture.Navigation.CompleteTransition();
         }
 
+        [Fact]
+        public async Task PendingInboxLoad_ReservesNavigationUntilItCompletes()
+        {
+            using var fixture = new NavigationFixture(initializeData: false);
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+
+            var inboxNavigation = fixture.Navigation.OpenImportInboxAsync(LearningLanguage.English);
+            await WaitForOverlayAsync(fixture.Overlay);
+
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.English);
+            var pageDuringLoad = fixture.Navigation.CurrentPage;
+            fixture.Overlay.Dismiss();
+            var navigationException = await Record.ExceptionAsync(() => inboxNavigation);
+
+            Assert.Same(fixture.HomeViewModel, pageDuringLoad);
+            Assert.Null(navigationException);
+            Assert.IsType<ImportInboxListViewModel>(fixture.Navigation.CurrentPage);
+            fixture.Navigation.CompleteTransition();
+        }
+
+        private static async Task WaitForOverlayAsync(OverlayService overlay)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+            while (!overlay.IsVisible && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(1);
+            }
+
+            Assert.True(overlay.IsVisible, "等待导航加载错误弹层显示超时。");
+        }
+
         private sealed class NavigationFixture : IDisposable
         {
             private readonly TemporaryDirectory temporaryDirectory = new();
 
-            public NavigationFixture()
+            public NavigationFixture(bool initializeData = true)
             {
                 var paths = new ApplicationPaths(temporaryDirectory.Path);
+                paths.EnsureRuntimeDirectories();
+                if (initializeData)
+                {
+                    LexiconTestDatabases.CreateBoth(paths);
+                    new SchemaMigrationRunner(
+                        paths,
+                        new SqliteConnectionFactory(paths)).MigrateAsync().GetAwaiter().GetResult();
+                }
+
                 var services = new ServiceCollection();
                 services.AddSingleton<NavigationService>(serviceProvider =>
                     new NavigationService(
@@ -269,14 +309,15 @@ namespace Dictation.Tests.Presentation
                     ScopeProbes.Add(probe);
                     return ActivatorUtilities.CreateInstance<LexiconLookupViewModel>(serviceProvider);
                 });
-                services.AddScoped<ImportInboxViewModel>(serviceProvider =>
+                services.AddScoped<ImportInboxListViewModel>(serviceProvider =>
                 {
                     var probe = serviceProvider.GetRequiredService<ScopeProbe>();
                     ScopeProbes.Add(probe);
-                    return ActivatorUtilities.CreateInstance<ImportInboxViewModel>(serviceProvider);
+                    return ActivatorUtilities.CreateInstance<ImportInboxListViewModel>(serviceProvider);
                 });
                 ServiceProvider = services.BuildServiceProvider();
                 Navigation = ServiceProvider.GetRequiredService<NavigationService>();
+                Overlay = ServiceProvider.GetRequiredService<OverlayService>();
                 HomeViewModel = new HomeViewModel(
                     new SettingsService(new ConfigurationBuilder().Build(), paths),
                     Navigation);
@@ -287,6 +328,8 @@ namespace Dictation.Tests.Presentation
             public ServiceProvider ServiceProvider { get; }
 
             public NavigationService Navigation { get; }
+
+            public OverlayService Overlay { get; }
 
             public HomeViewModel HomeViewModel { get; }
 
