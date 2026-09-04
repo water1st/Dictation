@@ -13,7 +13,7 @@ namespace Dictation.LexiconBuilder
 {
     internal sealed class JapaneseLexiconDatabaseBuilder
     {
-        internal const string SchemaVersion = "1";
+        internal const string SchemaVersion = "2";
 
         internal JapaneseLexiconBuildSummary Build(BuilderOptions options)
         {
@@ -24,9 +24,13 @@ namespace Dictation.LexiconBuilder
             }
 
             var inputPath = Path.GetFullPath(options.SourcePath);
+            var tomoshiPath = Path.GetFullPath(
+                options.TomoshiDatabasePath
+                    ?? throw new ArgumentException("日语构建器需要 Tomoshi 中文词库。", nameof(options)));
             var outputPath = Path.GetFullPath(options.OutputPath);
-            ValidatePaths(inputPath, outputPath);
+            ValidatePaths(inputPath, tomoshiPath, outputPath);
             var inputSha256 = ComputeSha256(inputPath);
+            var tomoshiSha256 = ComputeSha256(tomoshiPath);
             var outputDirectory = Path.GetDirectoryName(outputPath)!;
             var temporaryPath = Path.Combine(
                 outputDirectory,
@@ -38,7 +42,13 @@ namespace Dictation.LexiconBuilder
                 {
                 }
 
-                var summary = BuildTemporaryDatabase(inputPath, temporaryPath, inputSha256, outputPath);
+                var summary = BuildTemporaryDatabase(
+                    inputPath,
+                    tomoshiPath,
+                    temporaryPath,
+                    inputSha256,
+                    tomoshiSha256,
+                    outputPath);
                 File.Move(temporaryPath, outputPath, overwrite: true);
                 return summary;
             }
@@ -53,16 +63,21 @@ namespace Dictation.LexiconBuilder
 
         private static JapaneseLexiconBuildSummary BuildTemporaryDatabase(
             string inputPath,
+            string tomoshiPath,
             string temporaryPath,
             string inputSha256,
+            string tomoshiSha256,
             string outputPath)
         {
             var parser = new JmDictParser();
             var generator = new JapaneseFormGenerator();
+            var chineseGlossIndex = TomoshiChineseGlossIndex.Load(tomoshiPath);
             var sourceSequences = new HashSet<int>();
             var entryCount = 0;
             var formCount = 0;
             var glossCount = 0;
+            var chineseMeaningCount = 0;
+            var missingChineseEntryCount = 0;
 
             using var connection = new SqliteConnection($"Data Source={temporaryPath};Mode=ReadWriteCreate;Pooling=False");
             connection.Open();
@@ -84,8 +99,25 @@ namespace Dictation.LexiconBuilder
                         InsertPartsOfSpeech(connection, transaction, entryId, sense.PartsOfSpeech);
                         foreach (var gloss in sense.Glosses.Select((value, index) => (value, index)))
                         {
-                            InsertGloss(connection, transaction, entryId, gloss.value, gloss.index);
+                            InsertSourceGloss(connection, transaction, entryId, gloss.value, gloss.index);
                             glossCount++;
+                        }
+
+                        var chineseMeanings = chineseGlossIndex.GetMeanings(entry.Sequence, sense.Index);
+                        for (var index = 0; index < chineseMeanings.Count; index++)
+                        {
+                            InsertChineseMeaning(
+                                connection,
+                                transaction,
+                                entryId,
+                                index,
+                                chineseMeanings[index]);
+                            chineseMeaningCount++;
+                        }
+
+                        if (chineseMeanings.Count == 0)
+                        {
+                            missingChineseEntryCount++;
                         }
 
                         foreach (var form in forms)
@@ -103,13 +135,18 @@ namespace Dictation.LexiconBuilder
             {
                 ["schema_version"] = SchemaVersion,
                 ["input_sha256"] = inputSha256,
+                ["jmdict_sha256"] = inputSha256,
+                ["tomoshi_sha256"] = tomoshiSha256,
                 ["jmdict_created"] = parser.CreatedDate,
                 ["generator_version"] = typeof(JapaneseLexiconDatabaseBuilder).Assembly.GetName().Version?.ToString() ?? "unknown",
                 ["source_entries"] = sourceSequences.Count.ToString(CultureInfo.InvariantCulture),
                 ["entries"] = entryCount.ToString(CultureInfo.InvariantCulture),
                 ["senses"] = entryCount.ToString(CultureInfo.InvariantCulture),
                 ["forms"] = formCount.ToString(CultureInfo.InvariantCulture),
-                ["glosses"] = glossCount.ToString(CultureInfo.InvariantCulture)
+                ["glosses"] = glossCount.ToString(CultureInfo.InvariantCulture),
+                ["source_glosses"] = glossCount.ToString(CultureInfo.InvariantCulture),
+                ["chinese_meanings"] = chineseMeaningCount.ToString(CultureInfo.InvariantCulture),
+                ["missing_chinese_entries"] = missingChineseEntryCount.ToString(CultureInfo.InvariantCulture)
             };
             InsertMetadata(connection, transaction, metadata);
             transaction.Commit();
@@ -120,16 +157,24 @@ namespace Dictation.LexiconBuilder
                 entryCount,
                 formCount,
                 glossCount,
+                chineseMeaningCount,
+                missingChineseEntryCount,
                 inputSha256,
+                tomoshiSha256,
                 parser.CreatedDate,
                 outputPath);
         }
 
-        private static void ValidatePaths(string inputPath, string outputPath)
+        private static void ValidatePaths(string inputPath, string tomoshiPath, string outputPath)
         {
             if (!File.Exists(inputPath))
             {
                 throw new FileNotFoundException("JMdict 文件不存在。", inputPath);
+            }
+
+            if (!File.Exists(tomoshiPath))
+            {
+                throw new FileNotFoundException("Tomoshi 中文词库不存在。", tomoshiPath);
             }
 
             if (Directory.Exists(outputPath))
@@ -146,6 +191,11 @@ namespace Dictation.LexiconBuilder
             if (string.Equals(inputPath, outputPath, StringComparison.OrdinalIgnoreCase))
             {
                 throw new ArgumentException("JMdict 输入和 SQLite 输出不能是同一个文件。", nameof(outputPath));
+            }
+
+            if (string.Equals(tomoshiPath, outputPath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException("Tomoshi 输入和 SQLite 输出不能是同一个文件。", nameof(outputPath));
             }
         }
 
@@ -183,13 +233,22 @@ namespace Dictation.LexiconBuilder
                     PRIMARY KEY (EntryId, SortIndex),
                     FOREIGN KEY (EntryId) REFERENCES Entries (EntryId) ON DELETE CASCADE
                 );
-                CREATE TABLE Glosses (
+                CREATE TABLE SourceGlosses (
                     EntryId TEXT NOT NULL,
                     Language TEXT NOT NULL,
                     GlossIndex INTEGER NOT NULL,
                     GlossType TEXT NULL,
                     Text TEXT NOT NULL,
                     PRIMARY KEY (EntryId, Language, GlossIndex),
+                    FOREIGN KEY (EntryId) REFERENCES Entries (EntryId) ON DELETE CASCADE
+                );
+                CREATE TABLE ChineseMeanings (
+                    EntryId TEXT NOT NULL,
+                    MeaningIndex INTEGER NOT NULL,
+                    Text TEXT NOT NULL,
+                    MeaningSource TEXT NOT NULL CHECK (MeaningSource = 'Tomoshi'),
+                    MeaningPrecision TEXT NOT NULL CHECK (MeaningPrecision = 'Exact'),
+                    PRIMARY KEY (EntryId, MeaningIndex),
                     FOREIGN KEY (EntryId) REFERENCES Entries (EntryId) ON DELETE CASCADE
                 );
                 CREATE TABLE Forms (
@@ -263,7 +322,7 @@ namespace Dictation.LexiconBuilder
             }
         }
 
-        private static void InsertGloss(
+        private static void InsertSourceGloss(
             SqliteConnection connection,
             SqliteTransaction transaction,
             string entryId,
@@ -272,12 +331,32 @@ namespace Dictation.LexiconBuilder
         {
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
-            command.CommandText = "INSERT INTO Glosses (EntryId, Language, GlossIndex, GlossType, Text) VALUES ($entryId, $language, $glossIndex, $glossType, $text);";
+            command.CommandText = "INSERT INTO SourceGlosses (EntryId, Language, GlossIndex, GlossType, Text) VALUES ($entryId, $language, $glossIndex, $glossType, $text);";
             command.Parameters.AddWithValue("$entryId", entryId);
             command.Parameters.AddWithValue("$language", gloss.Language);
             command.Parameters.AddWithValue("$glossIndex", glossIndex);
             command.Parameters.AddWithValue("$glossType", (object?)gloss.Type ?? DBNull.Value);
             command.Parameters.AddWithValue("$text", gloss.Text);
+            command.ExecuteNonQuery();
+        }
+
+        private static void InsertChineseMeaning(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            string entryId,
+            int meaningIndex,
+            string text)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = """
+                INSERT INTO ChineseMeanings (
+                    EntryId, MeaningIndex, Text, MeaningSource, MeaningPrecision)
+                VALUES ($entryId, $meaningIndex, $text, 'Tomoshi', 'Exact');
+                """;
+            command.Parameters.AddWithValue("$entryId", entryId);
+            command.Parameters.AddWithValue("$meaningIndex", meaningIndex);
+            command.Parameters.AddWithValue("$text", text);
             command.ExecuteNonQuery();
         }
 

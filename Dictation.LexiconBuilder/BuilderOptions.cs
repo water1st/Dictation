@@ -11,6 +11,15 @@ namespace Dictation.LexiconBuilder
     internal sealed class BuilderOptions
     {
         internal BuilderOptions(LexiconSourceKind sourceKind, string sourcePath, string outputPath)
+            : this(sourceKind, sourcePath, outputPath, null)
+        {
+        }
+
+        private BuilderOptions(
+            LexiconSourceKind sourceKind,
+            string sourcePath,
+            string outputPath,
+            string? tomoshiDatabasePath)
         {
             if (!Enum.IsDefined(sourceKind))
             {
@@ -20,6 +29,21 @@ namespace Dictation.LexiconBuilder
             SourceKind = sourceKind;
             SourcePath = RequirePath(sourcePath, nameof(sourcePath));
             OutputPath = RequirePath(outputPath, nameof(outputPath));
+            TomoshiDatabasePath = tomoshiDatabasePath is null
+                ? null
+                : RequirePath(tomoshiDatabasePath, nameof(tomoshiDatabasePath));
+        }
+
+        internal static BuilderOptions ForJapanese(
+            string jmDictPath,
+            string tomoshiDatabasePath,
+            string outputPath)
+        {
+            return new BuilderOptions(
+                LexiconSourceKind.JmDict,
+                jmDictPath,
+                outputPath,
+                tomoshiDatabasePath);
         }
 
         internal LexiconSourceKind SourceKind { get; }
@@ -27,6 +51,8 @@ namespace Dictation.LexiconBuilder
         internal string SourcePath { get; }
 
         internal string OutputPath { get; }
+
+        internal string? TomoshiDatabasePath { get; }
 
         private static string RequirePath(string path, string parameterName)
         {
@@ -44,7 +70,10 @@ namespace Dictation.LexiconBuilder
             int senseCount,
             int formCount,
             int glossCount,
+            int chineseMeaningCount,
+            int missingChineseEntryCount,
             string inputSha256,
+            string tomoshiSha256,
             string createdDate,
             string outputPath)
         {
@@ -53,7 +82,10 @@ namespace Dictation.LexiconBuilder
             SenseCount = senseCount;
             FormCount = formCount;
             GlossCount = glossCount;
+            ChineseMeaningCount = chineseMeaningCount;
+            MissingChineseEntryCount = missingChineseEntryCount;
             InputSha256 = inputSha256;
+            TomoshiSha256 = tomoshiSha256;
             CreatedDate = createdDate;
             OutputPath = outputPath;
         }
@@ -68,7 +100,13 @@ namespace Dictation.LexiconBuilder
 
         internal int GlossCount { get; }
 
+        internal int ChineseMeaningCount { get; }
+
+        internal int MissingChineseEntryCount { get; }
+
         internal string InputSha256 { get; }
+
+        internal string TomoshiSha256 { get; }
 
         internal string CreatedDate { get; }
 

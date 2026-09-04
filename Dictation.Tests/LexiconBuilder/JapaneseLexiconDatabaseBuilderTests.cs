@@ -20,6 +20,7 @@ namespace Dictation.Tests.LexiconBuilder
             using var temporaryDirectory = new TemporaryDirectory();
             var inputPath = Path.Combine(temporaryDirectory.Path, "JMdict.gz");
             var outputPath = Path.Combine(temporaryDirectory.Path, "JapaneseLexicon.db");
+            var tomoshiPath = CreateTomoshiDatabase(temporaryDirectory.Path);
             await WriteGzipAsync(inputPath, """
                 <!-- JMdict created: 2026-01-02 -->
                 <!DOCTYPE JMdict [<!ENTITY v1 "Ichidan verb"><!ENTITY v5k "Godan verb with 'ku' ending"><!ENTITY n "Common noun">]>
@@ -29,7 +30,8 @@ namespace Dictation.Tests.LexiconBuilder
                 </JMdict>
                 """);
 
-            var summary = new JapaneseLexiconDatabaseBuilder().Build(new BuilderOptions(LexiconSourceKind.JmDict, inputPath, outputPath));
+            var summary = new JapaneseLexiconDatabaseBuilder().Build(
+                BuilderOptions.ForJapanese(inputPath, tomoshiPath, outputPath));
 
             Assert.True(File.Exists(outputPath));
             Assert.Equal(2, summary.SourceEntryCount);
@@ -44,8 +46,8 @@ namespace Dictation.Tests.LexiconBuilder
                 await ReadStringsAsync(connection, "SELECT EntryId FROM Entries ORDER BY EntryId;"));
             Assert.Equal("Ichidan", await ReadScalarAsync(connection, "SELECT VerbClass FROM Entries WHERE EntryId = 'jmdict:12345:1';"));
             Assert.Equal("GodanK", await ReadScalarAsync(connection, "SELECT VerbClass FROM Entries WHERE EntryId = 'jmdict:12346:1';"));
-            Assert.Equal("to draw", await ReadScalarAsync(connection, "SELECT Text FROM Glosses WHERE EntryId = 'jmdict:12346:2';"));
-            Assert.Equal("verb", await ReadScalarAsync(connection, "SELECT GlossType FROM Glosses WHERE EntryId = 'jmdict:12345:1';"));
+            Assert.Equal("to draw", await ReadScalarAsync(connection, "SELECT Text FROM SourceGlosses WHERE EntryId = 'jmdict:12346:2';"));
+            Assert.Equal("verb", await ReadScalarAsync(connection, "SELECT GlossType FROM SourceGlosses WHERE EntryId = 'jmdict:12345:1';"));
             Assert.Equal("Ichidan verb", await ReadScalarAsync(connection, "SELECT Value FROM PartsOfSpeech WHERE EntryId = 'jmdict:12345:1' AND SortIndex = 0;"));
             Assert.Equal("jmdict:12345:1", await ReadScalarAsync(connection, "SELECT EntryId FROM Forms WHERE Surface = '食べます' LIMIT 1;"));
             Assert.Equal("jmdict:12345:1", await ReadScalarAsync(connection, "SELECT EntryId FROM Forms WHERE Surface = '食べて' LIMIT 1;"));
@@ -54,6 +56,7 @@ namespace Dictation.Tests.LexiconBuilder
             Assert.Equal("2", await ReadScalarAsync(connection, "SELECT Value FROM BuildMetadata WHERE Key = 'source_entries';"));
             Assert.Equal("3", await ReadScalarAsync(connection, "SELECT Value FROM BuildMetadata WHERE Key = 'entries';"));
             Assert.Equal("3", await ReadScalarAsync(connection, "SELECT Value FROM BuildMetadata WHERE Key = 'senses';"));
+            Assert.Equal("2", await ReadScalarAsync(connection, "SELECT Value FROM BuildMetadata WHERE Key = 'schema_version';"));
             Assert.Equal("1", await ReadScalarAsync(connection, "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = 'IX_Forms_Surface';"));
         }
 
@@ -63,6 +66,7 @@ namespace Dictation.Tests.LexiconBuilder
             using var temporaryDirectory = new TemporaryDirectory();
             var inputPath = Path.Combine(temporaryDirectory.Path, "JMdict.gz");
             var outputPath = Path.Combine(temporaryDirectory.Path, "JapaneseLexicon.db");
+            var tomoshiPath = CreateTomoshiDatabase(temporaryDirectory.Path);
             await WriteGzipAsync(inputPath, """
                 <JMdict>
                   <entry><ent_seq>1</ent_seq><k_ele><keb>稀語</keb></k_ele><r_ele><reb>きご</reb></r_ele><sense><pos>Common noun</pos><gloss>rare word</gloss></sense></entry>
@@ -70,7 +74,8 @@ namespace Dictation.Tests.LexiconBuilder
                 </JMdict>
                 """);
 
-            new JapaneseLexiconDatabaseBuilder().Build(new BuilderOptions(LexiconSourceKind.JmDict, inputPath, outputPath));
+            new JapaneseLexiconDatabaseBuilder().Build(
+                BuilderOptions.ForJapanese(inputPath, tomoshiPath, outputPath));
 
             await using var connection = new SqliteConnection($"Data Source={outputPath};Mode=ReadOnly;Pooling=False");
             await connection.OpenAsync(TestContext.Current.CancellationToken);
@@ -85,10 +90,12 @@ namespace Dictation.Tests.LexiconBuilder
             using var temporaryDirectory = new TemporaryDirectory();
             var inputPath = Path.Combine(temporaryDirectory.Path, "broken.gz");
             var outputPath = Path.Combine(temporaryDirectory.Path, "JapaneseLexicon.db");
+            var tomoshiPath = CreateTomoshiDatabase(temporaryDirectory.Path);
             await File.WriteAllTextAsync(inputPath, "not gzip", TestContext.Current.CancellationToken);
             await File.WriteAllTextAsync(outputPath, "existing database", TestContext.Current.CancellationToken);
 
-            Assert.ThrowsAny<Exception>(() => new JapaneseLexiconDatabaseBuilder().Build(new BuilderOptions(LexiconSourceKind.JmDict, inputPath, outputPath)));
+            Assert.ThrowsAny<Exception>(() => new JapaneseLexiconDatabaseBuilder().Build(
+                BuilderOptions.ForJapanese(inputPath, tomoshiPath, outputPath)));
             Assert.Equal("existing database", await File.ReadAllTextAsync(outputPath, TestContext.Current.CancellationToken));
             Assert.Empty(Directory.GetFiles(temporaryDirectory.Path, "*.tmp"));
         }
@@ -100,6 +107,10 @@ namespace Dictation.Tests.LexiconBuilder
             {
                 new[] { "--jmdict", "--output" },
                 new[] { "--jmdict", "x", "--jmdict", "y", "--output", "z" },
+                new[] { "--jmdict", "x", "--output", "z" },
+                new[] { "--jmdict", "x", "--tomoshi", "a", "--tomoshi", "b", "--output", "z" },
+                new[] { "--jmdict", "x", "--tomoshi", "a", "--cow", "b", "--output", "z" },
+                new[] { "--wordnet", "x", "--tomoshi", "a", "--output", "z" },
                 new[] { "--unknown", "x", "--output", "z" }
             };
 
@@ -118,12 +129,13 @@ namespace Dictation.Tests.LexiconBuilder
             var missingInput = Path.Combine(temporaryDirectory.Path, "missing.gz");
             var validInput = Path.Combine(temporaryDirectory.Path, "valid.gz");
             var validOutput = Path.Combine(temporaryDirectory.Path, "JapaneseLexicon.db");
+            var tomoshiPath = CreateTomoshiDatabase(temporaryDirectory.Path);
             await WriteGzipAsync(validInput, "<JMdict />");
             var missingInputError = new StringWriter();
             Assert.Equal(
                 2,
                 LexiconBuilderCli.Run(
-                    new[] { "--jmdict", missingInput, "--output", validOutput },
+                    new[] { "--jmdict", missingInput, "--tomoshi", tomoshiPath, "--output", validOutput },
                     TextWriter.Null,
                     missingInputError));
 
@@ -131,7 +143,7 @@ namespace Dictation.Tests.LexiconBuilder
             Assert.Equal(
                 2,
                 LexiconBuilderCli.Run(
-                    new[] { "--jmdict", validInput, "--output", Path.Combine(temporaryDirectory.Path, "missing", "out.db") },
+                    new[] { "--jmdict", validInput, "--tomoshi", tomoshiPath, "--output", Path.Combine(temporaryDirectory.Path, "missing", "out.db") },
                     TextWriter.Null,
                     missingDirectoryError));
             Assert.NotEmpty(missingInputError.ToString());
@@ -144,13 +156,14 @@ namespace Dictation.Tests.LexiconBuilder
             using var temporaryDirectory = new TemporaryDirectory();
             var inputPath = Path.Combine(temporaryDirectory.Path, "broken.gz");
             var outputPath = Path.Combine(temporaryDirectory.Path, "JapaneseLexicon.db");
+            var tomoshiPath = CreateTomoshiDatabase(temporaryDirectory.Path);
             await File.WriteAllTextAsync(inputPath, "not gzip", TestContext.Current.CancellationToken);
             var error = new StringWriter();
 
             Assert.Equal(
                 2,
                 LexiconBuilderCli.Run(
-                    new[] { "--jmdict", inputPath, "--output", outputPath },
+                    new[] { "--jmdict", inputPath, "--tomoshi", tomoshiPath, "--output", outputPath },
                     TextWriter.Null,
                     error));
             Assert.False(File.Exists(outputPath));
@@ -162,13 +175,14 @@ namespace Dictation.Tests.LexiconBuilder
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var samePath = Path.Combine(temporaryDirectory.Path, "same.gz");
+            var tomoshiPath = CreateTomoshiDatabase(temporaryDirectory.Path);
             await WriteGzipAsync(samePath, "<JMdict />");
             var error = new StringWriter();
 
             Assert.Equal(
                 2,
                 LexiconBuilderCli.Run(
-                    new[] { "--jmdict", samePath, "--output", samePath },
+                    new[] { "--jmdict", samePath, "--tomoshi", tomoshiPath, "--output", samePath },
                     TextWriter.Null,
                     error));
             Assert.Contains("同一个文件", error.ToString());
@@ -180,6 +194,7 @@ namespace Dictation.Tests.LexiconBuilder
             using var temporaryDirectory = new TemporaryDirectory();
             var inputPath = Path.Combine(temporaryDirectory.Path, "JMdict.gz");
             var outputPath = Path.Combine(temporaryDirectory.Path, "JapaneseLexicon.db");
+            var tomoshiPath = CreateTomoshiDatabase(temporaryDirectory.Path);
             await WriteGzipAsync(inputPath, """
                 <JMdict><entry>
                   <ent_seq>700</ent_seq><r_ele><reb>たべる</reb></r_ele>
@@ -188,14 +203,15 @@ namespace Dictation.Tests.LexiconBuilder
                 </entry></JMdict>
                 """);
 
-            var summary = new JapaneseLexiconDatabaseBuilder().Build(new BuilderOptions(LexiconSourceKind.JmDict, inputPath, outputPath));
+            var summary = new JapaneseLexiconDatabaseBuilder().Build(
+                BuilderOptions.ForJapanese(inputPath, tomoshiPath, outputPath));
 
             Assert.Equal(1, summary.SourceEntryCount);
             Assert.Equal(1, summary.EntryCount);
             await using var connection = new SqliteConnection($"Data Source={outputPath};Mode=ReadOnly;Pooling=False");
             await connection.OpenAsync(TestContext.Current.CancellationToken);
             Assert.Equal("1", await ReadScalarAsync(connection, "SELECT COUNT(*) FROM Entries;"));
-            Assert.Equal("2", await ReadScalarAsync(connection, "SELECT COUNT(*) FROM Glosses;"));
+            Assert.Equal("2", await ReadScalarAsync(connection, "SELECT COUNT(*) FROM SourceGlosses;"));
         }
 
         [Fact]
@@ -204,6 +220,7 @@ namespace Dictation.Tests.LexiconBuilder
             using var temporaryDirectory = new TemporaryDirectory();
             var inputPath = Path.Combine(temporaryDirectory.Path, "JMdict.gz");
             var outputPath = Path.Combine(temporaryDirectory.Path, "JapaneseLexicon.db");
+            var tomoshiPath = CreateTomoshiDatabase(temporaryDirectory.Path);
             await WriteGzipAsync(inputPath, """
                 <JMdict><entry>
                   <ent_seq>1399790</ent_seq><k_ele><keb>掃除</keb></k_ele><r_ele><reb>そうじ</reb></r_ele>
@@ -211,7 +228,8 @@ namespace Dictation.Tests.LexiconBuilder
                 </entry></JMdict>
                 """);
 
-            new JapaneseLexiconDatabaseBuilder().Build(new BuilderOptions(LexiconSourceKind.JmDict, inputPath, outputPath));
+            new JapaneseLexiconDatabaseBuilder().Build(
+                BuilderOptions.ForJapanese(inputPath, tomoshiPath, outputPath));
 
             await using var connection = new SqliteConnection($"Data Source={outputPath};Mode=ReadOnly;Pooling=False");
             await connection.OpenAsync(TestContext.Current.CancellationToken);
@@ -221,12 +239,106 @@ namespace Dictation.Tests.LexiconBuilder
             Assert.Equal("Verb", await ReadScalarAsync(connection, "SELECT LexicalRole FROM Forms WHERE EntryId = 'jmdict:1399790:1' AND Surface = '掃除する' LIMIT 1;"));
         }
 
+        [Fact]
+        public async Task Build_WritesExactChineseSensesAndKeepsMissingSenseStructure()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var inputPath = Path.Combine(temporaryDirectory.Path, "JMdict.gz");
+            var outputPath = Path.Combine(temporaryDirectory.Path, "JapaneseLexicon.db");
+            var tomoshiPath = CreateTomoshiDatabase(
+                temporaryDirectory.Path,
+                ("1358280", """
+                    {"senses":{"0":{"glosses":[{"text":"吃；食用"}]},"1":{"glosses":[{"text":"靠……生活"}]}}}
+                    """));
+            await WriteGzipAsync(inputPath, """
+                <!-- JMdict created: 2026-02-03 -->
+                <JMdict>
+                  <entry><ent_seq>1358280</ent_seq><k_ele><keb>食べる</keb><ke_pri>ichi1</ke_pri></k_ele><r_ele><reb>たべる</reb><re_pri>ichi1</re_pri></r_ele><sense><pos>Ichidan verb</pos><gloss>to eat</gloss></sense><sense><gloss>to live on</gloss></sense></entry>
+                  <entry><ent_seq>24680</ent_seq><k_ele><keb>未収録</keb></k_ele><r_ele><reb>みしゅうろく</reb></r_ele><sense><pos>Common noun</pos><gloss>not recorded</gloss></sense></entry>
+                </JMdict>
+                """);
+
+            new JapaneseLexiconDatabaseBuilder().Build(
+                BuilderOptions.ForJapanese(inputPath, tomoshiPath, outputPath));
+
+            await using var connection = new SqliteConnection(
+                $"Data Source={outputPath};Mode=ReadOnly;Pooling=False");
+            await connection.OpenAsync(TestContext.Current.CancellationToken);
+            Assert.Equal("2", await ReadScalarAsync(
+                connection,
+                "SELECT Value FROM BuildMetadata WHERE Key = 'schema_version';"));
+            Assert.Equal(
+                new[] { "jmdict:1358280:1:吃；食用", "jmdict:1358280:2:靠……生活" },
+                await ReadStringsAsync(
+                    connection,
+                    "SELECT EntryId || ':' || Text FROM ChineseMeanings ORDER BY EntryId, MeaningIndex;"));
+            Assert.Equal(
+                new[] { "Exact:Tomoshi", "Exact:Tomoshi" },
+                await ReadStringsAsync(
+                    connection,
+                    "SELECT MeaningPrecision || ':' || MeaningSource FROM ChineseMeanings ORDER BY EntryId, MeaningIndex;"));
+            Assert.Equal("to eat", await ReadScalarAsync(
+                connection,
+                "SELECT Text FROM SourceGlosses WHERE EntryId = 'jmdict:1358280:1';"));
+            Assert.Equal("0", await ReadScalarAsync(
+                connection,
+                "SELECT COUNT(*) FROM ChineseMeanings WHERE EntryId = 'jmdict:24680:1';"));
+            Assert.Equal("yes", await ReadScalarAsync(
+                connection,
+                "SELECT CASE WHEN COUNT(*) > 0 THEN 'yes' ELSE 'no' END FROM Forms WHERE EntryId = 'jmdict:24680:1';"));
+            Assert.Equal("1", await ReadScalarAsync(
+                connection,
+                "SELECT Value FROM BuildMetadata WHERE Key = 'missing_chinese_entries';"));
+            Assert.Equal(64, (await ReadScalarAsync(
+                connection,
+                "SELECT Value FROM BuildMetadata WHERE Key = 'jmdict_sha256';"))?.Length);
+            Assert.Equal(64, (await ReadScalarAsync(
+                connection,
+                "SELECT Value FROM BuildMetadata WHERE Key = 'tomoshi_sha256';"))?.Length);
+        }
+
         private static async Task WriteGzipAsync(string path, string content)
         {
             await using var file = File.Create(path);
             await using var gzip = new GZipStream(file, CompressionLevel.SmallestSize);
             await using var writer = new StreamWriter(gzip, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             await writer.WriteAsync(content);
+        }
+
+        private static string CreateTomoshiDatabase(
+            string directoryPath,
+            params (string EntryId, string Data)[] rows)
+        {
+            var databasePath = Path.Combine(directoryPath, "tomoshi.db");
+            using var connection = new SqliteConnection(
+                $"Data Source={databasePath};Mode=ReadWriteCreate;Pooling=False");
+            connection.Open();
+            using (var schema = connection.CreateCommand())
+            {
+                schema.CommandText = """
+                    CREATE TABLE zh_defs (
+                        entry_id TEXT NOT NULL,
+                        locale TEXT NOT NULL DEFAULT 'zh-CN',
+                        data TEXT NOT NULL,
+                        PRIMARY KEY (entry_id, locale)
+                    );
+                    """;
+                schema.ExecuteNonQuery();
+            }
+
+            foreach (var row in rows)
+            {
+                using var insert = connection.CreateCommand();
+                insert.CommandText = """
+                    INSERT INTO zh_defs(entry_id, locale, data)
+                    VALUES ($entryId, 'zh-CN', $data);
+                    """;
+                insert.Parameters.AddWithValue("$entryId", row.EntryId);
+                insert.Parameters.AddWithValue("$data", row.Data);
+                insert.ExecuteNonQuery();
+            }
+
+            return databasePath;
         }
 
         private static async Task<string?> ReadScalarAsync(SqliteConnection connection, string sql)

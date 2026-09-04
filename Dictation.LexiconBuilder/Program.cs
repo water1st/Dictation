@@ -33,7 +33,7 @@ namespace Dictation.LexiconBuilder
                     var summary = new JapaneseLexiconDatabaseBuilder().Build(options);
                     stopwatch.Stop();
                     output.WriteLine(
-                        $"词库构建完成：source_entries={summary.SourceEntryCount} entries={summary.EntryCount} senses={summary.SenseCount} forms={summary.FormCount} glosses={summary.GlossCount} output={summary.OutputPath} elapsed_ms={stopwatch.ElapsedMilliseconds}");
+                        $"词库构建完成：source_entries={summary.SourceEntryCount} entries={summary.EntryCount} senses={summary.SenseCount} forms={summary.FormCount} source_glosses={summary.GlossCount} chinese_meanings={summary.ChineseMeaningCount} missing_chinese_entries={summary.MissingChineseEntryCount} output={summary.OutputPath} elapsed_ms={stopwatch.ElapsedMilliseconds}");
                 }
                 else
                 {
@@ -86,11 +86,12 @@ namespace Dictation.LexiconBuilder
 
             LexiconSourceKind? sourceKind = null;
             string? sourcePath = null;
+            string? tomoshiDatabasePath = null;
             string? outputPath = null;
             for (var index = 0; index < args.Count; index++)
             {
                 var option = args[index];
-                if (option is not "--jmdict" and not "--wordnet" and not "--output")
+                if (option is not "--jmdict" and not "--wordnet" and not "--tomoshi" and not "--output")
                 {
                     throw new ArgumentException($"不支持的参数：{option}。", nameof(args));
                 }
@@ -115,6 +116,15 @@ namespace Dictation.LexiconBuilder
                         : LexiconSourceKind.WordNet;
                     sourcePath = value;
                 }
+                else if (option == "--tomoshi")
+                {
+                    if (tomoshiDatabasePath is not null)
+                    {
+                        throw new ArgumentException("--tomoshi 不能重复。", nameof(args));
+                    }
+
+                    tomoshiDatabasePath = value;
+                }
                 else
                 {
                     if (outputPath is not null)
@@ -129,6 +139,21 @@ namespace Dictation.LexiconBuilder
             if (sourceKind is null || sourcePath is null || outputPath is null)
             {
                 throw new ArgumentException("必须提供 --jmdict 或 --wordnet 之一以及 --output。", nameof(args));
+            }
+
+            if (sourceKind == LexiconSourceKind.JmDict)
+            {
+                if (tomoshiDatabasePath is null)
+                {
+                    throw new ArgumentException("--jmdict 必须同时提供且只提供一个 --tomoshi。", nameof(args));
+                }
+
+                return BuilderOptions.ForJapanese(sourcePath, tomoshiDatabasePath, outputPath);
+            }
+
+            if (tomoshiDatabasePath is not null)
+            {
+                throw new ArgumentException("--tomoshi 只能与 --jmdict 一起使用。", nameof(args));
             }
 
             return new BuilderOptions(sourceKind.Value, sourcePath, outputPath);
