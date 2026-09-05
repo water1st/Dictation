@@ -35,6 +35,7 @@ namespace Dictation.Presentation.ViewModels
             SelectDarkThemeCommand = new AsyncCommand(() => SelectThemeAsync(ThemeMode.Dark));
             OpenLexiconLookupCommand = new AsyncCommand(() => OpenLexiconLookupAsync());
             OpenImportInboxCommand = new AsyncCommand(() => OpenImportInboxAsync());
+            OpenLearningPlanCommand = new AsyncCommand(() => OpenLearningPlanAsync());
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -85,6 +86,8 @@ namespace Dictation.Presentation.ViewModels
         public ICommand OpenLexiconLookupCommand { get; }
 
         public ICommand OpenImportInboxCommand { get; }
+
+        public ICommand OpenLearningPlanCommand { get; }
 
         public async Task InitializeAsync(CancellationToken cancellationToken = default)
         {
@@ -152,6 +155,11 @@ namespace Dictation.Presentation.ViewModels
             return GetNavigationService().OpenImportInboxAsync(
                 selectedLanguage,
                 cancellationToken);
+        }
+
+        public Task OpenLearningPlanAsync(CancellationToken cancellationToken = default)
+        {
+            return GetNavigationService().OpenLearningPlanAsync(selectedLanguage, cancellationToken);
         }
 
         private async Task SaveSettingsAsync(

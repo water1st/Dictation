@@ -159,11 +159,39 @@
                     </Button>
                 </Grid>
 
-                <Button Command="{Binding OpenLexiconLookupCommand}"
+                <Button Command="{Binding OpenLearningPlanCommand}"
                         HorizontalContentAlignment="Stretch">
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource LanguageCardButtonStyle}">
                             <Setter Property="Margin" Value="0,18,0,0" />
+                            <Setter Property="Padding" Value="18,14" />
+                        </Style>
+                    </Button.Style>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock FontSize="25" Foreground="{DynamicResource AccentBrush}" Text="◎" />
+                        <StackPanel Grid.Column="1" Margin="14,0,0,0">
+                            <TextBlock FontSize="17" FontWeight="SemiBold" Text="学习计划" />
+                            <TextBlock Margin="0,3,0,0"
+                                       Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                       Text="设置今天的词数、词形和练习方式" />
+                        </StackPanel>
+                        <Border Grid.Column="2" Padding="11,7"
+                                Background="{DynamicResource AccentSoftBrush}" CornerRadius="14">
+                            <TextBlock Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold" Text="学习 0/20" />
+                        </Border>
+                    </Grid>
+                </Button>
+
+                <Button Command="{Binding OpenLexiconLookupCommand}"
+                        HorizontalContentAlignment="Stretch">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource LanguageCardButtonStyle}">
+                            <Setter Property="Margin" Value="0,12,0,0" />
                             <Setter Property="Padding" Value="18,14" />
                         </Style>
                     </Button.Style>

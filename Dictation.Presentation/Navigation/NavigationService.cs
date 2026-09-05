@@ -127,6 +127,48 @@ namespace Dictation.Presentation.Navigation
             }
         }
 
+        public async Task OpenLearningPlanAsync(
+            LearningLanguage language,
+            CancellationToken cancellationToken = default)
+        {
+            ValidateLanguage(language);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!TryPrepareForwardNavigation())
+            {
+                return;
+            }
+
+            navigationOperationPending = true;
+            OnPropertyChanged(nameof(CanGoBack));
+            try
+            {
+                var scope = scopeFactory.CreateScope();
+                try
+                {
+                    var viewModel = scope.ServiceProvider.GetRequiredService<LearningPlanViewModel>();
+                    viewModel.Initialize(language);
+                    await viewModel.RefreshAsync(cancellationToken);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    NavigateForward(new NavigationEntry(
+                        viewModel,
+                        viewModel.WindowTitle,
+                        language,
+                        scope,
+                        viewModel.RefreshPreservingStateAsync));
+                }
+                catch
+                {
+                    scope.Dispose();
+                    throw;
+                }
+            }
+            finally
+            {
+                navigationOperationPending = false;
+                OnPropertyChanged(nameof(CanGoBack));
+            }
+        }
+
         public Task OpenImportInboxDetailAsync(
             ImportBatchDto batch,
             long itemId,

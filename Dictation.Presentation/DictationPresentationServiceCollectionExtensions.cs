@@ -24,6 +24,7 @@ namespace Dictation.Presentation
             services.AddScoped<LexiconLookupViewModel>();
             services.AddScoped<ImportInboxListViewModel>();
             services.AddScoped<ImportInboxDetailViewModel>();
+            services.AddScoped<LearningPlanViewModel>();
 
             return services;
         }

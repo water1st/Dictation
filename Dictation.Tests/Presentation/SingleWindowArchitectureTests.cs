@@ -40,6 +40,7 @@ namespace Dictation.Tests.Presentation
             Assert.True(typeof(UserControl).IsAssignableFrom(typeof(LexiconLookupPage)));
             Assert.True(typeof(UserControl).IsAssignableFrom(typeof(ImportInboxListPage)));
             Assert.True(typeof(UserControl).IsAssignableFrom(typeof(ImportInboxDetailPage)));
+            Assert.True(typeof(UserControl).IsAssignableFrom(typeof(LearningPlanPage)));
         }
 
         [Fact]
