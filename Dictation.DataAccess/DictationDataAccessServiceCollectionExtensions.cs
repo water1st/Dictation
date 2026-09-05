@@ -1,5 +1,6 @@
 using Dictation.DataAccess.Runtime;
 using Dictation.DataAccess.Importing;
+using Dictation.DataAccess.Learning;
 using Dictation.DataAccess.Lexicon;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,6 +21,7 @@ namespace Dictation.DataAccess
             services.AddSingleton<JapaneseLexiconDataAccessor>();
             services.AddSingleton<EnglishLexiconDataAccessor>();
             services.AddSingleton<ImportInboxDataAccessor>();
+            services.AddSingleton<LearningPlanDataAccessor>();
             services.AddSingleton<SchemaMigrationRunner>(serviceProvider =>
                 new SchemaMigrationRunner(
                     serviceProvider.GetRequiredService<ApplicationPaths>(),

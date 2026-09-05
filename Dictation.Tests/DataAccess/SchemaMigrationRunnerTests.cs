@@ -66,6 +66,10 @@ namespace Dictation.Tests.DataAccess
                 {
                     "ImportBatchItems",
                     "ImportBatches",
+                    "LearningPlanChannels",
+                    "LearningPlanForms",
+                    "LearningPlanOutputs",
+                    "LearningPlans",
                     "SchemaMigrations",
                     "WordGroupForms",
                     "WordGroupMeanings",
@@ -73,7 +77,7 @@ namespace Dictation.Tests.DataAccess
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3, 4 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4, 5 }, await ReadAppliedVersionsAsync(paths));
             Assert.Empty(Directory.GetFiles(paths.Backups));
         }
 
@@ -95,7 +99,7 @@ namespace Dictation.Tests.DataAccess
             await Assert.ThrowsAsync<SqliteException>(() => ExecuteAsync(
                 connection,
                 "INSERT INTO ImportBatches (BatchId, Language, SourceKind, Status, CreatedAtUtc) VALUES ('bad', 'Japanese', 'Manual', 'Unknown', 'now');"));
-            Assert.Equal(new[] { 1, 2, 3, 4 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4, 5 }, await ReadAppliedVersionsAsync(paths));
 
             await ExecuteAsync(connection, "INSERT INTO WordGroups (WordGroupId, Language, AnchorSourceSenseId, Placement, CreatedAtUtc) VALUES ('legacy-group', 'Japanese', 'legacy', 'Inbox', '2026-01-01T00:00:00Z');");
             await ExecuteAsync(connection, "INSERT INTO WordGroupMembers (WordGroupId, Language, SourceSenseId, SourceLexemeId, Headword, PartOfSpeechLabel, AttributeLabel, IsPhrase, SortOrder) VALUES ('legacy-group', 'Japanese', 'legacy', 'legacy', '旧词', '其他', '其他', 0, 0);");

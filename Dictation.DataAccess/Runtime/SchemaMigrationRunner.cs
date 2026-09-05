@@ -434,6 +434,48 @@ namespace Dictation.DataAccess.Runtime
 
                     DROP TABLE WordGroupForms;
                     ALTER TABLE WordGroupForms_New RENAME TO WordGroupForms;
+                    """),
+                new SchemaMigration(
+                    5,
+                    "创建按语言隔离的学习计划",
+                    """
+                    CREATE TABLE LearningPlans (
+                        Language TEXT NOT NULL PRIMARY KEY CHECK (Language IN ('Japanese', 'English')),
+                        DailyNewTarget INTEGER NOT NULL CHECK (DailyNewTarget BETWEEN 1 AND 500),
+                        SessionWordLimit INTEGER NOT NULL CHECK (SessionWordLimit BETWEEN 1 AND 500),
+                        SelectionMode TEXT NOT NULL CHECK (SelectionMode IN ('Random', 'Sequential', 'Manual')),
+                        EnglishFormLabelMode TEXT NOT NULL CHECK (EnglishFormLabelMode IN ('GrammarName', 'ExampleParadigm')),
+                        EnglishExampleSourceSenseId TEXT NULL,
+                        UpdatedAtUtc TEXT NOT NULL,
+                        CHECK (
+                            Language = 'English'
+                            OR (EnglishFormLabelMode = 'GrammarName' AND EnglishExampleSourceSenseId IS NULL)
+                        )
+                    );
+                    CREATE TABLE LearningPlanForms (
+                        Language TEXT NOT NULL,
+                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
+                        FormCode TEXT NOT NULL CHECK (length(trim(FormCode)) > 0),
+                        PRIMARY KEY (Language, SortOrder),
+                        UNIQUE (Language, FormCode),
+                        FOREIGN KEY (Language) REFERENCES LearningPlans (Language) ON DELETE CASCADE
+                    );
+                    CREATE TABLE LearningPlanChannels (
+                        Language TEXT NOT NULL,
+                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
+                        Channel TEXT NOT NULL CHECK (Channel IN ('MeaningWriting', 'Dictation')),
+                        PRIMARY KEY (Language, SortOrder),
+                        UNIQUE (Language, Channel),
+                        FOREIGN KEY (Language) REFERENCES LearningPlans (Language) ON DELETE CASCADE
+                    );
+                    CREATE TABLE LearningPlanOutputs (
+                        Language TEXT NOT NULL,
+                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
+                        OutputMode TEXT NOT NULL CHECK (OutputMode IN ('Latin', 'Kana', 'Kanji')),
+                        PRIMARY KEY (Language, SortOrder),
+                        UNIQUE (Language, OutputMode),
+                        FOREIGN KEY (Language) REFERENCES LearningPlans (Language) ON DELETE CASCADE
+                    );
                     """)
             };
         }

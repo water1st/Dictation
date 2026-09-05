@@ -30,6 +30,10 @@ namespace Dictation.Tests.Services
                 {
                     "ImportBatchItems",
                     "ImportBatches",
+                    "LearningPlanChannels",
+                    "LearningPlanForms",
+                    "LearningPlanOutputs",
+                    "LearningPlans",
                     "SchemaMigrations",
                     "WordGroupForms",
                     "WordGroupMeanings",
@@ -37,7 +41,7 @@ namespace Dictation.Tests.Services
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3, 4 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4, 5 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]
@@ -56,6 +60,10 @@ namespace Dictation.Tests.Services
                 {
                     "ImportBatchItems",
                     "ImportBatches",
+                    "LearningPlanChannels",
+                    "LearningPlanForms",
+                    "LearningPlanOutputs",
+                    "LearningPlans",
                     "SchemaMigrations",
                     "WordGroupForms",
                     "WordGroupMeanings",
@@ -63,7 +71,7 @@ namespace Dictation.Tests.Services
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3, 4 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4, 5 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]
@@ -85,6 +93,10 @@ namespace Dictation.Tests.Services
                 {
                     "ImportBatchItems",
                     "ImportBatches",
+                    "LearningPlanChannels",
+                    "LearningPlanForms",
+                    "LearningPlanOutputs",
+                    "LearningPlans",
                     "SchemaMigrations",
                     "WordGroupForms",
                     "WordGroupMeanings",
@@ -92,7 +104,7 @@ namespace Dictation.Tests.Services
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3, 4 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4, 5 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]
