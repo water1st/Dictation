@@ -405,6 +405,9 @@ namespace Dictation.Tests.DataAccess
                     new ImportWordGroupFormPo(
                         headword,
                         language == "Japanese" ? "よみ" : null,
+                        language == "Japanese" ? "Dictionary" : "Base",
+                        language == "Japanese" ? "Kanji" : null,
+                        language == "Japanese" ? "Verb" : null,
                         "普通形",
                         "汉字 · 动词",
                         true,

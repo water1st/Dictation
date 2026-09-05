@@ -144,6 +144,9 @@ namespace Dictation.Tests.Presentation
                             new ImportWordGroupFormDto(
                                 "went",
                                 null,
+                                "Past",
+                                null,
+                                null,
                                 "过去式",
                                 "词库来源",
                                 true,

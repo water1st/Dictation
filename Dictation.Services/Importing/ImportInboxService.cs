@@ -172,10 +172,14 @@ namespace Dictation.Services.Importing
                 value.Forms.Select(form => new ImportWordGroupFormPo(
                     form.Surface,
                     form.Reading,
+                    form.FormCode,
+                    form.ScriptCode,
+                    form.RoleCode,
                     form.FormLabel,
                     form.DetailLabel,
                     form.IsCommon,
-                    form.IsPrimary)).ToArray());
+                    form.IsPrimary)).ToArray(),
+                value.KanjiUsageCode);
         }
 
         private static StageImportBatchResultDto MapStageResult(ImportBatchPo batch)
@@ -236,12 +240,16 @@ namespace Dictation.Services.Importing
                     member.Forms.Select(form => new ImportWordGroupFormDto(
                         form.Surface,
                         form.Reading,
+                        form.FormCode,
+                        form.ScriptCode,
+                        form.RoleCode,
                         form.FormLabel,
                         form.DetailLabel,
                         form.IsCommon,
                         form.IsPrimary)).ToArray(),
                     ParseMeaningSource(member.MeaningSource),
-                    ParseMeaningPrecision(member.MeaningPrecision))).ToArray());
+                    ParseMeaningPrecision(member.MeaningPrecision),
+                    member.KanjiUsageCode)).ToArray());
         }
 
         private static void ValidateStageRequest(StageImportBatchRequestDto request)

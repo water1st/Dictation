@@ -33,7 +33,8 @@ namespace Dictation.Services.Lexicon
             IReadOnlyList<string> meanings,
             IReadOnlyList<LexiconLookupFormDto> forms,
             LexiconMeaningSource meaningSource = LexiconMeaningSource.Missing,
-            LexiconMeaningPrecision meaningPrecision = LexiconMeaningPrecision.Missing)
+            LexiconMeaningPrecision meaningPrecision = LexiconMeaningPrecision.Missing,
+            string? kanjiUsageCode = null)
         {
             Language = language;
             SourceSenseId = RequireText(sourceSenseId, nameof(sourceSenseId));
@@ -47,6 +48,7 @@ namespace Dictation.Services.Lexicon
             Forms = forms ?? throw new ArgumentNullException(nameof(forms));
             MeaningSource = meaningSource;
             MeaningPrecision = meaningPrecision;
+            KanjiUsageCode = kanjiUsageCode;
         }
 
         public LearningLanguage Language { get; }
@@ -73,6 +75,8 @@ namespace Dictation.Services.Lexicon
 
         public LexiconMeaningPrecision MeaningPrecision { get; }
 
+        public string? KanjiUsageCode { get; }
+
         public bool HasChineseMeaning => Meanings.Any(meaning => !string.IsNullOrWhiteSpace(meaning));
 
         private static string RequireText(string value, string parameterName)
@@ -88,6 +92,9 @@ namespace Dictation.Services.Lexicon
         public LexiconLookupFormDto(
             string surface,
             string? reading,
+            string formCode,
+            string? scriptCode,
+            string? roleCode,
             string formLabel,
             string detailLabel,
             bool isCommon,
@@ -97,6 +104,11 @@ namespace Dictation.Services.Lexicon
                 ? throw new ArgumentException("词形不能为空。", nameof(surface))
                 : surface;
             Reading = reading;
+            FormCode = string.IsNullOrWhiteSpace(formCode)
+                ? throw new ArgumentException("词形稳定标识不能为空。", nameof(formCode))
+                : formCode;
+            ScriptCode = scriptCode;
+            RoleCode = roleCode;
             FormLabel = string.IsNullOrWhiteSpace(formLabel)
                 ? throw new ArgumentException("词形标签不能为空。", nameof(formLabel))
                 : formLabel;
@@ -110,6 +122,12 @@ namespace Dictation.Services.Lexicon
         public string Surface { get; }
 
         public string? Reading { get; }
+
+        public string FormCode { get; }
+
+        public string? ScriptCode { get; }
+
+        public string? RoleCode { get; }
 
         public string FormLabel { get; }
 

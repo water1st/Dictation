@@ -37,7 +37,7 @@ namespace Dictation.Tests.Services
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]
@@ -63,7 +63,7 @@ namespace Dictation.Tests.Services
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]
@@ -92,7 +92,7 @@ namespace Dictation.Tests.Services
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]

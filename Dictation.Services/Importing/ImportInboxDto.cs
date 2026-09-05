@@ -188,7 +188,8 @@ namespace Dictation.Services.Importing
             IReadOnlyList<string> meanings,
             IReadOnlyList<ImportWordGroupFormDto> forms,
             Lexicon.LexiconMeaningSource meaningSource = Lexicon.LexiconMeaningSource.Missing,
-            Lexicon.LexiconMeaningPrecision meaningPrecision = Lexicon.LexiconMeaningPrecision.Missing)
+            Lexicon.LexiconMeaningPrecision meaningPrecision = Lexicon.LexiconMeaningPrecision.Missing,
+            string? kanjiUsageCode = null)
         {
             Language = language;
             SourceSenseId = sourceSenseId;
@@ -202,6 +203,7 @@ namespace Dictation.Services.Importing
             Forms = forms ?? throw new ArgumentNullException(nameof(forms));
             MeaningSource = meaningSource;
             MeaningPrecision = meaningPrecision;
+            KanjiUsageCode = kanjiUsageCode;
         }
 
         public string Language { get; }
@@ -228,6 +230,8 @@ namespace Dictation.Services.Importing
 
         public Lexicon.LexiconMeaningPrecision MeaningPrecision { get; }
 
+        public string? KanjiUsageCode { get; }
+
         public bool HasChineseMeaning => Meanings.Any(meaning => !string.IsNullOrWhiteSpace(meaning));
     }
 
@@ -236,6 +240,9 @@ namespace Dictation.Services.Importing
         public ImportWordGroupFormDto(
             string surface,
             string? reading,
+            string formCode,
+            string? scriptCode,
+            string? roleCode,
             string formLabel,
             string detailLabel,
             bool isCommon,
@@ -243,6 +250,11 @@ namespace Dictation.Services.Importing
         {
             Surface = surface;
             Reading = reading;
+            FormCode = string.IsNullOrWhiteSpace(formCode)
+                ? throw new ArgumentException("词形稳定标识不能为空。", nameof(formCode))
+                : formCode;
+            ScriptCode = scriptCode;
+            RoleCode = roleCode;
             FormLabel = formLabel;
             DetailLabel = detailLabel;
             IsCommon = isCommon;
@@ -252,6 +264,12 @@ namespace Dictation.Services.Importing
         public string Surface { get; }
 
         public string? Reading { get; }
+
+        public string FormCode { get; }
+
+        public string? ScriptCode { get; }
+
+        public string? RoleCode { get; }
 
         public string FormLabel { get; }
 

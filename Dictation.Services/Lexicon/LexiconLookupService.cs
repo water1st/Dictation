@@ -99,12 +99,16 @@ namespace Dictation.Services.Lexicon
                 value.Forms.Select(form => new LexiconLookupFormDto(
                     form.Surface,
                     form.Reading,
+                    form.FormKind,
+                    form.ScriptKind,
+                    form.LexicalRole,
                     MapJapaneseFormKind(form.FormKind),
                     MapJapaneseFormDetail(form),
                     form.IsCommon,
                     form.IsPrimary)).ToArray(),
                 ParseMeaningSource(value.MeaningSource),
-                ParseMeaningPrecision(value.MeaningPrecision));
+                ParseMeaningPrecision(value.MeaningPrecision),
+                value.KanjiUsage);
         }
 
         private static LexiconLookupResultDto MapEnglish(EnglishLexiconLookupPo value)
@@ -122,6 +126,9 @@ namespace Dictation.Services.Lexicon
                 value.Meanings,
                 value.Forms.Select(form => new LexiconLookupFormDto(
                     form.Surface,
+                    null,
+                    form.FormKind,
+                    null,
                     null,
                     MapEnglishFormKind(form.FormKind),
                     MapEnglishFormSourceKind(form.FormSourceKind),

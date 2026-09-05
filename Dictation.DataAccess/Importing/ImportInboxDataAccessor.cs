@@ -505,11 +505,11 @@ namespace Dictation.DataAccess.Importing
                     INSERT INTO WordGroupMembers (
                         WordGroupId, Language, SourceSenseId, SourceLexemeId, Headword, Reading,
                         PartOfSpeechLabel, AttributeLabel, IsPhrase, SortOrder,
-                        MeaningLanguage, MeaningSource, MeaningPrecision)
+                        MeaningLanguage, MeaningSource, MeaningPrecision, KanjiUsageCode)
                     VALUES (
                         @WordGroupId, @Language, @SourceSenseId, @SourceLexemeId, @Headword, @Reading,
                         @PartOfSpeechLabel, @AttributeLabel, @IsPhrase, @SortOrder,
-                        @MeaningLanguage, @MeaningSource, @MeaningPrecision);
+                        @MeaningLanguage, @MeaningSource, @MeaningPrecision, @KanjiUsageCode);
                     SELECT last_insert_rowid();
                     """,
                     new
@@ -525,6 +525,7 @@ namespace Dictation.DataAccess.Importing
                         member.MeaningLanguage,
                         member.MeaningSource,
                         member.MeaningPrecision,
+                        member.KanjiUsageCode,
                         IsPhrase = member.IsPhrase ? 1 : 0,
                         SortOrder = sortOrder
                     },
@@ -546,9 +547,11 @@ namespace Dictation.DataAccess.Importing
                     await connection.ExecuteAsync(new CommandDefinition(
                         """
                         INSERT INTO WordGroupForms (
-                            MemberId, FormIndex, Surface, Reading, FormLabel, DetailLabel, IsCommon, IsPrimary)
+                            MemberId, FormIndex, Surface, Reading, FormCode, ScriptCode, RoleCode,
+                            FormLabel, DetailLabel, IsCommon, IsPrimary)
                         VALUES (
-                            @MemberId, @FormIndex, @Surface, @Reading, @FormLabel, @DetailLabel, @IsCommon, @IsPrimary);
+                            @MemberId, @FormIndex, @Surface, @Reading, @FormCode, @ScriptCode, @RoleCode,
+                            @FormLabel, @DetailLabel, @IsCommon, @IsPrimary);
                         """,
                         new
                         {
@@ -556,6 +559,9 @@ namespace Dictation.DataAccess.Importing
                             FormIndex = formIndex,
                             form.Surface,
                             form.Reading,
+                            form.FormCode,
+                            form.ScriptCode,
+                            form.RoleCode,
                             form.FormLabel,
                             form.DetailLabel,
                             IsCommon = form.IsCommon ? 1 : 0,
@@ -641,7 +647,7 @@ namespace Dictation.DataAccess.Importing
                     """
                     SELECT MemberId, WordGroupId, Language, SourceSenseId, SourceLexemeId, Headword, Reading,
                            PartOfSpeechLabel, AttributeLabel, IsPhrase, SortOrder,
-                           MeaningLanguage, MeaningSource, MeaningPrecision
+                           MeaningLanguage, MeaningSource, MeaningPrecision, KanjiUsageCode
                     FROM WordGroupMembers
                     WHERE WordGroupId IN @GroupIds
                     ORDER BY WordGroupId, SortOrder;
@@ -664,7 +670,8 @@ namespace Dictation.DataAccess.Importing
                 ? Array.Empty<FormRow>()
                 : (await connection.QueryAsync<FormRow>(new CommandDefinition(
                     """
-                    SELECT MemberId, FormIndex, Surface, Reading, FormLabel, DetailLabel, IsCommon, IsPrimary
+                    SELECT MemberId, FormIndex, Surface, Reading, FormCode, ScriptCode, RoleCode,
+                           FormLabel, DetailLabel, IsCommon, IsPrimary
                     FROM WordGroupForms
                     WHERE MemberId IN @MemberIds
                     ORDER BY MemberId, FormIndex;
@@ -693,6 +700,9 @@ namespace Dictation.DataAccess.Importing
                         .Select(form => new ImportWordGroupFormPo(
                             form.Surface,
                             form.Reading,
+                            form.FormCode,
+                            form.ScriptCode,
+                            form.RoleCode,
                             form.FormLabel,
                             form.DetailLabel,
                             form.IsCommon != 0,
@@ -729,7 +739,8 @@ namespace Dictation.DataAccess.Importing
                                 : Array.Empty<string>(),
                             formsByMember.TryGetValue(member.MemberId, out var memberForms)
                                 ? memberForms
-                                : Array.Empty<ImportWordGroupFormPo>()))
+                                : Array.Empty<ImportWordGroupFormPo>(),
+                            member.KanjiUsageCode))
                         .ToArray());
             }
 
@@ -1020,6 +1031,8 @@ namespace Dictation.DataAccess.Importing
             public string MeaningSource { get; set; } = string.Empty;
 
             public string MeaningPrecision { get; set; } = string.Empty;
+
+            public string? KanjiUsageCode { get; set; }
         }
 
         private sealed class EditableMemberRow
@@ -1047,6 +1060,12 @@ namespace Dictation.DataAccess.Importing
             public string Surface { get; set; } = string.Empty;
 
             public string? Reading { get; set; }
+
+            public string FormCode { get; set; } = string.Empty;
+
+            public string? ScriptCode { get; set; }
+
+            public string? RoleCode { get; set; }
 
             public string FormLabel { get; set; } = string.Empty;
 

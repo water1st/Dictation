@@ -130,10 +130,11 @@ namespace Dictation.DataAccess.Runtime
                     foreach (var migration in pendingMigrations)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-                        await connection.ExecuteAsync(new CommandDefinition(
+                        await ExecuteMigrationSqlAsync(
+                            connection,
+                            transaction,
                             migration.Sql,
-                            transaction: transaction,
-                            cancellationToken: cancellationToken));
+                            cancellationToken);
                         await connection.ExecuteAsync(new CommandDefinition(
                             "INSERT INTO SchemaMigrations (Version, Name, AppliedAtUtc) VALUES (@Version, @Name, @AppliedAtUtc);",
                             new
@@ -170,6 +171,21 @@ namespace Dictation.DataAccess.Runtime
             catch (Exception exception)
             {
                 throw new SchemaMigrationDataAccessException("打开 SQLite 数据库进行迁移失败，已阻止程序启动。", exception);
+            }
+        }
+
+        private static async Task ExecuteMigrationSqlAsync(
+            System.Data.Common.DbConnection connection,
+            System.Data.Common.DbTransaction transaction,
+            string sql,
+            CancellationToken cancellationToken)
+        {
+            await using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = sql;
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.NextResultAsync(cancellationToken))
+            {
             }
         }
 
@@ -329,6 +345,95 @@ namespace Dictation.DataAccess.Runtime
                     ALTER TABLE WordGroupMembers ADD COLUMN MeaningLanguage TEXT NOT NULL DEFAULT 'und';
                     ALTER TABLE WordGroupMembers ADD COLUMN MeaningSource TEXT NOT NULL DEFAULT 'Legacy';
                     ALTER TABLE WordGroupMembers ADD COLUMN MeaningPrecision TEXT NOT NULL DEFAULT 'Missing';
+                    """),
+                new SchemaMigration(
+                    4,
+                    "保存稳定词形标识",
+                    """
+                    ALTER TABLE WordGroupMembers ADD COLUMN KanjiUsageCode TEXT NULL
+                        CHECK (
+                            (Language = 'English' AND KanjiUsageCode IS NULL)
+                            OR (Language = 'Japanese' AND KanjiUsageCode IN ('None', 'Common', 'Rare'))
+                        );
+
+                    UPDATE WordGroupMembers
+                    SET KanjiUsageCode = CASE
+                        WHEN Language = 'English' THEN NULL
+                        WHEN AttributeLabel LIKE '%常用汉字%' THEN 'Common'
+                        WHEN AttributeLabel LIKE '%罕见汉字%' THEN 'Rare'
+                        WHEN AttributeLabel LIKE '%无汉字%' THEN 'None'
+                        ELSE 'Unknown'
+                    END;
+
+                    CREATE TABLE WordGroupForms_New (
+                        MemberId INTEGER NOT NULL,
+                        FormIndex INTEGER NOT NULL,
+                        Surface TEXT NOT NULL,
+                        Reading TEXT NULL,
+                        FormCode TEXT NOT NULL CHECK (FormCode IN (
+                            'Dictionary', 'Polite', 'Te', 'Ta',
+                            'Base', 'PresentFirstPersonSingular', 'PresentNonThirdPerson',
+                            'ThirdPersonSingular', 'Past', 'PastParticiple', 'PresentParticiple',
+                            'Plural', 'Comparative', 'Superlative')),
+                        ScriptCode TEXT NULL CHECK (ScriptCode IS NULL OR ScriptCode IN ('Kanji', 'Kana')),
+                        RoleCode TEXT NULL CHECK (RoleCode IS NULL OR RoleCode IN ('Noun', 'Verb', 'Adjective', 'Adverb', 'Other')),
+                        FormLabel TEXT NOT NULL,
+                        DetailLabel TEXT NOT NULL,
+                        IsCommon INTEGER NOT NULL CHECK (IsCommon IN (0, 1)),
+                        IsPrimary INTEGER NOT NULL CHECK (IsPrimary IN (0, 1)),
+                        PRIMARY KEY (MemberId, FormIndex),
+                        FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE
+                    );
+
+                    INSERT INTO WordGroupForms_New (
+                        MemberId, FormIndex, Surface, Reading, FormCode, ScriptCode, RoleCode,
+                        FormLabel, DetailLabel, IsCommon, IsPrimary)
+                    SELECT
+                        Forms.MemberId,
+                        Forms.FormIndex,
+                        Forms.Surface,
+                        Forms.Reading,
+                        CASE Forms.FormLabel
+                            WHEN '普通形' THEN 'Dictionary'
+                            WHEN '礼貌形' THEN 'Polite'
+                            WHEN 'て形' THEN 'Te'
+                            WHEN 'た形' THEN 'Ta'
+                            WHEN '原形' THEN 'Base'
+                            WHEN '第一人称单数' THEN 'PresentFirstPersonSingular'
+                            WHEN '非第三人称现在式' THEN 'PresentNonThirdPerson'
+                            WHEN '第三人称单数' THEN 'ThirdPersonSingular'
+                            WHEN '过去式' THEN 'Past'
+                            WHEN '过去分词' THEN 'PastParticiple'
+                            WHEN '现在分词' THEN 'PresentParticiple'
+                            WHEN '复数' THEN 'Plural'
+                            WHEN '比较级' THEN 'Comparative'
+                            WHEN '最高级' THEN 'Superlative'
+                            ELSE 'Unknown'
+                        END,
+                        CASE
+                            WHEN Members.Language = 'English' THEN NULL
+                            WHEN Forms.DetailLabel LIKE '汉字 · %' THEN 'Kanji'
+                            WHEN Forms.DetailLabel LIKE '假名 · %' THEN 'Kana'
+                            ELSE 'Unknown'
+                        END,
+                        CASE
+                            WHEN Members.Language = 'English' THEN NULL
+                            WHEN Forms.DetailLabel LIKE '% · 名词' THEN 'Noun'
+                            WHEN Forms.DetailLabel LIKE '% · 动词' THEN 'Verb'
+                            WHEN Forms.DetailLabel LIKE '% · 形容词' THEN 'Adjective'
+                            WHEN Forms.DetailLabel LIKE '% · 副词' THEN 'Adverb'
+                            WHEN Forms.DetailLabel LIKE '% · 其他' THEN 'Other'
+                            ELSE 'Unknown'
+                        END,
+                        Forms.FormLabel,
+                        Forms.DetailLabel,
+                        Forms.IsCommon,
+                        Forms.IsPrimary
+                    FROM WordGroupForms AS Forms
+                    INNER JOIN WordGroupMembers AS Members ON Members.MemberId = Forms.MemberId;
+
+                    DROP TABLE WordGroupForms;
+                    ALTER TABLE WordGroupForms_New RENAME TO WordGroupForms;
                     """)
             };
         }

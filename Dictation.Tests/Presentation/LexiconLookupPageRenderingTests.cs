@@ -54,6 +54,9 @@ namespace Dictation.Tests.Presentation
                         new LexiconLookupFormDto(
                             "render",
                             null,
+                            "Base",
+                            null,
+                            null,
                             "原形",
                             "英语",
                             true,
