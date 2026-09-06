@@ -2,7 +2,7 @@
 
 ## 目标
 
-将目前独立的 `Dictation.Services` 业务项目完整并入 `Dictation.Core`，使最终三层物理结构为 `Dictation.Presentation`、`Dictation.Core`、`Dictation.DataAccess`。这次调整只改变代码归属、命名空间、项目引用和 DI 注册入口，不改变已经通过测试的业务行为、数据库结构或公开交互。
+将目前独立的 `Dictation.Services` 业务项目完整并入 `Dictation.Core`，使最终三层物理结构为 `Dictation.Presentation`、`Dictation.Core`、`Dictation.DataAccess`。合并时同步删除已被 WPF 单窗口和新 TTS 链路取代的旧 Core/WinForms 实现；不改变已经通过测试的新业务行为、数据库结构或公开交互。
 
 ## 项目与依赖方向
 
@@ -20,11 +20,13 @@ Tests ─────────> Presentation / Core / DataAccess / TtsHost
 
 原 `Dictation.Services/<Feature>/` 文件迁入 `Dictation.Core/<Feature>/`，命名空间同步由 `Dictation.Services.*` 改为 `Dictation.Core.*`。配置、导入、学习、词库、单例、启动和 TTS 模块仍各自保留目录边界；DTO、业务模型和 Provider 接口继续与 DataAccess PO 分离。
 
-现有 `AddDictationCore()` 成为唯一 Core 注册入口：合并新业务服务注册，并暂时保留旧 WinForms 仍需要的注册。`AddDictationServices()` 随项目删除，Presentation 和测试只调用一次 `AddDictationCore()`，避免构建两套容器或重复注册。
+现有 `AddDictationCore()` 成为唯一 Core 注册入口，只保留新业务服务注册。`AddDictationServices()` 随项目删除，Presentation 和测试只调用一次 `AddDictationCore()`，避免构建两套容器或重复注册。
 
-## 遗留代码策略
+## 遗留代码清理
 
-`Dictation.Core` 中现有 Edge TTS、System Speech、绘图和旧听写类型暂不在本次迁移中删除，因为尚存 WinForms 编译引用。它们继续作为明确的迁移遗留项；待 WPF、TTS 和学习链路完全替代后，再按原总计划删除。合并不新增对这些旧类型的依赖。
+引用扫描已经确认旧 `DictationManager`、`WordCollection`、绘图集合、Edge/System TTS 与工厂只被旧 WinForms 窗口互相引用，当前 WPF `Program`/`App`/单窗口页面不使用它们。因此本次一并删除这些 Core 文件和旧 TTS 包引用。
+
+Presentation 删除 `MainWindow`、`DictationWindow`、`ReviewWindow`、`ResultWindow` 的 `.cs`/`.Designer.cs`/`.resx`、仅供它们使用的 `WindowFactory` 和空的旧强类型资源文件；项目关闭 `UseWindowsForms`。保留 `HomeWindow`、全部 `UserControl`、ViewModel、主题、导航、`pen.ico` 以及新 TTS Host。删除后的编译和全量测试是“确实无用”的最终证据。
 
 ## 文档与测试
 
@@ -40,4 +42,6 @@ Tests ─────────> Presentation / Core / DataAccess / TtsHost
 - `AddDictationCore()` 是唯一 Core/业务注册入口。
 - DataAccess 不引用 Core；项目依赖无环。
 - 全量测试数量不减少且全部通过，解决方案构建为零错误。
-- 本次迁移不改变 SQLite schema、用户数据、TTS 进程协议或学习行为。
+- Core 不再包含旧 Edge/System TTS、绘图或旧听写类型和对应包。
+- Presentation 不再启用 WinForms，程序集没有 `Form` 子类或 `WindowFactory`。
+- 本次迁移不改变 SQLite schema、用户数据、新 TTS 进程协议或学习行为。
