@@ -2,15 +2,16 @@
 
 ## 1. 范围与目标
 
-当前版本由 `Dictation.Core`（`netstandard2.1`）和 `Dictation.Presentation`（`.NET 8` WinForms）组成，并依赖 Edge/System TTS。目标是迁移到 `.NET 10` WPF 的离线日语、英语学习与智能复习应用。迁移按可运行的垂直切片进行；旧 WinForms 代码在新链路可启动并验收前保留，最终切片才移除。
+目标是 `.NET 10` WPF 的离线日语、英语学习与智能复习应用。当前已建立 WPF 单窗口、Core 业务层和 DataAccess 持久化层；旧 WinForms、Edge/System TTS 与独立 Services 项目已在替代链路通过测试和启动冒烟后移除。剩余功能继续按可运行、可验证的垂直切片实现。
 
-最终结构为传统三层：`Presentation`（WPF）、`Services`（用例编排）、`DataAccess`（Dapper/SQLite CRUD）；另有隐藏的 `Dictation.TtsHost`、`Dictation.Updater` 和构建时使用的 `Dictation.LexiconBuilder`。WPF 与 MCP 必须调用同一 Services，不得绕过业务层。
+最终结构为传统三层：`Presentation`（WPF）、`Core`（用例编排）、`DataAccess`（Dapper/SQLite CRUD）；另有隐藏的 `Dictation.TtsHost`、待实现的 `Dictation.Updater` 和构建时使用的 `Dictation.LexiconBuilder`。WPF 与 MCP 必须调用 Core 内同一组业务服务，不得绕过业务层。
 
 ## 2. 架构与运行时边界
 
-- WPF、Services、DataAccess 和可选 MCP Hosted Service 属于同一个 WPF Generic Host 与 DI 容器。入口为 `[STAThread] Program.Main`，`App` 不使用 `StartupUri`。`Dictation.TtsHost` 是由该宿主生命周期钩子启动和停止的单独隐藏进程，通过命名管道通信；它不建立第二套业务层或数据库访问链路。
-- Presentation 只处理 WPF、ViewModel、绑定和输入适配；Services 只编排业务；DataAccess 只执行 CRUD/SQL。DTO、业务模型、持久化对象（PO）分离，跨层使用简单 Mapper。
-- 设置配置集中在 `Dictation.Services.Configuration`：`ApplicationSettingsDocument` 只保存持久化字符串，Microsoft `IConfiguration.GetValue<T>` 负责读取可选的 `CONFIG/settings.json`，内部 `IConfiguration.SetValueAsync<T>` 负责一次完整文档的原子写回并调用 `IConfigurationRoot.Reload()`。微软提供器没有官方 JSON 写回 API，因此只补这个最小缺口；SettingsService 将字符串映射为 DTO 枚举并拒绝未知业务值，默认值也由 SettingsService 产生。DataAccess 不承担读写设置。
+- WPF、Core、DataAccess 和可选 MCP Hosted Service 属于同一个 WPF Generic Host 与 DI 容器。入口为 `[STAThread] Program.Main`，`App` 不使用 `StartupUri`。`Dictation.TtsHost` 是由该宿主生命周期钩子启动和停止的单独隐藏进程，通过命名管道通信；它不建立第二套业务层或数据库访问链路。
+- Presentation 只处理 WPF、ViewModel、绑定和输入适配；Core 只编排业务；DataAccess 只执行 CRUD/SQL。DTO、业务模型、持久化对象（PO）分离，跨层使用简单 Mapper。
+- 设置配置集中在 `Dictation.Core.Configuration`：`ApplicationSettingsDocument` 只保存持久化字符串，Microsoft `IConfiguration.GetValue<T>` 负责读取可选的 `CONFIG/settings.json`，内部 `IConfiguration.SetValueAsync<T>` 负责一次完整文档的原子写回并调用 `IConfigurationRoot.Reload()`。微软提供器没有官方 JSON 写回 API，因此只补这个最小缺口；SettingsService 将字符串映射为 DTO 枚举并拒绝未知业务值，默认值也由 SettingsService 产生。DataAccess 不承担读写设置。
+- 项目依赖为 Presentation → Core → DataAccess、TtsHost → Core；DataAccess 不得反向引用 Core。`AddDictationCore()` 是唯一业务注册入口，不保留独立 Services 项目或转发兼容层。
 - 只有 TTS、OCR、更新源、系统时钟等确实有多 Provider 的边界使用接口；单实现 Service 和 DataAccessor 以具体类注册。禁止 DDD、CQRS、EF、`Repository`/`Repository<T>` 和无实际扩展价值的抽象。
 - 每次数据库操作独立创建连接。SQLite 迁移器维护 `SchemaMigrations`；升级先备份，迁移在事务中执行，失败回滚并阻止应用启动。
 - 单例使用命名互斥体和命名管道：第二进程静默退出，不提示、不转交参数；第一进程若最小化则还原并置前。
@@ -71,7 +72,7 @@ OCR 使用 Windows Ink 和本地 PP-OCRv5 的混合 Provider，并用预期答�
 
 单个隐藏 `Dictation.TtsHost` 通过命名管道提供音频；日语使用 Piper Plus CSS10，英语使用 Sherpa-ONNX Kokoro v1.0 英式发音，模型懒加载，后台服务不显示黑框，WPF 退出时关闭。界面只显示喇叭图标，播放实际目标词形。TTS Host 只在内存中生成并传输 WAV 字节，客户端播放后释放；产品代码不得持久化音频、写入 `.wav` 或建立音频缓存。
 
-MCP 是同一 Generic Host 中按设置启停的可选 Hosted Service。仅监听 `127.0.0.1:<固定且可配置的高位端口>/mcp`，不使用 HTTPS、token 或 CORS，并严格校验 Host/Origin；端口冲突只显示状态，不影响 WPF。设置页原子注册/注销 Codex MCP 配置。工具包括 capability/schema、离线查询、整组暂存导入、批次状态和诊断；所有写入经过 Services，不能确认 Inbox 或直写数据库。
+MCP 是同一 Generic Host 中按设置启停的可选 Hosted Service。仅监听 `127.0.0.1:<固定且可配置的高位端口>/mcp`，不使用 HTTPS、token 或 CORS，并严格校验 Host/Origin；端口冲突只显示状态，不影响 WPF。设置页原子注册/注销 Codex MCP 配置。工具包括 capability/schema、离线查询、整组暂存导入、批次状态和诊断；所有写入经过 Core 业务服务，不能确认 Inbox 或直写数据库。
 
 ## 10. 统计、主题与视觉
 
@@ -81,4 +82,4 @@ MCP 是同一 Generic Host 中按设置启停的可选 Hosted Service。仅监�
 
 每个业务切片先写覆盖正常、边界、非法、异常和状态变化的测试，临时制造针对性实现错误并运行测试确认会失败，随后修正为绿；第一个中文提交完成最小实现。再打通 WPF/ViewModel→Service→DTO/Mapper→DataAccessor/PO→SQLite 或 Provider，所有测试、构建和冒烟通过后做第二个中文提交。分支必须以 `codex/` 开头，不直接在 `master` 开发。
 
-本规格不要求一次性重写全部代码，不引入分布式读写分离、在线同步、复杂记忆自评按钮、中文反向词典查询、安装程序、代码签名、增量更新、运行时在线词库更新或 CUDA 依赖。最终移除旧 WinForms、Edge TTS 和 System TTS，但只能在新链路验收后进行。
+本规格不要求一次性重写全部代码，不引入分布式读写分离、在线同步、复杂记忆自评按钮、中文反向词典查询、安装程序、代码签名、增量更新、运行时在线词库更新或 CUDA 依赖。已移除的旧 WinForms、Edge TTS 和 System TTS 不得重新作为兼容路径引入。

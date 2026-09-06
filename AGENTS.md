@@ -2,19 +2,21 @@
 
 ## 当前状态与批准目标
 
-当前仓库仍只有 `Dictation.Core`（`netstandard2.1`）和 `Dictation.Presentation`（`net8.0-windows` WinForms）两个项目。批准的重构目标是 `.NET 10 WPF`，目标项目在迁移完成前可能尚不存在；新增目录或项目必须以实际代码为准，不得把目标结构当成当前状态。
+当前解决方案已迁入 `.NET 10`：`Dictation.Presentation` 使用 WPF，`Dictation.Core` 承载业务服务，`Dictation.DataAccess` 负责持久化；另有 `Dictation.TtsHost`、`Dictation.LexiconBuilder` 和 `Dictation.Tests`。旧 WinForms、Edge/System TTS 与独立 Services 项目已移除。其余目标功能仍按已批准计划分片实现，不得把计划中的项目或功能当成已存在。
 
 ## 目标结构与迁移方式
 
-目标结构包括 `Dictation.Presentation`、`Dictation.Services`、`Dictation.DataAccess`，支持程序 `Dictation.TtsHost`、`Dictation.Updater`，构建工具 `Dictation.LexiconBuilder`，以及按需拆分的测试项目。按可运行、可验证的垂直切片逐步迁移，每个切片都交付真实业务链路；禁止先一次性铺设没有行为的空壳分层。
+物理三层固定为 `Dictation.Presentation → Dictation.Core → Dictation.DataAccess`；业务按 `Core/Configuration`、`Core/Importing`、`Core/Learning`、`Core/Lexicon`、`Core/Tts` 等目录内聚组织。支持程序包括现有 `Dictation.TtsHost` 和待实现的 `Dictation.Updater`。按可运行、可验证的垂直切片迁移，不铺设没有行为的空壳；已被新链路取代且没有引用的旧实现应删除，不留无用兼容层。
 
 ## 架构边界
 
 采用传统三层边界和一个 Generic Host 管理的单一 DI 容器：
 
 - `Presentation` 只负责 WPF UI、ViewModel、绑定和输入输出适配，不承载业务规则或 SQL。
-- `Services` 只负责业务编排和用例流程；UI 与 MCP 共用这些 Services，不得绕过它们实现业务。
+- `Core` 负责业务编排和用例流程，以及对应 DTO、Mapper、Provider 合同；UI 与 MCP 共用 Core 内的业务服务，不得绕过业务层。
 - `DataAccess` 只负责 CRUD 和 SQL，使用 Dapper 与 `Microsoft.Data.Sqlite`。
+
+`AddDictationCore()` 是唯一业务注册入口，只在组合根注册一次；禁止重建独立 Services 项目、兼容命名空间或第二套容器。DataAccess 不得反向引用 Core。
 
 DTO、业务模型和持久化对象（PO）按职责分离；跨边界需要转换时使用简单 Mapper。DataAccessor 和只有一个实现的 Service 默认以具体类注入；仅 TTS、OCR、更新源、系统时钟等确有替换需求的 Provider seam 使用接口。禁止引入 DDD、CQRS、`Repository`/`Repository<T>`，也不要为没有扩展价值的接口或抽象增加复杂度。
 
@@ -37,16 +39,16 @@ DTO、业务模型和持久化对象（PO）按职责分离；跨边界需要转
 
 ## 开发环境与命令
 
-目标环境为 Windows 11、稳定版 Visual Studio 2026 和 .NET 10 SDK。以下命令用于当前基线；重构后按实际项目路径更新：
+环境为 Windows 11、稳定版 Visual Studio 2026 和 `global.json` 指定的 .NET 10 SDK。常用验证命令：
 
 ```powershell
 dotnet restore Dictation.sln
-dotnet build Dictation.sln --configuration Debug
-dotnet test Dictation.sln
+dotnet build Dictation.sln --configuration Debug --no-restore
+dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 1372
 dotnet run --project Dictation.Presentation/Dictation.Presentation.csproj
 ```
 
-当前没有测试项目；重构第一切片必须先补齐测试基础设施，之后 `dotnet test` 必须纳入每个切片的验证。开发不应依赖 Edge、Windows TTS、Node、Docker、SQL Server、EF 或 CUDA。
+`Dictation.Tests` 使用 xUnit v3 与 Microsoft.Testing.Platform，测试命名采用 `行为_场景_预期`。聚焦测试用 `--filter-class` 或 `--filter-method`，并指定合理的 `--minimum-expected-tests`；零测试不算通过。全量数量不得少于当前基线 1372 项。开发不应依赖 Edge、Windows TTS、Node、Docker、SQL Server、EF 或 CUDA。
 
 ## 编码约定
 
@@ -74,4 +76,4 @@ C# 使用四空格缩进、Allman 大括号和块级命名空间。类型、方�
 
 ## 安全与发布
 
-MCP 仅监听 `127.0.0.1`，不得绕过 Services 直接写数据库。不得提交令牌或其他凭据。发布为自包含 `win-x64` 全量 ZIP；配置和用户数据目录必须在更新时保留且不被覆盖。
+MCP 仅监听 `127.0.0.1`，不得绕过 Core 业务服务直接写数据库。不得提交令牌或其他凭据。发布为自包含 `win-x64` 全量 ZIP；配置和用户数据目录必须在更新时保留且不被覆盖。

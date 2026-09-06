@@ -4,13 +4,17 @@
 
 **Goal:** 交付日语、英语彼此独立的学习计划、学习库管理、可恢复学习会话、动态题目覆盖、即时判题／延迟重答／结算汇总，以及单窗口 WPF 学习入口和本轮浏览；本计划先用两种语言均支持的键盘输入完成闭环，日语默认手写和 OCR 在后续手写计划接入同一答题契约。
 
-**Architecture:** 用户词组快照仍是唯一学习内容来源；具体类 `LearningPlanDataAccessor` 负责计划／学习库 CRUD，`LearningSessionDataAccessor` 负责会话／进度事务，`LearningPlanService`、`LearningSessionService`、`AnswerEvaluationService` 分别负责计划、会话编排和确定性文本判题。WPF 继续使用 `ContentControl + UserControl` 单窗口导航，ViewModel 调用 Services；随机次序由注入的具体 `Random` 控制，时间由 .NET `TimeProvider` 控制，不增加接口、Repository、DDD、CQRS 或消息总线。
+**Architecture:** 用户词组快照仍是唯一学习内容来源；具体类 `LearningPlanDataAccessor` 负责计划／学习库 CRUD，`LearningSessionDataAccessor` 负责会话／进度事务，`LearningPlanService`、`LearningSessionService`、`AnswerEvaluationService` 分别负责计划、会话编排和确定性文本判题。WPF 继续使用 `ContentControl + UserControl` 单窗口导航，ViewModel 调用 Core 业务服务；随机次序由注入的具体 `Random` 控制，时间由 .NET `TimeProvider` 控制，不增加接口、Repository、DDD、CQRS 或消息总线。
 
 **Tech Stack:** C# 14、.NET 10、WPF、Generic Host、Dapper、Microsoft.Data.Sqlite、`TimeProvider`、xUnit v3、现有内存 WAV TTS 管道、NAudio（仅内存播放适配器）。
 
 **Spec:** `docs/requirements/RefactorSpecification.md` 第 4–7、9–11 节。
 
 **Depends on:** `docs/superpowers/plans/2026-08-31-single-window-navigation.md` 与 `docs/superpowers/plans/2026-08-31-chinese-runtime-lexicons.md` 已全部完成；基线为 1279/1279 测试通过。
+
+## 续接状态（2026-09-06）
+
+Task 1–4 已实现；Core 合并与旧 Core/WinForms 清理按 `2026-09-06-core-services-consolidation.md` 完成验证，当前全量基线为 1372/1372。后续从 Task 5 继续，业务服务使用 `Dictation.Core.*`，只通过 `AddDictationCore()` 注册，不再建立独立 Services 项目。
 
 ## Global Constraints
 
@@ -35,26 +39,26 @@
 
 - Modify: `Dictation.DataAccess/Importing/ImportInboxPo.cs`
 - Modify: `Dictation.DataAccess/Importing/ImportInboxDataAccessor.cs`
-- Modify: `Dictation.Services/Importing/ImportInboxDto.cs`
-- Modify: `Dictation.Services/Importing/ImportInboxService.cs`
-- Modify: `Dictation.Services/Lexicon/LexiconLookupResultDto.cs`
-- Modify: `Dictation.Services/Lexicon/LexiconLookupService.cs`
+- Modify: `Dictation.Core/Importing/ImportInboxDto.cs`
+- Modify: `Dictation.Core/Importing/ImportInboxService.cs`
+- Modify: `Dictation.Core/Lexicon/LexiconLookupResultDto.cs`
+- Modify: `Dictation.Core/Lexicon/LexiconLookupService.cs`
 - Modify: `Dictation.DataAccess/Runtime/SchemaMigrationRunner.cs`
 
-### 学习 DataAccess 与 Services
+### 学习 DataAccess 与 Core 业务服务
 
 - Create: `Dictation.DataAccess/Learning/LearningPlanPo.cs`
 - Create: `Dictation.DataAccess/Learning/LearningSessionPo.cs`
 - Create: `Dictation.DataAccess/Learning/LearningPlanDataAccessor.cs`
 - Create: `Dictation.DataAccess/Learning/LearningSessionDataAccessor.cs`
 - Create: `Dictation.DataAccess/Learning/LearningDataAccessException.cs`
-- Create: `Dictation.Services/Learning/LearningPlanDto.cs`
-- Create: `Dictation.Services/Learning/LearningSessionDto.cs`
-- Create: `Dictation.Services/Learning/LearningPlanService.cs`
-- Create: `Dictation.Services/Learning/LearningSessionService.cs`
-- Create: `Dictation.Services/Learning/AnswerEvaluationService.cs`
+- Create: `Dictation.Core/Learning/LearningPlanDto.cs`
+- Create: `Dictation.Core/Learning/LearningSessionDto.cs`
+- Create: `Dictation.Core/Learning/LearningPlanService.cs`
+- Create: `Dictation.Core/Learning/LearningSessionService.cs`
+- Create: `Dictation.Core/Learning/AnswerEvaluationService.cs`
 - Modify: `Dictation.DataAccess/DictationDataAccessServiceCollectionExtensions.cs`
-- Modify: `Dictation.Services/DictationServicesServiceCollectionExtensions.cs`
+- Modify: `Dictation.Core/DictationCoreServiceCollectionExtensions.cs`
 
 ### WPF 单窗口流程
 
@@ -76,11 +80,11 @@
 
 - Modify: `Dictation.Tests/DataAccess/SchemaMigrationRunnerTests.cs`
 - Modify: `Dictation.Tests/DataAccess/ImportInboxDataAccessorTests.cs`
-- Modify: `Dictation.Tests/Services/ImportInboxServiceTests.cs`
+- Modify: `Dictation.Tests/Core/ImportInboxServiceTests.cs`
 - Create: `Dictation.Tests/DataAccess/LearningDataAccessorTests.cs`
-- Create: `Dictation.Tests/Services/LearningPlanServiceTests.cs`
-- Create: `Dictation.Tests/Services/LearningSessionServiceTests.cs`
-- Create: `Dictation.Tests/Services/AnswerEvaluationServiceTests.cs`
+- Create: `Dictation.Tests/Core/LearningPlanServiceTests.cs`
+- Create: `Dictation.Tests/Core/LearningSessionServiceTests.cs`
+- Create: `Dictation.Tests/Core/AnswerEvaluationServiceTests.cs`
 - Create: `Dictation.Tests/Presentation/LearningPlanViewModelTests.cs`
 - Create: `Dictation.Tests/Presentation/LearningSessionViewModelTests.cs`
 - Create: `Dictation.Tests/Presentation/LearningPageRenderingTests.cs`
@@ -217,7 +221,7 @@ public Task<IReadOnlyList<LearningBrowseItemDto>> GetBrowseItemsAsync(
 
 ```powershell
 dotnet build Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-restore
-dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --no-restore -- --filter-class Dictation.Tests.Services.ImportInboxServiceTests
+dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --no-restore -- --filter-class Dictation.Tests.Core.ImportInboxServiceTests
 ```
 
 临时把所有 `FormCode` 映射为 `Base`；必须至少出现一个断言失败，明确显示 `Polite` 或 `PastParticiple` 被错误映射成 `Base`。恢复 mutation，记录冻结测试哈希，转绿期间不得再编辑这些测试。

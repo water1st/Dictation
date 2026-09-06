@@ -28,145 +28,28 @@
 - Modify: `Dictation.Tests/Presentation/SingleWindowArchitectureTests.cs`
 
 **Interfaces:**
-- Consumes: 仓库根目录中的 `Dictation.sln`、各 `.csproj` 和生产 `.cs` 文件。
-- Produces: 五项文件系统架构约束，以及“不存在 WinForms 类型”的程序集约束；均不依赖待删除类型。
+- Consumes: 实际编译的 Core、Presentation、TtsHost、DataAccess 程序集和真实 DI 容器。
+- Produces: 五项程序集／DI 约束，以及 Presentation 中不存在 WinForms 类型的约束。
 
-- [ ] **Step 1：记录迁移前测试基线**
+- [x] **Step 1：记录迁移前测试基线**
 
-Run:
+`dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-restore --minimum-expected-tests 1367` 实际通过 1367/1367。
 
-```powershell
-dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-restore --minimum-expected-tests 1367
-```
+- [x] **Step 2：新增可编译的架构测试**
 
-Expected: 1367/1367 通过。若数量或结果不同，先调查，不得开始迁移。
+采用运行时程序集元数据和真实 DI 解析，替代原计划仅扫描源码文本的测试，以验证真实依赖和业务服务可用性：
 
-- [ ] **Step 2：新增可编译的架构测试**
+1. `CoreAssembly_OwnsBusinessServicesAndSharedContracts`：业务服务及共享 DTO／Provider 合同实际归属于 Core，不存在 Services 命名空间。
+2. `CompiledDependencies_UseCoreWithoutReversingTheThreeLayers`：UI、TtsHost 引用 Core；Core 引用 DataAccess；DataAccess 不反向依赖。
+3. `CoreAssembly_RunsOnNet10WithoutLegacyDesktopDependencies`：实际目标为 .NET 10，程序集不引用旧桌面／TTS 依赖。
+4. `AddDictationCore_ResolvesBusinessServicesOnceAndSupportsTheHomeViewModel`：每项业务服务只注册一次且生命周期正确；真实解析依赖并初始化首页，唯一业务入口为 AddDictationCore。
+5. `AddDictationCore_RejectsNullCollection`：空容器输入抛出 ArgumentNullException。
 
-创建 `CoreLayerArchitectureTests`，使用下列仓库定位器，避免依赖当前工作目录：
+已有单窗口测试改为反射检查实际 Presentation 程序集不存在 Form 子类和 WindowFactory，避免直接引用待删除类型。其余业务测试仅允许必要的命名空间／注册入口改名和无用 using 清理，不改断言。
 
-```csharp
-private static DirectoryInfo FindRepositoryRoot()
-{
-    for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
-         directory is not null;
-         directory = directory.Parent)
-    {
-        if (File.Exists(Path.Combine(directory.FullName, "Dictation.sln")))
-        {
-            return directory;
-        }
-    }
+- [x] **Step 3：证明测试是行为 RED，而不是编译 RED**
 
-    throw new DirectoryNotFoundException("无法定位 Dictation.sln 所在目录。");
-}
-```
-
-添加五个 `[Fact]`：
-
-```csharp
-[Fact]
-public void Solution_DoesNotContainSeparateServicesProject()
-{
-    var root = FindRepositoryRoot();
-    Assert.False(Directory.Exists(Path.Combine(root.FullName, "Dictation.Services")));
-    Assert.DoesNotContain("Dictation.Services", File.ReadAllText(Path.Combine(root.FullName, "Dictation.sln")));
-}
-
-[Fact]
-public void ProductionSources_DoNotDeclareOrImportServicesNamespaces()
-{
-    var root = FindRepositoryRoot();
-    var sourceRoots = new[] { "Dictation.Core", "Dictation.DataAccess", "Dictation.Presentation", "Dictation.TtsHost" };
-    var files = sourceRoots.SelectMany(path => Directory.EnumerateFiles(
-        Path.Combine(root.FullName, path), "*.cs", SearchOption.AllDirectories))
-        .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase)
-            && !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase));
-
-    Assert.All(files, path =>
-    {
-        var source = File.ReadAllText(path);
-        Assert.DoesNotContain("namespace Dictation.Services", source, StringComparison.Ordinal);
-        Assert.DoesNotContain("using Dictation.Services", source, StringComparison.Ordinal);
-    });
-}
-
-[Fact]
-public void CoreProject_TargetsNet10AndReferencesDataAccessWithoutReverseReference()
-{
-    var root = FindRepositoryRoot();
-    var core = File.ReadAllText(Path.Combine(root.FullName, "Dictation.Core", "Dictation.Core.csproj"));
-    var dataAccess = File.ReadAllText(Path.Combine(root.FullName, "Dictation.DataAccess", "Dictation.DataAccess.csproj"));
-    Assert.Contains("<TargetFramework>net10.0</TargetFramework>", core, StringComparison.Ordinal);
-    Assert.Contains("..\\Dictation.DataAccess\\Dictation.DataAccess.csproj", core, StringComparison.Ordinal);
-    Assert.DoesNotContain("Dictation.Core.csproj", dataAccess, StringComparison.Ordinal);
-}
-
-[Fact]
-public void DependencyInjection_HasOnlyAddDictationCoreEntryPoint()
-{
-    var root = FindRepositoryRoot();
-    var productionSources = Directory.EnumerateFiles(root.FullName, "*.cs", SearchOption.AllDirectories)
-        .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}Dictation.Tests{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase)
-            && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase)
-            && !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
-        .Select(File.ReadAllText)
-        .ToArray();
-    Assert.DoesNotContain(productionSources, source => source.Contains("AddDictationServices", StringComparison.Ordinal));
-    Assert.Single(productionSources.Where(source => source.Contains("AddDictationCore(this IServiceCollection", StringComparison.Ordinal)));
-}
-
-[Fact]
-public void CoreAndPresentation_DoNotRetainLegacyDesktopSourcesOrPackages()
-{
-    var root = FindRepositoryRoot();
-    var forbiddenFiles = new[]
-    {
-        "Dictation.Core/DictationManager.cs", "Dictation.Core/EdgeTTSPlayer.cs",
-        "Dictation.Core/SystemTTSPlayer.cs", "Dictation.Core/WordCollection .cs",
-        "Dictation.Presentation/WindowFactory.cs", "Dictation.Presentation/MainWindow.cs",
-        "Dictation.Presentation/DictationWindow.cs", "Dictation.Presentation/ReviewWindow.cs",
-        "Dictation.Presentation/ResultWindow.cs"
-    };
-    Assert.All(forbiddenFiles, relative => Assert.False(File.Exists(Path.Combine(
-        root.FullName, relative.Replace('/', Path.DirectorySeparatorChar)))));
-
-    var coreProject = File.ReadAllText(Path.Combine(root.FullName, "Dictation.Core", "Dictation.Core.csproj"));
-    var presentationProject = File.ReadAllText(Path.Combine(root.FullName, "Dictation.Presentation", "Dictation.Presentation.csproj"));
-    Assert.DoesNotContain("Edge_tts_sharp", coreProject, StringComparison.Ordinal);
-    Assert.DoesNotContain("System.Speech", coreProject, StringComparison.Ordinal);
-    Assert.DoesNotContain("<UseWindowsForms>true</UseWindowsForms>", presentationProject, StringComparison.Ordinal);
-}
-```
-
-同时把 `SingleWindowArchitectureTests.LegacyWinFormsWindowsAreNotRegisteredInTheActiveContainer` 改为不引用待删除的 `WindowFactory` 类型，并直接检查 Presentation 程序集：
-
-```csharp
-[Fact]
-public void PresentationAssemblyContainsNoLegacyWinFormsTypes()
-{
-    var types = typeof(HomeWindow).Assembly.GetTypes();
-    Assert.DoesNotContain(types, type => InheritsFrom(type, "System.Windows.Forms.Form"));
-    Assert.DoesNotContain(types, type => type.FullName == "Dictation.Presentation.WindowFactory");
-}
-
-private static bool InheritsFrom(Type type, string fullName)
-{
-    for (var current = type.BaseType; current is not null; current = current.BaseType)
-    {
-        if (string.Equals(current.FullName, fullName, StringComparison.Ordinal))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-```
-
-- [ ] **Step 3：证明测试是行为 RED，而不是编译 RED**
-
-Run:
+实际运行：
 
 ```powershell
 dotnet build Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-restore
@@ -174,7 +57,9 @@ dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-bu
 dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --filter-method Dictation.Tests.Presentation.SingleWindowArchitectureTests.PresentationAssemblyContainsNoLegacyWinFormsTypes --minimum-expected-tests 1
 ```
 
-Expected: build 0 errors；架构类 5 项至少有 4 项断言失败，单窗口测试也因现存 Form 子类而断言失败。失败分别指出 Services 项目/命名空间、Core 目标框架、双 DI 入口和遗留桌面代码；不得修改测试来转绿。
+迁移前 build 0 errors；架构类实际执行 5 项，4 项因 Core 类型归属／程序集依赖／目标框架／服务注册断言失败；单窗口测试因残留 Form 子类失败。空容器异常测试正常通过。没有把编译失败或零测试算作 RED。
+
+迁移后另做一次生产 DI mutation：临时将 SettingsService 的 Singleton 改为 Transient。先 build 0 errors，随后相同 5 项测试中 1 项因 `Expected Singleton / Actual Transient` 断言失败。仅恢复生产注册后全绿；冻结架构测试和 DI 源码的 SHA-256 在该次 mutation 前后完全一致。
 
 ---
 
@@ -221,7 +106,7 @@ Expected: build 0 errors；架构类 5 项至少有 4 项断言失败，单窗�
 - Consumes: 原 `Dictation.Services.*` 类型及 `AddDictationServices()` 注册行为。
 - Produces: 等价的 `Dictation.Core.*` 类型以及唯一的 `AddDictationCore(IServiceCollection)` 注册入口。
 
-- [ ] **Step 1：使用 Git 移动业务模块与测试目录**
+- [x] **Step 1：移动业务模块与测试目录**
 
 Run:
 
@@ -236,9 +121,9 @@ git mv Dictation.Services/Tts Dictation.Core/Tts
 git mv Dictation.Tests/Services Dictation.Tests/Core
 ```
 
-Expected: Git 将文件识别为重命名；不得复制后留下两套源码。
+实际使用逐项校验源／目标绝对路径后的 PowerShell Move-Item 完成上述迁移，Git 在暂存后识别重命名；没有保留两套源码。
 
-- [ ] **Step 2：更新 Core 项目清单**
+- [x] **Step 2：更新 Core 项目清单**
 
 将 `Dictation.Core.csproj` 改为 `net10.0`、启用 `ImplicitUsings`，只合并仍需要的 Services 依赖：
 
@@ -255,7 +140,7 @@ Expected: Git 将文件识别为重命名；不得复制后留下两套源码。
 
 不要添加 EF、Repository、兼容程序集或新的第三方库。
 
-- [ ] **Step 3：机械迁移命名空间并移动测试命名空间**
+- [x] **Step 3：机械迁移命名空间并移动测试命名空间**
 
 对以下明确根目录中、排除 `bin/obj` 的 `.cs` 文件执行一次机械替换：
 
@@ -273,11 +158,12 @@ rg -n "namespace Dictation\.Services|using Dictation\.Services|Dictation\.Tests\
 
 Expected: 无输出。
 
-- [ ] **Step 4：合并为唯一 DI 入口**
+- [x] **Step 4：合并为唯一 DI 入口**
 
 在 `DictationCoreServiceCollectionExtensions.cs` 中删除旧 WinForms/Core 注册，只保留以下原 Services 注册；删除 `DictationServicesServiceCollectionExtensions.cs`：
 
 ```csharp
+ArgumentNullException.ThrowIfNull(services);
 services.AddSingleton<SettingsService>();
 services.AddSingleton<StartupInitializer>();
 services.AddSingleton<SingleInstanceCoordinator>();
@@ -293,7 +179,7 @@ services.AddSingleton<AnswerEvaluationService>();
 
 将 Presentation 和测试中的 `.AddDictationServices().AddDictationDataAccess().AddDictationCore()` 改为只调用一次业务入口和一次数据访问入口：`.AddDictationDataAccess().AddDictationCore()`。
 
-- [ ] **Step 5：更新项目引用并删除 Services 项目**
+- [x] **Step 5：更新项目引用并删除 Services 项目**
 
 具体变更：
 
@@ -314,7 +200,7 @@ dotnet build Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-r
 
 Expected: restore 成功；测试项目 build 0 errors。若出现循环引用，检查并保持 DataAccess 不引用 Core，禁止用抽取第四个共享项目规避。
 
-- [ ] **Step 6：让架构测试由红转绿**
+- [x] **Step 6：让架构测试由红转绿**
 
 Run:
 
@@ -325,7 +211,7 @@ dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-bu
 
 Expected: 5/5 和 1/1 通过；只能修正迁移实现，不能放宽断言或排除生产目录。
 
-- [ ] **Step 7：验证行为未变**
+- [x] **Step 7：验证行为未变**
 
 Run:
 
@@ -337,32 +223,34 @@ git diff --check
 
 Expected: 至少 1372 项全部通过；解决方案 0 errors；差异格式检查无错误。
 
-- [ ] **Step 8：静态核对依赖与遗留项**
+- [x] **Step 8：静态核对依赖与遗留项**
 
 Run:
 
 ```powershell
 dotnet sln Dictation.sln list
-rg -n "Dictation\.Services|AddDictationServices" Dictation.sln Dictation.Core Dictation.DataAccess Dictation.Presentation Dictation.TtsHost Dictation.Tests -g '!**/bin/**' -g '!**/obj/**'
+rg -n "Dictation\.Services|AddDictationServices" Dictation.sln Dictation.Core Dictation.DataAccess Dictation.Presentation Dictation.TtsHost Dictation.Tests/Dictation.Tests.csproj -g '!**/bin/**' -g '!**/obj/**'
 rg -n "Dictation\.Core" Dictation.DataAccess/Dictation.DataAccess.csproj
 rg -n "UseWindowsForms|Edge_tts_sharp|System\.Speech|WindowFactory|class (MainWindow|DictationWindow|ReviewWindow|ResultWindow)" Dictation.Core Dictation.Presentation -g '!**/bin/**' -g '!**/obj/**'
 rg --files -g '*.db' -g '!**/bin/**' -g '!**/obj/**'
 ```
 
-Expected: 解决方案无 Services 项目；三次 `rg` 无输出；源码树无 `.db`。`HomeWindow`、WPF `UserControl` 与新 `Dictation.TtsHost` 仍存在。
+Expected: 解决方案无 Services 项目；三次 `rg` 无输出；源码树无 `.db`。架构测试中作为禁止依赖断言的旧名称字符串有意保留，不计作生产依赖。`HomeWindow`、WPF `UserControl` 与新 `Dictation.TtsHost` 仍存在。
 
-- [ ] **Step 9：提交原子架构纠偏**
+- [x] **Step 9：提交原子架构纠偏**
 
 ```powershell
 git add Dictation.sln Dictation.Core Dictation.Presentation Dictation.TtsHost Dictation.Tests Dictation.Services
 git commit -m "架构：将业务服务并入核心层"
 ```
 
-Expected: 提交只包含项目合并、遗留代码清理、命名空间、DI、项目引用和架构测试，不包含 Task 5 学习 UI。
+已提交 `b65d75c`：项目合并、遗留代码清理、命名空间、DI、项目引用和架构测试；不包含 Task 5 学习 UI。独立只读审查未发现需要修复的问题。
 
 ---
 
 ### Task 3：同步权威架构文档并恢复学习计划入口
+
+执行记录还需更新本计划与对应设计中的验证说明，历史已完成计划不改写。
 
 **Files:**
 - Modify: `AGENTS.md`
@@ -373,7 +261,7 @@ Expected: 提交只包含项目合并、遗留代码清理、命名空间、DI�
 - Consumes: Task 2 已落地的 Presentation/Core/DataAccess 三层路径。
 - Produces: 后续 Task 5 及新 Agent 使用的唯一正确路径和命名空间说明。
 
-- [ ] **Step 1：更新权威架构描述**
+- [x] **Step 1：更新权威架构描述**
 
 将当前目标结构和架构边界统一为：
 
@@ -385,7 +273,7 @@ Dictation.DataAccess：Dapper/SQLite CRUD 与 SQL
 
 明确 UI 与未来 MCP 共用 Core 的业务服务；只有可替换 Provider 使用接口。把当前需求规格中的 `Dictation.Services.Configuration` 改为 `Dictation.Core.Configuration`。
 
-- [ ] **Step 2：修正仍在执行的学习模式计划路径**
+- [x] **Step 2：修正仍在执行的学习模式计划路径**
 
 在 `2026-09-04-learning-mode.md` 中将尚未完成任务及文件清单里的：
 
@@ -397,7 +285,7 @@ Dictation.Tests/Services/ -> Dictation.Tests/Core/
 
 已完成的其他历史计划保留作为当时执行记录，不批量改写。
 
-- [ ] **Step 3：验证文档与代码一致**
+- [x] **Step 3：验证文档与代码一致**
 
 Run:
 
@@ -410,13 +298,23 @@ git diff --check
 
 Expected: `rg` 无陈旧架构命中；至少 1372 项全部通过；解决方案 0 errors；差异格式检查无错误。
 
-- [ ] **Step 4：提交文档同步**
+- [x] **Step 4：提交文档同步**
 
 ```powershell
-git add AGENTS.md docs/requirements/RefactorSpecification.md docs/superpowers/plans/2026-09-04-learning-mode.md
+git add AGENTS.md docs/requirements/RefactorSpecification.md docs/superpowers/plans/2026-09-04-learning-mode.md docs/superpowers/plans/2026-09-06-core-services-consolidation.md docs/superpowers/specs/2026-09-06-core-services-consolidation-design.md
 git commit -m "文档：同步核心层三层架构"
 ```
 
-- [ ] **Step 5：回到学习模式 Task 5**
+- [x] **Step 5：回到学习模式 Task 5**
 
-确认工作树干净后，从 `2026-09-04-learning-mode.md` 的 Task 5“完成 WPF 学习会话、浏览与纯内存音频链路”继续；所有原 `Dictation.Services.*` 引用改用 `Dictation.Core.*`。
+续接入口已切回 `2026-09-04-learning-mode.md` 的 Task 5“完成 WPF 学习会话、浏览与纯内存音频链路”，该任务尚未实现；本计划文档提交并确认工作树干净后开始，使用 `Dictation.Core.*`。
+
+## 本轮验证记录（2026-09-06）
+
+- 迁移前基线：1367/1367；迁移后 Core 架构 5/5、单窗口架构 7/7、全量 1372/1372，均无跳过。
+- Debug 解决方案构建：0 errors；独立临时目录 publish：0 errors、0 warnings。
+- 最终对照 15016ec 的 81 个既有业务与测试文件，在命名空间／注册入口改名及无用 using 标准化后无非机械差异。新增架构测试和有意加强的单窗口测试单独验证，不混入此统计；既有业务测试断言未改。
+- DI 生命周期 mutation 的源码 SHA-256 前后均为 `DB38E647967834A88B3FA80B5AE7EF7AE8EFB60BAE1E7632CC6CD443B5366CE4`；冻结架构测试前后均为 `A944B4CEBEABF31546B29E64A92E754B453040C7337072785B1E9B522EC88BCD`。
+- 隔离发布启动冒烟：真实首页就绪、首次创建 DATA/UserData.db、唯一 TtsHost 子进程启动；关闭首页后 WPF 返回 0，子进程退出。首次用 WaitForInputIdle 取样过早；改为等待真实主窗口和数据库就绪后通过，未改生产实现。
+- Services 目录及其旧 bin/obj 已清除；无反向项目引用；发布依赖清单无旧 Services／Edge/System TTS；源码树无数据库文件。用户运行数据、下载资源未修改。
+- 下一业务任务仍为学习模式 Task 5；本次合并不实现新学习 UI，也不标记整个重构 GOAL 完成。
