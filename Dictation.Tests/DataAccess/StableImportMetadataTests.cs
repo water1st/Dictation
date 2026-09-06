@@ -3,9 +3,9 @@ using Dictation.DataAccess;
 using Dictation.DataAccess.Importing;
 using Dictation.DataAccess.Lexicon;
 using Dictation.DataAccess.Runtime;
-using Dictation.Services.Configuration;
-using Dictation.Services.Importing;
-using Dictation.Services.Lexicon;
+using Dictation.Core.Configuration;
+using Dictation.Core.Importing;
+using Dictation.Core.Lexicon;
 using Dictation.Tests.Infrastructure;
 using Microsoft.Data.Sqlite;
 

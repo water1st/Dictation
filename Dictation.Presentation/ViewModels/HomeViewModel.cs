@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Dictation.Presentation.Navigation;
-using Dictation.Services.Configuration;
+using Dictation.Core.Configuration;
 
 namespace Dictation.Presentation.ViewModels
 {

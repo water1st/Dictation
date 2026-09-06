@@ -4,9 +4,9 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Dictation.Presentation.Navigation;
 using Dictation.Presentation.Shell;
-using Dictation.Services.Configuration;
-using Dictation.Services.Learning;
-using Dictation.Services.Lexicon;
+using Dictation.Core.Configuration;
+using Dictation.Core.Learning;
+using Dictation.Core.Lexicon;
 
 namespace Dictation.Presentation.ViewModels
 {

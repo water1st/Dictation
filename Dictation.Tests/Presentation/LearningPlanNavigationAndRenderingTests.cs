@@ -10,8 +10,7 @@ using Dictation.Presentation;
 using Dictation.Presentation.Navigation;
 using Dictation.Presentation.ViewModels;
 using Dictation.Presentation.Views;
-using Dictation.Services;
-using Dictation.Services.Configuration;
+using Dictation.Core.Configuration;
 using Dictation.Tests.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -72,7 +71,7 @@ namespace Dictation.Tests.Presentation
             var services = new ServiceCollection();
             services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
             services.AddDictationDataAccess(root);
-            services.AddDictationServices();
+            services.AddDictationCore();
             services.AddDictationPresentation();
             return services.BuildServiceProvider();
         }

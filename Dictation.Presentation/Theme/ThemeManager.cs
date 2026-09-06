@@ -1,4 +1,4 @@
-using Dictation.Services.Configuration;
+using Dictation.Core.Configuration;
 
 namespace Dictation.Presentation.Theme
 {

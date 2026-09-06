@@ -1,5 +1,5 @@
 using System.Globalization;
-using Dictation.Services.Tts;
+using Dictation.Core.Tts;
 
 namespace Dictation.TtsHost
 {

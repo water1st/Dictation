@@ -1,4 +1,4 @@
-using Dictation.Services.Tts;
+using Dictation.Core.Tts;
 using DotNetG2P;
 using DotNetG2P.MeCab;
 using DotNetG2P.MeCab.Dictionary;

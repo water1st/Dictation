@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
-using Dictation.Services.Tts;
+using Dictation.Core.Tts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.TtsHost

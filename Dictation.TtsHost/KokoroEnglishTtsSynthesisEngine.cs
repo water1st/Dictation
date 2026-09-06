@@ -1,4 +1,4 @@
-using Dictation.Services.Tts;
+using Dictation.Core.Tts;
 using PiperPlus.Core.Inference;
 using SherpaOnnx;
 

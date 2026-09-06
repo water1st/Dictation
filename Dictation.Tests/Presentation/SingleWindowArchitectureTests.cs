@@ -12,7 +12,7 @@ using Dictation.Presentation.Navigation;
 using Dictation.Presentation.Shell;
 using Dictation.Presentation.ViewModels;
 using Dictation.Presentation.Views;
-using Dictation.Services.Configuration;
+using Dictation.Core.Configuration;
 using Dictation.Tests.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,7 +44,7 @@ namespace Dictation.Tests.Presentation
         }
 
         [Fact]
-        public void LegacyWinFormsWindowsAreNotRegisteredInTheActiveContainer()
+        public void PresentationAssemblyContainsNoLegacyWinFormsTypes()
         {
             var services = new ServiceCollection();
 
@@ -52,10 +52,26 @@ namespace Dictation.Tests.Presentation
 
             Assert.DoesNotContain(
                 services,
-                descriptor => typeof(System.Windows.Forms.Form).IsAssignableFrom(descriptor.ServiceType));
+                descriptor => InheritsFrom(descriptor.ServiceType, "System.Windows.Forms.Form"));
             Assert.DoesNotContain(
                 services,
-                descriptor => descriptor.ServiceType == typeof(WindowFactory));
+                descriptor => descriptor.ServiceType.FullName == "Dictation.Presentation.WindowFactory");
+            var types = typeof(HomeWindow).Assembly.GetTypes();
+            Assert.DoesNotContain(types, type => InheritsFrom(type, "System.Windows.Forms.Form"));
+            Assert.DoesNotContain(types, type => type.FullName == "Dictation.Presentation.WindowFactory");
+        }
+
+        private static bool InheritsFrom(Type type, string fullName)
+        {
+            for (var current = type; current is not null; current = current.BaseType)
+            {
+                if (string.Equals(current.FullName, fullName, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         [Fact]

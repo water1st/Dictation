@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.IO.Pipes;
-using Dictation.Services;
-using Dictation.Services.Tts;
+using Dictation.Core;
+using Dictation.Core.Tts;
 using Dictation.TtsHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -66,7 +66,7 @@ namespace Dictation.Tests.TtsHost
         public async Task RegisteredTtsService_UsesRealHostAndPropagatesSynthesisFailure()
         {
             using var services = new ServiceCollection()
-                .AddDictationServices()
+                .AddDictationCore()
                 .AddLocalTtsHost(GetTtsHostPath())
                 .BuildServiceProvider();
             var lifecycle = services.GetRequiredService<TtsHostLifecycle>();

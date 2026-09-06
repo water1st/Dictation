@@ -1,5 +1,5 @@
 using System.IO.Pipes;
-using Dictation.Services.Tts;
+using Dictation.Core.Tts;
 using Dictation.TtsHost;
 using Dictation.Tests.Infrastructure;
 

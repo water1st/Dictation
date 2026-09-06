@@ -1,4 +1,4 @@
-using Dictation.Services.Tts;
+using Dictation.Core.Tts;
 using Dictation.Tests.Infrastructure;
 using Dictation.TtsHost;
 

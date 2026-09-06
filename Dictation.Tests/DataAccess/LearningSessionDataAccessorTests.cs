@@ -3,9 +3,9 @@ using Dictation.DataAccess.Importing;
 using Dictation.DataAccess.Learning;
 using Dictation.DataAccess.Lexicon;
 using Dictation.DataAccess.Runtime;
-using Dictation.Services.Configuration;
-using Dictation.Services.Importing;
-using Dictation.Services.Lexicon;
+using Dictation.Core.Configuration;
+using Dictation.Core.Importing;
+using Dictation.Core.Lexicon;
 using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.DataAccess

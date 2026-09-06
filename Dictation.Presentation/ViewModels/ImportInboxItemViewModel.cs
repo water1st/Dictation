@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Dictation.Services.Importing;
+using Dictation.Core.Importing;
 
 namespace Dictation.Presentation.ViewModels
 {

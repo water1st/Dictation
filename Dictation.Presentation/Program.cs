@@ -1,7 +1,7 @@
 using Dictation.DataAccess;
-using Dictation.Services;
-using Dictation.Services.SingleInstance;
-using Dictation.Services.Startup;
+using Dictation.Core;
+using Dictation.Core.SingleInstance;
+using Dictation.Core.Startup;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -80,10 +80,9 @@ namespace Dictation.Presentation
                 {
                     services
                         .AddDictationDataAccess(AppContext.BaseDirectory)
-                        .AddDictationServices()
+                        .AddDictationCore()
                         .AddLocalTtsHost(Path.Combine(AppContext.BaseDirectory, "Dictation.TtsHost.exe"))
-                        .AddDictationPresentation()
-                        .AddDictationCore();
+                        .AddDictationPresentation();
                 });
         }
     }

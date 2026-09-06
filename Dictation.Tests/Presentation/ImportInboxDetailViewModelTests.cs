@@ -1,6 +1,6 @@
 using Dictation.Presentation.ViewModels;
-using Dictation.Services.Configuration;
-using Dictation.Services.Importing;
+using Dictation.Core.Configuration;
+using Dictation.Core.Importing;
 
 namespace Dictation.Tests.Presentation
 {

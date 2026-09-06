@@ -1,6 +1,6 @@
 using System.ComponentModel;
-using Dictation.Services.Importing;
-using Dictation.Services.Learning;
+using Dictation.Core.Importing;
+using Dictation.Core.Learning;
 
 namespace Dictation.Presentation.ViewModels
 {

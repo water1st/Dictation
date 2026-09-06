@@ -1,4 +1,10 @@
-﻿using Dictation.Core;
+using Dictation.Core.Configuration;
+using Dictation.Core.Importing;
+using Dictation.Core.Learning;
+using Dictation.Core.Lexicon;
+using Dictation.Core.SingleInstance;
+using Dictation.Core.Startup;
+using Dictation.Core.Tts;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -6,16 +12,18 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddDictationCore(this IServiceCollection services)
         {
-            services.AddSingleton<WordCollection>();
-            services.AddSingleton<WordDrawingCollection>();
-
-            services.AddTransient<LanguageRecognizer>();
-            services.AddKeyedTransient<ILanguageSettableTTSPlayer, EdgeTTSPlayer>("edge");
-            services.AddKeyedTransient<ILanguageSettableTTSPlayer, SystemTTSPlayer>("system");
-            services.AddTransient<ITTSPlayer, TTSProxy>();
-            services.AddTransient<DictationManager>();
-            services.AddTransient<TTSFactory>();
-
+            ArgumentNullException.ThrowIfNull(services);
+            services.AddSingleton<SettingsService>();
+            services.AddSingleton<StartupInitializer>();
+            services.AddSingleton<SingleInstanceCoordinator>();
+            services.AddSingleton<TtsService>();
+            services.AddSingleton<LexiconLookupService>();
+            services.AddSingleton<ImportInboxService>();
+            services.AddSingleton(TimeProvider.System);
+            services.AddSingleton(Random.Shared);
+            services.AddSingleton<LearningPlanService>();
+            services.AddSingleton<LearningSessionService>();
+            services.AddSingleton<AnswerEvaluationService>();
             return services;
         }
     }

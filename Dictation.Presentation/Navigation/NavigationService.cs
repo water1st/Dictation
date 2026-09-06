@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Dictation.Presentation.ViewModels;
-using Dictation.Services.Configuration;
-using Dictation.Services.Importing;
+using Dictation.Core.Configuration;
+using Dictation.Core.Importing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Presentation.Navigation

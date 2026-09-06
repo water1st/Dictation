@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Dictation.Services.Configuration;
-using Dictation.Services.Importing;
+using Dictation.Core.Configuration;
+using Dictation.Core.Importing;
 
 namespace Dictation.Presentation.ViewModels
 {

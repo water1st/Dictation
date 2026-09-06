@@ -1,5 +1,5 @@
 using Dictation.Presentation.Theme;
-using Dictation.Services.Configuration;
+using Dictation.Core.Configuration;
 
 namespace Dictation.Tests.Presentation
 {

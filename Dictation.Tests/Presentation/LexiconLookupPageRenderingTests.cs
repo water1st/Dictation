@@ -12,9 +12,9 @@ using Dictation.Presentation.Navigation;
 using Dictation.Presentation.Shell;
 using Dictation.Presentation.ViewModels;
 using Dictation.Presentation.Views;
-using Dictation.Services.Configuration;
-using Dictation.Services.Importing;
-using Dictation.Services.Lexicon;
+using Dictation.Core.Configuration;
+using Dictation.Core.Importing;
+using Dictation.Core.Lexicon;
 using Dictation.Tests.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 

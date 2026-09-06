@@ -13,7 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Dictation.DataAccess\Dictation.DataAccess.csproj" />
     <ProjectReference Include="..\Dictation.Presentation\Dictation.Presentation.csproj" />
-    <ProjectReference Include="..\Dictation.Services\Dictation.Services.csproj" />
+    <ProjectReference Include="..\Dictation.Core\Dictation.Core.csproj" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
     <PackageReference Include="xunit.v3" Version="3.2.2" />
     <Using Include="Xunit" />
