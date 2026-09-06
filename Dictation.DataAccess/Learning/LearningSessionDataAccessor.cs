@@ -68,7 +68,9 @@ namespace Dictation.DataAccess.Learning
                     FROM WordGroups
                     LEFT JOIN LearningGroupProgress
                         ON LearningGroupProgress.WordGroupId = WordGroups.WordGroupId
-                    WHERE WordGroups.Language = @Language AND WordGroups.Placement = 'Learning'
+                    WHERE WordGroups.Language = @Language
+                      AND (WordGroups.Placement = 'Learning'
+                           OR (WordGroups.Placement = 'Review' AND LearningGroupProgress.CompletedLocalDate IS NOT NULL))
                     ORDER BY WordGroups.CreatedAtUtc, WordGroups.WordGroupId;
                     """,
                     new { Language = language },
@@ -81,7 +83,9 @@ namespace Dictation.DataAccess.Learning
                 var groupIds = groups.Select(group => group.WordGroupId).ToArray();
                 var forms = (await connection.QueryAsync<CandidateFormRow>(new CommandDefinition(
                     """
-                    SELECT DISTINCT WordGroupMembers.WordGroupId, WordGroupMembers.MemberId, WordGroupForms.FormCode
+                    SELECT DISTINCT WordGroupMembers.WordGroupId, WordGroupMembers.MemberId,
+                                    WordGroupForms.FormCode, WordGroupForms.ScriptCode,
+                                    WordGroupMembers.KanjiUsageCode
                     FROM WordGroupMembers
                     INNER JOIN WordGroupForms ON WordGroupForms.MemberId = WordGroupMembers.MemberId
                     WHERE WordGroupMembers.WordGroupId IN @WordGroupIds
@@ -102,7 +106,11 @@ namespace Dictation.DataAccess.Learning
                     .ToDictionary(
                         group => group.Key,
                         group => (IReadOnlyList<LearningFormIdentityPo>)group
-                            .Select(form => new LearningFormIdentityPo(form.MemberId, form.FormCode)).ToArray(),
+                            .Select(form => new LearningFormIdentityPo(
+                                form.MemberId,
+                                form.FormCode,
+                                form.ScriptCode,
+                                form.KanjiUsageCode)).ToArray(),
                         StringComparer.Ordinal);
                 var statesByGroup = states.GroupBy(state => state.WordGroupId, StringComparer.Ordinal)
                     .ToDictionary(
@@ -194,13 +202,22 @@ namespace Dictation.DataAccess.Learning
                     {
                         var group = request.Groups[index];
                         var state = await connection.QuerySingleOrDefaultAsync<GroupStateRow>(new CommandDefinition(
-                            "SELECT Language, Placement FROM WordGroups WHERE WordGroupId = @WordGroupId;",
+                            """
+                            SELECT WordGroups.Language, WordGroups.Placement,
+                                   CASE WHEN LearningGroupProgress.CompletedLocalDate IS NULL THEN 0 ELSE 1 END AS HasCompletedProgress
+                            FROM WordGroups
+                            LEFT JOIN LearningGroupProgress
+                                ON LearningGroupProgress.WordGroupId = WordGroups.WordGroupId
+                            WHERE WordGroups.WordGroupId = @WordGroupId;
+                            """,
                             new { group.WordGroupId },
                             transaction,
                             cancellationToken: cancellationToken));
                         if (state is null
                             || !string.Equals(state.Language, request.Language, StringComparison.Ordinal)
-                            || !string.Equals(state.Placement, "Learning", StringComparison.Ordinal))
+                            || (!string.Equals(state.Placement, "Learning", StringComparison.Ordinal)
+                                && !(string.Equals(state.Placement, "Review", StringComparison.Ordinal)
+                                    && state.HasCompletedProgress != 0)))
                         {
                             throw InvalidData("会话包含不存在、其他语言或非学习库词组。");
                         }
@@ -321,6 +338,398 @@ namespace Dictation.DataAccess.Learning
             catch (Exception exception)
             {
                 throw new LearningSessionDataAccessException("读取本轮浏览内容失败。", exception);
+            }
+        }
+
+        public async Task<LearningSchedulingSnapshotPo> GetSchedulingSnapshotAsync(
+            string sessionId,
+            CancellationToken cancellationToken = default)
+        {
+            sessionId = RequireText(sessionId, nameof(sessionId));
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await using var connection = connectionFactory.CreateConnection();
+                await connection.OpenAsync(cancellationToken);
+                var session = await LoadByIdAsync(connection, sessionId, cancellationToken)
+                    ?? throw InvalidData("学习会话不存在。");
+                var pendingRow = await connection.QuerySingleOrDefaultAsync<QuestionRow>(new CommandDefinition(
+                    """
+                    SELECT QuestionId, SessionId, WordGroupId, MemberId, FormCode,
+                           Channel, OutputMode, QuestionOrdinal
+                    FROM LearningQuestions
+                    WHERE SessionId = @SessionId AND Status = 'Pending';
+                    """,
+                    new { SessionId = sessionId },
+                    cancellationToken: cancellationToken));
+                var unitRows = (await connection.QueryAsync<FormUnitRow>(new CommandDefinition(
+                    """
+                    SELECT States.WordGroupId, States.MemberId, States.FormCode,
+                           COALESCE((
+                               SELECT FormLabel FROM WordGroupForms
+                               WHERE MemberId = States.MemberId AND FormCode = States.FormCode
+                               ORDER BY IsPrimary DESC, IsCommon DESC, FormIndex LIMIT 1
+                           ), States.FormCode) AS FormLabel,
+                           Members.IsPhrase, Members.KanjiUsageCode, Members.MeaningLanguage,
+                           States.CorrectStreak, States.IsMastered, States.NextEligibleOrdinal,
+                           States.MeaningWritingCount, States.DictationCount,
+                           States.LatinCount, States.KanaCount, States.KanjiCount,
+                           States.CorrectCount, States.ErrorCount
+                    FROM LearningSessionGroups AS SessionGroups
+                    INNER JOIN LearningFormStates AS States
+                        ON States.WordGroupId = SessionGroups.WordGroupId
+                    INNER JOIN WordGroupMembers AS Members
+                        ON Members.MemberId = States.MemberId
+                    WHERE SessionGroups.SessionId = @SessionId
+                    ORDER BY SessionGroups.SortOrder, Members.SortOrder, States.FormCode;
+                    """,
+                    new { SessionId = sessionId },
+                    cancellationToken: cancellationToken))).ToArray();
+                var memberIds = unitRows.Select(row => row.MemberId).Distinct().ToArray();
+                var meanings = memberIds.Length == 0
+                    ? Array.Empty<MeaningRow>()
+                    : (await connection.QueryAsync<MeaningRow>(new CommandDefinition(
+                        """
+                        SELECT MemberId, MeaningIndex, Text
+                        FROM WordGroupMeanings
+                        WHERE MemberId IN @MemberIds
+                        ORDER BY MemberId, MeaningIndex;
+                        """,
+                        new { MemberIds = memberIds },
+                        cancellationToken: cancellationToken))).ToArray();
+                var variants = memberIds.Length == 0
+                    ? Array.Empty<AnswerVariantRow>()
+                    : (await connection.QueryAsync<AnswerVariantRow>(new CommandDefinition(
+                        """
+                        SELECT MemberId, FormCode, Surface, Reading, ScriptCode, IsCommon, IsPrimary, FormIndex
+                        FROM WordGroupForms
+                        WHERE MemberId IN @MemberIds
+                        ORDER BY MemberId, FormCode, IsPrimary DESC, IsCommon DESC, FormIndex;
+                        """,
+                        new { MemberIds = memberIds },
+                        cancellationToken: cancellationToken))).ToArray();
+                var historyRows = (await connection.QueryAsync<QuestionHistoryRow>(new CommandDefinition(
+                    """
+                    SELECT Questions.QuestionId, Questions.WordGroupId, Questions.MemberId,
+                           Questions.FormCode, Questions.Channel, Questions.OutputMode,
+                           Questions.QuestionOrdinal, Attempts.WasCorrect
+                    FROM LearningQuestions AS Questions
+                    LEFT JOIN LearningQuestionAttempts AS Attempts
+                        ON Attempts.QuestionId = Questions.QuestionId
+                    WHERE Questions.SessionId = @SessionId
+                    ORDER BY Questions.QuestionOrdinal;
+                    """,
+                    new { SessionId = sessionId },
+                    cancellationToken: cancellationToken))).ToArray();
+                var meaningsByMember = meanings.GroupBy(row => row.MemberId)
+                    .ToDictionary(group => group.Key, group => (IReadOnlyList<string>)group.Select(row => row.Text).ToArray());
+                var variantsByUnit = variants.GroupBy(row => (row.MemberId, row.FormCode))
+                    .ToDictionary(
+                        group => group.Key,
+                        group => (IReadOnlyList<LearningAnswerVariantPo>)group.Select(row => new LearningAnswerVariantPo(
+                            row.Surface,
+                            row.Reading,
+                            row.ScriptCode,
+                            row.IsCommon != 0,
+                            row.IsPrimary != 0)).ToArray());
+                var units = unitRows.Select(row => new LearningFormUnitPo(
+                    row.WordGroupId,
+                    row.MemberId,
+                    row.FormCode,
+                    row.FormLabel,
+                    row.IsPhrase != 0,
+                    row.KanjiUsageCode,
+                    string.Equals(row.MeaningLanguage, "zh-CN", StringComparison.Ordinal)
+                        && meaningsByMember.TryGetValue(row.MemberId, out var memberMeanings)
+                            ? memberMeanings
+                            : Array.Empty<string>(),
+                    variantsByUnit.TryGetValue((row.MemberId, row.FormCode), out var unitVariants)
+                        ? unitVariants
+                        : Array.Empty<LearningAnswerVariantPo>(),
+                    row.CorrectStreak,
+                    row.IsMastered != 0,
+                    row.NextEligibleOrdinal,
+                    row.MeaningWritingCount,
+                    row.DictationCount,
+                    row.LatinCount,
+                    row.KanaCount,
+                    row.KanjiCount,
+                    row.CorrectCount,
+                    row.ErrorCount)).ToArray();
+                return new LearningSchedulingSnapshotPo(
+                    session,
+                    pendingRow is null ? null : MapQuestion(pendingRow),
+                    units,
+                    historyRows.Select(row => new LearningQuestionHistoryPo(
+                        row.QuestionId,
+                        row.WordGroupId,
+                        row.MemberId,
+                        row.FormCode,
+                        row.Channel,
+                        row.OutputMode,
+                        row.QuestionOrdinal,
+                        row.WasCorrect is null ? null : row.WasCorrect != 0)).ToArray());
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (LearningSessionDataAccessException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw new LearningSessionDataAccessException("读取学习题目调度快照失败。", exception);
+            }
+        }
+
+        public async Task<LearningQuestionStatePo> CreatePendingQuestionAsync(
+            CreateLearningQuestionPo question,
+            CancellationToken cancellationToken = default)
+        {
+            ValidateQuestion(question);
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await using var connection = connectionFactory.CreateConnection();
+                await connection.OpenAsync(cancellationToken);
+                await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+                try
+                {
+                    await ValidateQuestionTargetAsync(connection, transaction, question, cancellationToken);
+                    var questionId = await InsertQuestionAsync(connection, transaction, question, cancellationToken);
+                    await transaction.CommitAsync(cancellationToken);
+                    return new LearningQuestionStatePo(
+                        questionId,
+                        question.SessionId,
+                        question.WordGroupId,
+                        question.MemberId,
+                        question.FormCode,
+                        question.Channel,
+                        question.OutputMode,
+                        question.QuestionOrdinal);
+                }
+                catch
+                {
+                    await TryRollbackAsync(transaction);
+                    throw;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (LearningSessionDataAccessException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw new LearningSessionDataAccessException("创建学习待答题失败，事务已回滚。", exception);
+            }
+        }
+
+        public async Task<LearningQuestionStatePo?> ApplyAnswerAsync(
+            ApplyLearningAnswerPo answer,
+            CancellationToken cancellationToken = default)
+        {
+            ValidateAnswer(answer);
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await using var connection = connectionFactory.CreateConnection();
+                await connection.OpenAsync(cancellationToken);
+                await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+                try
+                {
+                    var target = await connection.QuerySingleOrDefaultAsync<AnswerTargetRow>(new CommandDefinition(
+                        """
+                        SELECT Questions.QuestionId, Questions.SessionId, Questions.WordGroupId,
+                               Questions.MemberId, Questions.FormCode, Questions.Channel,
+                               Questions.OutputMode, Questions.QuestionOrdinal,
+                               Questions.Status AS QuestionStatus,
+                               Sessions.Status AS SessionStatus, Sessions.CurrentOrdinal
+                        FROM LearningQuestions AS Questions
+                        INNER JOIN LearningSessions AS Sessions ON Sessions.SessionId = Questions.SessionId
+                        WHERE Questions.SessionId = @SessionId AND Questions.QuestionId = @QuestionId;
+                        """,
+                        new { answer.SessionId, answer.QuestionId },
+                        transaction,
+                        cancellationToken: cancellationToken));
+                    if (target is null
+                        || !string.Equals(target.QuestionStatus, "Pending", StringComparison.Ordinal)
+                        || !string.Equals(target.SessionStatus, "InProgress", StringComparison.Ordinal)
+                        || target.CurrentOrdinal != target.QuestionOrdinal)
+                    {
+                        throw InvalidData("题目已过期、不属于当前会话或会话已完成。");
+                    }
+
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        """
+                        INSERT INTO LearningQuestionAttempts (
+                            QuestionId, SubmittedText, WasCorrect, AnsweredAtUtc)
+                        VALUES (@QuestionId, @SubmittedText, @WasCorrect, @AnsweredAtUtc);
+                        """,
+                        new
+                        {
+                            answer.QuestionId,
+                            answer.SubmittedText,
+                            WasCorrect = answer.WasCorrect ? 1 : 0,
+                            AnsweredAtUtc = FormatDateTime(answer.AnsweredAtUtc)
+                        },
+                        transaction,
+                        cancellationToken: cancellationToken));
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        "UPDATE LearningQuestions SET Status = 'Answered' WHERE QuestionId = @QuestionId;",
+                        new { answer.QuestionId },
+                        transaction,
+                        cancellationToken: cancellationToken));
+                    var channelColumn = target.Channel switch
+                    {
+                        "MeaningWriting" => "MeaningWritingCount",
+                        "Dictation" => "DictationCount",
+                        _ => throw InvalidData("待答题题型无效。")
+                    };
+                    var outputColumn = target.OutputMode switch
+                    {
+                        "Latin" => "LatinCount",
+                        "Kana" => "KanaCount",
+                        "Kanji" => "KanjiCount",
+                        _ => throw InvalidData("待答题输出方式无效。")
+                    };
+                    var updated = await connection.ExecuteAsync(new CommandDefinition(
+                        $"""
+                        UPDATE LearningFormStates
+                        SET CorrectStreak = @CorrectStreak,
+                            IsMastered = @IsMastered,
+                            NextEligibleOrdinal = @NextEligibleOrdinal,
+                            {channelColumn} = {channelColumn} + 1,
+                            {outputColumn} = {outputColumn} + 1,
+                            CorrectCount = CorrectCount + @CorrectIncrement,
+                            ErrorCount = ErrorCount + @ErrorIncrement,
+                            LastAnsweredAtUtc = @AnsweredAtUtc
+                        WHERE WordGroupId = @WordGroupId
+                          AND MemberId = @MemberId
+                          AND FormCode = @FormCode;
+                        """,
+                        new
+                        {
+                            target.WordGroupId,
+                            target.MemberId,
+                            target.FormCode,
+                            answer.CorrectStreak,
+                            IsMastered = answer.IsMastered ? 1 : 0,
+                            answer.NextEligibleOrdinal,
+                            CorrectIncrement = answer.WasCorrect ? 1 : 0,
+                            ErrorIncrement = answer.WasCorrect ? 0 : 1,
+                            AnsweredAtUtc = FormatDateTime(answer.AnsweredAtUtc)
+                        },
+                        transaction,
+                        cancellationToken: cancellationToken));
+                    if (updated != 1)
+                    {
+                        throw InvalidData("待答题对应的学习词形状态不存在。");
+                    }
+
+                    var nextOrdinal = target.QuestionOrdinal + 1;
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        "UPDATE LearningSessions SET CurrentOrdinal = @CurrentOrdinal WHERE SessionId = @SessionId;",
+                        new { CurrentOrdinal = nextOrdinal, answer.SessionId },
+                        transaction,
+                        cancellationToken: cancellationToken));
+                    if (answer.CompletedWordGroupIds.Count > 0)
+                    {
+                        var completedGroupCount = await connection.ExecuteScalarAsync<int>(new CommandDefinition(
+                            """
+                            SELECT COUNT(*) FROM LearningSessionGroups
+                            WHERE SessionId = @SessionId AND WordGroupId IN @WordGroupIds;
+                            """,
+                            new { answer.SessionId, WordGroupIds = answer.CompletedWordGroupIds },
+                            transaction,
+                            cancellationToken: cancellationToken));
+                        if (completedGroupCount != answer.CompletedWordGroupIds.Count)
+                        {
+                            throw InvalidData("完成词组不属于当前会话。");
+                        }
+
+                        await connection.ExecuteAsync(new CommandDefinition(
+                            "UPDATE WordGroups SET Placement = 'Review' WHERE WordGroupId IN @WordGroupIds;",
+                            new { WordGroupIds = answer.CompletedWordGroupIds },
+                            transaction,
+                            cancellationToken: cancellationToken));
+                        await connection.ExecuteAsync(new CommandDefinition(
+                            """
+                            UPDATE LearningGroupProgress
+                            SET CompletedLocalDate = @CompletedLocalDate
+                            WHERE WordGroupId IN @WordGroupIds;
+                            """,
+                            new
+                            {
+                                CompletedLocalDate = answer.AnsweredLocalDate,
+                                WordGroupIds = answer.CompletedWordGroupIds
+                            },
+                            transaction,
+                            cancellationToken: cancellationToken));
+                    }
+
+                    LearningQuestionStatePo? next = null;
+                    if (answer.CompleteSession)
+                    {
+                        await connection.ExecuteAsync(new CommandDefinition(
+                            """
+                            UPDATE LearningSessions
+                            SET Status = 'Completed', CompletedAtUtc = @CompletedAtUtc
+                            WHERE SessionId = @SessionId;
+                            """,
+                            new { CompletedAtUtc = FormatDateTime(answer.AnsweredAtUtc), answer.SessionId },
+                            transaction,
+                            cancellationToken: cancellationToken));
+                    }
+                    else
+                    {
+                        var nextQuestion = answer.NextQuestion
+                            ?? throw InvalidData("未完成会话必须提供下一道题。");
+                        if (!string.Equals(nextQuestion.SessionId, answer.SessionId, StringComparison.Ordinal)
+                            || nextQuestion.QuestionOrdinal != nextOrdinal)
+                        {
+                            throw InvalidData("下一道题不属于当前会话或题号不连续。");
+                        }
+
+                        ValidateQuestion(nextQuestion);
+                        await ValidateQuestionTargetAsync(connection, transaction, nextQuestion, cancellationToken);
+                        var nextQuestionId = await InsertQuestionAsync(connection, transaction, nextQuestion, cancellationToken);
+                        next = new LearningQuestionStatePo(
+                            nextQuestionId,
+                            nextQuestion.SessionId,
+                            nextQuestion.WordGroupId,
+                            nextQuestion.MemberId,
+                            nextQuestion.FormCode,
+                            nextQuestion.Channel,
+                            nextQuestion.OutputMode,
+                            nextQuestion.QuestionOrdinal);
+                    }
+
+                    await transaction.CommitAsync(cancellationToken);
+                    return next;
+                }
+                catch
+                {
+                    await TryRollbackAsync(transaction);
+                    throw;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (LearningSessionDataAccessException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw new LearningSessionDataAccessException("提交学习答案失败，事务已回滚。", exception);
             }
         }
 
@@ -462,6 +871,154 @@ namespace Dictation.DataAccess.Learning
             }
         }
 
+        private static LearningQuestionStatePo MapQuestion(QuestionRow row)
+        {
+            return new LearningQuestionStatePo(
+                row.QuestionId,
+                row.SessionId,
+                row.WordGroupId,
+                row.MemberId,
+                row.FormCode,
+                row.Channel,
+                row.OutputMode,
+                row.QuestionOrdinal);
+        }
+
+        private static void ValidateQuestion(CreateLearningQuestionPo question)
+        {
+            ArgumentNullException.ThrowIfNull(question);
+            RequireText(question.SessionId, nameof(question.SessionId));
+            RequireText(question.WordGroupId, nameof(question.WordGroupId));
+            RequireText(question.FormCode, nameof(question.FormCode));
+            if (question.MemberId <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(question.MemberId));
+            }
+
+            if (question.Channel is not ("MeaningWriting" or "Dictation"))
+            {
+                throw new ArgumentOutOfRangeException(nameof(question.Channel), question.Channel, "题型不受支持。");
+            }
+
+            if (question.OutputMode is not ("Latin" or "Kana" or "Kanji"))
+            {
+                throw new ArgumentOutOfRangeException(nameof(question.OutputMode), question.OutputMode, "输出方式不受支持。");
+            }
+
+            ArgumentOutOfRangeException.ThrowIfNegative(question.QuestionOrdinal);
+        }
+
+        private static void ValidateAnswer(ApplyLearningAnswerPo answer)
+        {
+            ArgumentNullException.ThrowIfNull(answer);
+            RequireText(answer.SessionId, nameof(answer.SessionId));
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(answer.QuestionId);
+            ArgumentNullException.ThrowIfNull(answer.SubmittedText);
+            if (answer.CorrectStreak is < 0 or > 2)
+            {
+                throw new ArgumentOutOfRangeException(nameof(answer.CorrectStreak));
+            }
+
+            if (answer.IsMastered != (answer.CorrectStreak == 2))
+            {
+                throw new ArgumentException("掌握状态与连续正确次数不一致。", nameof(answer));
+            }
+
+            ArgumentOutOfRangeException.ThrowIfNegative(answer.NextEligibleOrdinal);
+            RequireText(answer.AnsweredLocalDate, nameof(answer.AnsweredLocalDate));
+            ArgumentNullException.ThrowIfNull(answer.CompletedWordGroupIds);
+            if (answer.CompletedWordGroupIds.Distinct(StringComparer.Ordinal).Count() != answer.CompletedWordGroupIds.Count)
+            {
+                throw new ArgumentException("完成词组不能重复。", nameof(answer.CompletedWordGroupIds));
+            }
+
+            if (answer.CompleteSession && answer.NextQuestion is not null)
+            {
+                throw new ArgumentException("已完成会话不能包含下一道题。", nameof(answer));
+            }
+        }
+
+        private static async Task ValidateQuestionTargetAsync(
+            SqliteConnection connection,
+            System.Data.Common.DbTransaction transaction,
+            CreateLearningQuestionPo question,
+            CancellationToken cancellationToken)
+        {
+            var session = await connection.QuerySingleOrDefaultAsync<SessionStateRow>(new CommandDefinition(
+                "SELECT Status, CurrentOrdinal FROM LearningSessions WHERE SessionId = @SessionId;",
+                new { question.SessionId },
+                transaction,
+                cancellationToken: cancellationToken));
+            if (session is null
+                || !string.Equals(session.Status, "InProgress", StringComparison.Ordinal)
+                || session.CurrentOrdinal != question.QuestionOrdinal)
+            {
+                throw InvalidData("会话不存在、已完成或当前题号不匹配。");
+            }
+
+            var targetCount = await connection.ExecuteScalarAsync<int>(new CommandDefinition(
+                """
+                SELECT COUNT(*)
+                FROM LearningSessionGroups AS Groups
+                INNER JOIN LearningFormStates AS States
+                    ON States.WordGroupId = Groups.WordGroupId
+                WHERE Groups.SessionId = @SessionId
+                  AND States.WordGroupId = @WordGroupId
+                  AND States.MemberId = @MemberId
+                  AND States.FormCode = @FormCode
+                  AND EXISTS (
+                      SELECT 1 FROM WordGroupForms AS Forms
+                      WHERE Forms.MemberId = States.MemberId
+                        AND Forms.FormCode = States.FormCode
+                        AND (@OutputMode = 'Latin' OR Forms.ScriptCode = @OutputMode));
+                """,
+                new
+                {
+                    question.SessionId,
+                    question.WordGroupId,
+                    question.MemberId,
+                    question.FormCode,
+                    question.OutputMode
+                },
+                transaction,
+                cancellationToken: cancellationToken));
+            if (targetCount != 1)
+            {
+                throw InvalidData("题目目标不属于当前会话或没有对应输出词形。");
+            }
+        }
+
+        private static Task<long> InsertQuestionAsync(
+            SqliteConnection connection,
+            System.Data.Common.DbTransaction transaction,
+            CreateLearningQuestionPo question,
+            CancellationToken cancellationToken)
+        {
+            return connection.ExecuteScalarAsync<long>(new CommandDefinition(
+                """
+                INSERT INTO LearningQuestions (
+                    SessionId, WordGroupId, MemberId, FormCode,
+                    Channel, OutputMode, QuestionOrdinal, Status, CreatedAtUtc)
+                VALUES (
+                    @SessionId, @WordGroupId, @MemberId, @FormCode,
+                    @Channel, @OutputMode, @QuestionOrdinal, 'Pending', @CreatedAtUtc);
+                SELECT last_insert_rowid();
+                """,
+                new
+                {
+                    question.SessionId,
+                    question.WordGroupId,
+                    question.MemberId,
+                    question.FormCode,
+                    question.Channel,
+                    question.OutputMode,
+                    question.QuestionOrdinal,
+                    CreatedAtUtc = FormatDateTime(question.CreatedAtUtc)
+                },
+                transaction,
+                cancellationToken: cancellationToken));
+        }
+
         private static void ValidateLanguage(string language)
         {
             if (!Languages.Contains(language))
@@ -522,6 +1079,8 @@ namespace Dictation.DataAccess.Learning
             public string WordGroupId { get; set; } = string.Empty;
             public long MemberId { get; set; }
             public string FormCode { get; set; } = string.Empty;
+            public string? ScriptCode { get; set; }
+            public string? KanjiUsageCode { get; set; }
         }
 
         private sealed class FormStateRow
@@ -536,6 +1095,7 @@ namespace Dictation.DataAccess.Learning
         {
             public string Language { get; set; } = string.Empty;
             public string Placement { get; set; } = string.Empty;
+            public int HasCompletedProgress { get; set; }
         }
 
         private sealed class BrowseGroupRow
@@ -583,6 +1143,76 @@ namespace Dictation.DataAccess.Learning
             public string DetailLabel { get; set; } = string.Empty;
             public int IsCommon { get; set; }
             public int IsPrimary { get; set; }
+        }
+
+        private class QuestionRow
+        {
+            public long QuestionId { get; set; }
+            public string SessionId { get; set; } = string.Empty;
+            public string WordGroupId { get; set; } = string.Empty;
+            public long MemberId { get; set; }
+            public string FormCode { get; set; } = string.Empty;
+            public string Channel { get; set; } = string.Empty;
+            public string OutputMode { get; set; } = string.Empty;
+            public int QuestionOrdinal { get; set; }
+        }
+
+        private sealed class FormUnitRow
+        {
+            public string WordGroupId { get; set; } = string.Empty;
+            public long MemberId { get; set; }
+            public string FormCode { get; set; } = string.Empty;
+            public string FormLabel { get; set; } = string.Empty;
+            public int IsPhrase { get; set; }
+            public string? KanjiUsageCode { get; set; }
+            public string MeaningLanguage { get; set; } = string.Empty;
+            public int CorrectStreak { get; set; }
+            public int IsMastered { get; set; }
+            public int NextEligibleOrdinal { get; set; }
+            public int MeaningWritingCount { get; set; }
+            public int DictationCount { get; set; }
+            public int LatinCount { get; set; }
+            public int KanaCount { get; set; }
+            public int KanjiCount { get; set; }
+            public int CorrectCount { get; set; }
+            public int ErrorCount { get; set; }
+        }
+
+        private sealed class AnswerVariantRow
+        {
+            public long MemberId { get; set; }
+            public string FormCode { get; set; } = string.Empty;
+            public string Surface { get; set; } = string.Empty;
+            public string? Reading { get; set; }
+            public string? ScriptCode { get; set; }
+            public int IsCommon { get; set; }
+            public int IsPrimary { get; set; }
+            public int FormIndex { get; set; }
+        }
+
+        private sealed class QuestionHistoryRow
+        {
+            public long QuestionId { get; set; }
+            public string WordGroupId { get; set; } = string.Empty;
+            public long MemberId { get; set; }
+            public string FormCode { get; set; } = string.Empty;
+            public string Channel { get; set; } = string.Empty;
+            public string OutputMode { get; set; } = string.Empty;
+            public int QuestionOrdinal { get; set; }
+            public int? WasCorrect { get; set; }
+        }
+
+        private sealed class SessionStateRow
+        {
+            public string Status { get; set; } = string.Empty;
+            public int CurrentOrdinal { get; set; }
+        }
+
+        private sealed class AnswerTargetRow : QuestionRow
+        {
+            public string QuestionStatus { get; set; } = string.Empty;
+            public string SessionStatus { get; set; } = string.Empty;
+            public int CurrentOrdinal { get; set; }
         }
     }
 }

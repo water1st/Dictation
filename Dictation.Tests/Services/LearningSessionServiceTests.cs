@@ -295,6 +295,7 @@ namespace Dictation.Tests.Services
                 var sessionService = new LearningSessionService(
                     new LearningSessionDataAccessor(connectionFactory),
                     planService,
+                    new AnswerEvaluationService(),
                     timeProvider,
                     new Random(randomSeed));
                 return new TestEnvironment(temporaryDirectory, paths, timeProvider, planService, importService, sessionService);

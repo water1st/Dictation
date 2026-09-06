@@ -18,7 +18,17 @@ namespace Dictation.DataAccess.Learning
         IReadOnlyList<LearningFormIdentityPo> AvailableForms,
         IReadOnlyList<LearningFormStateSummaryPo> FormStates);
 
-    public sealed record LearningFormIdentityPo(long MemberId, string FormCode);
+    public sealed record LearningFormIdentityPo(
+        long MemberId,
+        string FormCode,
+        string? ScriptCode = null,
+        string? KanjiUsageCode = null)
+    {
+        public LearningFormIdentityPo(long memberId, string formCode)
+            : this(memberId, formCode, null, null)
+        {
+        }
+    }
 
     public sealed record LearningFormStateSummaryPo(long MemberId, string FormCode, bool IsMastered);
 

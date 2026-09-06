@@ -24,6 +24,7 @@ namespace Dictation.Services
             services.AddSingleton(Random.Shared);
             services.AddSingleton<LearningPlanService>();
             services.AddSingleton<LearningSessionService>();
+            services.AddSingleton<AnswerEvaluationService>();
             return services;
         }
     }
