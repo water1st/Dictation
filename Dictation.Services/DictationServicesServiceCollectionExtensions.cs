@@ -21,7 +21,9 @@ namespace Dictation.Services
             services.AddSingleton<LexiconLookupService>();
             services.AddSingleton<ImportInboxService>();
             services.AddSingleton(TimeProvider.System);
+            services.AddSingleton(Random.Shared);
             services.AddSingleton<LearningPlanService>();
+            services.AddSingleton<LearningSessionService>();
             return services;
         }
     }

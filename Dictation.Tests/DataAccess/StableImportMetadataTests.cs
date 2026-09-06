@@ -27,7 +27,7 @@ namespace Dictation.Tests.DataAccess
             Assert.Contains("FormCode", formColumns);
             Assert.Contains("ScriptCode", formColumns);
             Assert.Contains("RoleCode", formColumns);
-            Assert.Equal(5L, await ExecuteScalarAsync<long>(
+            Assert.Equal(6L, await ExecuteScalarAsync<long>(
                 connection,
                 "SELECT MAX(Version) FROM SchemaMigrations;"));
         }
@@ -154,7 +154,7 @@ namespace Dictation.Tests.DataAccess
 
             await using var connection = OpenUserDatabase(paths);
             await connection.OpenAsync(TestContext.Current.CancellationToken);
-            Assert.Equal(5L, await ExecuteScalarAsync<long>(
+            Assert.Equal(6L, await ExecuteScalarAsync<long>(
                 connection,
                 "SELECT MAX(Version) FROM SchemaMigrations;"));
             Assert.Equal(

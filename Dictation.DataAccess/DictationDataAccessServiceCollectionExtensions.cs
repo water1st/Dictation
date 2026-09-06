@@ -22,6 +22,7 @@ namespace Dictation.DataAccess
             services.AddSingleton<EnglishLexiconDataAccessor>();
             services.AddSingleton<ImportInboxDataAccessor>();
             services.AddSingleton<LearningPlanDataAccessor>();
+            services.AddSingleton<LearningSessionDataAccessor>();
             services.AddSingleton<SchemaMigrationRunner>(serviceProvider =>
                 new SchemaMigrationRunner(
                     serviceProvider.GetRequiredService<ApplicationPaths>(),

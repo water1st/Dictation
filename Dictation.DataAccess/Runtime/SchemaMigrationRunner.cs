@@ -476,6 +476,82 @@ namespace Dictation.DataAccess.Runtime
                         UNIQUE (Language, OutputMode),
                         FOREIGN KEY (Language) REFERENCES LearningPlans (Language) ON DELETE CASCADE
                     );
+                    """),
+                new SchemaMigration(
+                    6,
+                    "创建可恢复学习会话与进度",
+                    """
+                    CREATE TABLE LearningSessions (
+                        SessionId TEXT NOT NULL PRIMARY KEY,
+                        Language TEXT NOT NULL CHECK (Language IN ('Japanese', 'English')),
+                        Status TEXT NOT NULL CHECK (Status IN ('InProgress', 'Completed')),
+                        CurrentOrdinal INTEGER NOT NULL DEFAULT 0 CHECK (CurrentOrdinal >= 0),
+                        CreatedAtUtc TEXT NOT NULL,
+                        CompletedAtUtc TEXT NULL
+                    );
+                    CREATE UNIQUE INDEX UX_LearningSessions_ActiveLanguage
+                        ON LearningSessions (Language) WHERE Status = 'InProgress';
+                    CREATE TABLE LearningSessionGroups (
+                        SessionId TEXT NOT NULL,
+                        WordGroupId TEXT NOT NULL,
+                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
+                        PRIMARY KEY (SessionId, WordGroupId),
+                        UNIQUE (SessionId, SortOrder),
+                        FOREIGN KEY (SessionId) REFERENCES LearningSessions (SessionId) ON DELETE CASCADE,
+                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE
+                    );
+                    CREATE TABLE LearningGroupProgress (
+                        WordGroupId TEXT NOT NULL PRIMARY KEY,
+                        Language TEXT NOT NULL CHECK (Language IN ('Japanese', 'English')),
+                        FirstStartedLocalDate TEXT NOT NULL,
+                        CompletedLocalDate TEXT NULL,
+                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE
+                    );
+                    CREATE TABLE LearningFormStates (
+                        WordGroupId TEXT NOT NULL,
+                        MemberId INTEGER NOT NULL,
+                        FormCode TEXT NOT NULL,
+                        CorrectStreak INTEGER NOT NULL DEFAULT 0 CHECK (CorrectStreak BETWEEN 0 AND 2),
+                        IsMastered INTEGER NOT NULL DEFAULT 0 CHECK (IsMastered IN (0, 1)),
+                        NextEligibleOrdinal INTEGER NOT NULL DEFAULT 0 CHECK (NextEligibleOrdinal >= 0),
+                        MeaningWritingCount INTEGER NOT NULL DEFAULT 0 CHECK (MeaningWritingCount >= 0),
+                        DictationCount INTEGER NOT NULL DEFAULT 0 CHECK (DictationCount >= 0),
+                        LatinCount INTEGER NOT NULL DEFAULT 0 CHECK (LatinCount >= 0),
+                        KanaCount INTEGER NOT NULL DEFAULT 0 CHECK (KanaCount >= 0),
+                        KanjiCount INTEGER NOT NULL DEFAULT 0 CHECK (KanjiCount >= 0),
+                        CorrectCount INTEGER NOT NULL DEFAULT 0 CHECK (CorrectCount >= 0),
+                        ErrorCount INTEGER NOT NULL DEFAULT 0 CHECK (ErrorCount >= 0),
+                        LastAnsweredAtUtc TEXT NULL,
+                        PRIMARY KEY (WordGroupId, MemberId, FormCode),
+                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE,
+                        FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE
+                    );
+                    CREATE TABLE LearningQuestions (
+                        QuestionId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        SessionId TEXT NOT NULL,
+                        WordGroupId TEXT NOT NULL,
+                        MemberId INTEGER NOT NULL,
+                        FormCode TEXT NOT NULL,
+                        Channel TEXT NOT NULL CHECK (Channel IN ('MeaningWriting', 'Dictation')),
+                        OutputMode TEXT NOT NULL CHECK (OutputMode IN ('Latin', 'Kana', 'Kanji')),
+                        QuestionOrdinal INTEGER NOT NULL CHECK (QuestionOrdinal >= 0),
+                        Status TEXT NOT NULL CHECK (Status IN ('Pending', 'Answered')),
+                        CreatedAtUtc TEXT NOT NULL,
+                        UNIQUE (SessionId, QuestionOrdinal),
+                        FOREIGN KEY (SessionId) REFERENCES LearningSessions (SessionId) ON DELETE CASCADE,
+                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE,
+                        FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE
+                    );
+                    CREATE UNIQUE INDEX UX_LearningQuestions_PendingSession
+                        ON LearningQuestions (SessionId) WHERE Status = 'Pending';
+                    CREATE TABLE LearningQuestionAttempts (
+                        AttemptId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        QuestionId INTEGER NOT NULL UNIQUE,
+                        SubmittedText TEXT NOT NULL,
+                        WasCorrect INTEGER NOT NULL CHECK (WasCorrect IN (0, 1)),
+                        AnsweredAtUtc TEXT NOT NULL,
+                        FOREIGN KEY (QuestionId) REFERENCES LearningQuestions (QuestionId) ON DELETE CASCADE
+                    );
                     """)
             };
         }

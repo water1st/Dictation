@@ -30,10 +30,16 @@ namespace Dictation.Tests.Services
                 {
                     "ImportBatchItems",
                     "ImportBatches",
+                    "LearningFormStates",
+                    "LearningGroupProgress",
                     "LearningPlanChannels",
                     "LearningPlanForms",
                     "LearningPlanOutputs",
                     "LearningPlans",
+                    "LearningQuestionAttempts",
+                    "LearningQuestions",
+                    "LearningSessionGroups",
+                    "LearningSessions",
                     "SchemaMigrations",
                     "WordGroupForms",
                     "WordGroupMeanings",
@@ -41,7 +47,7 @@ namespace Dictation.Tests.Services
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3, 4, 5 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4, 5, 6 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]
@@ -60,10 +66,16 @@ namespace Dictation.Tests.Services
                 {
                     "ImportBatchItems",
                     "ImportBatches",
+                    "LearningFormStates",
+                    "LearningGroupProgress",
                     "LearningPlanChannels",
                     "LearningPlanForms",
                     "LearningPlanOutputs",
                     "LearningPlans",
+                    "LearningQuestionAttempts",
+                    "LearningQuestions",
+                    "LearningSessionGroups",
+                    "LearningSessions",
                     "SchemaMigrations",
                     "WordGroupForms",
                     "WordGroupMeanings",
@@ -71,7 +83,7 @@ namespace Dictation.Tests.Services
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3, 4, 5 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4, 5, 6 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]
@@ -93,10 +105,16 @@ namespace Dictation.Tests.Services
                 {
                     "ImportBatchItems",
                     "ImportBatches",
+                    "LearningFormStates",
+                    "LearningGroupProgress",
                     "LearningPlanChannels",
                     "LearningPlanForms",
                     "LearningPlanOutputs",
                     "LearningPlans",
+                    "LearningQuestionAttempts",
+                    "LearningQuestions",
+                    "LearningSessionGroups",
+                    "LearningSessions",
                     "SchemaMigrations",
                     "WordGroupForms",
                     "WordGroupMeanings",
@@ -104,7 +122,7 @@ namespace Dictation.Tests.Services
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3, 4, 5 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4, 5, 6 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]
