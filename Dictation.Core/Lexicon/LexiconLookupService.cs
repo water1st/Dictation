@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Dictation.Core.Lexicon
 {
-    public sealed class LexiconLookupService
+    public sealed class LexiconLookupService : ILexiconSearch, ILexiconImportGroupResolver
     {
         private readonly JapaneseLexiconDataAccessor japaneseAccessor;
         private readonly EnglishLexiconDataAccessor englishAccessor;

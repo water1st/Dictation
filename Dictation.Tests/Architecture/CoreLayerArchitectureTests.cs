@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Runtime.Versioning;
 using Dictation.DataAccess;
 using Dictation.DataAccess.Runtime;
+using Dictation.Core.Lexicon;
 using Dictation.Presentation;
 using Dictation.Presentation.ViewModels;
 using Dictation.Tests.Infrastructure;
@@ -106,6 +107,26 @@ namespace Dictation.Tests.Architecture
             var entryPoints = core.GetTypes().SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static))
                 .Where(method => method.Name is "AddDictationCore" or "AddDictationServices").ToArray();
             Assert.Equal("AddDictationCore", Assert.Single(entryPoints).Name);
+        }
+
+        [Fact]
+        public void AddDictationCore_LexiconCapabilitiesAliasTheOriginalSingleton()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var services = new ServiceCollection();
+            services.AddDictationDataAccess(temporaryDirectory.Path).AddDictationCore();
+            using var provider = services.BuildServiceProvider();
+
+            var implementation = provider.GetRequiredService<LexiconLookupService>();
+
+            Assert.Same(implementation, provider.GetRequiredService<ILexiconSearch>());
+            Assert.Same(implementation, provider.GetRequiredService<ILexiconImportGroupResolver>());
+            Assert.Same(
+                provider.GetRequiredService<ILexiconSearch>(),
+                provider.GetRequiredService<ILexiconSearch>());
+            Assert.Same(
+                provider.GetRequiredService<ILexiconImportGroupResolver>(),
+                provider.GetRequiredService<ILexiconImportGroupResolver>());
         }
 
         [Fact]

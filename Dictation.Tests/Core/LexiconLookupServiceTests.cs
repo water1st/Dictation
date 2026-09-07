@@ -3,6 +3,7 @@ using Dictation.DataAccess.Runtime;
 using Dictation.Core.Configuration;
 using Dictation.Core.Lexicon;
 using Dictation.Tests.Infrastructure;
+using Microsoft.Data.Sqlite;
 
 namespace Dictation.Tests.Core
 {
@@ -22,6 +23,7 @@ namespace Dictation.Tests.Core
 
             Assert.Equal(2, results.Count);
             Assert.NotEqual(results[0].SourceSenseId, results[1].SourceSenseId);
+            Assert.Equal(new[] { "go%v", "oewn:go:v" }, results.Select(result => result.SourceLexemeId));
             Assert.All(results, result =>
             {
                 Assert.Equal(LearningLanguage.English, result.Language);
@@ -40,6 +42,12 @@ namespace Dictation.Tests.Core
             Assert.Equal(new[] { "去", "行走" }, results[0].Meanings);
             Assert.Equal(LexiconMeaningSource.Ecdict, results[1].MeaningSource);
             Assert.Equal(LexiconMeaningPrecision.Broad, results[1].MeaningPrecision);
+            var sourcePastForm = Assert.Single(results[0].Forms, form => form.Surface == "went");
+            Assert.Equal("Past", sourcePastForm.FormCode);
+            Assert.Equal("过去式", sourcePastForm.FormLabel);
+            Assert.Equal("词库来源", sourcePastForm.DetailLabel);
+            Assert.True(sourcePastForm.IsCommon);
+            Assert.False(sourcePastForm.IsPrimary);
             Assert.DoesNotContain(results.SelectMany(result => result.Meanings), meaning => meaning.Contains("to ", StringComparison.Ordinal));
         }
 
@@ -131,6 +139,31 @@ namespace Dictation.Tests.Core
         }
 
         [Fact]
+        public async Task SearchAsync_InvalidChineseMeaningMetadata_PropagatesDataAccessException()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            LexiconTestDatabases.CreateBoth(paths);
+            using (var connection = new SqliteConnection($"Data Source={paths.EnglishLexiconDatabase};Pooling=False"))
+            {
+                connection.Open();
+                using var command = connection.CreateCommand();
+                command.CommandText = "UPDATE LearningSenses SET MeaningSource = 'Unexpected' WHERE LearningSenseId = 'go%2:01:00::';";
+                Assert.Equal(1, command.ExecuteNonQuery());
+            }
+
+            ILexiconSearch search = CreateService(paths);
+
+            var exception = await Assert.ThrowsAsync<LexiconDataAccessException>(() => search.SearchAsync(
+                new LexiconSearchRequestDto(LearningLanguage.English, "went", 20),
+                TestContext.Current.CancellationToken));
+
+            Assert.Equal("词库包含无效的中文释义元数据。", exception.Message);
+            var reason = Assert.IsType<InvalidDataException>(exception.InnerException);
+            Assert.Equal("不支持的中文释义来源：Unexpected。", reason.Message);
+        }
+
+        [Fact]
         public async Task SearchAsync_EnglishDefinitionDoesNotBecomeReverseLookup()
         {
             using var temporaryDirectory = new TemporaryDirectory();
@@ -210,7 +243,7 @@ namespace Dictation.Tests.Core
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = new ApplicationPaths(temporaryDirectory.Path);
             LexiconTestDatabases.CreateBoth(paths);
-            var service = CreateService(paths);
+            ILexiconImportGroupResolver service = CreateService(paths);
 
             var japanese = Assert.Single(await service.GetImportGroupAsync(
                 LearningLanguage.Japanese,
