@@ -4,7 +4,7 @@
 
 **Goal:** 交付日语、英语彼此独立的学习计划、学习库管理、可恢复学习会话、动态题目覆盖、即时判题／延迟重答／结算汇总，以及单窗口 WPF 学习入口和本轮浏览；本计划先用两种语言均支持的键盘输入完成闭环，日语默认手写和 OCR 在后续手写计划接入同一答题契约。
 
-**Architecture:** 用户词组快照仍是唯一学习内容来源；具体类 `LearningPlanDataAccessor` 负责计划／学习库 CRUD，`LearningSessionDataAccessor` 负责会话／进度事务，`LearningPlanService`、`LearningSessionService`、`AnswerEvaluationService` 分别负责计划、会话编排和确定性文本判题。WPF 继续使用 `ContentControl + UserControl` 单窗口导航，ViewModel 调用 Core 业务服务；随机次序由注入的具体 `Random` 控制，时间由 .NET `TimeProvider` 控制，不增加接口、Repository、DDD、CQRS 或消息总线。
+**Architecture:** 用户词组快照仍是唯一学习内容来源；具体类 `LearningPlanDataAccessor` 负责计划／学习库 CRUD，`LearningSessionDataAccessor` 负责会话／进度事务，`LearningPlanService`、`LearningSessionService`、`AnswerEvaluationService` 分别负责计划、会话编排和确定性文本判题。WPF 继续使用 `ContentControl + UserControl` 单窗口导航，ViewModel 调用 Core 业务能力；随机次序由注入的具体 `Random` 控制，时间由 .NET `TimeProvider` 控制。接口依据能力边界和实际隔离价值设置，不能仅按实现数量判断；按调用方需要拆分，DI 保持实例身份，优先组合，纯映射归对应 Mapper。遵循仓库 AGENTS.md，不增加 Repository、DDD、CQRS 或消息总线。
 
 **Tech Stack:** C# 14、.NET 10、WPF、Generic Host、Dapper、Microsoft.Data.Sqlite、`TimeProvider`、xUnit v3、现有内存 WAV TTS 管道、NAudio（仅内存播放适配器）。
 
@@ -14,7 +14,9 @@
 
 ## 续接状态（2026-09-07）
 
-Task 1–4 已实现；Core 合并与旧 Core/WinForms 清理按 `2026-09-06-core-services-consolidation.md` 完成验证，当前全量基线为 1372/1372。后续从 Task 5 继续，业务服务使用 `Dictation.Core.*`，只通过 `AddDictationCore()` 注册，不再建立独立 Services 项目。
+Task 1–4 已实现；Core 合并与旧 Core/WinForms 清理按 `2026-09-06-core-services-consolidation.md` 完成验证，当时全量基线为 1372/1372，Task 5 首个检查点后为 1392/1392。后续从 Task 5 继续，业务服务使用 `Dictation.Core.*`，只通过 `AddDictationCore()` 注册，不再建立独立 Services 项目。
+
+用户已批准先执行 `2026-09-07-design-principles-cleanup.md`：先修规则，再完成全项目同类设计整改，之后继续本计划 Task 5。此期间不重复执行已完成切片，不把结构整改当成学习页面或播放器已经交付。
 
 Task 5 进行中：已新增会话 ViewModel、内存音频接口和真实 SQLite 行为测试；WPF 页面、导航接线与实际播放器尚未完成。第一个最小实现检查点含 15 项会话测试和 5 项音频回归测试，最终 1392/1392 全量测试通过（零跳过），解决方案构建 0 错误；不要把它算作 Task 5 整体验收通过。
 

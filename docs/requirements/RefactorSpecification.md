@@ -10,9 +10,10 @@
 
 - WPF、Core、DataAccess 和可选 MCP Hosted Service 属于同一个 WPF Generic Host 与 DI 容器。入口为 `[STAThread] Program.Main`，`App` 不使用 `StartupUri`。`Dictation.TtsHost` 是由该宿主生命周期钩子启动和停止的单独隐藏进程，通过命名管道通信；它不建立第二套业务层或数据库访问链路。
 - Presentation 只处理 WPF、ViewModel、绑定和输入适配；Core 只编排业务；DataAccess 只执行 CRUD/SQL。DTO、业务模型、持久化对象（PO）分离，跨层使用简单 Mapper。
-- 设置配置集中在 `Dictation.Core.Configuration`：`ApplicationSettingsDocument` 只保存持久化字符串，Microsoft `IConfiguration.GetValue<T>` 负责读取可选的 `CONFIG/settings.json`，内部 `IConfiguration.SetValueAsync<T>` 负责一次完整文档的原子写回并调用 `IConfigurationRoot.Reload()`。微软提供器没有官方 JSON 写回 API，因此只补这个最小缺口；SettingsService 将字符串映射为 DTO 枚举并拒绝未知业务值，默认值也由 SettingsService 产生。DataAccess 不承担读写设置。
+- 设置配置集中在 `Dictation.Core.Configuration`：`ApplicationSettingsDocument` 只保存持久化字符串，Microsoft `IConfiguration.GetValue<T>` 负责读取可选的 `CONFIG/settings.json`，内部 `IConfiguration.SetValueAsync<T>` 负责一次完整文档的原子写回并调用 `IConfigurationRoot.Reload()`。微软提供器没有官方 JSON 写回 API，因此只补这个最小缺口；SettingsService 调用对应 Mapper 转换文档与 DTO，拒绝未知业务值，默认值由 SettingsService 产生。DataAccess 不承担读写设置。
 - 项目依赖为 Presentation → Core → DataAccess、TtsHost → Core；DataAccess 不得反向引用 Core。`AddDictationCore()` 是唯一业务注册入口，不保留独立 Services 项目或转发兼容层。
-- 只有 TTS、OCR、更新源、系统时钟等确实有多 Provider 的边界使用接口；单实现 Service 和 DataAccessor 以具体类注册。禁止 DDD、CQRS、EF、`Repository`/`Repository<T>` 和无实际扩展价值的抽象。
+- 接口依据实际能力边界、跨模块复用、实现替换和依赖隔离需求设置，不能只按实现数量判断；无实际抽象价值的 Service、DataAccessor 或算法组件仍以具体类注入。接口按调用方需要的能力拆分，同一实现可实现多个接口，DI 别名保留同一实例与生命周期；能力复用优先组合而非继承。禁止 DDD、CQRS、EF、`Repository`/`Repository<T>` 和无实际价值的抽象。
+- 简单不等于合并不相关职责。纯映射放对应 Mapper，查询、业务规则与事务仍归所属层；一文件一个主要类型，允许真正私有的附属嵌套类型及框架分部类型。实现与辅助类型采用最小必要可见性，补齐中文类型职责、方法、参数及必要返回值 XML 注释，复杂流程解释原因和约束。具体准则以仓库 `AGENTS.md` 为准。
 - 每次数据库操作独立创建连接。SQLite 迁移器维护 `SchemaMigrations`；升级先备份，迁移在事务中执行，失败回滚并阻止应用启动。
 - 单例使用命名互斥体和命名管道：第二进程静默退出，不提示、不转交参数；第一进程若最小化则还原并置前。
 
