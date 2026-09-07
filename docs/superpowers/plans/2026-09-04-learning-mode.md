@@ -12,9 +12,15 @@
 
 **Depends on:** `docs/superpowers/plans/2026-08-31-single-window-navigation.md` 与 `docs/superpowers/plans/2026-08-31-chinese-runtime-lexicons.md` 已全部完成；基线为 1279/1279 测试通过。
 
-## 续接状态（2026-09-06）
+## 续接状态（2026-09-07）
 
 Task 1–4 已实现；Core 合并与旧 Core/WinForms 清理按 `2026-09-06-core-services-consolidation.md` 完成验证，当前全量基线为 1372/1372。后续从 Task 5 继续，业务服务使用 `Dictation.Core.*`，只通过 `AddDictationCore()` 注册，不再建立独立 Services 项目。
+
+Task 5 进行中：已新增会话 ViewModel、内存音频接口和真实 SQLite 行为测试；WPF 页面、导航接线与实际播放器尚未完成。第一个最小实现检查点含 15 项会话测试和 5 项音频回归测试，最终 1392/1392 全量测试通过（零跳过），解决方案构建 0 错误；不要把它算作 Task 5 整体验收通过。
+
+严格 RED 记录：先编译成功，再让提交操作暂不转发到 Core；`SubmitCommand_PersistsAnswerBeforeShowingFeedback` 实际执行 1 项，因答题记录期望 1、实际 0 而失败。只补回生产 Service 调用后转绿。测试 `LearningSessionViewModelTests.cs` 的 SHA-256 前后均为 `4BE128DD2D52AD9B7A12BB706E47C6EC751C069DC5B63074C1EE1AF725EB9494`；夹具 `LearningPresentationTestEnvironment.cs` 前后均为 `857A39F76364CF0675C161EF7750D3285D9C4BA65F4DD027BD35108F1C431641`。
+
+复核补测：新测试夹具最初使用了错误的中文语言标记，该次夹具失败不计 RED；更正为 `zh-CN` 后重新冻结。成功编译后，5 项测试均因真实行为断言失败：已听过题目后重播失败／取消导致不能提交，以及汉字听写／同形异读词反馈播放了错误文本。只修正生产实现后 5/5 转绿。`LearningSessionAudioRegressionTests.cs` 冻结与恢复后 SHA-256 均为 `96478B04EC40DDFABD708294725EE1DDDA3A2B427521CE939A6F50EC6C418842`。Core 在答题结果中返回当前成员／词形的精确 `SpokenText`，WPF 不再跨词条猜测读音；看义题提交前仍不返回发音答案。两项复核发现均已修复并经独立只读复核。
 
 ## Global Constraints
 

@@ -223,7 +223,8 @@ namespace Dictation.Core.Learning
                 SelectPreferredAnswer(currentUnit, output, language),
                 hadError,
                 nextQuestion,
-                summary);
+                summary,
+                SelectPreferredSpokenText(currentUnit, output, language));
         }
 
         private ScheduledQuestion? ScheduleQuestion(
@@ -400,7 +401,7 @@ namespace Dictation.Core.Learning
                 GetFormLabel(unit, plan, language),
                 GetOutputLabel(output),
                 unit.Meanings,
-                channel == LearningChannel.Dictation ? SelectPreferredAnswer(unit, output, language) : null);
+                channel == LearningChannel.Dictation ? SelectPreferredSpokenText(unit, output, language) : null);
         }
 
         private static string GetFormLabel(
@@ -452,6 +453,22 @@ namespace Dictation.Core.Learning
             LearningFormUnitPo unit,
             LearningOutputMode output,
             LearningLanguage language) => GetAnswers(unit, output, language)[0];
+
+        private static string SelectPreferredSpokenText(
+            LearningFormUnitPo unit,
+            LearningOutputMode output,
+            LearningLanguage language)
+        {
+            var answer = SelectPreferredAnswer(unit, output, language);
+            if (language == LearningLanguage.English)
+            {
+                return answer;
+            }
+
+            var variant = unit.Variants.First(value => value.Surface == answer
+                && string.Equals(value.ScriptCode, output.ToString(), StringComparison.Ordinal));
+            return string.IsNullOrWhiteSpace(variant.Reading) ? answer : variant.Reading;
+        }
 
         private static LearningFormUnitPo FindUnit(
             IReadOnlyList<LearningFormUnitPo> units,

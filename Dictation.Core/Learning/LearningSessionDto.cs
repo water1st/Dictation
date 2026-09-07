@@ -51,7 +51,8 @@ namespace Dictation.Core.Learning
         string CorrectAnswer,
         bool HadErrorInSession,
         LearningQuestionDto? NextQuestion,
-        LearningSessionSummaryDto? Summary);
+        LearningSessionSummaryDto? Summary,
+        string SpokenText);
 
     public sealed record LearningSessionSummaryDto(
         string SessionId,
