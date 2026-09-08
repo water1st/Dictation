@@ -1,7 +1,26 @@
 namespace Dictation.DataAccess.Lexicon
 {
+    /// <summary>
+    /// 表示从日语词库读取的一条完整查询记录。
+    /// </summary>
     public sealed class JapaneseLexiconLookupPo
     {
+        /// <summary>
+        /// 创建包含分类、中文释义元数据和完整词形的日语记录。
+        /// </summary>
+        /// <param name="entryId">词条稳定标识。</param>
+        /// <param name="primaryWritten">主书写形式。</param>
+        /// <param name="primaryReading">主读音。</param>
+        /// <param name="lexicalCategory">词汇分类代码。</param>
+        /// <param name="verbClass">动词分类代码。</param>
+        /// <param name="transitivity">及物性代码。</param>
+        /// <param name="kanjiUsage">汉字使用代码。</param>
+        /// <param name="isPhrase">是否为短语。</param>
+        /// <param name="partsOfSpeech">来源词性列表。</param>
+        /// <param name="meaningSource">中文释义来源代码。</param>
+        /// <param name="meaningPrecision">中文释义精度代码。</param>
+        /// <param name="meanings">中文释义。</param>
+        /// <param name="forms">完整词形。</param>
         public JapaneseLexiconLookupPo(
             string entryId,
             string primaryWritten,
@@ -64,50 +83,5 @@ namespace Dictation.DataAccess.Lexicon
                 ? throw new ArgumentException("词库字段不能为空。", parameterName)
                 : value;
         }
-    }
-
-    public sealed class JapaneseLexiconLookupFormPo
-    {
-        public JapaneseLexiconLookupFormPo(
-            string surface,
-            string reading,
-            string formKind,
-            string scriptKind,
-            string lexicalRole,
-            bool isCommon,
-            bool isPrimary)
-        {
-            Surface = string.IsNullOrWhiteSpace(surface)
-                ? throw new ArgumentException("词形不能为空。", nameof(surface))
-                : surface;
-            Reading = string.IsNullOrWhiteSpace(reading)
-                ? throw new ArgumentException("读音不能为空。", nameof(reading))
-                : reading;
-            FormKind = string.IsNullOrWhiteSpace(formKind)
-                ? throw new ArgumentException("词形类型不能为空。", nameof(formKind))
-                : formKind;
-            ScriptKind = string.IsNullOrWhiteSpace(scriptKind)
-                ? throw new ArgumentException("文字类型不能为空。", nameof(scriptKind))
-                : scriptKind;
-            LexicalRole = string.IsNullOrWhiteSpace(lexicalRole)
-                ? throw new ArgumentException("词汇角色不能为空。", nameof(lexicalRole))
-                : lexicalRole;
-            IsCommon = isCommon;
-            IsPrimary = isPrimary;
-        }
-
-        public string Surface { get; }
-
-        public string Reading { get; }
-
-        public string FormKind { get; }
-
-        public string ScriptKind { get; }
-
-        public string LexicalRole { get; }
-
-        public bool IsCommon { get; }
-
-        public bool IsPrimary { get; }
     }
 }

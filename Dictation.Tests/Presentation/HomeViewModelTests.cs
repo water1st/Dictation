@@ -223,6 +223,8 @@ namespace Dictation.Tests.Presentation
             services.AddSingleton<NavigationService>();
             services.AddSingleton<OverlayService>();
             services.AddScoped<LexiconLookupService>(_ => CreateLexiconService(paths));
+            services.AddScoped<ILexiconSearch>(serviceProvider =>
+                serviceProvider.GetRequiredService<LexiconLookupService>());
             services.AddScoped<ImportInboxService>(serviceProvider =>
                 new ImportInboxService(
                     serviceProvider.GetRequiredService<LexiconLookupService>(),

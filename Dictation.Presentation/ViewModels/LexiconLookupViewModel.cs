@@ -12,7 +12,7 @@ namespace Dictation.Presentation.ViewModels
 {
     public sealed class LexiconLookupViewModel : INotifyPropertyChanged
     {
-        private readonly LexiconLookupService lexiconLookupService;
+        private readonly ILexiconSearch lexiconSearch;
         private LearningLanguage selectedLanguage;
         private string query = string.Empty;
         private LexiconLookupResultDto? selectedResult;
@@ -28,13 +28,13 @@ namespace Dictation.Presentation.ViewModels
         private string? importErrorMessage;
 
         public LexiconLookupViewModel(
-            LexiconLookupService lexiconLookupService,
+            ILexiconSearch lexiconSearch,
             ImportInboxService importInboxService,
             NavigationService navigationService,
             OverlayService overlayService)
         {
-            this.lexiconLookupService = lexiconLookupService
-                ?? throw new ArgumentNullException(nameof(lexiconLookupService));
+            this.lexiconSearch = lexiconSearch
+                ?? throw new ArgumentNullException(nameof(lexiconSearch));
             this.importInboxService = importInboxService
                 ?? throw new ArgumentNullException(nameof(importInboxService));
             this.navigationService = navigationService
@@ -239,7 +239,7 @@ namespace Dictation.Presentation.ViewModels
 
             try
             {
-                var results = await lexiconLookupService.SearchAsync(
+                var results = await lexiconSearch.SearchAsync(
                     new LexiconSearchRequestDto(selectedLanguage, searchQuery),
                     cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();

@@ -1,7 +1,22 @@
 namespace Dictation.DataAccess.Lexicon
 {
+    /// <summary>
+    /// 表示从英语词库读取的一条完整查询记录。
+    /// </summary>
     public sealed class EnglishLexiconLookupPo
     {
+        /// <summary>
+        /// 创建包含中文释义元数据和完整词形的英语记录。
+        /// </summary>
+        /// <param name="learningSenseId">学习义项稳定标识。</param>
+        /// <param name="sourceLexemeId">来源词元稳定标识。</param>
+        /// <param name="headword">主词头。</param>
+        /// <param name="partOfSpeech">来源词性代码。</param>
+        /// <param name="isPhrase">是否为短语。</param>
+        /// <param name="meaningSource">中文释义来源代码。</param>
+        /// <param name="meaningPrecision">中文释义精度代码。</param>
+        /// <param name="meanings">中文释义。</param>
+        /// <param name="forms">完整词形。</param>
         public EnglishLexiconLookupPo(
             string learningSenseId,
             string sourceLexemeId,
@@ -48,30 +63,5 @@ namespace Dictation.DataAccess.Lexicon
                 ? throw new ArgumentException("词库字段不能为空。", parameterName)
                 : value;
         }
-    }
-
-    public sealed class EnglishLexiconLookupFormPo
-    {
-        public EnglishLexiconLookupFormPo(
-            string surface,
-            string formKind,
-            string formSourceKind)
-        {
-            Surface = string.IsNullOrWhiteSpace(surface)
-                ? throw new ArgumentException("词形不能为空。", nameof(surface))
-                : surface;
-            FormKind = string.IsNullOrWhiteSpace(formKind)
-                ? throw new ArgumentException("词形类型不能为空。", nameof(formKind))
-                : formKind;
-            FormSourceKind = string.IsNullOrWhiteSpace(formSourceKind)
-                ? throw new ArgumentException("词形来源类型不能为空。", nameof(formSourceKind))
-                : formSourceKind;
-        }
-
-        public string Surface { get; }
-
-        public string FormKind { get; }
-
-        public string FormSourceKind { get; }
     }
 }

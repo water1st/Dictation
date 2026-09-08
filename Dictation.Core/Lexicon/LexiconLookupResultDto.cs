@@ -2,25 +2,27 @@ using Dictation.Core.Configuration;
 
 namespace Dictation.Core.Lexicon
 {
-    public enum LexiconMeaningSource
-    {
-        Tomoshi,
-        ChineseOpenWordNet,
-        Ecdict,
-        User,
-        Missing
-    }
-
-    public enum LexiconMeaningPrecision
-    {
-        Exact,
-        Broad,
-        UserProvided,
-        Missing
-    }
-
+    /// <summary>
+    /// 表示可供业务与界面使用的一条词库查询结果。
+    /// </summary>
     public sealed class LexiconLookupResultDto
     {
+        /// <summary>
+        /// 创建保留稳定来源标识、中文释义元数据和完整词形的查询结果。
+        /// </summary>
+        /// <param name="language">学习语言。</param>
+        /// <param name="sourceSenseId">来源义项稳定标识。</param>
+        /// <param name="sourceLexemeId">来源词元稳定标识。</param>
+        /// <param name="headword">主词头。</param>
+        /// <param name="reading">读音；英语结果为空。</param>
+        /// <param name="partOfSpeechLabel">词性展示标签。</param>
+        /// <param name="attributeLabel">属性展示标签。</param>
+        /// <param name="isPhrase">是否为短语。</param>
+        /// <param name="meanings">中文释义。</param>
+        /// <param name="forms">完整词形。</param>
+        /// <param name="meaningSource">中文释义来源。</param>
+        /// <param name="meaningPrecision">中文释义精度。</param>
+        /// <param name="kanjiUsageCode">日语汉字使用稳定代码。</param>
         public LexiconLookupResultDto(
             LearningLanguage language,
             string sourceSenseId,
@@ -77,6 +79,9 @@ namespace Dictation.Core.Lexicon
 
         public string? KanjiUsageCode { get; }
 
+        /// <summary>
+        /// 获取结果是否包含至少一条非空中文释义。
+        /// </summary>
         public bool HasChineseMeaning => Meanings.Any(meaning => !string.IsNullOrWhiteSpace(meaning));
 
         private static string RequireText(string value, string parameterName)
@@ -85,56 +90,5 @@ namespace Dictation.Core.Lexicon
                 ? throw new ArgumentException("查词结果字段不能为空。", parameterName)
                 : value;
         }
-    }
-
-    public sealed class LexiconLookupFormDto
-    {
-        public LexiconLookupFormDto(
-            string surface,
-            string? reading,
-            string formCode,
-            string? scriptCode,
-            string? roleCode,
-            string formLabel,
-            string detailLabel,
-            bool isCommon,
-            bool isPrimary)
-        {
-            Surface = string.IsNullOrWhiteSpace(surface)
-                ? throw new ArgumentException("词形不能为空。", nameof(surface))
-                : surface;
-            Reading = reading;
-            FormCode = string.IsNullOrWhiteSpace(formCode)
-                ? throw new ArgumentException("词形稳定标识不能为空。", nameof(formCode))
-                : formCode;
-            ScriptCode = scriptCode;
-            RoleCode = roleCode;
-            FormLabel = string.IsNullOrWhiteSpace(formLabel)
-                ? throw new ArgumentException("词形标签不能为空。", nameof(formLabel))
-                : formLabel;
-            DetailLabel = string.IsNullOrWhiteSpace(detailLabel)
-                ? throw new ArgumentException("词形详情标签不能为空。", nameof(detailLabel))
-                : detailLabel;
-            IsCommon = isCommon;
-            IsPrimary = isPrimary;
-        }
-
-        public string Surface { get; }
-
-        public string? Reading { get; }
-
-        public string FormCode { get; }
-
-        public string? ScriptCode { get; }
-
-        public string? RoleCode { get; }
-
-        public string FormLabel { get; }
-
-        public string DetailLabel { get; }
-
-        public bool IsCommon { get; }
-
-        public bool IsPrimary { get; }
     }
 }

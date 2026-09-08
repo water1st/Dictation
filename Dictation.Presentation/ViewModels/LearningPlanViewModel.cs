@@ -13,7 +13,7 @@ namespace Dictation.Presentation.ViewModels
     public sealed class LearningPlanViewModel : INotifyPropertyChanged
     {
         private readonly LearningPlanService learningPlanService;
-        private readonly LexiconLookupService lexiconLookupService;
+        private readonly ILexiconSearch lexiconSearch;
         private readonly NavigationService navigationService;
         private readonly OverlayService overlayService;
         private readonly SemaphoreSlim operationGate = new(1, 1);
@@ -34,12 +34,12 @@ namespace Dictation.Presentation.ViewModels
 
         public LearningPlanViewModel(
             LearningPlanService learningPlanService,
-            LexiconLookupService lexiconLookupService,
+            ILexiconSearch lexiconSearch,
             NavigationService navigationService,
             OverlayService overlayService)
         {
             this.learningPlanService = learningPlanService ?? throw new ArgumentNullException(nameof(learningPlanService));
-            this.lexiconLookupService = lexiconLookupService ?? throw new ArgumentNullException(nameof(lexiconLookupService));
+            this.lexiconSearch = lexiconSearch ?? throw new ArgumentNullException(nameof(lexiconSearch));
             this.navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
             this.overlayService = overlayService ?? throw new ArgumentNullException(nameof(overlayService));
             FormOptions = new ObservableCollection<LearningPlanOptionViewModel>();
@@ -429,7 +429,7 @@ namespace Dictation.Presentation.ViewModels
             }
 
             var selectedForms = FormOptions.Where(option => option.IsSelected).Select(option => option.Code).ToArray();
-            var results = await lexiconLookupService.SearchAsync(
+            var results = await lexiconSearch.SearchAsync(
                 new LexiconSearchRequestDto(LearningLanguage.English, ExampleQuery, 20),
                 cancellationToken);
             SelectedExample = null;

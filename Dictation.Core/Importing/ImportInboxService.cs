@@ -6,15 +6,15 @@ namespace Dictation.Core.Importing
 {
     public sealed class ImportInboxService
     {
-        private readonly LexiconLookupService lexiconLookupService;
+        private readonly ILexiconImportGroupResolver lexiconImportGroupResolver;
         private readonly ImportInboxDataAccessor importInboxAccessor;
 
         public ImportInboxService(
-            LexiconLookupService lexiconLookupService,
+            ILexiconImportGroupResolver lexiconImportGroupResolver,
             ImportInboxDataAccessor importInboxAccessor)
         {
-            this.lexiconLookupService = lexiconLookupService
-                ?? throw new ArgumentNullException(nameof(lexiconLookupService));
+            this.lexiconImportGroupResolver = lexiconImportGroupResolver
+                ?? throw new ArgumentNullException(nameof(lexiconImportGroupResolver));
             this.importInboxAccessor = importInboxAccessor
                 ?? throw new ArgumentNullException(nameof(importInboxAccessor));
         }
@@ -38,7 +38,7 @@ namespace Dictation.Core.Importing
             foreach (var selection in selections)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var group = await lexiconLookupService.GetImportGroupAsync(
+                var group = await lexiconImportGroupResolver.GetImportGroupAsync(
                     request.Language,
                     selection.SourceSenseId,
                     cancellationToken);

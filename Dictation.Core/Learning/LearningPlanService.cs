@@ -20,16 +20,16 @@ namespace Dictation.Core.Learning
         };
 
         private readonly LearningPlanDataAccessor dataAccessor;
-        private readonly LexiconLookupService lexiconLookupService;
+        private readonly ILexiconImportGroupResolver lexiconImportGroupResolver;
         private readonly TimeProvider timeProvider;
 
         public LearningPlanService(
             LearningPlanDataAccessor dataAccessor,
-            LexiconLookupService lexiconLookupService,
+            ILexiconImportGroupResolver lexiconImportGroupResolver,
             TimeProvider timeProvider)
         {
             this.dataAccessor = dataAccessor ?? throw new ArgumentNullException(nameof(dataAccessor));
-            this.lexiconLookupService = lexiconLookupService ?? throw new ArgumentNullException(nameof(lexiconLookupService));
+            this.lexiconImportGroupResolver = lexiconImportGroupResolver ?? throw new ArgumentNullException(nameof(lexiconImportGroupResolver));
             this.timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         }
 
@@ -270,7 +270,7 @@ namespace Dictation.Core.Learning
             CancellationToken cancellationToken)
         {
             var normalizedId = NormalizeText(sourceSenseId, "英语示例词义项");
-            var group = await lexiconLookupService.GetImportGroupAsync(LearningLanguage.English, normalizedId, cancellationToken);
+            var group = await lexiconImportGroupResolver.GetImportGroupAsync(LearningLanguage.English, normalizedId, cancellationToken);
             var member = group.SingleOrDefault(item => string.Equals(item.SourceSenseId, normalizedId, StringComparison.Ordinal));
             if (member is null || member.PartOfSpeechLabel != "动词" || member.IsPhrase)
             {
