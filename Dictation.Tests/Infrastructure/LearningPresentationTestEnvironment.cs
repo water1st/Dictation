@@ -48,7 +48,9 @@ namespace Dictation.Tests.Infrastructure
                             japanese ? "jmdict:1:1" : "take_off%2:38:00::") }),
                         TestContext.Current.CancellationToken);
                     await importer.DecideAsync(new DecideImportBatchRequestDto(
-                        batch.BatchId, new[] { Assert.Single(batch.Items).ItemId }, ImportDecision.Learning),
+                        batch.Batch.BatchId,
+                        new[] { Assert.Single(batch.Batch.Items).ItemId },
+                        ImportDecision.Learning),
                         TestContext.Current.CancellationToken);
                 }
 

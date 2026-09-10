@@ -97,8 +97,8 @@ namespace Dictation.Tests.Presentation
                 new ImportSelectionDto("went", "go%2:01:00::"));
             await service.DecideAsync(
                 new DecideImportBatchRequestDto(
-                    firstBatch.BatchId,
-                    new[] { Assert.Single(firstBatch.Items).ItemId },
+                    firstBatch.Batch.BatchId,
+                    new[] { Assert.Single(firstBatch.Batch.Items).ItemId },
                     ImportDecision.Learning));
             await StageAsync(
                 service,

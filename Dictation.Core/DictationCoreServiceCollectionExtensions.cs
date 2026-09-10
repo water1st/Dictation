@@ -31,6 +31,12 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<ILexiconImportGroupResolver>(serviceProvider =>
                 serviceProvider.GetRequiredService<LexiconLookupService>());
             services.AddSingleton<ImportInboxService>();
+            services.AddSingleton<IImportStaging>(serviceProvider =>
+                serviceProvider.GetRequiredService<ImportInboxService>());
+            services.AddSingleton<IImportInboxQuery>(serviceProvider =>
+                serviceProvider.GetRequiredService<ImportInboxService>());
+            services.AddSingleton<IImportInboxActions>(serviceProvider =>
+                serviceProvider.GetRequiredService<ImportInboxService>());
             services.AddSingleton(TimeProvider.System);
             services.AddSingleton(Random.Shared);
             services.AddSingleton<LearningPlanService>();

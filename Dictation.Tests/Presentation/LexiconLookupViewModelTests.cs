@@ -225,7 +225,7 @@ namespace Dictation.Tests.Presentation
             var staged = await viewModel.StageSelectedAsync(TestContext.Current.CancellationToken);
 
             Assert.NotNull(staged);
-            var item = Assert.Single(staged!.Items);
+            var item = Assert.Single(staged!.Batch.Items);
             Assert.Equal("went", item.SourceText);
             Assert.Equal(selected.SourceSenseId, item.AnchorSourceSenseId);
             Assert.Equal(1, staged.AddedCount);

@@ -30,7 +30,12 @@ namespace Dictation.Tests.Core
                     }),
                 TestContext.Current.CancellationToken);
 
-            var item = Assert.Single(result.Items);
+            var item = Assert.Single(result.Batch.Items);
+            Assert.False(string.IsNullOrWhiteSpace(result.Batch.BatchId));
+            Assert.Equal(LearningLanguage.Japanese, result.Batch.Language);
+            Assert.Equal(ImportSourceKind.Manual, result.Batch.SourceKind);
+            Assert.Equal(ImportBatchStatus.Pending, result.Batch.Status);
+            Assert.Null(result.Batch.CompletedAtUtc);
             Assert.Equal("食べます", item.SourceText);
             Assert.Equal(1, result.AddedCount);
             Assert.Equal(0, result.DuplicateCount);
@@ -67,7 +72,7 @@ namespace Dictation.Tests.Core
 
             Assert.Equal(1, result.AddedCount);
             Assert.Equal(1, result.DuplicateCount);
-            var addedItem = result.Items[0];
+            var addedItem = result.Batch.Items[0];
             var memberIds = addedItem.WordGroup!.Members
                 .Select(member => member.SourceSenseId)
                 .ToArray();
@@ -78,8 +83,8 @@ namespace Dictation.Tests.Core
             Assert.DoesNotContain("go%2:02:00::", memberIds);
             Assert.DoesNotContain(addedItem.WordGroup.Members, member => member.IsPhrase);
             Assert.Equal(ImportItemDecision.Pending, addedItem.Decision);
-            Assert.Equal(ImportItemDecision.Duplicate, result.Items[1].Decision);
-            Assert.Null(result.Items[1].WordGroup);
+            Assert.Equal(ImportItemDecision.Duplicate, result.Batch.Items[1].Decision);
+            Assert.Null(result.Batch.Items[1].WordGroup);
             Assert.All(addedItem.WordGroup.Members, member =>
             {
                 Assert.Equal("动词", member.PartOfSpeechLabel);
@@ -102,7 +107,7 @@ namespace Dictation.Tests.Core
                     new[] { new ImportSelectionDto("went", "go%2:01:00::", new[] { " カ\u3099 ", "ガ" }) }),
                 TestContext.Current.CancellationToken);
 
-            var members = Assert.Single(result.Items).WordGroup!.Members;
+            var members = Assert.Single(result.Batch.Items).WordGroup!.Members;
             var anchor = Assert.Single(members, member => member.SourceSenseId == "go%2:01:00::");
             Assert.Equal(new[] { "ガ" }, anchor.Meanings);
             Assert.Equal(LexiconMeaningSource.User, anchor.MeaningSource);
@@ -130,13 +135,13 @@ namespace Dictation.Tests.Core
                     ImportSourceKind.Manual,
                     new[] { new ImportSelectionDto("%", "missing:symbols:v") }),
                 TestContext.Current.CancellationToken);
-            var item = Assert.Single(staged.Items);
+            var item = Assert.Single(staged.Batch.Items);
             var member = Assert.Single(item.WordGroup!.Members);
 
             Assert.False(member.HasChineseMeaning);
             Assert.Equal(LexiconMeaningSource.Missing, member.MeaningSource);
             await Assert.ThrowsAsync<InvalidOperationException>(() => service.DecideAsync(
-                new DecideImportBatchRequestDto(staged.BatchId, new[] { item.ItemId }, ImportDecision.Learning),
+                new DecideImportBatchRequestDto(staged.Batch.BatchId, new[] { item.ItemId }, ImportDecision.Learning),
                 TestContext.Current.CancellationToken));
             await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateMeaningsAsync(
                 new UpdateImportMeaningsRequestDto(item.WordGroup.WordGroupId, member.SourceSenseId, new[] { " " }),
@@ -157,7 +162,7 @@ namespace Dictation.Tests.Core
             Assert.Equal(LexiconMeaningPrecision.UserProvided, updatedMember.MeaningPrecision);
 
             await service.DecideAsync(
-                new DecideImportBatchRequestDto(staged.BatchId, new[] { item.ItemId }, decision),
+                new DecideImportBatchRequestDto(staged.Batch.BatchId, new[] { item.ItemId }, decision),
                 TestContext.Current.CancellationToken);
             await Assert.ThrowsAsync<ImportInboxDataAccessException>(() => service.UpdateMeaningsAsync(
                 new UpdateImportMeaningsRequestDto(item.WordGroup.WordGroupId, member.SourceSenseId, new[] { "新释义" }),
@@ -181,8 +186,8 @@ namespace Dictation.Tests.Core
 
             await service.DecideAsync(
                 new DecideImportBatchRequestDto(
-                    staged.BatchId,
-                    new[] { Assert.Single(staged.Items).ItemId },
+                    staged.Batch.BatchId,
+                    new[] { Assert.Single(staged.Batch.Items).ItemId },
                     ImportDecision.Discard),
                 TestContext.Current.CancellationToken);
 
@@ -217,7 +222,42 @@ namespace Dictation.Tests.Core
             Assert.Empty(await service.GetPendingBatchesAsync(
                 LearningLanguage.English,
                 TestContext.Current.CancellationToken));
-            Assert.Equal(staged.BatchId, pending.BatchId);
+            Assert.Equal(staged.Batch.BatchId, pending.BatchId);
+        }
+
+        [Fact]
+        public void StageImportBatchResultDto_RejectsNullBatch()
+        {
+            Assert.Throws<ArgumentNullException>(() => new StageImportBatchResultDto(null!));
+        }
+
+        [Fact]
+        public async Task DecideAsync_InvalidItemKeepsExistingPendingItemUnchanged()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = await CreateEnvironmentAsync(temporaryDirectory);
+            var service = CreateService(paths);
+            var staged = await service.StageAsync(
+                new StageImportBatchRequestDto(
+                    LearningLanguage.English,
+                    ImportSourceKind.Manual,
+                    new[] { new ImportSelectionDto("went", "go%2:01:00::") }),
+                TestContext.Current.CancellationToken);
+            var validItem = Assert.Single(staged.Batch.Items);
+
+            await Assert.ThrowsAsync<ArgumentException>(() => service.DecideAsync(
+                new DecideImportBatchRequestDto(
+                    staged.Batch.BatchId,
+                    new[] { validItem.ItemId + 1_000_000 },
+                    ImportDecision.Learning),
+                TestContext.Current.CancellationToken));
+
+            var pending = Assert.Single(await service.GetPendingBatchesAsync(
+                LearningLanguage.English,
+                TestContext.Current.CancellationToken));
+            var unchangedItem = Assert.Single(pending.Items);
+            Assert.Equal(validItem.ItemId, unchangedItem.ItemId);
+            Assert.Equal(ImportItemDecision.Pending, unchangedItem.Decision);
         }
 
         [Fact]

@@ -7,7 +7,7 @@ namespace Dictation.Core.Importing
     /// <summary>
     /// 负责把词库义项解析为完整词组快照，并编排导入收件箱的暂存、审核与释义更新。
     /// </summary>
-    public sealed class ImportInboxService
+    public sealed class ImportInboxService : IImportStaging, IImportInboxQuery, IImportInboxActions
     {
         private readonly ILexiconImportGroupResolver lexiconImportGroupResolver;
         private readonly ImportInboxDataAccessor importInboxAccessor;
@@ -225,14 +225,7 @@ namespace Dictation.Core.Importing
         /// <returns>供调用方展示暂存结果的业务对象。</returns>
         private static StageImportBatchResultDto MapStageResult(ImportBatchPo batch)
         {
-            return new StageImportBatchResultDto(
-                batch.BatchId,
-                ParseLanguage(batch.Language),
-                ParseSourceKind(batch.SourceKind),
-                ParseBatchStatus(batch.Status),
-                batch.CreatedAtUtc,
-                batch.CompletedAtUtc,
-                batch.Items.Select(MapItem).ToArray());
+            return new StageImportBatchResultDto(MapBatch(batch));
         }
 
         /// <summary>

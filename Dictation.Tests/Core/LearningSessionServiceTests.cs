@@ -316,9 +316,9 @@ namespace Dictation.Tests.Core
                         ImportSourceKind.Manual,
                         new[] { new ImportSelectionDto(sourceText, sourceSenseId) }),
                     TestContext.Current.CancellationToken);
-                var item = Assert.Single(staged.Items);
+                var item = Assert.Single(staged.Batch.Items);
                 await ImportService.DecideAsync(
-                    new DecideImportBatchRequestDto(staged.BatchId, new[] { item.ItemId }, decision),
+                    new DecideImportBatchRequestDto(staged.Batch.BatchId, new[] { item.ItemId }, decision),
                     TestContext.Current.CancellationToken);
                 return Assert.IsType<string>(item.WordGroupId);
             }

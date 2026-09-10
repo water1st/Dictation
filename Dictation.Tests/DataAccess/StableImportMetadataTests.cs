@@ -46,7 +46,7 @@ namespace Dictation.Tests.DataAccess
                     new[] { new ImportSelectionDto("食べます", "jmdict:1:1") }),
                 TestContext.Current.CancellationToken);
 
-            var member = Assert.Single(Assert.Single(result.Items).WordGroup!.Members);
+            var member = Assert.Single(Assert.Single(result.Batch.Items).WordGroup!.Members);
             Assert.Equal("Common", ReadRequiredProperty(member, "KanjiUsageCode"));
             var form = Assert.Single(member.Forms, value => value.Surface == "たべます");
             Assert.Equal("Polite", ReadRequiredProperty(form, "FormCode"));
@@ -73,7 +73,7 @@ namespace Dictation.Tests.DataAccess
                     new[] { new ImportSelectionDto("食前", "jmdict:2:1") }),
                 TestContext.Current.CancellationToken);
             var nounForm = Assert.Single(
-                Assert.Single(Assert.Single(nounResult.Items).WordGroup!.Members).Forms,
+                Assert.Single(Assert.Single(nounResult.Batch.Items).WordGroup!.Members).Forms,
                 value => value.Surface == "食前");
             Assert.Equal("Dictionary", ReadRequiredProperty(nounForm, "FormCode"));
             Assert.Equal("Kanji", ReadRequiredProperty(nounForm, "ScriptCode"));
@@ -95,7 +95,7 @@ namespace Dictation.Tests.DataAccess
                 TestContext.Current.CancellationToken);
 
             var member = Assert.Single(
-                Assert.Single(result.Items).WordGroup!.Members,
+                Assert.Single(result.Batch.Items).WordGroup!.Members,
                 value => value.SourceSenseId == "go%2:01:00::");
             Assert.Null(ReadRequiredProperty(member, "KanjiUsageCode"));
             var form = Assert.Single(member.Forms, value => value.Surface == "gone");

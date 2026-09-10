@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Runtime.Versioning;
 using Dictation.DataAccess;
 using Dictation.DataAccess.Runtime;
+using Dictation.Core.Importing;
 using Dictation.Core.Lexicon;
 using Dictation.Presentation;
 using Dictation.Presentation.ViewModels;
@@ -127,6 +128,20 @@ namespace Dictation.Tests.Architecture
             Assert.Same(
                 provider.GetRequiredService<ILexiconImportGroupResolver>(),
                 provider.GetRequiredService<ILexiconImportGroupResolver>());
+
+            var importImplementation = provider.GetRequiredService<ImportInboxService>();
+            Assert.Same(importImplementation, provider.GetRequiredService<IImportStaging>());
+            Assert.Same(importImplementation, provider.GetRequiredService<IImportInboxQuery>());
+            Assert.Same(importImplementation, provider.GetRequiredService<IImportInboxActions>());
+            Assert.Same(
+                provider.GetRequiredService<IImportStaging>(),
+                provider.GetRequiredService<IImportStaging>());
+            Assert.Same(
+                provider.GetRequiredService<IImportInboxQuery>(),
+                provider.GetRequiredService<IImportInboxQuery>());
+            Assert.Same(
+                provider.GetRequiredService<IImportInboxActions>(),
+                provider.GetRequiredService<IImportInboxActions>());
         }
 
         [Fact]

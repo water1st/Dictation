@@ -58,7 +58,7 @@ namespace Dictation.Core.Importing
         IReadOnlyList<long> ItemIds,
         ImportDecision Decision);
 
-    public class ImportBatchDto
+    public sealed class ImportBatchDto
     {
         public ImportBatchDto(
             string batchId,
@@ -93,23 +93,18 @@ namespace Dictation.Core.Importing
         public IReadOnlyList<ImportBatchItemDto> Items { get; }
     }
 
-    public sealed class StageImportBatchResultDto : ImportBatchDto
+    public sealed class StageImportBatchResultDto
     {
-        public StageImportBatchResultDto(
-            string batchId,
-            LearningLanguage language,
-            ImportSourceKind sourceKind,
-            ImportBatchStatus status,
-            DateTimeOffset createdAtUtc,
-            DateTimeOffset? completedAtUtc,
-            IReadOnlyList<ImportBatchItemDto> items)
-            : base(batchId, language, sourceKind, status, createdAtUtc, completedAtUtc, items)
+        public StageImportBatchResultDto(ImportBatchDto batch)
         {
+            Batch = batch ?? throw new ArgumentNullException(nameof(batch));
         }
 
-        public int AddedCount => Items.Count(item => item.Decision == ImportItemDecision.Pending);
+        public ImportBatchDto Batch { get; }
 
-        public int DuplicateCount => Items.Count(item => item.Decision == ImportItemDecision.Duplicate);
+        public int AddedCount => Batch.Items.Count(item => item.Decision == ImportItemDecision.Pending);
+
+        public int DuplicateCount => Batch.Items.Count(item => item.Decision == ImportItemDecision.Duplicate);
     }
 
     public sealed class ImportBatchItemDto
