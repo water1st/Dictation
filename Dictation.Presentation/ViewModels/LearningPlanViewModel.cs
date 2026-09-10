@@ -10,6 +10,9 @@ using Dictation.Core.Lexicon;
 
 namespace Dictation.Presentation.ViewModels
 {
+    /// <summary>
+    /// 管理学习计划配置、学习库分页选择、英语示例词检索及学习启动交互。
+    /// </summary>
     public sealed class LearningPlanViewModel : INotifyPropertyChanged
     {
         private readonly LearningPlanService learningPlanService;
@@ -32,6 +35,13 @@ namespace Dictation.Presentation.ViewModels
         private string? statusMessage;
         private bool isInitialized;
 
+        /// <summary>
+        /// 初始化学习计划页面视图模型并创建页面命令。
+        /// </summary>
+        /// <param name="learningPlanService">用于读写计划、管理学习库并生成启动请求的业务服务。</param>
+        /// <param name="lexiconSearch">用于检索符合示例范式条件的英语词条。</param>
+        /// <param name="navigationService">用于返回上一页面的导航服务。</param>
+        /// <param name="overlayService">用于在删除整组词条前请求用户确认的覆盖层服务。</param>
         public LearningPlanViewModel(
             LearningPlanService learningPlanService,
             ILexiconSearch lexiconSearch,
@@ -246,6 +256,10 @@ namespace Dictation.Presentation.ViewModels
         public ICommand PreviousPageCommand { get; }
         public ICommand NextPageCommand { get; }
 
+        /// <summary>
+        /// 为页面绑定唯一的学习语言，并构建该语言可选的词形、渠道和输出方式。
+        /// </summary>
+        /// <param name="language">本页面要配置的学习语言。</param>
         public void Initialize(LearningLanguage language)
         {
             ValidateLanguage(language);
@@ -264,29 +278,49 @@ namespace Dictation.Presentation.ViewModels
             OnPropertyChanged(nameof(IsEnglish));
         }
 
+        /// <summary>
+        /// 重新加载当前语言的计划和当前页学习库。
+        /// </summary>
+        /// <param name="cancellationToken">取消刷新操作的令牌。</param>
         public Task RefreshAsync(CancellationToken cancellationToken = default)
         {
             EnsureInitialized();
             return RunExclusiveAsync(token => RefreshCoreAsync(resetPage: false, token), cancellationToken, "加载学习计划失败");
         }
 
+        /// <summary>
+        /// 在保留当前页码与页面选择上下文的前提下重新加载计划和学习库。
+        /// </summary>
+        /// <param name="cancellationToken">取消刷新操作的令牌。</param>
         public Task RefreshPreservingStateAsync(CancellationToken cancellationToken = default)
         {
             return RefreshAsync(cancellationToken);
         }
 
+        /// <summary>
+        /// 保存当前页面中的学习计划选项，并用服务返回的规范化计划更新页面。
+        /// </summary>
+        /// <param name="cancellationToken">取消保存操作的令牌。</param>
         public Task SaveAsync(CancellationToken cancellationToken = default)
         {
             EnsureInitialized();
             return RunExclusiveAsync(SaveCoreAsync, cancellationToken, "保存学习计划失败");
         }
 
+        /// <summary>
+        /// 检索可覆盖全部已选词形的英语单词动词，供示例范式选择。
+        /// </summary>
+        /// <param name="cancellationToken">取消检索的令牌。</param>
         public Task SearchExamplesAsync(CancellationToken cancellationToken = default)
         {
             EnsureInitialized();
             return RunExclusiveAsync(SearchExamplesCoreAsync, cancellationToken, "检索英语示例词失败");
         }
 
+        /// <summary>
+        /// 经用户确认后删除当前页选中的整组学习词条，并刷新学习库分页状态。
+        /// </summary>
+        /// <param name="cancellationToken">取消确认、删除或刷新操作的令牌。</param>
         public async Task DeleteSelectedAsync(CancellationToken cancellationToken = default)
         {
             EnsureInitialized();
@@ -340,12 +374,20 @@ namespace Dictation.Presentation.ViewModels
             }
         }
 
+        /// <summary>
+        /// 先保存当前计划，再生成并公开本轮学习的启动请求。
+        /// </summary>
+        /// <param name="cancellationToken">取消保存或准备学习范围的令牌。</param>
         public Task StartAsync(CancellationToken cancellationToken = default)
         {
             EnsureInitialized();
             return RunExclusiveAsync(StartCoreAsync, cancellationToken, "准备本轮学习失败");
         }
 
+        /// <summary>
+        /// 在存在上一页时读取学习库上一页。
+        /// </summary>
+        /// <param name="cancellationToken">取消翻页操作的令牌。</param>
         public Task PreviousPageAsync(CancellationToken cancellationToken = default)
         {
             EnsureInitialized();
@@ -361,6 +403,10 @@ namespace Dictation.Presentation.ViewModels
             }, cancellationToken, "读取上一页失败");
         }
 
+        /// <summary>
+        /// 在存在下一页时读取学习库下一页。
+        /// </summary>
+        /// <param name="cancellationToken">取消翻页操作的令牌。</param>
         public Task NextPageAsync(CancellationToken cancellationToken = default)
         {
             EnsureInitialized();
@@ -389,6 +435,10 @@ namespace Dictation.Presentation.ViewModels
             StatusMessage = null;
         }
 
+        /// <summary>
+        /// 读取当前学习库页，并重新建立条目选择状态监听。
+        /// </summary>
+        /// <param name="cancellationToken">取消读取的令牌。</param>
         private async Task RefreshLibraryAsync(CancellationToken cancellationToken)
         {
             var page = await learningPlanService.GetLibraryPageAsync(
@@ -421,6 +471,10 @@ namespace Dictation.Presentation.ViewModels
             StatusMessage = "学习计划已保存。";
         }
 
+        /// <summary>
+        /// 从英语检索结果中筛选非短语动词及具备全部已选词形的示例候选项。
+        /// </summary>
+        /// <param name="cancellationToken">取消词库检索的令牌。</param>
         private async Task SearchExamplesCoreAsync(CancellationToken cancellationToken)
         {
             if (!IsEnglish)
@@ -445,6 +499,10 @@ namespace Dictation.Presentation.ViewModels
             StatusMessage = ExampleCandidates.Count == 0 ? "没有找到包含全部已选词形的动词。" : null;
         }
 
+        /// <summary>
+        /// 保存当前计划，并按选词模式组装本轮学习范围。
+        /// </summary>
+        /// <param name="cancellationToken">取消保存或生成启动请求的令牌。</param>
         private async Task StartCoreAsync(CancellationToken cancellationToken)
         {
             await SaveCoreAsync(cancellationToken);
@@ -459,6 +517,10 @@ namespace Dictation.Presentation.ViewModels
             StatusMessage = "本轮学习范围已准备完成。";
         }
 
+        /// <summary>
+        /// 将当前页面选择转换为学习计划保存请求。
+        /// </summary>
+        /// <returns>包含当前语言、词形、渠道、输出方式及可选示例义项的请求。</returns>
         private SaveLearningPlanRequestDto CreateSaveRequest()
         {
             return new SaveLearningPlanRequestDto(
@@ -477,6 +539,10 @@ namespace Dictation.Presentation.ViewModels
                     .Select(option => Enum.Parse<LearningOutputMode>(option.Code)).ToArray());
         }
 
+        /// <summary>
+        /// 将服务返回的计划应用到当前语言页面，并同步各组选项的选中状态。
+        /// </summary>
+        /// <param name="plan">已规范化且与当前语言一致的学习计划。</param>
         private void ApplyPlan(LearningPlanDto plan)
         {
             if (plan.Language != selectedLanguage)
@@ -496,6 +562,10 @@ namespace Dictation.Presentation.ViewModels
             ApplySelected(OutputOptions, plan.OutputModes.Select(output => output.ToString()));
         }
 
+        /// <summary>
+        /// 按学习语言构建可选词形、出题渠道和输出形式。
+        /// </summary>
+        /// <param name="language">决定可用选项集合的学习语言。</param>
         private void BuildOptions(LearningLanguage language)
         {
             FormOptions.Clear();

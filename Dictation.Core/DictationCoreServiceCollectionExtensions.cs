@@ -8,8 +8,16 @@ using Dictation.Core.Tts;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
+    /// <summary>
+    /// 提供 Dictation Core 业务服务及其能力别名的依赖注入注册入口。
+    /// </summary>
     public static class DictationCoreServiceCollectionExtensions
     {
+        /// <summary>
+        /// 注册 Core 层服务；词库检索与整组解析能力共享同一个词库服务单例。
+        /// </summary>
+        /// <param name="services">应用程序唯一组合根使用的服务集合。</param>
+        /// <returns>完成 Core 业务服务注册后的原服务集合。</returns>
         public static IServiceCollection AddDictationCore(this IServiceCollection services)
         {
             ArgumentNullException.ThrowIfNull(services);

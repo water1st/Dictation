@@ -4,11 +4,19 @@ using Dictation.Core.Lexicon;
 
 namespace Dictation.Core.Importing
 {
+    /// <summary>
+    /// 负责把词库义项解析为完整词组快照，并编排导入收件箱的暂存、审核与释义更新。
+    /// </summary>
     public sealed class ImportInboxService
     {
         private readonly ILexiconImportGroupResolver lexiconImportGroupResolver;
         private readonly ImportInboxDataAccessor importInboxAccessor;
 
+        /// <summary>
+        /// 初始化导入收件箱服务。
+        /// </summary>
+        /// <param name="lexiconImportGroupResolver">用于按来源义项解析完整词组的词库能力。</param>
+        /// <param name="importInboxAccessor">用于持久化导入批次及审核结果的数据访问器。</param>
         public ImportInboxService(
             ILexiconImportGroupResolver lexiconImportGroupResolver,
             ImportInboxDataAccessor importInboxAccessor)
@@ -19,6 +27,12 @@ namespace Dictation.Core.Importing
                 ?? throw new ArgumentNullException(nameof(importInboxAccessor));
         }
 
+        /// <summary>
+        /// 规范化并去重用户选择，将每个来源义项的完整词组快照暂存到导入收件箱。
+        /// </summary>
+        /// <param name="request">包含学习语言、导入来源及所选义项的暂存请求。</param>
+        /// <param name="cancellationToken">取消操作的令牌。</param>
+        /// <returns>持久化后的批次，以及新增和重复项目统计。</returns>
         public async Task<StageImportBatchResultDto> StageAsync(
             StageImportBatchRequestDto request,
             CancellationToken cancellationToken = default)
@@ -72,6 +86,12 @@ namespace Dictation.Core.Importing
             return MapStageResult(batch);
         }
 
+        /// <summary>
+        /// 读取指定学习语言尚待处理的导入批次。
+        /// </summary>
+        /// <param name="language">要筛选的学习语言。</param>
+        /// <param name="cancellationToken">取消操作的令牌。</param>
+        /// <returns>按数据访问层顺序返回的待处理批次。</returns>
         public async Task<IReadOnlyList<ImportBatchDto>> GetPendingBatchesAsync(
             LearningLanguage language,
             CancellationToken cancellationToken = default)
@@ -84,6 +104,11 @@ namespace Dictation.Core.Importing
             return batches.Select(MapBatch).ToArray();
         }
 
+        /// <summary>
+        /// 对批次中的指定项目执行导入决定；进入学习或复习前会确认整组成员均有中文释义。
+        /// </summary>
+        /// <param name="request">批次编号、项目编号及目标决定。</param>
+        /// <param name="cancellationToken">取消操作的令牌。</param>
         public async Task DecideAsync(
             DecideImportBatchRequestDto request,
             CancellationToken cancellationToken = default)
@@ -136,6 +161,11 @@ namespace Dictation.Core.Importing
                 cancellationToken);
         }
 
+        /// <summary>
+        /// 规范化并更新导入词组中指定来源义项的中文释义。
+        /// </summary>
+        /// <param name="request">词组、来源义项及替换后的中文释义。</param>
+        /// <param name="cancellationToken">取消操作的令牌。</param>
         public Task UpdateMeaningsAsync(
             UpdateImportMeaningsRequestDto request,
             CancellationToken cancellationToken = default)
@@ -151,6 +181,12 @@ namespace Dictation.Core.Importing
                 cancellationToken);
         }
 
+        /// <summary>
+        /// 将词库成员固化为导入快照，并在用户覆盖释义时同步标记释义来源与精度。
+        /// </summary>
+        /// <param name="value">词库中的义项及词形结果。</param>
+        /// <param name="meaningOverride">锚定义项的用户中文释义；为 <see langword="null"/> 时保留词库释义元数据。</param>
+        /// <returns>可随导入批次持久化的词组成员快照。</returns>
         private static ImportWordGroupMemberPo MapMember(
             LexiconLookupResultDto value,
             IReadOnlyList<string>? meaningOverride)
@@ -182,6 +218,11 @@ namespace Dictation.Core.Importing
                 value.KanjiUsageCode);
         }
 
+        /// <summary>
+        /// 将已暂存批次映射为包含新增与重复统计的业务结果。
+        /// </summary>
+        /// <param name="batch">持久化后的导入批次。</param>
+        /// <returns>供调用方展示暂存结果的业务对象。</returns>
         private static StageImportBatchResultDto MapStageResult(ImportBatchPo batch)
         {
             return new StageImportBatchResultDto(
@@ -194,6 +235,11 @@ namespace Dictation.Core.Importing
                 batch.Items.Select(MapItem).ToArray());
         }
 
+        /// <summary>
+        /// 将持久化批次及其项目映射为收件箱业务对象。
+        /// </summary>
+        /// <param name="batch">待映射的持久化批次。</param>
+        /// <returns>包含批次状态和全部项目的业务对象。</returns>
         private static ImportBatchDto MapBatch(ImportBatchPo batch)
         {
             return new ImportBatchDto(
@@ -206,6 +252,11 @@ namespace Dictation.Core.Importing
                 batch.Items.Select(MapItem).ToArray());
         }
 
+        /// <summary>
+        /// 将批次项目映射为业务对象，并保留尚未形成词组的空状态。
+        /// </summary>
+        /// <param name="item">待映射的持久化批次项目。</param>
+        /// <returns>包含决定及可选完整词组的业务项目。</returns>
         private static ImportBatchItemDto MapItem(ImportBatchItemPo item)
         {
             return new ImportBatchItemDto(
@@ -217,6 +268,11 @@ namespace Dictation.Core.Importing
                 item.WordGroup is null ? null : MapGroup(item.WordGroup));
         }
 
+        /// <summary>
+        /// 将持久化词组还原为业务对象；非简体中文释义不会作为可用中文释义暴露。
+        /// </summary>
+        /// <param name="group">待映射的持久化完整词组。</param>
+        /// <returns>包含全部成员、词形和释义元数据的业务词组。</returns>
         private static ImportWordGroupDto MapGroup(ImportWordGroupPo group)
         {
             return new ImportWordGroupDto(

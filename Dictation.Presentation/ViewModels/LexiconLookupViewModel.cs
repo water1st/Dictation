@@ -10,6 +10,9 @@ using Dictation.Core.Lexicon;
 
 namespace Dictation.Presentation.ViewModels
 {
+    /// <summary>
+    /// 管理查词页面的语言初始化、词库检索结果，以及所选义项进入导入收件箱的交互状态。
+    /// </summary>
     public sealed class LexiconLookupViewModel : INotifyPropertyChanged
     {
         private readonly ILexiconSearch lexiconSearch;
@@ -27,6 +30,13 @@ namespace Dictation.Presentation.ViewModels
         private string? importStatusMessage;
         private string? importErrorMessage;
 
+        /// <summary>
+        /// 初始化查词页面视图模型并创建页面命令。
+        /// </summary>
+        /// <param name="lexiconSearch">用于按当前语言执行词库检索的能力。</param>
+        /// <param name="importInboxService">用于将所选义项的完整词组暂存到导入收件箱的服务。</param>
+        /// <param name="navigationService">用于返回上一页面的导航服务。</param>
+        /// <param name="overlayService">页面覆盖层服务；构造时校验该页面依赖已由组合根提供。</param>
         public LexiconLookupViewModel(
             ILexiconSearch lexiconSearch,
             ImportInboxService importInboxService,
@@ -208,6 +218,10 @@ namespace Dictation.Presentation.ViewModels
             }
         }
 
+        /// <summary>
+        /// 为查词页面绑定唯一的学习语言；初始化后不允许切换语言。
+        /// </summary>
+        /// <param name="language">本页面要查询的学习语言。</param>
         public void Initialize(LearningLanguage language)
         {
             ValidateLanguage(language);
@@ -223,6 +237,10 @@ namespace Dictation.Presentation.ViewModels
             OnPropertyChanged(nameof(CanStageSelected));
         }
 
+        /// <summary>
+        /// 使用当前查询文本检索词库，并更新结果选择、下拉框及空状态。
+        /// </summary>
+        /// <param name="cancellationToken">取消检索的令牌。</param>
         public async Task SearchAsync(CancellationToken cancellationToken = default)
         {
             EnsureInitialized();
@@ -271,6 +289,11 @@ namespace Dictation.Presentation.ViewModels
             }
         }
 
+        /// <summary>
+        /// 将最近一次成功查询中选定的来源义项整组暂存到导入收件箱。
+        /// </summary>
+        /// <param name="cancellationToken">取消暂存操作的令牌。</param>
+        /// <returns>暂存成功时返回批次结果；没有有效选择或业务操作失败时返回 <see langword="null"/>。</returns>
         public async Task<StageImportBatchResultDto?> StageSelectedAsync(
             CancellationToken cancellationToken = default)
         {

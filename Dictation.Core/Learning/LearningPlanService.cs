@@ -6,6 +6,9 @@ using Dictation.Core.Lexicon;
 
 namespace Dictation.Core.Learning
 {
+    /// <summary>
+    /// 负责校验和持久化学习计划、读取学习库，并依据词库完整词组生成英语示例范式。
+    /// </summary>
     public sealed class LearningPlanService
     {
         private static readonly HashSet<string> JapaneseFormCodes = new(StringComparer.Ordinal)
@@ -23,6 +26,12 @@ namespace Dictation.Core.Learning
         private readonly ILexiconImportGroupResolver lexiconImportGroupResolver;
         private readonly TimeProvider timeProvider;
 
+        /// <summary>
+        /// 初始化学习计划服务。
+        /// </summary>
+        /// <param name="dataAccessor">用于读写学习计划和学习库的数据访问器。</param>
+        /// <param name="lexiconImportGroupResolver">用于校验英语示例词及解析完整词组的词库能力。</param>
+        /// <param name="timeProvider">用于记录计划更新时间和生成默认计划时间的时钟。</param>
         public LearningPlanService(
             LearningPlanDataAccessor dataAccessor,
             ILexiconImportGroupResolver lexiconImportGroupResolver,
@@ -33,6 +42,12 @@ namespace Dictation.Core.Learning
             this.timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         }
 
+        /// <summary>
+        /// 读取指定语言的学习计划；尚未保存计划时生成默认计划。
+        /// </summary>
+        /// <param name="language">学习计划所属语言。</param>
+        /// <param name="cancellationToken">取消操作的令牌。</param>
+        /// <returns>已保存的计划，或尚无记录时生成的默认计划。</returns>
         public async Task<LearningPlanDto> LoadAsync(
             LearningLanguage language,
             CancellationToken cancellationToken = default)
@@ -45,6 +60,12 @@ namespace Dictation.Core.Learning
                 : await MapPlanAsync(plan, cancellationToken);
         }
 
+        /// <summary>
+        /// 校验并保存学习计划；示例范式模式下同时从词库解析所选动词的启用词形。
+        /// </summary>
+        /// <param name="request">待保存的计划选项。</param>
+        /// <param name="cancellationToken">取消操作的令牌。</param>
+        /// <returns>规范化并补全示例范式后的学习计划。</returns>
         public async Task<LearningPlanDto> SaveAsync(
             SaveLearningPlanRequestDto request,
             CancellationToken cancellationToken = default)
@@ -74,6 +95,14 @@ namespace Dictation.Core.Learning
             return MapPlan(plan, example);
         }
 
+        /// <summary>
+        /// 分页读取指定语言的学习库整组词条。
+        /// </summary>
+        /// <param name="language">学习库所属语言。</param>
+        /// <param name="pageNumber">从 1 开始的页码。</param>
+        /// <param name="pageSize">每页数量，最大为 500。</param>
+        /// <param name="cancellationToken">取消操作的令牌。</param>
+        /// <returns>包含总数和当前页整组词条的分页结果。</returns>
         public async Task<LearningLibraryPageDto> GetLibraryPageAsync(
             LearningLanguage language,
             int pageNumber,
@@ -97,6 +126,12 @@ namespace Dictation.Core.Learning
                 page.Groups.Select(MapGroup).ToArray());
         }
 
+        /// <summary>
+        /// 删除指定语言学习库中的完整词组及其学习进度。
+        /// </summary>
+        /// <param name="language">词组所属学习语言。</param>
+        /// <param name="wordGroupId">要删除的词组稳定标识。</param>
+        /// <param name="cancellationToken">取消操作的令牌。</param>
         public async Task DeleteWordGroupAsync(
             LearningLanguage language,
             string wordGroupId,
@@ -120,6 +155,13 @@ namespace Dictation.Core.Learning
             }
         }
 
+        /// <summary>
+        /// 根据已保存计划生成一轮学习的启动请求，并在手动模式下校验所选词组均属于当前学习库。
+        /// </summary>
+        /// <param name="language">本轮学习语言。</param>
+        /// <param name="selectedWordGroupIds">手动模式下选择的词组标识；其他模式下不参与范围选择。</param>
+        /// <param name="cancellationToken">取消操作的令牌。</param>
+        /// <returns>包含选词模式、数量上限及已验证手动词组的启动请求。</returns>
         public async Task<LearningStartRequestDto> CreateStartRequestAsync(
             LearningLanguage language,
             IReadOnlyList<string>? selectedWordGroupIds,
@@ -153,6 +195,11 @@ namespace Dictation.Core.Learning
             return new LearningStartRequestDto(language, plan.SessionWordLimit, plan.SelectionMode, normalizedIds);
         }
 
+        /// <summary>
+        /// 校验计划各选项的语言约束，并规范化词形、渠道、输出形式和示例义项。
+        /// </summary>
+        /// <param name="request">原始保存请求。</param>
+        /// <returns>去重并规范化后的保存请求。</returns>
         private SaveLearningPlanRequestDto ValidateAndNormalize(SaveLearningPlanRequestDto request)
         {
             ValidateLanguage(request.Language);
@@ -235,6 +282,12 @@ namespace Dictation.Core.Learning
             }
         }
 
+        /// <summary>
+        /// 将持久化计划映射为业务对象，并按需解析英语示例范式。
+        /// </summary>
+        /// <param name="plan">持久化的学习计划。</param>
+        /// <param name="cancellationToken">取消词库解析的令牌。</param>
+        /// <returns>包含可展示示例范式的学习计划。</returns>
         private async Task<LearningPlanDto> MapPlanAsync(LearningPlanPo plan, CancellationToken cancellationToken)
         {
             var language = ParseEnum<LearningLanguage>(plan.Language, "学习语言");
@@ -246,6 +299,12 @@ namespace Dictation.Core.Learning
             return MapPlan(plan, example);
         }
 
+        /// <summary>
+        /// 将持久化字段转换为强类型计划，并附加已解析的示例范式。
+        /// </summary>
+        /// <param name="plan">持久化的学习计划。</param>
+        /// <param name="example">示例范式；未启用示例模式时为 <see langword="null"/>。</param>
+        /// <returns>可供表现层使用的学习计划。</returns>
         private static LearningPlanDto MapPlan(
             LearningPlanPo plan,
             EnglishExampleParadigmDto? example)
@@ -264,6 +323,13 @@ namespace Dictation.Core.Learning
                 example);
         }
 
+        /// <summary>
+        /// 从英语完整词组中定位指定单词动词，并为每个启用词形选择优先、常用的展示形式。
+        /// </summary>
+        /// <param name="sourceSenseId">示例词的来源义项稳定标识。</param>
+        /// <param name="enabledForms">计划中启用的英语词形代码。</param>
+        /// <param name="cancellationToken">取消词库解析的令牌。</param>
+        /// <returns>与已启用词形一一对应的英语示例范式。</returns>
         private async Task<EnglishExampleParadigmDto> ResolveExampleParadigmAsync(
             string? sourceSenseId,
             IReadOnlyList<string> enabledForms,
@@ -296,6 +362,11 @@ namespace Dictation.Core.Learning
             return new EnglishExampleParadigmDto(normalizedId, member.Headword, forms);
         }
 
+        /// <summary>
+        /// 为尚无持久化记录的语言创建默认学习计划。
+        /// </summary>
+        /// <param name="language">默认计划所属语言。</param>
+        /// <returns>使用该语言默认词形与输出方式的未持久化计划。</returns>
         private LearningPlanDto CreateDefault(LearningLanguage language)
         {
             return new LearningPlanDto(
@@ -314,6 +385,11 @@ namespace Dictation.Core.Learning
                 null);
         }
 
+        /// <summary>
+        /// 将学习库中的持久化词组映射为包含全部成员的业务对象。
+        /// </summary>
+        /// <param name="group">持久化的学习词组。</param>
+        /// <returns>供学习计划页面展示的整组词条。</returns>
         private static LearningWordGroupDto MapGroup(LearningWordGroupPo group)
         {
             return new LearningWordGroupDto(
@@ -324,6 +400,11 @@ namespace Dictation.Core.Learning
                 group.Members.Select(MapMember).ToArray());
         }
 
+        /// <summary>
+        /// 将学习库成员还原为导入词组成员；非简体中文释义按无可用中文释义处理。
+        /// </summary>
+        /// <param name="member">持久化的词组成员。</param>
+        /// <returns>保留词形与释义元数据的业务成员。</returns>
         private static ImportWordGroupMemberDto MapMember(ImportWordGroupMemberPo member)
         {
             return new ImportWordGroupMemberDto(
