@@ -72,8 +72,9 @@ namespace Dictation.Tests.Infrastructure
 
         public LearningSessionViewModel CreateViewModel()
         {
-            var viewModel = new LearningSessionViewModel(Sessions,
-                provider.GetRequiredService<LearningPlanService>(),
+            var viewModel = new LearningSessionViewModel(
+                provider.GetRequiredService<ILearningSessionOperations>(),
+                provider.GetRequiredService<ILearningPlanReader>(),
                 provider.GetRequiredService<TtsService>(), Audio);
             viewModel.Initialize(Language);
             return viewModel;

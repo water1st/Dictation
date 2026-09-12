@@ -295,6 +295,7 @@ namespace Dictation.Tests.Core
                 var sessionService = new LearningSessionService(
                     new LearningSessionDataAccessor(connectionFactory),
                     planService,
+                    planService,
                     new AnswerEvaluationService(),
                     timeProvider,
                     new Random(randomSeed));

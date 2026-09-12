@@ -624,6 +624,7 @@ namespace Dictation.Tests.Core
                 var service = new LearningSessionService(
                     dataAccessor,
                     planService,
+                    planService,
                     evaluationService,
                     timeProvider,
                     new Random(seed));
@@ -643,6 +644,7 @@ namespace Dictation.Tests.Core
 
             public LearningSessionService CreateSecondService() => new(
                 new LearningSessionDataAccessor(connectionFactory),
+                planService,
                 planService,
                 evaluationService,
                 TimeProvider,

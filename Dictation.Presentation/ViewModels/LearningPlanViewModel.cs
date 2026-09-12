@@ -15,7 +15,9 @@ namespace Dictation.Presentation.ViewModels
     /// </summary>
     public sealed class LearningPlanViewModel : INotifyPropertyChanged
     {
-        private readonly LearningPlanService learningPlanService;
+        private readonly ILearningPlanEditor learningPlanEditor;
+        private readonly ILearningLibraryManager learningLibraryManager;
+        private readonly ILearningSessionStartPreparer sessionStartPreparer;
         private readonly ILexiconSearch lexiconSearch;
         private readonly NavigationService navigationService;
         private readonly OverlayService overlayService;
@@ -38,17 +40,23 @@ namespace Dictation.Presentation.ViewModels
         /// <summary>
         /// 初始化学习计划页面视图模型并创建页面命令。
         /// </summary>
-        /// <param name="learningPlanService">用于读写计划、管理学习库并生成启动请求的业务服务。</param>
+        /// <param name="learningPlanEditor">用于加载和保存学习计划的编辑能力。</param>
+        /// <param name="learningLibraryManager">用于分页读取和整组删除学习库的管理能力。</param>
+        /// <param name="sessionStartPreparer">用于按计划校验学习启动选择的准备能力。</param>
         /// <param name="lexiconSearch">用于检索符合示例范式条件的英语词条。</param>
         /// <param name="navigationService">用于返回上一页面的导航服务。</param>
         /// <param name="overlayService">用于在删除整组词条前请求用户确认的覆盖层服务。</param>
         public LearningPlanViewModel(
-            LearningPlanService learningPlanService,
+            ILearningPlanEditor learningPlanEditor,
+            ILearningLibraryManager learningLibraryManager,
+            ILearningSessionStartPreparer sessionStartPreparer,
             ILexiconSearch lexiconSearch,
             NavigationService navigationService,
             OverlayService overlayService)
         {
-            this.learningPlanService = learningPlanService ?? throw new ArgumentNullException(nameof(learningPlanService));
+            this.learningPlanEditor = learningPlanEditor ?? throw new ArgumentNullException(nameof(learningPlanEditor));
+            this.learningLibraryManager = learningLibraryManager ?? throw new ArgumentNullException(nameof(learningLibraryManager));
+            this.sessionStartPreparer = sessionStartPreparer ?? throw new ArgumentNullException(nameof(sessionStartPreparer));
             this.lexiconSearch = lexiconSearch ?? throw new ArgumentNullException(nameof(lexiconSearch));
             this.navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
             this.overlayService = overlayService ?? throw new ArgumentNullException(nameof(overlayService));
@@ -349,7 +357,7 @@ namespace Dictation.Presentation.ViewModels
 
                 foreach (var item in selected)
                 {
-                    await learningPlanService.DeleteWordGroupAsync(selectedLanguage, item.WordGroupId, cancellationToken);
+                    await learningLibraryManager.DeleteWordGroupAsync(selectedLanguage, item.WordGroupId, cancellationToken);
                 }
 
                 if (selected.Length == LibraryItems.Count && PageNumber > 1)
@@ -429,7 +437,7 @@ namespace Dictation.Presentation.ViewModels
                 PageNumber = 1;
             }
 
-            var plan = await learningPlanService.LoadAsync(selectedLanguage, cancellationToken);
+            var plan = await learningPlanEditor.LoadAsync(selectedLanguage, cancellationToken);
             ApplyPlan(plan);
             await RefreshLibraryAsync(cancellationToken);
             StatusMessage = null;
@@ -441,7 +449,7 @@ namespace Dictation.Presentation.ViewModels
         /// <param name="cancellationToken">取消读取的令牌。</param>
         private async Task RefreshLibraryAsync(CancellationToken cancellationToken)
         {
-            var page = await learningPlanService.GetLibraryPageAsync(
+            var page = await learningLibraryManager.GetLibraryPageAsync(
                 selectedLanguage,
                 PageNumber,
                 PageSize,
@@ -466,7 +474,7 @@ namespace Dictation.Presentation.ViewModels
         private async Task SaveCoreAsync(CancellationToken cancellationToken)
         {
             var request = CreateSaveRequest();
-            var saved = await learningPlanService.SaveAsync(request, cancellationToken);
+            var saved = await learningPlanEditor.SaveAsync(request, cancellationToken);
             ApplyPlan(saved);
             StatusMessage = "学习计划已保存。";
         }
@@ -509,7 +517,7 @@ namespace Dictation.Presentation.ViewModels
             var selectedIds = SelectionMode == LearningSelectionMode.Manual
                 ? LibraryItems.Where(item => item.IsSelected).Select(item => item.WordGroupId).ToArray()
                 : null;
-            LastStartRequest = await learningPlanService.CreateStartRequestAsync(
+            LastStartRequest = await sessionStartPreparer.CreateStartRequestAsync(
                 selectedLanguage,
                 selectedIds,
                 cancellationToken);

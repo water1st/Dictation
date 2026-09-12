@@ -7,28 +7,32 @@ using Dictation.Core.Lexicon;
 
 namespace Dictation.Core.Learning
 {
-    public sealed class LearningSessionService
+    internal sealed class LearningSessionService : ILearningSessionOperations
     {
         private readonly LearningSessionDataAccessor dataAccessor;
-        private readonly LearningPlanService learningPlanService;
+        private readonly ILearningPlanReader learningPlanReader;
+        private readonly ILearningSessionStartPreparer sessionStartPreparer;
         private readonly AnswerEvaluationService answerEvaluationService;
         private readonly TimeProvider timeProvider;
         private readonly Random random;
 
         public LearningSessionService(
             LearningSessionDataAccessor dataAccessor,
-            LearningPlanService learningPlanService,
+            ILearningPlanReader learningPlanReader,
+            ILearningSessionStartPreparer sessionStartPreparer,
             AnswerEvaluationService answerEvaluationService,
             TimeProvider timeProvider,
             Random random)
         {
             ArgumentNullException.ThrowIfNull(dataAccessor);
-            ArgumentNullException.ThrowIfNull(learningPlanService);
+            ArgumentNullException.ThrowIfNull(learningPlanReader);
+            ArgumentNullException.ThrowIfNull(sessionStartPreparer);
             ArgumentNullException.ThrowIfNull(answerEvaluationService);
             ArgumentNullException.ThrowIfNull(timeProvider);
             ArgumentNullException.ThrowIfNull(random);
             this.dataAccessor = dataAccessor;
-            this.learningPlanService = learningPlanService;
+            this.learningPlanReader = learningPlanReader;
+            this.sessionStartPreparer = sessionStartPreparer;
             this.answerEvaluationService = answerEvaluationService;
             this.timeProvider = timeProvider;
             this.random = random;
@@ -48,7 +52,7 @@ namespace Dictation.Core.Learning
                 return MapSession(active);
             }
 
-            var plan = await learningPlanService.LoadAsync(request.Language, cancellationToken);
+            var plan = await learningPlanReader.LoadAsync(request.Language, cancellationToken);
             var candidates = await dataAccessor.GetCandidatesAsync(request.Language.ToString(), cancellationToken);
             var enabledForms = plan.FormCodes.ToHashSet(StringComparer.Ordinal);
             var eligible = candidates
@@ -122,7 +126,7 @@ namespace Dictation.Core.Learning
                 return null;
             }
 
-            var plan = await learningPlanService.LoadAsync(language, cancellationToken);
+            var plan = await learningPlanReader.LoadAsync(language, cancellationToken);
             if (snapshot.PendingQuestion is not null)
             {
                 return MapQuestion(snapshot, snapshot.PendingQuestion, plan);
@@ -151,7 +155,7 @@ namespace Dictation.Core.Learning
             }
 
             var language = ParseEnum<LearningLanguage>(snapshot.Session.Language, "学习语言");
-            var plan = await learningPlanService.LoadAsync(language, cancellationToken);
+            var plan = await learningPlanReader.LoadAsync(language, cancellationToken);
             var currentQuestion = snapshot.PendingQuestion;
             var currentUnit = FindUnit(snapshot.Units, currentQuestion);
             var output = ParseEnum<LearningOutputMode>(currentQuestion.OutputMode, "输出方式");
@@ -543,7 +547,7 @@ namespace Dictation.Core.Learning
             int remainingNewCount,
             CancellationToken cancellationToken)
         {
-            var startRequest = await learningPlanService.CreateStartRequestAsync(
+            var startRequest = await sessionStartPreparer.CreateStartRequestAsync(
                 request.Language,
                 request.SelectedWordGroupIds,
                 cancellationToken);

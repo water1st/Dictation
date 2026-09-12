@@ -246,7 +246,13 @@ namespace Dictation.Tests.Presentation
 
             public LearningPlanViewModel CreateViewModel()
             {
-                return new LearningPlanViewModel(LearningPlanService, LexiconLookupService, Navigation, Overlay);
+                return new LearningPlanViewModel(
+                    LearningPlanService,
+                    LearningPlanService,
+                    LearningPlanService,
+                    LexiconLookupService,
+                    Navigation,
+                    Overlay);
             }
 
             public async Task<string> StageAndDecideAsync(

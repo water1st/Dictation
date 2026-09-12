@@ -3,6 +3,7 @@ using System.Runtime.Versioning;
 using Dictation.DataAccess;
 using Dictation.DataAccess.Runtime;
 using Dictation.Core.Importing;
+using Dictation.Core.Learning;
 using Dictation.Core.Lexicon;
 using Dictation.Presentation;
 using Dictation.Presentation.ViewModels;
@@ -142,6 +143,62 @@ namespace Dictation.Tests.Architecture
             Assert.Same(
                 provider.GetRequiredService<IImportInboxActions>(),
                 provider.GetRequiredService<IImportInboxActions>());
+        }
+
+        [Fact]
+        public void AddDictationCore_LearningCapabilitiesAliasTheirOriginalSingletons()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var services = new ServiceCollection();
+            services.AddDictationDataAccess(temporaryDirectory.Path).AddDictationCore();
+            using var provider = services.BuildServiceProvider();
+
+            var planImplementation = provider.GetRequiredService<LearningPlanService>();
+            Assert.Same(planImplementation, provider.GetRequiredService<ILearningPlanReader>());
+            Assert.Same(planImplementation, provider.GetRequiredService<ILearningPlanEditor>());
+            Assert.Same(planImplementation, provider.GetRequiredService<ILearningLibraryManager>());
+            Assert.Same(planImplementation, provider.GetRequiredService<ILearningSessionStartPreparer>());
+            Assert.Same(
+                provider.GetRequiredService<ILearningPlanReader>(),
+                provider.GetRequiredService<ILearningPlanReader>());
+
+            var sessionImplementation = provider.GetRequiredService<LearningSessionService>();
+            Assert.Same(sessionImplementation, provider.GetRequiredService<ILearningSessionOperations>());
+            Assert.Same(
+                provider.GetRequiredService<ILearningSessionOperations>(),
+                provider.GetRequiredService<ILearningSessionOperations>());
+        }
+
+        [Fact]
+        public void LearningConsumers_OnlyRequestTheirRequiredCapabilities()
+        {
+            var planViewModelParameters = Assert.Single(typeof(LearningPlanViewModel).GetConstructors())
+                .GetParameters()
+                .Select(parameter => parameter.ParameterType)
+                .ToArray();
+            Assert.Equal(
+                new[]
+                {
+                    typeof(ILearningPlanEditor),
+                    typeof(ILearningLibraryManager),
+                    typeof(ILearningSessionStartPreparer),
+                    typeof(ILexiconSearch),
+                    typeof(Dictation.Presentation.Navigation.NavigationService),
+                    typeof(Dictation.Presentation.Shell.OverlayService)
+                },
+                planViewModelParameters);
+
+            var sessionViewModelParameters = Assert.Single(typeof(LearningSessionViewModel).GetConstructors())
+                .GetParameters();
+            Assert.Equal(typeof(ILearningSessionOperations), sessionViewModelParameters[0].ParameterType);
+            Assert.Equal(typeof(ILearningPlanReader), sessionViewModelParameters[1].ParameterType);
+
+            var sessionServiceParameters = Assert.Single(typeof(LearningSessionService).GetConstructors())
+                .GetParameters();
+            Assert.Equal(typeof(ILearningPlanReader), sessionServiceParameters[1].ParameterType);
+            Assert.Equal(typeof(ILearningSessionStartPreparer), sessionServiceParameters[2].ParameterType);
+            Assert.False(typeof(LearningPlanService).IsPublic);
+            Assert.False(typeof(LearningSessionService).IsPublic);
         }
 
         [Fact]

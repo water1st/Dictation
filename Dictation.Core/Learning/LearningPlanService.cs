@@ -9,7 +9,10 @@ namespace Dictation.Core.Learning
     /// <summary>
     /// 负责校验和持久化学习计划、读取学习库，并依据词库完整词组生成英语示例范式。
     /// </summary>
-    public sealed class LearningPlanService
+    internal sealed class LearningPlanService :
+        ILearningPlanEditor,
+        ILearningLibraryManager,
+        ILearningSessionStartPreparer
     {
         private static readonly HashSet<string> JapaneseFormCodes = new(StringComparer.Ordinal)
         {

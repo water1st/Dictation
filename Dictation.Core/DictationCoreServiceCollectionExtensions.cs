@@ -40,7 +40,17 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton(TimeProvider.System);
             services.AddSingleton(Random.Shared);
             services.AddSingleton<LearningPlanService>();
+            services.AddSingleton<ILearningPlanReader>(serviceProvider =>
+                serviceProvider.GetRequiredService<LearningPlanService>());
+            services.AddSingleton<ILearningPlanEditor>(serviceProvider =>
+                serviceProvider.GetRequiredService<LearningPlanService>());
+            services.AddSingleton<ILearningLibraryManager>(serviceProvider =>
+                serviceProvider.GetRequiredService<LearningPlanService>());
+            services.AddSingleton<ILearningSessionStartPreparer>(serviceProvider =>
+                serviceProvider.GetRequiredService<LearningPlanService>());
             services.AddSingleton<LearningSessionService>();
+            services.AddSingleton<ILearningSessionOperations>(serviceProvider =>
+                serviceProvider.GetRequiredService<LearningSessionService>());
             services.AddSingleton<AnswerEvaluationService>();
             return services;
         }

@@ -11,8 +11,8 @@ namespace Dictation.Presentation.ViewModels
 {
     public sealed class LearningSessionViewModel : INotifyPropertyChanged, IDisposable
     {
-        private readonly LearningSessionService sessionService;
-        private readonly LearningPlanService planService;
+        private readonly ILearningSessionOperations sessionOperations;
+        private readonly ILearningPlanReader planReader;
         private readonly TtsService ttsService;
         private readonly IAudioPlayer audioPlayer;
         private readonly SemaphoreSlim operationGate = new(1, 1);
@@ -38,13 +38,13 @@ namespace Dictation.Presentation.ViewModels
         private bool isDisposed;
 
         public LearningSessionViewModel(
-            LearningSessionService sessionService,
-            LearningPlanService planService,
+            ILearningSessionOperations sessionOperations,
+            ILearningPlanReader planReader,
             TtsService ttsService,
             IAudioPlayer audioPlayer)
         {
-            this.sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
-            this.planService = planService ?? throw new ArgumentNullException(nameof(planService));
+            this.sessionOperations = sessionOperations ?? throw new ArgumentNullException(nameof(sessionOperations));
+            this.planReader = planReader ?? throw new ArgumentNullException(nameof(planReader));
             this.ttsService = ttsService ?? throw new ArgumentNullException(nameof(ttsService));
             this.audioPlayer = audioPlayer ?? throw new ArgumentNullException(nameof(audioPlayer));
             SubmitCommand = CreateCommand(() => SubmitAsync(), () => CanSubmit);
@@ -159,16 +159,16 @@ namespace Dictation.Presentation.ViewModels
             startSelection = selectedWordGroupIds;
             return RunOperationAsync(async token =>
             {
-                var plan = await planService.LoadAsync(selectedLanguage, token);
+                var plan = await planReader.LoadAsync(selectedLanguage, token);
                 enabledFormCodes = plan.FormCodes.ToHashSet(StringComparer.Ordinal);
-                session = await sessionService.StartOrResumeAsync(
+                session = await sessionOperations.StartOrResumeAsync(
                     new StartLearningSessionRequestDto(selectedLanguage, selectedWordGroupIds), token);
-                var members = await sessionService.GetBrowseItemsAsync(session.SessionId, token);
+                var members = await sessionOperations.GetBrowseItemsAsync(session.SessionId, token);
                 token.ThrowIfCancellationRequested();
                 BrowseMembers.Clear();
                 foreach (var member in members.SelectMany(group => group.Members)) BrowseMembers.Add(member);
                 SelectedBrowseMember = BrowseMembers.FirstOrDefault();
-                question = await sessionService.GetCurrentQuestionAsync(session.SessionId, token);
+                question = await sessionOperations.GetCurrentQuestionAsync(session.SessionId, token);
                 feedback = null;
                 summary = session.Status == LearningSessionStatus.Completed
                     ? new LearningSessionSummaryDto(session.SessionId, 0, Array.Empty<LearningErrorSummaryDto>())
@@ -187,7 +187,7 @@ namespace Dictation.Presentation.ViewModels
             if (!CanSubmit) return Task.CompletedTask;
             return RunOperationAsync(async token =>
             {
-                feedback = await sessionService.SubmitAnswerAsync(
+                feedback = await sessionOperations.SubmitAnswerAsync(
                     new SubmitLearningAnswerRequestDto(question!.SessionId, question.QuestionId, answerText), token);
                 NotifyState();
             }, cancellationToken, "提交答案失败");
