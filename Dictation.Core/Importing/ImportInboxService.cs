@@ -7,7 +7,7 @@ namespace Dictation.Core.Importing
     /// <summary>
     /// 负责把词库义项解析为完整词组快照，并编排导入收件箱的暂存、审核与释义更新。
     /// </summary>
-    public sealed class ImportInboxService : IImportStaging, IImportInboxQuery, IImportInboxActions
+    internal sealed class ImportInboxService : IImportStaging, IImportInboxQuery, IImportInboxActions
     {
         private readonly ILexiconImportGroupResolver lexiconImportGroupResolver;
         private readonly ImportInboxDataAccessor importInboxAccessor;
@@ -66,7 +66,7 @@ namespace Dictation.Core.Importing
                 var snapshot = new ImportWordGroupSnapshotPo(
                     request.Language.ToString(),
                     selection.SourceSenseId,
-                    group.Select(member => MapMember(
+                    group.Select(member => ImportWordGroupMapper.ToSnapshotPo(
                         member,
                         string.Equals(member.SourceSenseId, selection.SourceSenseId, StringComparison.Ordinal)
                             ? selection.ChineseMeaningOverride
@@ -83,7 +83,7 @@ namespace Dictation.Core.Importing
                     request.SourceKind.ToString(),
                     stageItems),
                 cancellationToken);
-            return MapStageResult(batch);
+            return ImportInboxMapper.ToStageResultDto(batch);
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace Dictation.Core.Importing
             var batches = await importInboxAccessor.ListPendingAsync(
                 language.ToString(),
                 cancellationToken);
-            return batches.Select(MapBatch).ToArray();
+            return batches.Select(ImportInboxMapper.ToDto).ToArray();
         }
 
         /// <summary>
@@ -181,126 +181,6 @@ namespace Dictation.Core.Importing
                 cancellationToken);
         }
 
-        /// <summary>
-        /// 将词库成员固化为导入快照，并在用户覆盖释义时同步标记释义来源与精度。
-        /// </summary>
-        /// <param name="value">词库中的义项及词形结果。</param>
-        /// <param name="meaningOverride">锚定义项的用户中文释义；为 <see langword="null"/> 时保留词库释义元数据。</param>
-        /// <returns>可随导入批次持久化的词组成员快照。</returns>
-        private static ImportWordGroupMemberPo MapMember(
-            LexiconLookupResultDto value,
-            IReadOnlyList<string>? meaningOverride)
-        {
-            var isUserOverride = meaningOverride is not null;
-            return new ImportWordGroupMemberPo(
-                value.Language.ToString(),
-                value.SourceSenseId,
-                value.SourceLexemeId,
-                value.Headword,
-                value.Reading,
-                value.PartOfSpeechLabel,
-                value.AttributeLabel,
-                value.IsPhrase,
-                "zh-CN",
-                isUserOverride ? LexiconMeaningSource.User.ToString() : value.MeaningSource.ToString(),
-                isUserOverride ? LexiconMeaningPrecision.UserProvided.ToString() : value.MeaningPrecision.ToString(),
-                meaningOverride ?? value.Meanings,
-                value.Forms.Select(form => new ImportWordGroupFormPo(
-                    form.Surface,
-                    form.Reading,
-                    form.FormCode,
-                    form.ScriptCode,
-                    form.RoleCode,
-                    form.FormLabel,
-                    form.DetailLabel,
-                    form.IsCommon,
-                    form.IsPrimary)).ToArray(),
-                value.KanjiUsageCode);
-        }
-
-        /// <summary>
-        /// 将已暂存批次映射为包含新增与重复统计的业务结果。
-        /// </summary>
-        /// <param name="batch">持久化后的导入批次。</param>
-        /// <returns>供调用方展示暂存结果的业务对象。</returns>
-        private static StageImportBatchResultDto MapStageResult(ImportBatchPo batch)
-        {
-            return new StageImportBatchResultDto(MapBatch(batch));
-        }
-
-        /// <summary>
-        /// 将持久化批次及其项目映射为收件箱业务对象。
-        /// </summary>
-        /// <param name="batch">待映射的持久化批次。</param>
-        /// <returns>包含批次状态和全部项目的业务对象。</returns>
-        private static ImportBatchDto MapBatch(ImportBatchPo batch)
-        {
-            return new ImportBatchDto(
-                batch.BatchId,
-                ParseLanguage(batch.Language),
-                ParseSourceKind(batch.SourceKind),
-                ParseBatchStatus(batch.Status),
-                batch.CreatedAtUtc,
-                batch.CompletedAtUtc,
-                batch.Items.Select(MapItem).ToArray());
-        }
-
-        /// <summary>
-        /// 将批次项目映射为业务对象，并保留尚未形成词组的空状态。
-        /// </summary>
-        /// <param name="item">待映射的持久化批次项目。</param>
-        /// <returns>包含决定及可选完整词组的业务项目。</returns>
-        private static ImportBatchItemDto MapItem(ImportBatchItemPo item)
-        {
-            return new ImportBatchItemDto(
-                item.ItemId,
-                item.SourceText,
-                item.AnchorSourceSenseId,
-                item.WordGroupId,
-                ParseDecision(item.Decision),
-                item.WordGroup is null ? null : MapGroup(item.WordGroup));
-        }
-
-        /// <summary>
-        /// 将持久化词组还原为业务对象；非简体中文释义不会作为可用中文释义暴露。
-        /// </summary>
-        /// <param name="group">待映射的持久化完整词组。</param>
-        /// <returns>包含全部成员、词形和释义元数据的业务词组。</returns>
-        private static ImportWordGroupDto MapGroup(ImportWordGroupPo group)
-        {
-            return new ImportWordGroupDto(
-                group.WordGroupId,
-                ParseLanguage(group.Language),
-                group.AnchorSourceSenseId,
-                ParsePlacement(group.Placement),
-                group.CreatedAtUtc,
-                group.Members.Select(member => new ImportWordGroupMemberDto(
-                    member.Language,
-                    member.SourceSenseId,
-                    member.SourceLexemeId,
-                    member.Headword,
-                    member.Reading,
-                    member.PartOfSpeechLabel,
-                    member.AttributeLabel,
-                    member.IsPhrase,
-                    string.Equals(member.MeaningLanguage, "zh-CN", StringComparison.Ordinal)
-                        ? member.Meanings
-                        : Array.Empty<string>(),
-                    member.Forms.Select(form => new ImportWordGroupFormDto(
-                        form.Surface,
-                        form.Reading,
-                        form.FormCode,
-                        form.ScriptCode,
-                        form.RoleCode,
-                        form.FormLabel,
-                        form.DetailLabel,
-                        form.IsCommon,
-                        form.IsPrimary)).ToArray(),
-                    ParseMeaningSource(member.MeaningSource),
-                    ParseMeaningPrecision(member.MeaningPrecision),
-                    member.KanjiUsageCode)).ToArray());
-        }
-
         private static void ValidateStageRequest(StageImportBatchRequestDto request)
         {
             ArgumentNullException.ThrowIfNull(request);
@@ -359,22 +239,6 @@ namespace Dictation.Core.Importing
                 && member.Meanings.Any(meaning => !string.IsNullOrWhiteSpace(meaning));
         }
 
-        private static LexiconMeaningSource ParseMeaningSource(string value)
-        {
-            return Enum.TryParse<LexiconMeaningSource>(value, out var parsed)
-                && Enum.IsDefined(parsed)
-                    ? parsed
-                    : LexiconMeaningSource.Missing;
-        }
-
-        private static LexiconMeaningPrecision ParseMeaningPrecision(string value)
-        {
-            return Enum.TryParse<LexiconMeaningPrecision>(value, out var parsed)
-                && Enum.IsDefined(parsed)
-                    ? parsed
-                    : LexiconMeaningPrecision.Missing;
-        }
-
         private static void ValidateLanguage(LearningLanguage language)
         {
             if (!Enum.IsDefined(language))
@@ -387,31 +251,6 @@ namespace Dictation.Core.Importing
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(value);
             return value.Trim().Normalize(System.Text.NormalizationForm.FormC);
-        }
-
-        private static LearningLanguage ParseLanguage(string value)
-        {
-            return Enum.Parse<LearningLanguage>(value, ignoreCase: false);
-        }
-
-        private static ImportSourceKind ParseSourceKind(string value)
-        {
-            return Enum.Parse<ImportSourceKind>(value, ignoreCase: false);
-        }
-
-        private static ImportBatchStatus ParseBatchStatus(string value)
-        {
-            return Enum.Parse<ImportBatchStatus>(value, ignoreCase: false);
-        }
-
-        private static ImportItemDecision ParseDecision(string value)
-        {
-            return Enum.Parse<ImportItemDecision>(value, ignoreCase: false);
-        }
-
-        private static ImportWordGroupPlacement ParsePlacement(string value)
-        {
-            return Enum.Parse<ImportWordGroupPlacement>(value, ignoreCase: false);
         }
     }
 }

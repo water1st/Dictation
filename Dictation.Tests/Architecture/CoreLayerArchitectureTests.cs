@@ -145,6 +145,21 @@ namespace Dictation.Tests.Architecture
         }
 
         [Fact]
+        public void ImportConsumers_OnlyRequestTheirRequiredCapabilities()
+        {
+            var lookupParameters = Assert.Single(typeof(LexiconLookupViewModel).GetConstructors())
+                .GetParameters();
+            Assert.Equal(typeof(ILexiconSearch), lookupParameters[0].ParameterType);
+            Assert.Equal(typeof(IImportStaging), lookupParameters[1].ParameterType);
+
+            var inboxParameters = Assert.Single(typeof(ImportInboxListViewModel).GetConstructors())
+                .GetParameters();
+            Assert.Equal(typeof(IImportInboxQuery), inboxParameters[0].ParameterType);
+            Assert.Equal(typeof(IImportInboxActions), inboxParameters[1].ParameterType);
+            Assert.False(typeof(ImportInboxService).IsPublic);
+        }
+
+        [Fact]
         public void AddDictationCore_RejectsNullCollection()
         {
             Assert.Throws<ArgumentNullException>(() =>

@@ -229,6 +229,12 @@ namespace Dictation.Tests.Presentation
                 new ImportInboxService(
                     serviceProvider.GetRequiredService<LexiconLookupService>(),
                     new ImportInboxDataAccessor(new SqliteConnectionFactory(paths))));
+            services.AddScoped<IImportStaging>(serviceProvider =>
+                serviceProvider.GetRequiredService<ImportInboxService>());
+            services.AddScoped<IImportInboxQuery>(serviceProvider =>
+                serviceProvider.GetRequiredService<ImportInboxService>());
+            services.AddScoped<IImportInboxActions>(serviceProvider =>
+                serviceProvider.GetRequiredService<ImportInboxService>());
             services.AddScoped<LexiconLookupViewModel>();
             services.AddScoped<ImportInboxListViewModel>();
             return services.BuildServiceProvider();

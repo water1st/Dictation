@@ -23,7 +23,7 @@ namespace Dictation.Presentation.ViewModels
         private string emptyStateText = "请输入要查询的词语。";
         private bool isResultDropDownOpen;
         private bool isInitialized;
-        private readonly ImportInboxService importInboxService;
+        private readonly IImportStaging importStaging;
         private readonly NavigationService navigationService;
         private double scrollOffset;
         private string? lastSuccessfulSourceText;
@@ -34,19 +34,19 @@ namespace Dictation.Presentation.ViewModels
         /// 初始化查词页面视图模型并创建页面命令。
         /// </summary>
         /// <param name="lexiconSearch">用于按当前语言执行词库检索的能力。</param>
-        /// <param name="importInboxService">用于将所选义项的完整词组暂存到导入收件箱的服务。</param>
+        /// <param name="importStaging">用于将所选义项的完整词组暂存到导入收件箱的能力。</param>
         /// <param name="navigationService">用于返回上一页面的导航服务。</param>
         /// <param name="overlayService">页面覆盖层服务；构造时校验该页面依赖已由组合根提供。</param>
         public LexiconLookupViewModel(
             ILexiconSearch lexiconSearch,
-            ImportInboxService importInboxService,
+            IImportStaging importStaging,
             NavigationService navigationService,
             OverlayService overlayService)
         {
             this.lexiconSearch = lexiconSearch
                 ?? throw new ArgumentNullException(nameof(lexiconSearch));
-            this.importInboxService = importInboxService
-                ?? throw new ArgumentNullException(nameof(importInboxService));
+            this.importStaging = importStaging
+                ?? throw new ArgumentNullException(nameof(importStaging));
             this.navigationService = navigationService
                 ?? throw new ArgumentNullException(nameof(navigationService));
             ArgumentNullException.ThrowIfNull(overlayService);
@@ -310,7 +310,7 @@ namespace Dictation.Presentation.ViewModels
 
             try
             {
-                var result = await importInboxService.StageAsync(
+                var result = await importStaging.StageAsync(
                     new StageImportBatchRequestDto(
                         selectedLanguage,
                         ImportSourceKind.Manual,

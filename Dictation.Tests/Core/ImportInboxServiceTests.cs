@@ -41,15 +41,27 @@ namespace Dictation.Tests.Core
             Assert.Equal(0, result.DuplicateCount);
             var member = Assert.Single(item.WordGroup!.Members);
             Assert.Equal("jmdict:1:1", member.SourceSenseId);
+            Assert.Equal("jmdict:1:1", member.SourceLexemeId);
+            Assert.Equal("Japanese", member.Language);
             Assert.Equal("食べる", member.Headword);
+            Assert.Equal("たべる", member.Reading);
             Assert.Equal("动词", member.PartOfSpeechLabel);
             Assert.Contains("二类动词（一段）", member.AttributeLabel, StringComparison.Ordinal);
             Assert.Contains("常用汉字", member.AttributeLabel, StringComparison.Ordinal);
-            Assert.Equal("吃", member.Meanings[0]);
-            Assert.Contains(member.Forms, form =>
-                form.Surface == "食べます"
-                && form.FormLabel == "礼貌形"
-                && form.DetailLabel == "汉字 · 动词");
+            Assert.False(member.IsPhrase);
+            Assert.Equal("Common", member.KanjiUsageCode);
+            Assert.Equal(new[] { "吃", "吃饭" }, member.Meanings);
+            Assert.Equal(LexiconMeaningSource.Tomoshi, member.MeaningSource);
+            Assert.Equal(LexiconMeaningPrecision.Exact, member.MeaningPrecision);
+            var politeForm = Assert.Single(member.Forms, form => form.Surface == "食べます");
+            Assert.Equal("たべます", politeForm.Reading);
+            Assert.Equal("Polite", politeForm.FormCode);
+            Assert.Equal("Kanji", politeForm.ScriptCode);
+            Assert.Equal("Verb", politeForm.RoleCode);
+            Assert.Equal("礼貌形", politeForm.FormLabel);
+            Assert.Equal("汉字 · 动词", politeForm.DetailLabel);
+            Assert.True(politeForm.IsCommon);
+            Assert.True(politeForm.IsPrimary);
         }
 
         [Fact]

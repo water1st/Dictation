@@ -214,7 +214,11 @@ namespace Dictation.Tests.Presentation
 
             public ImportInboxListViewModel CreateListViewModel()
             {
-                return new ImportInboxListViewModel(ImportInboxService, Navigation, Overlay);
+                return new ImportInboxListViewModel(
+                    ImportInboxService,
+                    ImportInboxService,
+                    Navigation,
+                    Overlay);
             }
 
             public void Dispose()

@@ -253,7 +253,7 @@ namespace Dictation.Tests.Presentation
             var service = CreateService(paths);
             var overlay = new OverlayService();
             var navigation = new NavigationService(new TestScopeFactory());
-            var viewModel = new ImportInboxListViewModel(service, navigation, overlay);
+            var viewModel = new ImportInboxListViewModel(service, service, navigation, overlay);
             viewModel.Initialize(LearningLanguage.English);
             var refresh = viewModel.RefreshAsync();
             await WaitForOverlayAsync(overlay);
@@ -365,7 +365,11 @@ namespace Dictation.Tests.Presentation
 
             public ImportInboxListViewModel CreateViewModel()
             {
-                return new ImportInboxListViewModel(ImportInboxService, Navigation, Overlay);
+                return new ImportInboxListViewModel(
+                    ImportInboxService,
+                    ImportInboxService,
+                    Navigation,
+                    Overlay);
             }
 
             public void Dispose()
