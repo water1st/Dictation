@@ -1,18 +1,10 @@
 using Dictation.Core.Configuration;
-using Dictation.Core.Importing;
 
 namespace Dictation.Core.Learning
 {
-    public enum LearningSessionStatus
-    {
-        InProgress,
-        Completed
-    }
-
-    public sealed record StartLearningSessionRequestDto(
-        LearningLanguage Language,
-        IReadOnlyList<string>? SelectedWordGroupIds = null);
-
+    /// <summary>
+    /// 表示一轮学习会话的进度与词组范围。
+    /// </summary>
     public sealed record LearningSessionDto(
         string SessionId,
         LearningLanguage Language,
@@ -21,46 +13,4 @@ namespace Dictation.Core.Learning
         DateTimeOffset CreatedAtUtc,
         DateTimeOffset? CompletedAtUtc,
         IReadOnlyList<string> WordGroupIds);
-
-    public sealed record LearningBrowseItemDto(
-        int SortOrder,
-        string WordGroupId,
-        IReadOnlyList<ImportWordGroupMemberDto> Members);
-
-    public sealed record LearningQuestionDto(
-        long QuestionId,
-        string SessionId,
-        int QuestionOrdinal,
-        string WordGroupId,
-        LearningLanguage Language,
-        LearningChannel Channel,
-        LearningOutputMode OutputMode,
-        string FormCode,
-        string FormLabel,
-        string OutputLabel,
-        IReadOnlyList<string> Meanings,
-        string? SpokenText);
-
-    public sealed record SubmitLearningAnswerRequestDto(
-        string SessionId,
-        long QuestionId,
-        string? SubmittedText);
-
-    public sealed record LearningAnswerResultDto(
-        bool WasCorrect,
-        string CorrectAnswer,
-        bool HadErrorInSession,
-        LearningQuestionDto? NextQuestion,
-        LearningSessionSummaryDto? Summary,
-        string SpokenText);
-
-    public sealed record LearningSessionSummaryDto(
-        string SessionId,
-        int AnsweredCount,
-        IReadOnlyList<LearningErrorSummaryDto> Errors);
-
-    public sealed record LearningErrorSummaryDto(
-        string WordGroupId,
-        string FormCode,
-        string CorrectAnswer);
 }

@@ -1,7 +1,8 @@
-using Dictation.DataAccess.Importing;
-
 namespace Dictation.DataAccess.Learning
 {
+    /// <summary>
+    /// 表示持久化的学习会话概要。
+    /// </summary>
     public sealed record LearningSessionPo(
         string SessionId,
         string Language,
@@ -10,43 +11,4 @@ namespace Dictation.DataAccess.Learning
         DateTimeOffset CreatedAtUtc,
         DateTimeOffset? CompletedAtUtc,
         IReadOnlyList<string> WordGroupIds);
-
-    public sealed record LearningSessionCandidatePo(
-        string WordGroupId,
-        DateTimeOffset CreatedAtUtc,
-        bool HasProgress,
-        IReadOnlyList<LearningFormIdentityPo> AvailableForms,
-        IReadOnlyList<LearningFormStateSummaryPo> FormStates);
-
-    public sealed record LearningFormIdentityPo(
-        long MemberId,
-        string FormCode,
-        string? ScriptCode = null,
-        string? KanjiUsageCode = null)
-    {
-        public LearningFormIdentityPo(long memberId, string formCode)
-            : this(memberId, formCode, null, null)
-        {
-        }
-    }
-
-    public sealed record LearningFormStateSummaryPo(long MemberId, string FormCode, bool IsMastered);
-
-    public sealed record LearningSessionGroupSeedPo(
-        string WordGroupId,
-        IReadOnlyList<LearningFormIdentityPo> Forms);
-
-    public sealed record CreateLearningSessionPo(
-        string SessionId,
-        string Language,
-        string Status,
-        string StartedLocalDate,
-        DateTimeOffset CreatedAtUtc,
-        DateTimeOffset? CompletedAtUtc,
-        IReadOnlyList<LearningSessionGroupSeedPo> Groups);
-
-    public sealed record LearningBrowseItemPo(
-        int SortOrder,
-        string WordGroupId,
-        IReadOnlyList<ImportWordGroupMemberPo> Members);
 }

@@ -1,12 +1,12 @@
 using System.Globalization;
-using Dictation.DataAccess.Importing;
 using Dictation.DataAccess.Learning;
 using Dictation.Core.Configuration;
-using Dictation.Core.Importing;
-using Dictation.Core.Lexicon;
 
 namespace Dictation.Core.Learning
 {
+    /// <summary>
+    /// 编排学习会话的启动、浏览、出题、答题与完成持久化流程。
+    /// </summary>
     internal sealed class LearningSessionService : ILearningSessionOperations
     {
         private readonly LearningSessionDataAccessor dataAccessor;
@@ -16,6 +16,15 @@ namespace Dictation.Core.Learning
         private readonly TimeProvider timeProvider;
         private readonly Random random;
 
+        /// <summary>
+        /// 初始化学习会话编排服务。
+        /// </summary>
+        /// <param name="dataAccessor">用于读写会话、题目和学习进度的数据访问器。</param>
+        /// <param name="learningPlanReader">用于按会话语言读取当前学习计划。</param>
+        /// <param name="sessionStartPreparer">用于校验手选词组并准备启动范围。</param>
+        /// <param name="answerEvaluationService">用于依据语言规则判断提交答案。</param>
+        /// <param name="timeProvider">用于记录会话、题目和答案的时间。</param>
+        /// <param name="random">用于保留选词与出题的随机顺序。</param>
         public LearningSessionService(
             LearningSessionDataAccessor dataAccessor,
             ILearningPlanReader learningPlanReader,
@@ -38,6 +47,7 @@ namespace Dictation.Core.Learning
             this.random = random;
         }
 
+        /// <inheritdoc />
         public async Task<LearningSessionDto> StartOrResumeAsync(
             StartLearningSessionRequestDto request,
             CancellationToken cancellationToken = default)
@@ -49,7 +59,7 @@ namespace Dictation.Core.Learning
             var active = await dataAccessor.GetActiveAsync(request.Language.ToString(), cancellationToken);
             if (active is not null)
             {
-                return MapSession(active);
+                return LearningSessionMapper.ToDto(active);
             }
 
             var plan = await learningPlanReader.LoadAsync(request.Language, cancellationToken);
@@ -87,9 +97,15 @@ namespace Dictation.Core.Learning
                         candidate.Candidate.WordGroupId,
                         candidate.Forms)).ToArray()),
                 cancellationToken);
-            return MapSession(created);
+            return LearningSessionMapper.ToDto(created);
         }
 
+        /// <summary>
+        /// 读取指定语言尚未完成的会话。
+        /// </summary>
+        /// <param name="language">要查询的学习语言。</param>
+        /// <param name="cancellationToken">取消操作的令牌。</param>
+        /// <returns>同语言活动会话；不存在时为 <see langword="null"/>。</returns>
         public async Task<LearningSessionDto?> GetActiveAsync(
             LearningLanguage language,
             CancellationToken cancellationToken = default)
@@ -97,9 +113,10 @@ namespace Dictation.Core.Learning
             ValidateLanguage(language);
             cancellationToken.ThrowIfCancellationRequested();
             var session = await dataAccessor.GetActiveAsync(language.ToString(), cancellationToken);
-            return session is null ? null : MapSession(session);
+            return session is null ? null : LearningSessionMapper.ToDto(session);
         }
 
+        /// <inheritdoc />
         public async Task<IReadOnlyList<LearningBrowseItemDto>> GetBrowseItemsAsync(
             string sessionId,
             CancellationToken cancellationToken = default)
@@ -107,12 +124,10 @@ namespace Dictation.Core.Learning
             ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
             cancellationToken.ThrowIfCancellationRequested();
             var items = await dataAccessor.GetBrowseItemsAsync(sessionId.Trim(), cancellationToken);
-            return items.Select(item => new LearningBrowseItemDto(
-                item.SortOrder,
-                item.WordGroupId,
-                item.Members.Select(MapMember).ToArray())).ToArray();
+            return items.Select(LearningSessionMapper.ToDto).ToArray();
         }
 
+        /// <inheritdoc />
         public async Task<LearningQuestionDto?> GetCurrentQuestionAsync(
             string sessionId,
             CancellationToken cancellationToken = default)
@@ -138,6 +153,7 @@ namespace Dictation.Core.Learning
             return MapQuestion(snapshot, persisted, plan);
         }
 
+        /// <inheritdoc />
         public async Task<LearningAnswerResultDto> SubmitAnswerAsync(
             SubmitLearningAnswerRequestDto request,
             CancellationToken cancellationToken = default)
@@ -659,47 +675,6 @@ namespace Dictation.Core.Learning
             });
         }
 
-        private static LearningSessionDto MapSession(LearningSessionPo session)
-        {
-            return new LearningSessionDto(
-                session.SessionId,
-                ParseEnum<LearningLanguage>(session.Language, "学习语言"),
-                ParseEnum<LearningSessionStatus>(session.Status, "学习会话状态"),
-                session.CurrentOrdinal,
-                session.CreatedAtUtc,
-                session.CompletedAtUtc,
-                session.WordGroupIds);
-        }
-
-        private static ImportWordGroupMemberDto MapMember(ImportWordGroupMemberPo member)
-        {
-            return new ImportWordGroupMemberDto(
-                member.Language,
-                member.SourceSenseId,
-                member.SourceLexemeId,
-                member.Headword,
-                member.Reading,
-                member.PartOfSpeechLabel,
-                member.AttributeLabel,
-                member.IsPhrase,
-                string.Equals(member.MeaningLanguage, "zh-CN", StringComparison.Ordinal)
-                    ? member.Meanings
-                    : Array.Empty<string>(),
-                member.Forms.Select(form => new ImportWordGroupFormDto(
-                    form.Surface,
-                    form.Reading,
-                    form.FormCode,
-                    form.ScriptCode,
-                    form.RoleCode,
-                    form.FormLabel,
-                    form.DetailLabel,
-                    form.IsCommon,
-                    form.IsPrimary)).ToArray(),
-                ParseEnumOrDefault(member.MeaningSource, LexiconMeaningSource.Missing),
-                ParseEnumOrDefault(member.MeaningPrecision, LexiconMeaningPrecision.Missing),
-                member.KanjiUsageCode);
-        }
-
         private static void ValidateLanguage(LearningLanguage language)
         {
             if (!Enum.IsDefined(language))
@@ -713,11 +688,6 @@ namespace Dictation.Core.Learning
             return Enum.TryParse<T>(value, out var parsed) && Enum.IsDefined(parsed)
                 ? parsed
                 : throw new InvalidDataException($"数据库中的{fieldName}无效：{value}。");
-        }
-
-        private static T ParseEnumOrDefault<T>(string value, T defaultValue) where T : struct, Enum
-        {
-            return Enum.TryParse<T>(value, out var parsed) && Enum.IsDefined(parsed) ? parsed : defaultValue;
         }
 
         private sealed record EligibleCandidate(

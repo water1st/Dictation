@@ -1,7 +1,8 @@
-using Dictation.DataAccess.Importing;
-
 namespace Dictation.DataAccess.Learning
 {
+    /// <summary>
+    /// 表示持久化的学习计划字段。
+    /// </summary>
     public sealed record LearningPlanPo(
         string Language,
         int DailyNewTarget,
@@ -13,23 +14,4 @@ namespace Dictation.DataAccess.Learning
         IReadOnlyList<string> Channels,
         IReadOnlyList<string> OutputModes,
         DateTimeOffset UpdatedAtUtc);
-
-    public sealed record LearningLibraryPagePo(
-        int TotalCount,
-        IReadOnlyList<LearningWordGroupPo> Groups);
-
-    public sealed record LearningWordGroupPo(
-        string WordGroupId,
-        string Language,
-        string AnchorSourceSenseId,
-        DateTimeOffset CreatedAtUtc,
-        IReadOnlyList<ImportWordGroupMemberPo> Members);
-
-    public enum DeleteLearningWordGroupResult
-    {
-        Deleted,
-        NotFound,
-        WrongLanguage,
-        WrongPlacement
-    }
 }

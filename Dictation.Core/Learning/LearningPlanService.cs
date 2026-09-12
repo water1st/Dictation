@@ -1,7 +1,5 @@
-using Dictation.DataAccess.Importing;
 using Dictation.DataAccess.Learning;
 using Dictation.Core.Configuration;
-using Dictation.Core.Importing;
 using Dictation.Core.Lexicon;
 
 namespace Dictation.Core.Learning
@@ -60,7 +58,7 @@ namespace Dictation.Core.Learning
             var plan = await dataAccessor.GetPlanAsync(language.ToString(), cancellationToken);
             return plan is null
                 ? CreateDefault(language)
-                : await MapPlanAsync(plan, cancellationToken);
+                : await AssemblePlanAsync(plan, cancellationToken);
         }
 
         /// <summary>
@@ -83,19 +81,9 @@ namespace Dictation.Core.Learning
                         normalized.FormCodes,
                         cancellationToken)
                     : null;
-            var plan = new LearningPlanPo(
-                normalized.Language.ToString(),
-                normalized.DailyNewTarget,
-                normalized.SessionWordLimit,
-                normalized.SelectionMode.ToString(),
-                normalized.EnglishFormLabelMode.ToString(),
-                normalized.EnglishExampleSourceSenseId,
-                normalized.FormCodes,
-                normalized.Channels.Select(channel => channel.ToString()).ToArray(),
-                normalized.OutputModes.Select(output => output.ToString()).ToArray(),
-                timeProvider.GetUtcNow());
+            var plan = LearningPlanMapper.ToPo(normalized, timeProvider.GetUtcNow());
             await dataAccessor.SavePlanAsync(plan, cancellationToken);
-            return MapPlan(plan, example);
+            return LearningPlanMapper.ToDto(plan, example);
         }
 
         /// <summary>
@@ -122,11 +110,7 @@ namespace Dictation.Core.Learning
                 checked((pageNumber - 1) * pageSize),
                 pageSize,
                 cancellationToken);
-            return new LearningLibraryPageDto(
-                pageNumber,
-                pageSize,
-                page.TotalCount,
-                page.Groups.Select(MapGroup).ToArray());
+            return LearningPlanMapper.ToDto(page, pageNumber, pageSize);
         }
 
         /// <summary>
@@ -286,44 +270,24 @@ namespace Dictation.Core.Learning
         }
 
         /// <summary>
-        /// 将持久化计划映射为业务对象，并按需解析英语示例范式。
+        /// 装配持久化计划及其按需从词库加载的英语示例范式。
         /// </summary>
         /// <param name="plan">持久化的学习计划。</param>
         /// <param name="cancellationToken">取消词库解析的令牌。</param>
         /// <returns>包含可展示示例范式的学习计划。</returns>
-        private async Task<LearningPlanDto> MapPlanAsync(LearningPlanPo plan, CancellationToken cancellationToken)
-        {
-            var language = ParseEnum<LearningLanguage>(plan.Language, "学习语言");
-            var formCodes = plan.FormCodes.ToArray();
-            var labelMode = ParseEnum<EnglishFormLabelMode>(plan.EnglishFormLabelMode, "英语词形标签模式");
-            var example = language == LearningLanguage.English && labelMode == EnglishFormLabelMode.ExampleParadigm
-                ? await ResolveExampleParadigmAsync(plan.EnglishExampleSourceSenseId, formCodes, cancellationToken)
-                : null;
-            return MapPlan(plan, example);
-        }
-
-        /// <summary>
-        /// 将持久化字段转换为强类型计划，并附加已解析的示例范式。
-        /// </summary>
-        /// <param name="plan">持久化的学习计划。</param>
-        /// <param name="example">示例范式；未启用示例模式时为 <see langword="null"/>。</param>
-        /// <returns>可供表现层使用的学习计划。</returns>
-        private static LearningPlanDto MapPlan(
+        private async Task<LearningPlanDto> AssemblePlanAsync(
             LearningPlanPo plan,
-            EnglishExampleParadigmDto? example)
+            CancellationToken cancellationToken)
         {
-            return new LearningPlanDto(
-                ParseEnum<LearningLanguage>(plan.Language, "学习语言"),
-                plan.DailyNewTarget,
-                plan.SessionWordLimit,
-                ParseEnum<LearningSelectionMode>(plan.SelectionMode, "选词模式"),
-                ParseEnum<EnglishFormLabelMode>(plan.EnglishFormLabelMode, "英语词形标签模式"),
-                plan.EnglishExampleSourceSenseId,
-                plan.FormCodes.ToArray(),
-                plan.Channels.Select(channel => ParseEnum<LearningChannel>(channel, "出题渠道")).ToArray(),
-                plan.OutputModes.Select(output => ParseEnum<LearningOutputMode>(output, "输出形式")).ToArray(),
-                plan.UpdatedAtUtc,
-                example);
+            var mapped = LearningPlanMapper.ToDto(plan, null);
+            var example = mapped.Language == LearningLanguage.English
+                && mapped.EnglishFormLabelMode == EnglishFormLabelMode.ExampleParadigm
+                ? await ResolveExampleParadigmAsync(
+                    mapped.EnglishExampleSourceSenseId,
+                    mapped.FormCodes,
+                    cancellationToken)
+                : null;
+            return mapped with { EnglishExampleParadigm = example };
         }
 
         /// <summary>
@@ -388,46 +352,6 @@ namespace Dictation.Core.Learning
                 null);
         }
 
-        /// <summary>
-        /// 将学习库中的持久化词组映射为包含全部成员的业务对象。
-        /// </summary>
-        /// <param name="group">持久化的学习词组。</param>
-        /// <returns>供学习计划页面展示的整组词条。</returns>
-        private static LearningWordGroupDto MapGroup(LearningWordGroupPo group)
-        {
-            return new LearningWordGroupDto(
-                group.WordGroupId,
-                ParseEnum<LearningLanguage>(group.Language, "学习语言"),
-                group.AnchorSourceSenseId,
-                group.CreatedAtUtc,
-                group.Members.Select(MapMember).ToArray());
-        }
-
-        /// <summary>
-        /// 将学习库成员还原为导入词组成员；非简体中文释义按无可用中文释义处理。
-        /// </summary>
-        /// <param name="member">持久化的词组成员。</param>
-        /// <returns>保留词形与释义元数据的业务成员。</returns>
-        private static ImportWordGroupMemberDto MapMember(ImportWordGroupMemberPo member)
-        {
-            return new ImportWordGroupMemberDto(
-                member.Language,
-                member.SourceSenseId,
-                member.SourceLexemeId,
-                member.Headword,
-                member.Reading,
-                member.PartOfSpeechLabel,
-                member.AttributeLabel,
-                member.IsPhrase,
-                string.Equals(member.MeaningLanguage, "zh-CN", StringComparison.Ordinal) ? member.Meanings : Array.Empty<string>(),
-                member.Forms.Select(form => new ImportWordGroupFormDto(
-                    form.Surface, form.Reading, form.FormCode, form.ScriptCode, form.RoleCode,
-                    form.FormLabel, form.DetailLabel, form.IsCommon, form.IsPrimary)).ToArray(),
-                ParseEnumOrDefault(member.MeaningSource, LexiconMeaningSource.Missing),
-                ParseEnumOrDefault(member.MeaningPrecision, LexiconMeaningPrecision.Missing),
-                member.KanjiUsageCode);
-        }
-
         private static void ValidateLanguage(LearningLanguage language)
         {
             ValidateEnum(language, nameof(language));
@@ -439,18 +363,6 @@ namespace Dictation.Core.Learning
             {
                 throw new ArgumentOutOfRangeException(parameterName, value, "选项不受支持。");
             }
-        }
-
-        private static T ParseEnum<T>(string value, string fieldName) where T : struct, Enum
-        {
-            return Enum.TryParse<T>(value, out var parsed) && Enum.IsDefined(parsed)
-                ? parsed
-                : throw new InvalidDataException($"数据库中的{fieldName}无效：{value}。");
-        }
-
-        private static T ParseEnumOrDefault<T>(string value, T defaultValue) where T : struct, Enum
-        {
-            return Enum.TryParse<T>(value, out var parsed) && Enum.IsDefined(parsed) ? parsed : defaultValue;
         }
 
         private static string NormalizeText(string? value, string fieldName)
