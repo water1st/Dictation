@@ -66,6 +66,7 @@ namespace Dictation.Core.Learning
                 return null;
             }
 
+            // 优先补齐尚未覆盖的通道和字形；覆盖程度相同时，再优先安排历史错误率更高的词形。
             var maxUncovered = eligible.Max(candidate => candidate.UncoveredDimensions);
             var coveragePool = eligible
                 .Where(candidate => candidate.UncoveredDimensions == maxUncovered)
@@ -103,6 +104,15 @@ namespace Dictation.Core.Learning
                 && GetApplicableOutputs(unit, plan, language).Count > 0;
         }
 
+        /// <summary>
+        /// 为词形选择练习次数最少的通道和可用字形，并汇总未覆盖维度与历史错误率，
+        /// 供外层先按覆盖缺口、再按错误率确定调度优先级。
+        /// </summary>
+        /// <param name="unit">待评估的词形状态。</param>
+        /// <param name="plan">当前语言生效的学习计划。</param>
+        /// <param name="language">当前会话语言。</param>
+        /// <param name="history">本轮已创建题目的历史。</param>
+        /// <returns>可参与优先级比较的候选；没有适用字形时返回 <see langword="null"/>。</returns>
         private QuestionCandidate? CreateQuestionCandidate(
             LearningFormUnitPo unit,
             LearningPlanDto plan,
@@ -141,6 +151,15 @@ namespace Dictation.Core.Learning
             return pool[random.Next(pool.Length)];
         }
 
+        /// <summary>
+        /// 判断常规间隔尚未到达的词形能否在小候选池中提前释放。
+        /// 只有其余每个词形都在该词形上次出题之后至少完成过一题，才视为已有足够穿插；
+        /// 没有其他词形时该条件自然成立，避免单词形会话无法继续。
+        /// </summary>
+        /// <param name="candidate">等待提前释放的候选。</param>
+        /// <param name="candidates">当前全部未掌握且可练习的候选。</param>
+        /// <param name="history">用于判断各词形最近穿插顺序的答题历史。</param>
+        /// <returns>已满足小池穿插边界时返回 <see langword="true"/>。</returns>
         private static bool MayReleaseEarly(
             QuestionCandidate candidate,
             IReadOnlyList<QuestionCandidate> candidates,
@@ -154,6 +173,14 @@ namespace Dictation.Core.Learning
                     && IsSameUnit(other.Unit, item)));
         }
 
+        /// <summary>
+        /// 将计划字形限制到词形实际具备的表示：英语只使用存在变体的拉丁字形；
+        /// 日语假名必须有假名变体，汉字还必须标记为常用且存在汉字变体，从而排除罕见或无汉字词形。
+        /// </summary>
+        /// <param name="unit">待筛选字形的词形状态。</param>
+        /// <param name="plan">声明启用字形的学习计划。</param>
+        /// <param name="language">当前会话语言。</param>
+        /// <returns>同时满足计划选择和词形实际表示能力的字形。</returns>
         private static IReadOnlyList<LearningOutputMode> GetApplicableOutputs(
             LearningFormUnitPo unit,
             LearningPlanDto plan,
