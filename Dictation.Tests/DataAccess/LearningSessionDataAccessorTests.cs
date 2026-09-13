@@ -210,10 +210,11 @@ namespace Dictation.Tests.DataAccess
                 return new TestEnvironment(
                     temporaryDirectory,
                     paths,
-                    new ImportInboxService(lexiconService, new ImportInboxDataAccessor(new SqliteConnectionFactory(paths))));
+                    new ImportInboxService(lexiconService, DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths))));
             }
 
-            public LearningSessionDataAccessor CreateAccessor() => new(new SqliteConnectionFactory(Paths));
+            public LearningSessionDataAccessor CreateAccessor() =>
+                DataAccessorTestFactory.CreateLearningSession(new SqliteConnectionFactory(Paths));
 
             public async Task<string> StageLearningAsync(LearningLanguage language, string sourceText, string sourceSenseId)
             {

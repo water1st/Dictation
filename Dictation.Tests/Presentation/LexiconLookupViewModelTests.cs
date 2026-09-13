@@ -400,7 +400,7 @@ namespace Dictation.Tests.Presentation
                 new EnglishLexiconDataAccessor(factory));
             var importService = new ImportInboxService(
                 lexiconService,
-                new ImportInboxDataAccessor(new SqliteConnectionFactory(paths)));
+                DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths)));
             return new LexiconLookupViewModel(
                 lexiconService,
                 importService,
@@ -420,7 +420,7 @@ namespace Dictation.Tests.Presentation
         {
             return new ImportInboxService(
                 CreateLexiconService(paths),
-                new ImportInboxDataAccessor(new SqliteConnectionFactory(paths)));
+                DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths)));
         }
 
         private static IConfigurationRoot BuildConfiguration(ApplicationPaths paths)
@@ -452,7 +452,7 @@ namespace Dictation.Tests.Presentation
                 new EnglishLexiconDataAccessor(factory));
             return new ImportInboxService(
                 lexiconService,
-                new ImportInboxDataAccessor(new SqliteConnectionFactory(paths)));
+                DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths)));
         }
 
         private static async Task<ApplicationPaths> CreateEnvironmentAsync(TemporaryDirectory temporaryDirectory)

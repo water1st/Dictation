@@ -17,7 +17,7 @@ namespace Dictation.Tests.DataAccess
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = await CreateEnvironmentAsync(temporaryDirectory);
-            var accessor = new LearningPlanDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateLearningPlan(new SqliteConnectionFactory(paths));
             var japanese = CreatePlan("Japanese", 20, 15, "Random", new[] { "Dictionary", "Polite" }, new[] { "Kana", "Kanji" });
             var english = CreatePlan("English", 30, 25, "Sequential", new[] { "Base", "Past" }, new[] { "Latin" });
 
@@ -50,7 +50,7 @@ namespace Dictation.Tests.DataAccess
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = await CreateEnvironmentAsync(temporaryDirectory);
-            var accessor = new LearningPlanDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateLearningPlan(new SqliteConnectionFactory(paths));
             var invalid = CreatePlan("Japanese", 0, 20, "Random", new[] { "Dictionary" }, new[] { "Kana" });
 
             await Assert.ThrowsAsync<LearningPlanDataAccessException>(() => accessor.SavePlanAsync(
@@ -70,7 +70,7 @@ namespace Dictation.Tests.DataAccess
             await StageAndDecideAsync(importService, LearningLanguage.Japanese, "食前", "jmdict:2:1", ImportDecision.Learning);
             await StageAndDecideAsync(importService, LearningLanguage.Japanese, "食事", "jmdict:10:1", ImportDecision.Review);
             await StageAndDecideAsync(importService, LearningLanguage.English, "gone", "go%2:01:00::", ImportDecision.Learning);
-            var accessor = new LearningPlanDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateLearningPlan(new SqliteConnectionFactory(paths));
 
             var first = await accessor.GetLearningLibraryPageAsync(
                 "Japanese",
@@ -120,7 +120,7 @@ namespace Dictation.Tests.DataAccess
                 "食べる",
                 "jmdict:1:1",
                 ImportDecision.Learning);
-            var accessor = new LearningPlanDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateLearningPlan(new SqliteConnectionFactory(paths));
 
             var result = await accessor.DeleteWordGroupAsync(
                 "Japanese",
@@ -152,7 +152,7 @@ namespace Dictation.Tests.DataAccess
                 "食事",
                 "jmdict:10:1",
                 ImportDecision.Review);
-            var accessor = new LearningPlanDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateLearningPlan(new SqliteConnectionFactory(paths));
 
             Assert.Equal(
                 DeleteLearningWordGroupResult.NotFound,
@@ -185,7 +185,7 @@ namespace Dictation.Tests.DataAccess
                 "食事",
                 "jmdict:10:1",
                 ImportDecision.Review);
-            var accessor = new LearningPlanDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateLearningPlan(new SqliteConnectionFactory(paths));
 
             var count = await accessor.CountLearningWordGroupsAsync(
                 "Japanese",
@@ -206,7 +206,7 @@ namespace Dictation.Tests.DataAccess
                 await connection.ExecuteAsync("DROP TABLE LearningPlans;");
             }
 
-            var accessor = new LearningPlanDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateLearningPlan(new SqliteConnectionFactory(paths));
 
             var exception = await Assert.ThrowsAsync<LearningPlanDataAccessException>(() => accessor.GetPlanAsync(
                 "Japanese",
@@ -219,7 +219,7 @@ namespace Dictation.Tests.DataAccess
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = await CreateEnvironmentAsync(temporaryDirectory);
-            var accessor = new LearningPlanDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateLearningPlan(new SqliteConnectionFactory(paths));
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
 
@@ -283,7 +283,7 @@ namespace Dictation.Tests.DataAccess
                 new LexiconLookupService(
                     new JapaneseLexiconDataAccessor(lexiconFactory),
                     new EnglishLexiconDataAccessor(lexiconFactory)),
-                new ImportInboxDataAccessor(new SqliteConnectionFactory(paths)));
+                DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths)));
         }
 
         private static async Task<string> StageAndDecideAsync(

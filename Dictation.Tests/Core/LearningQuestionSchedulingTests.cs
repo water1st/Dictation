@@ -615,12 +615,12 @@ namespace Dictation.Tests.Core
                 var timeProvider = new MutableTimeProvider(
                     new DateTimeOffset(2026, 9, 6, 9, 0, 0, TimeSpan.FromHours(8)));
                 var planService = new LearningPlanService(
-                    new LearningPlanDataAccessor(connectionFactory),
+                    DataAccessorTestFactory.CreateLearningPlan(connectionFactory),
                     lexiconService,
                     timeProvider);
-                var importService = new ImportInboxService(lexiconService, new ImportInboxDataAccessor(connectionFactory));
+                var importService = new ImportInboxService(lexiconService, DataAccessorTestFactory.CreateImportInbox(connectionFactory));
                 var evaluationService = new AnswerEvaluationService();
-                var dataAccessor = new LearningSessionDataAccessor(connectionFactory);
+                var dataAccessor = DataAccessorTestFactory.CreateLearningSession(connectionFactory);
                 var random = new Random(seed);
                 var service = new LearningSessionService(
                     dataAccessor,
@@ -648,7 +648,7 @@ namespace Dictation.Tests.Core
             {
                 var random = new Random(seed + 1);
                 return new LearningSessionService(
-                    new LearningSessionDataAccessor(connectionFactory),
+                    DataAccessorTestFactory.CreateLearningSession(connectionFactory),
                     planService,
                     planService,
                     new LearningQuestionScheduler(TimeProvider, random),

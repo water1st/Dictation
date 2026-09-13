@@ -120,7 +120,7 @@ namespace Dictation.Tests.Presentation
         private static async Task SeedHomographsAsync(ApplicationPaths paths, bool dictation)
         {
             var factory = new SqliteConnectionFactory(paths);
-            var importer = new ImportInboxDataAccessor(factory);
+            var importer = DataAccessorTestFactory.CreateImportInbox(factory);
             foreach (var (senseId, reading, meaning) in new[]
             {
                 ("test:skill", "じょうず", "擅长"),
@@ -144,7 +144,7 @@ namespace Dictation.Tests.Presentation
                 await importer.DecideAsync(batch.BatchId, new[] { Assert.Single(batch.Items).ItemId },
                     "Learning", TestContext.Current.CancellationToken);
             }
-            await new LearningPlanDataAccessor(factory).SavePlanAsync(new LearningPlanPo(
+            await DataAccessorTestFactory.CreateLearningPlan(factory).SavePlanAsync(new LearningPlanPo(
                 "Japanese", 20, 20, "Sequential", "GrammarName", null,
                 new[] { "Dictionary" }, new[] { dictation ? "Dictation" : "MeaningWriting" },
                 new[] { "Kanji" }, DateTimeOffset.UtcNow), TestContext.Current.CancellationToken);

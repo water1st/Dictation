@@ -32,7 +32,7 @@ namespace Dictation.Tests.Presentation
                 var lexiconService = CreateLexiconService(paths);
                 var importService = new ImportInboxService(
                     lexiconService,
-                    new ImportInboxDataAccessor(new SqliteConnectionFactory(paths)));
+                    DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths)));
                 var viewModel = new LexiconLookupViewModel(
                     lexiconService,
                     importService,
@@ -85,7 +85,7 @@ namespace Dictation.Tests.Presentation
                 var lexiconService = CreateLexiconService(paths);
                 var importService = new ImportInboxService(
                     lexiconService,
-                    new ImportInboxDataAccessor(new SqliteConnectionFactory(paths)));
+                    DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths)));
                 var viewModel = new LexiconLookupViewModel(
                     lexiconService,
                     importService,

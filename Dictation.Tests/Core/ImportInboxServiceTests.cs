@@ -396,7 +396,7 @@ namespace Dictation.Tests.Core
                 new LexiconLookupService(
                     new JapaneseLexiconDataAccessor(factory),
                     new EnglishLexiconDataAccessor(factory)),
-                new ImportInboxDataAccessor(new SqliteConnectionFactory(paths)));
+                DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths)));
         }
 
         private static string HashFile(string path)

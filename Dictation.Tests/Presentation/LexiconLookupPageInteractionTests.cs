@@ -67,7 +67,7 @@ namespace Dictation.Tests.Presentation
                 new EnglishLexiconDataAccessor(factory));
             var importService = new ImportInboxService(
                 lexiconService,
-                new ImportInboxDataAccessor(new SqliteConnectionFactory(paths)));
+                DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths)));
             return new LexiconLookupViewModel(
                 lexiconService,
                 importService,

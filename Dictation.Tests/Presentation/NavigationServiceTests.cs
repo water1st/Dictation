@@ -349,7 +349,7 @@ namespace Dictation.Tests.Presentation
                 services.AddScoped<ImportInboxService>(serviceProvider =>
                     new ImportInboxService(
                         serviceProvider.GetRequiredService<LexiconLookupService>(),
-                        new ImportInboxDataAccessor(new SqliteConnectionFactory(paths))));
+                        DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths))));
                 services.AddScoped<IImportStaging>(serviceProvider =>
                     serviceProvider.GetRequiredService<ImportInboxService>());
                 services.AddScoped<IImportInboxQuery>(serviceProvider =>

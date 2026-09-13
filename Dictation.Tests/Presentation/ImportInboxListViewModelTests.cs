@@ -315,7 +315,7 @@ namespace Dictation.Tests.Presentation
                 new LexiconLookupService(
                     new JapaneseLexiconDataAccessor(factory),
                     new EnglishLexiconDataAccessor(factory)),
-                new ImportInboxDataAccessor(new SqliteConnectionFactory(paths)));
+                DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths)));
         }
 
         private sealed class TestEnvironment : IDisposable

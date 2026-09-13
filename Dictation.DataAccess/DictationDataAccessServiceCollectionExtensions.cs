@@ -20,9 +20,19 @@ namespace Dictation.DataAccess
             services.AddSingleton<LexiconSqliteConnectionFactory>();
             services.AddSingleton<JapaneseLexiconDataAccessor>();
             services.AddSingleton<EnglishLexiconDataAccessor>();
-            services.AddSingleton<ImportInboxDataAccessor>();
-            services.AddSingleton<LearningPlanDataAccessor>();
-            services.AddSingleton<LearningSessionDataAccessor>();
+            services.AddSingleton<WordGroupMemberSnapshotReader>();
+            services.AddSingleton(serviceProvider =>
+                new ImportInboxDataAccessor(
+                    serviceProvider.GetRequiredService<SqliteConnectionFactory>(),
+                    serviceProvider.GetRequiredService<WordGroupMemberSnapshotReader>()));
+            services.AddSingleton(serviceProvider =>
+                new LearningPlanDataAccessor(
+                    serviceProvider.GetRequiredService<SqliteConnectionFactory>(),
+                    serviceProvider.GetRequiredService<WordGroupMemberSnapshotReader>()));
+            services.AddSingleton(serviceProvider =>
+                new LearningSessionDataAccessor(
+                    serviceProvider.GetRequiredService<SqliteConnectionFactory>(),
+                    serviceProvider.GetRequiredService<WordGroupMemberSnapshotReader>()));
             services.AddSingleton<SchemaMigrationRunner>(serviceProvider =>
                 new SchemaMigrationRunner(
                     serviceProvider.GetRequiredService<ApplicationPaths>(),

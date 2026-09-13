@@ -288,13 +288,13 @@ namespace Dictation.Tests.Core
                 var connectionFactory = new SqliteConnectionFactory(paths);
                 var timeProvider = new MutableTimeProvider(new DateTimeOffset(2026, 9, 5, 6, 0, 0, TimeSpan.FromHours(8)));
                 var planService = new LearningPlanService(
-                    new LearningPlanDataAccessor(connectionFactory),
+                    DataAccessorTestFactory.CreateLearningPlan(connectionFactory),
                     lexiconService,
                     timeProvider);
-                var importService = new ImportInboxService(lexiconService, new ImportInboxDataAccessor(connectionFactory));
+                var importService = new ImportInboxService(lexiconService, DataAccessorTestFactory.CreateImportInbox(connectionFactory));
                 var random = new Random(randomSeed);
                 var sessionService = new LearningSessionService(
-                    new LearningSessionDataAccessor(connectionFactory),
+                    DataAccessorTestFactory.CreateLearningSession(connectionFactory),
                     planService,
                     planService,
                     new LearningQuestionScheduler(timeProvider, random),

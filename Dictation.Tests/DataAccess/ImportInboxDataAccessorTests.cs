@@ -11,7 +11,7 @@ namespace Dictation.Tests.DataAccess
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = await CreateUserDatabaseAsync(temporaryDirectory);
-            var accessor = new ImportInboxDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths));
             var group = CreateGroup("Japanese", "jmdict:1:1", "食べる", "to eat");
 
             var batch = await accessor.StageAsync(
@@ -41,7 +41,7 @@ namespace Dictation.Tests.DataAccess
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = await CreateUserDatabaseAsync(temporaryDirectory);
-            var accessor = new ImportInboxDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths));
             var group = CreateGroup("English", "go%2:01:00::", "go", "to move");
 
             var first = await accessor.StageAsync(
@@ -77,7 +77,7 @@ namespace Dictation.Tests.DataAccess
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = await CreateUserDatabaseAsync(temporaryDirectory);
-            var accessor = new ImportInboxDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths));
             var learningGroup = CreateGroup("English", "learning", "go", "move");
             var first = await accessor.StageAsync(
                 new ImportBatchStagePo(
@@ -127,7 +127,7 @@ namespace Dictation.Tests.DataAccess
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = await CreateUserDatabaseAsync(temporaryDirectory);
-            var accessor = new ImportInboxDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths));
             var firstGroup = CreateGroup("English", "first", "go", "move");
             var secondGroup = CreateGroup("English", "second", "take", "seize");
             var batch = await accessor.StageAsync(
@@ -171,7 +171,7 @@ namespace Dictation.Tests.DataAccess
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = await CreateUserDatabaseAsync(temporaryDirectory);
-            var accessor = new ImportInboxDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths));
             var group = CreateGroup("Japanese", "discard", "食べる", "to eat", includeSecondMember: true);
             var batch = await accessor.StageAsync(
                 new ImportBatchStagePo(
@@ -204,7 +204,7 @@ namespace Dictation.Tests.DataAccess
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = await CreateUserDatabaseAsync(temporaryDirectory);
-            var accessor = new ImportInboxDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths));
             var batch = await accessor.StageAsync(
                 new ImportBatchStagePo(
                     "English",
@@ -236,7 +236,7 @@ namespace Dictation.Tests.DataAccess
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = await CreateUserDatabaseAsync(temporaryDirectory);
-            var accessor = new ImportInboxDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths));
             var first = await accessor.StageAsync(
                 new ImportBatchStagePo(
                     "English",
@@ -296,7 +296,7 @@ namespace Dictation.Tests.DataAccess
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = new ApplicationPaths(temporaryDirectory.Path);
             paths.EnsureRuntimeDirectories();
-            var accessor = new ImportInboxDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths));
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
 
@@ -315,7 +315,7 @@ namespace Dictation.Tests.DataAccess
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = await CreateUserDatabaseAsync(temporaryDirectory);
-            var accessor = new ImportInboxDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths));
             var group = new ImportWordGroupSnapshotPo(
                 "Japanese",
                 "missing-anchor",
@@ -342,7 +342,7 @@ namespace Dictation.Tests.DataAccess
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = new ApplicationPaths(temporaryDirectory.Path);
             paths.EnsureRuntimeDirectories();
-            var accessor = new ImportInboxDataAccessor(new SqliteConnectionFactory(paths));
+            var accessor = DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths));
 
             var exception = await Assert.ThrowsAsync<ImportInboxDataAccessException>(() => accessor.ListPendingAsync(
                 "Japanese",

@@ -321,7 +321,7 @@ namespace Dictation.Tests.DataAccess
                 new LexiconLookupService(
                     new JapaneseLexiconDataAccessor(lexiconFactory),
                     new EnglishLexiconDataAccessor(lexiconFactory)),
-                new ImportInboxDataAccessor(new SqliteConnectionFactory(paths)));
+                DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths)));
         }
 
         private static SqliteConnection OpenUserDatabase(ApplicationPaths paths)

@@ -6,14 +6,27 @@ using Microsoft.Data.Sqlite;
 
 namespace Dictation.DataAccess.Learning
 {
+    /// <summary>
+    /// 负责学习计划与学习库分页的持久化访问。
+    /// </summary>
     public sealed class LearningPlanDataAccessor
     {
         private static readonly HashSet<string> Languages = new(StringComparer.Ordinal) { "Japanese", "English" };
         private readonly SqliteConnectionFactory connectionFactory;
+        private readonly WordGroupMemberSnapshotReader wordGroupMemberSnapshotReader;
 
-        public LearningPlanDataAccessor(SqliteConnectionFactory connectionFactory)
+        /// <summary>
+        /// 使用指定连接工厂和词组成员快照读取组件初始化数据访问器。
+        /// </summary>
+        /// <param name="connectionFactory">运行数据库连接工厂。</param>
+        /// <param name="wordGroupMemberSnapshotReader">复用调用方连接读取词组成员快照的组件。</param>
+        internal LearningPlanDataAccessor(
+            SqliteConnectionFactory connectionFactory,
+            WordGroupMemberSnapshotReader wordGroupMemberSnapshotReader)
         {
             this.connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
+            this.wordGroupMemberSnapshotReader = wordGroupMemberSnapshotReader
+                ?? throw new ArgumentNullException(nameof(wordGroupMemberSnapshotReader));
         }
 
         public async Task<LearningPlanPo?> GetPlanAsync(string language, CancellationToken cancellationToken = default)
@@ -305,7 +318,7 @@ namespace Dictation.DataAccess.Learning
             }
         }
 
-        private static async Task<IReadOnlyList<LearningWordGroupPo>> LoadGroupSnapshotsAsync(
+        private async Task<IReadOnlyList<LearningWordGroupPo>> LoadGroupSnapshotsAsync(
             SqliteConnection connection,
             IReadOnlyList<GroupRow> groups,
             CancellationToken cancellationToken)
@@ -315,35 +328,11 @@ namespace Dictation.DataAccess.Learning
                 return Array.Empty<LearningWordGroupPo>();
             }
 
-            var groupIds = groups.Select(group => group.WordGroupId).ToArray();
-            var members = (await connection.QueryAsync<MemberRow>(new CommandDefinition(
-                """
-                SELECT MemberId, WordGroupId, Language, SourceSenseId, SourceLexemeId, Headword, Reading,
-                       PartOfSpeechLabel, AttributeLabel, IsPhrase, SortOrder,
-                       MeaningLanguage, MeaningSource, MeaningPrecision, KanjiUsageCode
-                FROM WordGroupMembers WHERE WordGroupId IN @GroupIds ORDER BY WordGroupId, SortOrder;
-                """,
-                new { GroupIds = groupIds },
-                cancellationToken: cancellationToken))).ToArray();
-            var memberIds = members.Select(member => member.MemberId).ToArray();
-            var meanings = memberIds.Length == 0 ? Array.Empty<MeaningRow>() :
-                (await connection.QueryAsync<MeaningRow>(new CommandDefinition(
-                    "SELECT MemberId, MeaningIndex, Text FROM WordGroupMeanings WHERE MemberId IN @MemberIds ORDER BY MemberId, MeaningIndex;",
-                    new { MemberIds = memberIds }, cancellationToken: cancellationToken))).ToArray();
-            var forms = memberIds.Length == 0 ? Array.Empty<FormRow>() :
-                (await connection.QueryAsync<FormRow>(new CommandDefinition(
-                    """
-                    SELECT MemberId, FormIndex, Surface, Reading, FormCode, ScriptCode, RoleCode,
-                           FormLabel, DetailLabel, IsCommon, IsPrimary
-                    FROM WordGroupForms WHERE MemberId IN @MemberIds ORDER BY MemberId, FormIndex;
-                    """,
-                    new { MemberIds = memberIds }, cancellationToken: cancellationToken))).ToArray();
-            var membersByGroup = members.GroupBy(member => member.WordGroupId, StringComparer.Ordinal)
-                .ToDictionary(group => group.Key, group => group.OrderBy(member => member.SortOrder).ToArray(), StringComparer.Ordinal);
-            var meaningsByMember = meanings.GroupBy(meaning => meaning.MemberId)
-                .ToDictionary(group => group.Key, group => group.OrderBy(meaning => meaning.MeaningIndex).Select(meaning => meaning.Text).ToArray());
-            var formsByMember = forms.GroupBy(form => form.MemberId)
-                .ToDictionary(group => group.Key, group => group.OrderBy(form => form.FormIndex).Select(MapForm).ToArray());
+            var membersByGroup = await wordGroupMemberSnapshotReader.ReadAsync(
+                connection,
+                transaction: null,
+                groups.Select(group => group.WordGroupId).ToArray(),
+                cancellationToken);
 
             return groups.Select(group => new LearningWordGroupPo(
                 group.WordGroupId,
@@ -351,20 +340,8 @@ namespace Dictation.DataAccess.Learning
                 group.AnchorSourceSenseId,
                 ParseDateTime(group.CreatedAtUtc, "WordGroups.CreatedAtUtc"),
                 membersByGroup.TryGetValue(group.WordGroupId, out var groupMembers)
-                    ? groupMembers.Select(member => new ImportWordGroupMemberPo(
-                        member.Language, member.SourceSenseId, member.SourceLexemeId, member.Headword, member.Reading,
-                        member.PartOfSpeechLabel, member.AttributeLabel, member.IsPhrase != 0,
-                        member.MeaningLanguage, member.MeaningSource, member.MeaningPrecision,
-                        meaningsByMember.TryGetValue(member.MemberId, out var memberMeanings) ? memberMeanings : Array.Empty<string>(),
-                        formsByMember.TryGetValue(member.MemberId, out var memberForms) ? memberForms : Array.Empty<ImportWordGroupFormPo>(),
-                        member.KanjiUsageCode)).ToArray()
+                    ? groupMembers
                     : Array.Empty<ImportWordGroupMemberPo>())).ToArray();
-        }
-
-        private static ImportWordGroupFormPo MapForm(FormRow form)
-        {
-            return new ImportWordGroupFormPo(form.Surface, form.Reading, form.FormCode, form.ScriptCode, form.RoleCode,
-                form.FormLabel, form.DetailLabel, form.IsCommon != 0, form.IsPrimary != 0);
         }
 
         private static void ValidateLanguage(string language)
@@ -427,45 +404,5 @@ namespace Dictation.DataAccess.Learning
             public string Placement { get; set; } = string.Empty;
         }
 
-        private sealed class MemberRow
-        {
-            public long MemberId { get; set; }
-            public string WordGroupId { get; set; } = string.Empty;
-            public string Language { get; set; } = string.Empty;
-            public string SourceSenseId { get; set; } = string.Empty;
-            public string SourceLexemeId { get; set; } = string.Empty;
-            public string Headword { get; set; } = string.Empty;
-            public string? Reading { get; set; }
-            public string PartOfSpeechLabel { get; set; } = string.Empty;
-            public string AttributeLabel { get; set; } = string.Empty;
-            public int IsPhrase { get; set; }
-            public int SortOrder { get; set; }
-            public string MeaningLanguage { get; set; } = string.Empty;
-            public string MeaningSource { get; set; } = string.Empty;
-            public string MeaningPrecision { get; set; } = string.Empty;
-            public string? KanjiUsageCode { get; set; }
-        }
-
-        private sealed class MeaningRow
-        {
-            public long MemberId { get; set; }
-            public int MeaningIndex { get; set; }
-            public string Text { get; set; } = string.Empty;
-        }
-
-        private sealed class FormRow
-        {
-            public long MemberId { get; set; }
-            public int FormIndex { get; set; }
-            public string Surface { get; set; } = string.Empty;
-            public string? Reading { get; set; }
-            public string FormCode { get; set; } = string.Empty;
-            public string? ScriptCode { get; set; }
-            public string? RoleCode { get; set; }
-            public string FormLabel { get; set; } = string.Empty;
-            public string DetailLabel { get; set; } = string.Empty;
-            public int IsCommon { get; set; }
-            public int IsPrimary { get; set; }
-        }
     }
 }

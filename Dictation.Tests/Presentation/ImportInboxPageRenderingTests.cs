@@ -201,7 +201,7 @@ namespace Dictation.Tests.Presentation
                     new LexiconLookupService(
                         new JapaneseLexiconDataAccessor(factory),
                         new EnglishLexiconDataAccessor(factory)),
-                    new ImportInboxDataAccessor(new SqliteConnectionFactory(paths)));
+                    DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths)));
                 Overlay = new OverlayService();
                 Navigation = new NavigationService(new TestScopeFactory());
             }

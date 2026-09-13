@@ -236,9 +236,9 @@ namespace Dictation.Tests.Presentation
                     new EnglishLexiconDataAccessor(lexiconFactory));
                 var importService = new ImportInboxService(
                     lexiconService,
-                    new ImportInboxDataAccessor(new SqliteConnectionFactory(paths)));
+                    DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths)));
                 var planService = new LearningPlanService(
-                    new LearningPlanDataAccessor(new SqliteConnectionFactory(paths)),
+                    DataAccessorTestFactory.CreateLearningPlan(new SqliteConnectionFactory(paths)),
                     lexiconService,
                     TimeProvider.System);
                 return new TestEnvironment(temporaryDirectory, planService, lexiconService, importService);

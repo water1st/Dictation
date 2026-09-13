@@ -420,10 +420,10 @@ namespace Dictation.Tests.Core
             var lexiconService = new LexiconLookupService(
                 new JapaneseLexiconDataAccessor(lexiconFactory),
                 new EnglishLexiconDataAccessor(lexiconFactory));
-            var inboxAccessor = new ImportInboxDataAccessor(new SqliteConnectionFactory(paths));
+            var inboxAccessor = DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths));
             var importService = new ImportInboxService(lexiconService, inboxAccessor);
             var service = new LearningPlanService(
-                new LearningPlanDataAccessor(new SqliteConnectionFactory(paths)),
+                DataAccessorTestFactory.CreateLearningPlan(new SqliteConnectionFactory(paths)),
                 lexiconService,
                 new FixedTimeProvider(FixedNow));
             return new TestEnvironment(service, importService);
