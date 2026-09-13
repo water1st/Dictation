@@ -48,6 +48,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 serviceProvider.GetRequiredService<LearningPlanService>());
             services.AddSingleton<ILearningSessionStartPreparer>(serviceProvider =>
                 serviceProvider.GetRequiredService<LearningPlanService>());
+            services.AddSingleton<LearningQuestionScheduler>();
             services.AddSingleton<LearningSessionService>();
             services.AddSingleton<ILearningSessionOperations>(serviceProvider =>
                 serviceProvider.GetRequiredService<LearningSessionService>());

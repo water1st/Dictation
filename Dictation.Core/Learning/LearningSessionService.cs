@@ -12,6 +12,7 @@ namespace Dictation.Core.Learning
         private readonly LearningSessionDataAccessor dataAccessor;
         private readonly ILearningPlanReader learningPlanReader;
         private readonly ILearningSessionStartPreparer sessionStartPreparer;
+        private readonly LearningQuestionScheduler questionScheduler;
         private readonly AnswerEvaluationService answerEvaluationService;
         private readonly TimeProvider timeProvider;
         private readonly Random random;
@@ -22,6 +23,7 @@ namespace Dictation.Core.Learning
         /// <param name="dataAccessor">用于读写会话、题目和学习进度的数据访问器。</param>
         /// <param name="learningPlanReader">用于按会话语言读取当前学习计划。</param>
         /// <param name="sessionStartPreparer">用于校验手选词组并准备启动范围。</param>
+        /// <param name="questionScheduler">用于按当前词形状态和历史选择下一题。</param>
         /// <param name="answerEvaluationService">用于依据语言规则判断提交答案。</param>
         /// <param name="timeProvider">用于记录会话、题目和答案的时间。</param>
         /// <param name="random">用于保留选词与出题的随机顺序。</param>
@@ -29,6 +31,7 @@ namespace Dictation.Core.Learning
             LearningSessionDataAccessor dataAccessor,
             ILearningPlanReader learningPlanReader,
             ILearningSessionStartPreparer sessionStartPreparer,
+            LearningQuestionScheduler questionScheduler,
             AnswerEvaluationService answerEvaluationService,
             TimeProvider timeProvider,
             Random random)
@@ -36,12 +39,14 @@ namespace Dictation.Core.Learning
             ArgumentNullException.ThrowIfNull(dataAccessor);
             ArgumentNullException.ThrowIfNull(learningPlanReader);
             ArgumentNullException.ThrowIfNull(sessionStartPreparer);
+            ArgumentNullException.ThrowIfNull(questionScheduler);
             ArgumentNullException.ThrowIfNull(answerEvaluationService);
             ArgumentNullException.ThrowIfNull(timeProvider);
             ArgumentNullException.ThrowIfNull(random);
             this.dataAccessor = dataAccessor;
             this.learningPlanReader = learningPlanReader;
             this.sessionStartPreparer = sessionStartPreparer;
+            this.questionScheduler = questionScheduler;
             this.answerEvaluationService = answerEvaluationService;
             this.timeProvider = timeProvider;
             this.random = random;
@@ -147,9 +152,9 @@ namespace Dictation.Core.Learning
                 return MapQuestion(snapshot, snapshot.PendingQuestion, plan);
             }
 
-            var scheduled = ScheduleQuestion(snapshot, plan, snapshot.Session.CurrentOrdinal)
+            var scheduled = questionScheduler.CreateNextQuestion(snapshot, plan, snapshot.Session.CurrentOrdinal)
                 ?? throw new InvalidOperationException("当前学习会话没有可调度的题目。");
-            var persisted = await dataAccessor.CreatePendingQuestionAsync(scheduled.Question, cancellationToken);
+            var persisted = await dataAccessor.CreatePendingQuestionAsync(scheduled, cancellationToken);
             return MapQuestion(snapshot, persisted, plan);
         }
 
@@ -185,7 +190,7 @@ namespace Dictation.Core.Learning
                 .Trim()
                 .Normalize(System.Text.NormalizationForm.FormC);
             var newStreak = wasCorrect ? Math.Min(2, currentUnit.CorrectStreak + 1) : 0;
-            var nextEligibleOrdinal = currentQuestion.QuestionOrdinal + random.Next(4, 9);
+            var nextEligibleOrdinal = questionScheduler.GetNextEligibleOrdinal(currentQuestion.QuestionOrdinal);
             var updatedUnit = ApplyOutcome(currentUnit, currentQuestion, wasCorrect, newStreak, nextEligibleOrdinal);
             var updatedUnits = snapshot.Units
                 .Select(unit => IsSameUnit(unit, currentQuestion) ? updatedUnit : unit)
@@ -203,14 +208,18 @@ namespace Dictation.Core.Learning
                 Units = updatedUnits,
                 History = updatedHistory
             };
-            var activeUnits = updatedUnits.Where(unit => IsEnabledUnit(unit, plan, language)).ToArray();
+            var activeUnits = updatedUnits
+                .Where(unit => questionScheduler.IsEnabledUnit(unit, plan, language))
+                .ToArray();
             var completedWordGroupIds = activeUnits
                 .GroupBy(unit => unit.WordGroupId, StringComparer.Ordinal)
                 .Where(group => group.All(unit => unit.IsMastered))
                 .Select(group => group.Key)
                 .ToArray();
             var completeSession = activeUnits.Length == 0 || activeUnits.All(unit => unit.IsMastered);
-            var nextScheduled = completeSession ? null : ScheduleQuestion(transitionedSnapshot, plan, nextOrdinal);
+            var nextScheduled = completeSession
+                ? null
+                : questionScheduler.CreateNextQuestion(transitionedSnapshot, plan, nextOrdinal);
             if (!completeSession && nextScheduled is null)
             {
                 throw new InvalidOperationException("学习会话尚未完成，但没有可调度的下一题。");
@@ -229,7 +238,7 @@ namespace Dictation.Core.Learning
                     nextEligibleOrdinal,
                     now,
                     localDate,
-                    nextScheduled?.Question,
+                    nextScheduled,
                     completedWordGroupIds,
                     completeSession),
                 cancellationToken);
@@ -246,137 +255,6 @@ namespace Dictation.Core.Learning
                 summary,
                 SelectPreferredSpokenText(currentUnit, output, language));
         }
-
-        private ScheduledQuestion? ScheduleQuestion(
-            LearningSchedulingSnapshotPo snapshot,
-            LearningPlanDto plan,
-            int questionOrdinal)
-        {
-            var language = ParseEnum<LearningLanguage>(snapshot.Session.Language, "学习语言");
-            var candidates = snapshot.Units
-                .Where(unit => !unit.IsMastered && IsEnabledUnit(unit, plan, language))
-                .Select(unit => CreateQuestionCandidate(unit, plan, language, snapshot.History))
-                .Where(candidate => candidate is not null)
-                .Cast<QuestionCandidate>()
-                .ToArray();
-            var eligible = candidates.Where(candidate => candidate.Unit.NextEligibleOrdinal <= questionOrdinal).ToArray();
-            if (eligible.Length == 0)
-            {
-                eligible = candidates.Where(candidate => MayReleaseEarly(candidate, candidates, snapshot.History)).ToArray();
-            }
-
-            if (eligible.Length == 0)
-            {
-                return null;
-            }
-
-            var maxUncovered = eligible.Max(candidate => candidate.UncoveredDimensions);
-            var coveragePool = eligible.Where(candidate => candidate.UncoveredDimensions == maxUncovered).ToArray();
-            var maxErrorRate = coveragePool.Max(candidate => candidate.ErrorRate);
-            var priorityPool = coveragePool
-                .Where(candidate => Math.Abs(candidate.ErrorRate - maxErrorRate) < double.Epsilon)
-                .ToArray();
-            var selected = priorityPool[random.Next(priorityPool.Length)];
-            return new ScheduledQuestion(new CreateLearningQuestionPo(
-                snapshot.Session.SessionId,
-                selected.Unit.WordGroupId,
-                selected.Unit.MemberId,
-                selected.Unit.FormCode,
-                selected.Channel.ToString(),
-                selected.Output.ToString(),
-                questionOrdinal,
-                timeProvider.GetUtcNow()));
-        }
-
-        private QuestionCandidate? CreateQuestionCandidate(
-            LearningFormUnitPo unit,
-            LearningPlanDto plan,
-            LearningLanguage language,
-            IReadOnlyList<LearningQuestionHistoryPo> history)
-        {
-            var outputs = GetApplicableOutputs(unit, plan, language);
-            if (outputs.Count == 0)
-            {
-                return null;
-            }
-
-            var channel = SelectWeakest(
-                plan.Channels,
-                value => value == LearningChannel.MeaningWriting ? unit.MeaningWritingCount : unit.DictationCount);
-            var output = SelectWeakest(outputs, value => GetOutputCount(unit, value));
-            var uncovered = (GetChannelCount(unit, channel) == 0 ? 1 : 0)
-                + (GetOutputCount(unit, output) == 0 ? 1 : 0);
-            var totalAnswers = unit.CorrectCount + unit.ErrorCount;
-            var errorRate = totalAnswers == 0 ? 0d : (double)unit.ErrorCount / totalAnswers;
-            var lastOrdinal = history
-                .Where(item => IsSameUnit(unit, item))
-                .Select(item => item.QuestionOrdinal)
-                .DefaultIfEmpty(-1)
-                .Max();
-            return new QuestionCandidate(unit, channel, output, uncovered, errorRate, lastOrdinal);
-        }
-
-        private T SelectWeakest<T>(IReadOnlyList<T> values, Func<T, int> countSelector) where T : struct, Enum
-        {
-            var minimum = values.Min(countSelector);
-            var pool = values.Where(value => countSelector(value) == minimum).ToArray();
-            return pool[random.Next(pool.Length)];
-        }
-
-        private static bool MayReleaseEarly(
-            QuestionCandidate candidate,
-            IReadOnlyList<QuestionCandidate> candidates,
-            IReadOnlyList<LearningQuestionHistoryPo> history)
-        {
-            return candidates
-                .Where(other => !IsSameUnit(candidate.Unit, other.Unit))
-                .All(other => history.Any(item =>
-                    item.WasCorrect.HasValue
-                    && item.QuestionOrdinal > candidate.LastQuestionOrdinal
-                    && IsSameUnit(other.Unit, item)));
-        }
-
-        private static IReadOnlyList<LearningOutputMode> GetApplicableOutputs(
-            LearningFormUnitPo unit,
-            LearningPlanDto plan,
-            LearningLanguage language)
-        {
-            return plan.OutputModes.Where(output =>
-            {
-                if (language == LearningLanguage.English)
-                {
-                    return output == LearningOutputMode.Latin && unit.Variants.Count > 0;
-                }
-
-                return output switch
-                {
-                    LearningOutputMode.Kana => unit.Variants.Any(variant => string.Equals(variant.ScriptCode, "Kana", StringComparison.Ordinal)),
-                    LearningOutputMode.Kanji => string.Equals(unit.KanjiUsageCode, "Common", StringComparison.Ordinal)
-                        && unit.Variants.Any(variant => string.Equals(variant.ScriptCode, "Kanji", StringComparison.Ordinal)),
-                    _ => false
-                };
-            }).ToArray();
-        }
-
-        private static bool IsApplicableForm(LearningFormUnitPo unit, LearningLanguage language)
-        {
-            if (!unit.IsPhrase)
-            {
-                return true;
-            }
-
-            return language == LearningLanguage.English
-                ? string.Equals(unit.FormCode, "Base", StringComparison.Ordinal)
-                : string.Equals(unit.FormCode, "Dictionary", StringComparison.Ordinal);
-        }
-
-        private static bool IsEnabledUnit(
-            LearningFormUnitPo unit,
-            LearningPlanDto plan,
-            LearningLanguage language) =>
-            plan.FormCodes.Contains(unit.FormCode, StringComparer.Ordinal)
-            && IsApplicableForm(unit, language)
-            && GetApplicableOutputs(unit, plan, language).Count > 0;
 
         private static LearningFormUnitPo ApplyOutcome(
             LearningFormUnitPo unit,
@@ -498,24 +376,6 @@ namespace Dictation.Core.Learning
                 ?? throw new InvalidDataException("学习题目对应的词形状态不存在。");
         }
 
-        private static int GetChannelCount(LearningFormUnitPo unit, LearningChannel channel) => channel switch
-        {
-            LearningChannel.MeaningWriting => unit.MeaningWritingCount,
-            LearningChannel.Dictation => unit.DictationCount,
-            _ => throw new ArgumentOutOfRangeException(nameof(channel))
-        };
-
-        private static int GetOutputCount(LearningFormUnitPo unit, LearningOutputMode output) => output switch
-        {
-            LearningOutputMode.Latin => unit.LatinCount,
-            LearningOutputMode.Kana => unit.KanaCount,
-            LearningOutputMode.Kanji => unit.KanjiCount,
-            _ => throw new ArgumentOutOfRangeException(nameof(output))
-        };
-
-        private static bool IsSameUnit(LearningFormUnitPo left, LearningFormUnitPo right) =>
-            left.MemberId == right.MemberId && string.Equals(left.FormCode, right.FormCode, StringComparison.Ordinal);
-
         private static bool IsSameUnit(LearningFormUnitPo unit, LearningQuestionStatePo question) =>
             unit.MemberId == question.MemberId && string.Equals(unit.FormCode, question.FormCode, StringComparison.Ordinal);
 
@@ -545,16 +405,6 @@ namespace Dictation.Core.Learning
                 snapshot.History.Count(history => history.WasCorrect.HasValue),
                 errors);
         }
-
-        private sealed record ScheduledQuestion(CreateLearningQuestionPo Question);
-
-        private sealed record QuestionCandidate(
-            LearningFormUnitPo Unit,
-            LearningChannel Channel,
-            LearningOutputMode Output,
-            int UncoveredDimensions,
-            double ErrorRate,
-            int LastQuestionOrdinal);
 
         private async Task<IReadOnlyList<EligibleCandidate>> SelectManualAsync(
             StartLearningSessionRequestDto request,

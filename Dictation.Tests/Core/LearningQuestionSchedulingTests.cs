@@ -621,13 +621,15 @@ namespace Dictation.Tests.Core
                 var importService = new ImportInboxService(lexiconService, new ImportInboxDataAccessor(connectionFactory));
                 var evaluationService = new AnswerEvaluationService();
                 var dataAccessor = new LearningSessionDataAccessor(connectionFactory);
+                var random = new Random(seed);
                 var service = new LearningSessionService(
                     dataAccessor,
                     planService,
                     planService,
+                    new LearningQuestionScheduler(timeProvider, random),
                     evaluationService,
                     timeProvider,
-                    new Random(seed));
+                    random);
                 var environment = new TestEnvironment(
                     temporaryDirectory,
                     paths,
@@ -642,13 +644,18 @@ namespace Dictation.Tests.Core
                 return environment;
             }
 
-            public LearningSessionService CreateSecondService() => new(
-                new LearningSessionDataAccessor(connectionFactory),
-                planService,
-                planService,
-                evaluationService,
-                TimeProvider,
-                new Random(seed + 1));
+            public LearningSessionService CreateSecondService()
+            {
+                var random = new Random(seed + 1);
+                return new LearningSessionService(
+                    new LearningSessionDataAccessor(connectionFactory),
+                    planService,
+                    planService,
+                    new LearningQuestionScheduler(TimeProvider, random),
+                    evaluationService,
+                    TimeProvider,
+                    random);
+            }
 
             public async Task<string> StageLearningAsync(
                 LearningLanguage language,

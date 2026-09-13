@@ -292,13 +292,15 @@ namespace Dictation.Tests.Core
                     lexiconService,
                     timeProvider);
                 var importService = new ImportInboxService(lexiconService, new ImportInboxDataAccessor(connectionFactory));
+                var random = new Random(randomSeed);
                 var sessionService = new LearningSessionService(
                     new LearningSessionDataAccessor(connectionFactory),
                     planService,
                     planService,
+                    new LearningQuestionScheduler(timeProvider, random),
                     new AnswerEvaluationService(),
                     timeProvider,
-                    new Random(randomSeed));
+                    random);
                 return new TestEnvironment(temporaryDirectory, paths, timeProvider, planService, importService, sessionService);
             }
 
