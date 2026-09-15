@@ -2,10 +2,13 @@ using System.Reflection;
 using System.Runtime.Versioning;
 using Dictation.DataAccess;
 using Dictation.DataAccess.Runtime;
+using Dictation.Core.Configuration;
 using Dictation.Core.Importing;
 using Dictation.Core.Learning;
 using Dictation.Core.Lexicon;
 using Dictation.Presentation;
+using Dictation.Presentation.Navigation;
+using Dictation.Presentation.Shell;
 using Dictation.Presentation.ViewModels;
 using Dictation.Tests.Infrastructure;
 using Dictation.TtsHost;
@@ -87,6 +90,7 @@ namespace Dictation.Tests.Architecture
             }).Build();
             var services = new ServiceCollection();
             services.AddSingleton<IConfiguration>(configuration);
+            services.AddSingleton<IHomeNavigation, RejectingHomeNavigation>();
             services.AddDictationDataAccess(temporaryDirectory.Path).AddDictationCore();
             var core = Assembly.Load("Dictation.Core");
             using var provider = services.BuildServiceProvider();
@@ -183,8 +187,8 @@ namespace Dictation.Tests.Architecture
                     typeof(ILearningLibraryManager),
                     typeof(ILearningSessionStartPreparer),
                     typeof(ILexiconSearch),
-                    typeof(Dictation.Presentation.Navigation.NavigationService),
-                    typeof(Dictation.Presentation.Shell.OverlayService)
+                    typeof(IBackNavigation),
+                    typeof(IOverlayRequester)
                 },
                 planViewModelParameters);
 
@@ -208,12 +212,40 @@ namespace Dictation.Tests.Architecture
                 .GetParameters();
             Assert.Equal(typeof(ILexiconSearch), lookupParameters[0].ParameterType);
             Assert.Equal(typeof(IImportStaging), lookupParameters[1].ParameterType);
+            Assert.Equal(typeof(IBackNavigation), lookupParameters[2].ParameterType);
+            Assert.Equal(3, lookupParameters.Length);
 
             var inboxParameters = Assert.Single(typeof(ImportInboxListViewModel).GetConstructors())
                 .GetParameters();
             Assert.Equal(typeof(IImportInboxQuery), inboxParameters[0].ParameterType);
             Assert.Equal(typeof(IImportInboxActions), inboxParameters[1].ParameterType);
+            Assert.Equal(typeof(IBackNavigation), inboxParameters[2].ParameterType);
+            Assert.Equal(typeof(IImportInboxDetailNavigation), inboxParameters[3].ParameterType);
+            Assert.Equal(typeof(IOverlayRequester), inboxParameters[4].ParameterType);
+            Assert.Equal(5, inboxParameters.Length);
             Assert.False(typeof(ImportInboxService).IsPublic);
+        }
+
+        [Fact]
+        public void PresentationShellAndHome_OnlyRequestTheirRoleCapabilities()
+        {
+            var homeParameters = Assert.Single(typeof(HomeViewModel).GetConstructors())
+                .GetParameters()
+                .Select(parameter => parameter.ParameterType)
+                .ToArray();
+            Assert.Equal(new[] { typeof(SettingsService), typeof(IHomeNavigation) }, homeParameters);
+
+            var shellParameters = Assert.Single(typeof(ShellViewModel).GetConstructors())
+                .GetParameters()
+                .Select(parameter => parameter.ParameterType)
+                .ToArray();
+            Assert.Equal(new[] { typeof(INavigationHost), typeof(IOverlayHost) }, shellParameters);
+            Assert.DoesNotContain(
+                typeof(ShellViewModel).GetProperties(BindingFlags.Public | BindingFlags.Instance),
+                property => property.PropertyType is { } type
+                    && (type == typeof(NavigationService) || type == typeof(OverlayService)));
+            Assert.False(typeof(NavigationService).IsPublic);
+            Assert.False(typeof(OverlayService).IsPublic);
         }
 
         [Fact]
@@ -221,6 +253,30 @@ namespace Dictation.Tests.Architecture
         {
             Assert.Throws<ArgumentNullException>(() =>
                 DictationCoreServiceCollectionExtensions.AddDictationCore(null!));
+        }
+
+        private sealed class RejectingHomeNavigation : IHomeNavigation
+        {
+            public Task OpenLexiconLookupAsync(
+                LearningLanguage language,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromException(new InvalidOperationException("该架构测试不执行页面导航。"));
+            }
+
+            public Task OpenImportInboxAsync(
+                LearningLanguage language,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromException(new InvalidOperationException("该架构测试不执行页面导航。"));
+            }
+
+            public Task OpenLearningPlanAsync(
+                LearningLanguage language,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromException(new InvalidOperationException("该架构测试不执行页面导航。"));
+            }
         }
     }
 }

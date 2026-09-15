@@ -36,8 +36,7 @@ namespace Dictation.Tests.Presentation
                 var viewModel = new LexiconLookupViewModel(
                     lexiconService,
                     importService,
-                    new NavigationService(new TestScopeFactory()),
-                    new OverlayService());
+                    new NavigationService(new TestScopeFactory()));
                 viewModel.Initialize(LearningLanguage.English);
                 var result = new LexiconLookupResultDto(
                     LearningLanguage.English,
@@ -89,8 +88,7 @@ namespace Dictation.Tests.Presentation
                 var viewModel = new LexiconLookupViewModel(
                     lexiconService,
                     importService,
-                    new NavigationService(new TestScopeFactory()),
-                    new OverlayService());
+                    new NavigationService(new TestScopeFactory()));
                 viewModel.Initialize(LearningLanguage.English);
                 var result = new LexiconLookupResultDto(
                     LearningLanguage.English,

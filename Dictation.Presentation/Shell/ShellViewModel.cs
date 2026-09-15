@@ -8,45 +8,49 @@ namespace Dictation.Presentation.Shell
 {
     public sealed class ShellViewModel : INotifyPropertyChanged
     {
-        private readonly NavigationService navigationService;
-        private readonly OverlayService overlayService;
+        private readonly INavigationHost navigationHost;
+        private readonly IOverlayHost overlayHost;
 
         public ShellViewModel(
-            NavigationService navigationService,
-            OverlayService overlayService)
+            INavigationHost navigationHost,
+            IOverlayHost overlayHost)
         {
-            this.navigationService = navigationService
-                ?? throw new ArgumentNullException(nameof(navigationService));
-            this.overlayService = overlayService
-                ?? throw new ArgumentNullException(nameof(overlayService));
+            this.navigationHost = navigationHost
+                ?? throw new ArgumentNullException(nameof(navigationHost));
+            this.overlayHost = overlayHost
+                ?? throw new ArgumentNullException(nameof(overlayHost));
             GoBackCommand = new AsyncCommand(async () =>
             {
-                await this.navigationService.GoBackAsync();
+                await this.navigationHost.GoBackAsync();
             });
-            AcceptOverlayCommand = new RelayCommand(this.overlayService.Accept);
-            CancelOverlayCommand = new RelayCommand(this.overlayService.Cancel);
-            DismissOverlayCommand = new RelayCommand(this.overlayService.Dismiss);
-            this.navigationService.PropertyChanged += OnNavigationPropertyChanged;
-            this.overlayService.PropertyChanged += OnOverlayPropertyChanged;
+            AcceptOverlayCommand = new RelayCommand(this.overlayHost.Accept);
+            CancelOverlayCommand = new RelayCommand(this.overlayHost.Cancel);
+            DismissOverlayCommand = new RelayCommand(this.overlayHost.Dismiss);
+            this.navigationHost.PropertyChanged += OnNavigationPropertyChanged;
+            this.overlayHost.PropertyChanged += OnOverlayPropertyChanged;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public event EventHandler<NavigationTransitionEventArgs>? TransitionRequested
         {
-            add => navigationService.TransitionRequested += value;
-            remove => navigationService.TransitionRequested -= value;
+            add => navigationHost.TransitionRequested += value;
+            remove => navigationHost.TransitionRequested -= value;
         }
 
-        public NavigationService NavigationService => navigationService;
+        public object? CurrentPage => navigationHost.CurrentPage;
 
-        public OverlayService OverlayService => overlayService;
+        public string PageTitle => navigationHost.PageTitle;
 
-        public object? CurrentPage => navigationService.CurrentPage;
+        public bool CanGoBack => navigationHost.CanGoBack;
 
-        public string PageTitle => navigationService.PageTitle;
+        public OverlayRequest? CurrentOverlay => overlayHost.CurrentRequest;
 
-        public bool CanGoBack => navigationService.CanGoBack;
+        public bool IsOverlayVisible => overlayHost.IsVisible;
+
+        public bool IsOverlayBusy => overlayHost.IsBusy;
+
+        public bool IsOverlayConfirmation => overlayHost.IsConfirmation;
 
         public ICommand GoBackCommand { get; }
 
@@ -58,25 +62,32 @@ namespace Dictation.Presentation.Shell
 
         public void CompleteTransition()
         {
-            navigationService.CompleteTransition();
+            navigationHost.CompleteTransition();
         }
 
         private void OnNavigationPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             OnPropertyChanged(e.PropertyName);
-            if (e.PropertyName is nameof(NavigationService.CurrentPage)
-                or nameof(NavigationService.PageTitle)
-                or nameof(NavigationService.CanGoBack))
-            {
-                OnPropertyChanged(nameof(CurrentPage));
-                OnPropertyChanged(nameof(PageTitle));
-                OnPropertyChanged(nameof(CanGoBack));
-            }
         }
 
         private void OnOverlayPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            OnPropertyChanged($"OverlayService.{e.PropertyName}");
+            if (e.PropertyName == nameof(IOverlayHost.CurrentRequest))
+            {
+                OnPropertyChanged(nameof(CurrentOverlay));
+            }
+            else if (e.PropertyName == nameof(IOverlayHost.IsVisible))
+            {
+                OnPropertyChanged(nameof(IsOverlayVisible));
+            }
+            else if (e.PropertyName == nameof(IOverlayHost.IsBusy))
+            {
+                OnPropertyChanged(nameof(IsOverlayBusy));
+            }
+            else if (e.PropertyName == nameof(IOverlayHost.IsConfirmation))
+            {
+                OnPropertyChanged(nameof(IsOverlayConfirmation));
+            }
         }
 
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

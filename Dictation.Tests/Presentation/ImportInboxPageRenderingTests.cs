@@ -218,6 +218,7 @@ namespace Dictation.Tests.Presentation
                     ImportInboxService,
                     ImportInboxService,
                     Navigation,
+                    Navigation,
                     Overlay);
             }
 

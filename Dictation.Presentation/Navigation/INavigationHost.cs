@@ -12,10 +12,19 @@ namespace Dictation.Presentation.Navigation
         /// </summary>
         event EventHandler<NavigationTransitionEventArgs>? TransitionRequested;
 
+        /// <summary>
+        /// 获取当前由单窗口宿主呈现的页面视图模型。
+        /// </summary>
         object? CurrentPage { get; }
 
+        /// <summary>
+        /// 获取当前页面标题。
+        /// </summary>
         string PageTitle { get; }
 
+        /// <summary>
+        /// 获取当前页面是否允许返回上一页。
+        /// </summary>
         bool CanGoBack { get; }
 
         /// <summary>

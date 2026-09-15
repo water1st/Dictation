@@ -71,8 +71,7 @@ namespace Dictation.Tests.Presentation
             return new LexiconLookupViewModel(
                 lexiconService,
                 importService,
-                new NavigationService(new TestScopeFactory()),
-                new OverlayService());
+                new NavigationService(new TestScopeFactory()));
         }
 
         private static void ExecuteSearch(

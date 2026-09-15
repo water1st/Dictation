@@ -19,8 +19,8 @@ namespace Dictation.Presentation.ViewModels
         private readonly ILearningLibraryManager learningLibraryManager;
         private readonly ILearningSessionStartPreparer sessionStartPreparer;
         private readonly ILexiconSearch lexiconSearch;
-        private readonly NavigationService navigationService;
-        private readonly OverlayService overlayService;
+        private readonly IBackNavigation backNavigation;
+        private readonly IOverlayRequester overlayRequester;
         private readonly SemaphoreSlim operationGate = new(1, 1);
         private LearningLanguage selectedLanguage;
         private LearningSelectionMode selectionMode;
@@ -44,28 +44,28 @@ namespace Dictation.Presentation.ViewModels
         /// <param name="learningLibraryManager">用于分页读取和整组删除学习库的管理能力。</param>
         /// <param name="sessionStartPreparer">用于按计划校验学习启动选择的准备能力。</param>
         /// <param name="lexiconSearch">用于检索符合示例范式条件的英语词条。</param>
-        /// <param name="navigationService">用于返回上一页面的导航服务。</param>
-        /// <param name="overlayService">用于在删除整组词条前请求用户确认的覆盖层服务。</param>
+        /// <param name="backNavigation">用于返回上一页面的导航能力。</param>
+        /// <param name="overlayRequester">用于在删除整组词条前请求用户确认的弹层能力。</param>
         public LearningPlanViewModel(
             ILearningPlanEditor learningPlanEditor,
             ILearningLibraryManager learningLibraryManager,
             ILearningSessionStartPreparer sessionStartPreparer,
             ILexiconSearch lexiconSearch,
-            NavigationService navigationService,
-            OverlayService overlayService)
+            IBackNavigation backNavigation,
+            IOverlayRequester overlayRequester)
         {
             this.learningPlanEditor = learningPlanEditor ?? throw new ArgumentNullException(nameof(learningPlanEditor));
             this.learningLibraryManager = learningLibraryManager ?? throw new ArgumentNullException(nameof(learningLibraryManager));
             this.sessionStartPreparer = sessionStartPreparer ?? throw new ArgumentNullException(nameof(sessionStartPreparer));
             this.lexiconSearch = lexiconSearch ?? throw new ArgumentNullException(nameof(lexiconSearch));
-            this.navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
-            this.overlayService = overlayService ?? throw new ArgumentNullException(nameof(overlayService));
+            this.backNavigation = backNavigation ?? throw new ArgumentNullException(nameof(backNavigation));
+            this.overlayRequester = overlayRequester ?? throw new ArgumentNullException(nameof(overlayRequester));
             FormOptions = new ObservableCollection<LearningPlanOptionViewModel>();
             ChannelOptions = new ObservableCollection<LearningPlanOptionViewModel>();
             OutputOptions = new ObservableCollection<LearningPlanOptionViewModel>();
             LibraryItems = new ObservableCollection<LearningLibraryItemViewModel>();
             ExampleCandidates = new ObservableCollection<LexiconLookupResultDto>();
-            BackCommand = new AsyncCommand(() => navigationService.GoBackAsync());
+            BackCommand = new AsyncCommand(() => backNavigation.GoBackAsync());
             RefreshCommand = new AsyncCommand(() => RefreshAsync());
             SaveCommand = new AsyncCommand(() => SaveAsync());
             SearchExamplesCommand = new AsyncCommand(() => SearchExamplesAsync());
@@ -345,7 +345,7 @@ namespace Dictation.Presentation.ViewModels
                     return;
                 }
 
-                var confirmed = await overlayService.ConfirmAsync(
+                var confirmed = await overlayRequester.ConfirmAsync(
                     "移除学习词组",
                     $"确定移除已选的 {selected.Length} 个整组词条及其学习进度吗？",
                     cancellationToken);

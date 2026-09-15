@@ -6,56 +6,6 @@ using Dictation.Core.Importing;
 
 namespace Dictation.Presentation.ViewModels
 {
-    public sealed class ImportMemberEditorViewModel : INotifyPropertyChanged
-    {
-        private string chineseMeaningDraft;
-
-        public ImportMemberEditorViewModel(ImportWordGroupMemberDto member)
-        {
-            Member = member ?? throw new ArgumentNullException(nameof(member));
-            chineseMeaningDraft = string.Join(Environment.NewLine, member.Meanings);
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        public ImportWordGroupMemberDto Member { get; }
-
-        public string SourceSenseId => Member.SourceSenseId;
-
-        public string Headword => Member.Headword;
-
-        public string? Reading => Member.Reading;
-
-        public string PartOfSpeechLabel => Member.PartOfSpeechLabel;
-
-        public string AttributeLabel => Member.AttributeLabel;
-
-        public bool IsPhrase => Member.IsPhrase;
-
-        public IReadOnlyList<ImportWordGroupFormDto> Forms => Member.Forms;
-
-        public string ChineseMeaningDraft
-        {
-            get => chineseMeaningDraft;
-            set
-            {
-                var nextValue = value ?? string.Empty;
-                if (string.Equals(chineseMeaningDraft, nextValue, StringComparison.Ordinal))
-                {
-                    return;
-                }
-
-                chineseMeaningDraft = nextValue;
-                OnPropertyChanged();
-            }
-        }
-
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-    }
-
     public sealed class ImportInboxDetailViewModel : INotifyPropertyChanged
     {
         private LearningLanguage selectedLanguage;

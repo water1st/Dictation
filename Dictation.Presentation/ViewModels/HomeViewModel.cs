@@ -9,25 +9,21 @@ namespace Dictation.Presentation.ViewModels
     public sealed class HomeViewModel : INotifyPropertyChanged
     {
         private readonly SettingsService settingsService;
-        private readonly NavigationService? navigationService;
+        private readonly IHomeNavigation homeNavigation;
         private readonly SemaphoreSlim persistenceGate = new(1, 1);
         private ThemeMode selectedThemeMode = ThemeMode.System;
         private LearningLanguage selectedLanguage = LearningLanguage.Japanese;
         private string? errorMessage;
         private bool isInitialized;
 
-        public HomeViewModel(SettingsService settingsService)
-            : this(settingsService, null)
-        {
-        }
-
         public HomeViewModel(
             SettingsService settingsService,
-            NavigationService? navigationService)
+            IHomeNavigation homeNavigation)
         {
             this.settingsService = settingsService
                 ?? throw new ArgumentNullException(nameof(settingsService));
-            this.navigationService = navigationService;
+            this.homeNavigation = homeNavigation
+                ?? throw new ArgumentNullException(nameof(homeNavigation));
             SelectJapaneseCommand = new AsyncCommand(() => SelectLanguageAsync(LearningLanguage.Japanese));
             SelectEnglishCommand = new AsyncCommand(() => SelectLanguageAsync(LearningLanguage.English));
             SelectSystemThemeCommand = new AsyncCommand(() => SelectThemeAsync(ThemeMode.System));
@@ -145,21 +141,21 @@ namespace Dictation.Presentation.ViewModels
 
         public Task OpenLexiconLookupAsync(CancellationToken cancellationToken = default)
         {
-            return GetNavigationService().OpenLexiconLookupAsync(
+            return homeNavigation.OpenLexiconLookupAsync(
                 selectedLanguage,
                 cancellationToken);
         }
 
         public Task OpenImportInboxAsync(CancellationToken cancellationToken = default)
         {
-            return GetNavigationService().OpenImportInboxAsync(
+            return homeNavigation.OpenImportInboxAsync(
                 selectedLanguage,
                 cancellationToken);
         }
 
         public Task OpenLearningPlanAsync(CancellationToken cancellationToken = default)
         {
-            return GetNavigationService().OpenLearningPlanAsync(selectedLanguage, cancellationToken);
+            return homeNavigation.OpenLearningPlanAsync(selectedLanguage, cancellationToken);
         }
 
         private async Task SaveSettingsAsync(
@@ -240,12 +236,6 @@ namespace Dictation.Presentation.ViewModels
             {
                 throw new ArgumentOutOfRangeException(nameof(themeMode), themeMode, "主题值无效。");
             }
-        }
-
-        private NavigationService GetNavigationService()
-        {
-            return navigationService
-                ?? throw new InvalidOperationException("首页导航服务尚未配置。");
         }
 
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

@@ -58,7 +58,7 @@
             <Grid x:Name="OverlayLayer"
                   Panel.ZIndex="10"
                   Background="#99000000"
-                  Visibility="{Binding OverlayService.IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                  Visibility="{Binding IsOverlayVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Border Width="420"
                         MaxWidth="{Binding ActualWidth, ElementName=OverlayLayer}"
                         Padding="26"
@@ -71,10 +71,10 @@
                     <StackPanel>
                         <TextBlock FontSize="20"
                                    FontWeight="SemiBold"
-                                   Text="{Binding OverlayService.CurrentRequest.Title}" />
+                                   Text="{Binding CurrentOverlay.Title}" />
                         <TextBlock Margin="0,12,0,0"
                                    Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                   Text="{Binding OverlayService.CurrentRequest.Message}"
+                                   Text="{Binding CurrentOverlay.Message}"
                                    TextWrapping="Wrap" />
                         <StackPanel Margin="0,22,0,0"
                                     HorizontalAlignment="Right"
@@ -82,12 +82,12 @@
                             <Button Command="{Binding CancelOverlayCommand}"
                                     Content="取消"
                                     IsDefault="False"
-                                    Visibility="{Binding OverlayService.IsConfirmation, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    Visibility="{Binding IsOverlayConfirmation, Converter={StaticResource BooleanToVisibilityConverter}}"
                                     Padding="16,8" />
                             <Button Margin="10,0,0,0"
                                     Command="{Binding AcceptOverlayCommand}"
                                     Content="确定"
-                                    Visibility="{Binding OverlayService.IsConfirmation, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    Visibility="{Binding IsOverlayConfirmation, Converter={StaticResource BooleanToVisibilityConverter}}"
                                     Padding="16,8" />
                             <Button Margin="10,0,0,0"
                                     Command="{Binding DismissOverlayCommand}"
@@ -97,10 +97,10 @@
                                     <Style TargetType="Button">
                                         <Setter Property="Visibility" Value="Visible" />
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding OverlayService.IsConfirmation}" Value="True">
+                                            <DataTrigger Binding="{Binding IsOverlayConfirmation}" Value="True">
                                                 <Setter Property="Visibility" Value="Collapsed" />
                                             </DataTrigger>
-                                            <DataTrigger Binding="{Binding OverlayService.IsBusy}" Value="True">
+                                            <DataTrigger Binding="{Binding IsOverlayBusy}" Value="True">
                                                 <Setter Property="Visibility" Value="Collapsed" />
                                             </DataTrigger>
                                         </Style.Triggers>

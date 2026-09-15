@@ -133,6 +133,7 @@ namespace Dictation.Presentation
 
         private void OnClosed(object? sender, EventArgs e)
         {
+            // 已关闭窗口不能继续持有导航转场订阅；其余 Shell 订阅与根容器单例同寿命。
             shellViewModel.TransitionRequested -= OnTransitionRequested;
         }
     }

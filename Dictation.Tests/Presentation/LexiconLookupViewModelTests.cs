@@ -362,14 +362,12 @@ namespace Dictation.Tests.Presentation
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = new ApplicationPaths(temporaryDirectory.Path);
             var services = new ServiceCollection();
-            services.AddSingleton<OverlayService>();
             services.AddSingleton<NavigationService>();
             services.AddScoped<LexiconLookupViewModel>(serviceProvider =>
                 new LexiconLookupViewModel(
                     CreateLexiconService(paths),
                     CreateImportService(paths),
-                    serviceProvider.GetRequiredService<NavigationService>(),
-                    serviceProvider.GetRequiredService<OverlayService>()));
+                    serviceProvider.GetRequiredService<NavigationService>()));
             using var provider = services.BuildServiceProvider();
             var navigation = provider.GetRequiredService<NavigationService>();
             var home = new HomeViewModel(
@@ -404,8 +402,7 @@ namespace Dictation.Tests.Presentation
             return new LexiconLookupViewModel(
                 lexiconService,
                 importService,
-                new NavigationService(new TestScopeFactory()),
-                new OverlayService());
+                new NavigationService(new TestScopeFactory()));
         }
 
         private static LexiconLookupService CreateLexiconService(ApplicationPaths paths)

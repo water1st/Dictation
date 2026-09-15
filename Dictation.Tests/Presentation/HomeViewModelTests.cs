@@ -204,7 +204,8 @@ namespace Dictation.Tests.Presentation
         {
             return new HomeViewModel(new SettingsService(
                 BuildConfiguration(paths, ignoreConfigurationLoadErrors),
-                paths));
+                paths),
+                new RejectingHomeNavigation());
         }
 
         private static SettingsService CreateSettingsService(ApplicationPaths paths)
@@ -221,7 +222,13 @@ namespace Dictation.Tests.Presentation
                 new SqliteConnectionFactory(paths)).MigrateAsync().GetAwaiter().GetResult();
             var services = new ServiceCollection();
             services.AddSingleton<NavigationService>();
+            services.AddSingleton<IBackNavigation>(serviceProvider =>
+                serviceProvider.GetRequiredService<NavigationService>());
+            services.AddSingleton<IImportInboxDetailNavigation>(serviceProvider =>
+                serviceProvider.GetRequiredService<NavigationService>());
             services.AddSingleton<OverlayService>();
+            services.AddSingleton<IOverlayRequester>(serviceProvider =>
+                serviceProvider.GetRequiredService<OverlayService>());
             services.AddScoped<LexiconLookupService>(_ => CreateLexiconService(paths));
             services.AddScoped<ILexiconSearch>(serviceProvider =>
                 serviceProvider.GetRequiredService<LexiconLookupService>());
@@ -265,6 +272,30 @@ namespace Dictation.Tests.Presentation
                     }
                 })
                 .Build();
+        }
+
+        private sealed class RejectingHomeNavigation : IHomeNavigation
+        {
+            public Task OpenLexiconLookupAsync(
+                LearningLanguage language,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromException(new InvalidOperationException("该设置测试不执行页面导航。"));
+            }
+
+            public Task OpenImportInboxAsync(
+                LearningLanguage language,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromException(new InvalidOperationException("该设置测试不执行页面导航。"));
+            }
+
+            public Task OpenLearningPlanAsync(
+                LearningLanguage language,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromException(new InvalidOperationException("该设置测试不执行页面导航。"));
+            }
         }
     }
 }

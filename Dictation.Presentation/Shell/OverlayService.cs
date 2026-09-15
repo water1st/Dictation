@@ -3,36 +3,10 @@ using System.Runtime.CompilerServices;
 
 namespace Dictation.Presentation.Shell
 {
-    public enum OverlayKind
-    {
-        Message,
-        Confirmation,
-        Busy
-    }
-
-    public sealed class OverlayRequest
-    {
-        internal OverlayRequest(OverlayKind kind, string title, string message)
-        {
-            Kind = kind;
-            Title = title;
-            Message = message;
-            Completion = new TaskCompletionSource<bool?>(
-                TaskCreationOptions.RunContinuationsAsynchronously);
-        }
-
-        public OverlayKind Kind { get; }
-
-        public string Title { get; }
-
-        public string Message { get; }
-
-        internal TaskCompletionSource<bool?> Completion { get; }
-
-        internal CancellationTokenRegistration CancellationRegistration { get; set; }
-    }
-
-    public sealed class OverlayService : IOverlayRequester, IOverlayHost, IDisposable
+    /// <summary>
+    /// 在单窗口内串行管理弹层请求，并向页面与宿主暴露彼此隔离的能力。
+    /// </summary>
+    internal sealed class OverlayService : IOverlayRequester, IOverlayHost, IDisposable
     {
         private OverlayRequest? currentRequest;
         private bool isDisposed;
@@ -117,6 +91,7 @@ namespace Dictation.Presentation.Shell
             currentRequest = request;
             if (cancellationToken.CanBeCanceled)
             {
+                // 取消回调可能在线程池线程执行；这里只完成请求状态，不直接访问 WPF 控件。
                 request.CancellationRegistration = cancellationToken.Register(
                     static state => ((OverlayService)state!).Dismiss(),
                     this);

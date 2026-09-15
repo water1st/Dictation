@@ -7,7 +7,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Presentation.Navigation
 {
-    public sealed class NavigationService :
+    /// <summary>
+    /// 维护单窗口页面栈、异步导航互斥与转场结束后的页面作用域释放。
+    /// </summary>
+    internal sealed class NavigationService :
         IHomeNavigation,
         IBackNavigation,
         IImportInboxDetailNavigation,
@@ -19,7 +22,9 @@ namespace Dictation.Presentation.Navigation
         private readonly List<NavigationEntry> pendingDisposals = new();
         private NavigationEntry? currentEntry;
         private bool isInitialized;
+        // 转场期间旧页面仍由动画使用；只有宿主确认完成后才能释放其作用域。
         private bool transitionPending;
+        // 异步加载期间拒绝第二次前进或返回，避免两个完成顺序争用同一页面栈。
         private bool navigationOperationPending;
         private bool isDisposed;
 

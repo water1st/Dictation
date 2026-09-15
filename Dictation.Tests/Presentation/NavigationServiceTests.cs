@@ -40,6 +40,8 @@ namespace Dictation.Tests.Presentation
             pageServices.AddSingleton<ILexiconSearch, EmptyLexiconSearch>();
             pageServices.AddSingleton<IImportStaging, EmptyImportStaging>();
             pageServices.AddSingleton(new NavigationService(new RejectingScopeFactory()));
+            pageServices.AddSingleton<IBackNavigation>(serviceProvider =>
+                serviceProvider.GetRequiredService<NavigationService>());
             pageServices.AddSingleton<OverlayService>();
             pageServices.AddScoped<LexiconLookupViewModel>();
             using var pageProvider = pageServices.BuildServiceProvider();
@@ -401,7 +403,13 @@ namespace Dictation.Tests.Presentation
                 services.AddSingleton<NavigationService>(serviceProvider =>
                     new NavigationService(
                         serviceProvider.GetRequiredService<IServiceScopeFactory>()));
+                services.AddSingleton<IBackNavigation>(serviceProvider =>
+                    serviceProvider.GetRequiredService<NavigationService>());
+                services.AddSingleton<IImportInboxDetailNavigation>(serviceProvider =>
+                    serviceProvider.GetRequiredService<NavigationService>());
                 services.AddSingleton<OverlayService>();
+                services.AddSingleton<IOverlayRequester>(serviceProvider =>
+                    serviceProvider.GetRequiredService<OverlayService>());
                 services.AddScoped<ScopeProbe>();
                 services.AddScoped<LexiconLookupService>(_ => CreateLexiconService(paths));
                 services.AddScoped<ILexiconSearch>(serviceProvider =>

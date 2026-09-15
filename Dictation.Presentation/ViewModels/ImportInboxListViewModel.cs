@@ -16,8 +16,9 @@ namespace Dictation.Presentation.ViewModels
     {
         private readonly IImportInboxQuery importInboxQuery;
         private readonly IImportInboxActions importInboxActions;
-        private readonly NavigationService navigationService;
-        private readonly OverlayService overlayService;
+        private readonly IBackNavigation backNavigation;
+        private readonly IImportInboxDetailNavigation detailNavigation;
+        private readonly IOverlayRequester overlayRequester;
         private readonly List<ImportInboxItemViewModel> allItems = new();
         private readonly Dictionary<string, HashSet<long>> selectedItemIdsByBatch =
             new(StringComparer.Ordinal);
@@ -39,25 +40,29 @@ namespace Dictation.Presentation.ViewModels
         /// </summary>
         /// <param name="importInboxQuery">用于读取待处理批次的查询能力。</param>
         /// <param name="importInboxActions">用于确认项目和维护释义的操作能力。</param>
-        /// <param name="navigationService">用于页面导航的服务。</param>
-        /// <param name="overlayService">用于确认和错误消息的覆盖层服务。</param>
+        /// <param name="backNavigation">用于返回上一页面的导航能力。</param>
+        /// <param name="detailNavigation">用于打开当前批次项目详情的导航能力。</param>
+        /// <param name="overlayRequester">用于请求确认和错误消息弹层的能力。</param>
         public ImportInboxListViewModel(
             IImportInboxQuery importInboxQuery,
             IImportInboxActions importInboxActions,
-            NavigationService navigationService,
-            OverlayService overlayService)
+            IBackNavigation backNavigation,
+            IImportInboxDetailNavigation detailNavigation,
+            IOverlayRequester overlayRequester)
         {
             this.importInboxQuery = importInboxQuery
                 ?? throw new ArgumentNullException(nameof(importInboxQuery));
             this.importInboxActions = importInboxActions
                 ?? throw new ArgumentNullException(nameof(importInboxActions));
-            this.navigationService = navigationService
-                ?? throw new ArgumentNullException(nameof(navigationService));
-            this.overlayService = overlayService
-                ?? throw new ArgumentNullException(nameof(overlayService));
+            this.backNavigation = backNavigation
+                ?? throw new ArgumentNullException(nameof(backNavigation));
+            this.detailNavigation = detailNavigation
+                ?? throw new ArgumentNullException(nameof(detailNavigation));
+            this.overlayRequester = overlayRequester
+                ?? throw new ArgumentNullException(nameof(overlayRequester));
             Batches = new ObservableCollection<ImportBatchDto>();
             Items = new ObservableCollection<ImportInboxItemViewModel>();
-            BackCommand = new AsyncCommand(() => this.navigationService.GoBackAsync());
+            BackCommand = new AsyncCommand(() => this.backNavigation.GoBackAsync());
             RefreshCommand = new AsyncCommand(() => RefreshAsync());
             OpenSelectedDetailCommand = new AsyncCommand(() => OpenSelectedDetailAsync());
             SendToLearningCommand = new AsyncCommand(() => DecideAsync(ImportDecision.Learning));
@@ -296,7 +301,7 @@ namespace Dictation.Presentation.ViewModels
                     return;
                 }
 
-                await navigationService.OpenImportInboxDetailAsync(
+                await detailNavigation.OpenImportInboxDetailAsync(
                     selectedBatch,
                     selectedItem.ItemId,
                     cancellationToken);
@@ -361,7 +366,7 @@ namespace Dictation.Presentation.ViewModels
 
                 if (decision == ImportDecision.Discard)
                 {
-                    var confirmed = await overlayService.ConfirmAsync(
+                    var confirmed = await overlayRequester.ConfirmAsync(
                         "丢弃导入",
                         $"确定丢弃已选的 {itemIds.Length} 个项目吗？",
                         cancellationToken);
@@ -648,7 +653,7 @@ namespace Dictation.Presentation.ViewModels
             string message,
             CancellationToken cancellationToken)
         {
-            await overlayService.ShowMessageAsync(title, message, cancellationToken);
+            await overlayRequester.ShowMessageAsync(title, message, cancellationToken);
         }
 
         private void EnsureInitialized()

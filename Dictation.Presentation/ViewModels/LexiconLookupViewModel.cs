@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Dictation.Presentation.Navigation;
-using Dictation.Presentation.Shell;
 using Dictation.Core.Configuration;
 using Dictation.Core.Importing;
 using Dictation.Core.Lexicon;
@@ -24,7 +23,7 @@ namespace Dictation.Presentation.ViewModels
         private bool isResultDropDownOpen;
         private bool isInitialized;
         private readonly IImportStaging importStaging;
-        private readonly NavigationService navigationService;
+        private readonly IBackNavigation backNavigation;
         private double scrollOffset;
         private string? lastSuccessfulSourceText;
         private string? importStatusMessage;
@@ -35,24 +34,21 @@ namespace Dictation.Presentation.ViewModels
         /// </summary>
         /// <param name="lexiconSearch">用于按当前语言执行词库检索的能力。</param>
         /// <param name="importStaging">用于将所选义项的完整词组暂存到导入收件箱的能力。</param>
-        /// <param name="navigationService">用于返回上一页面的导航服务。</param>
-        /// <param name="overlayService">页面覆盖层服务；构造时校验该页面依赖已由组合根提供。</param>
+        /// <param name="backNavigation">用于返回上一页面的导航能力。</param>
         public LexiconLookupViewModel(
             ILexiconSearch lexiconSearch,
             IImportStaging importStaging,
-            NavigationService navigationService,
-            OverlayService overlayService)
+            IBackNavigation backNavigation)
         {
             this.lexiconSearch = lexiconSearch
                 ?? throw new ArgumentNullException(nameof(lexiconSearch));
             this.importStaging = importStaging
                 ?? throw new ArgumentNullException(nameof(importStaging));
-            this.navigationService = navigationService
-                ?? throw new ArgumentNullException(nameof(navigationService));
-            ArgumentNullException.ThrowIfNull(overlayService);
+            this.backNavigation = backNavigation
+                ?? throw new ArgumentNullException(nameof(backNavigation));
             Results = new ObservableCollection<LexiconLookupResultDto>();
             SearchCommand = new AsyncCommand(() => SearchAsync());
-            BackCommand = new AsyncCommand(() => this.navigationService.GoBackAsync());
+            BackCommand = new AsyncCommand(() => this.backNavigation.GoBackAsync());
             StageSelectedCommand = new AsyncCommand(async () =>
             {
                 await StageSelectedAsync();
