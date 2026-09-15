@@ -7,6 +7,7 @@ using Dictation.Core.Configuration;
 using Dictation.Core.Importing;
 using Dictation.Core.Lexicon;
 using Dictation.Tests.Infrastructure;
+using Microsoft.Data.Sqlite;
 
 namespace Dictation.Tests.DataAccess
 {
@@ -212,6 +213,38 @@ namespace Dictation.Tests.DataAccess
                 "Japanese",
                 TestContext.Current.CancellationToken));
             Assert.NotNull(exception.InnerException);
+        }
+
+        [Fact]
+        public async Task GetLearningLibraryPageAsync_共享快照读取失败_包装中文数据访问异常()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = await CreateEnvironmentAsync(temporaryDirectory);
+            var importService = CreateImportService(paths);
+            await StageAndDecideAsync(
+                importService,
+                LearningLanguage.Japanese,
+                "食べる",
+                "jmdict:1:1",
+                ImportDecision.Learning);
+            await using (var connection = new SqliteConnectionFactory(paths).CreateConnection())
+            {
+                await connection.OpenAsync(TestContext.Current.CancellationToken);
+                await connection.ExecuteAsync(new CommandDefinition(
+                    "DROP TABLE WordGroupForms;",
+                    cancellationToken: TestContext.Current.CancellationToken));
+            }
+
+            var accessor = DataAccessorTestFactory.CreateLearningPlan(new SqliteConnectionFactory(paths));
+
+            var exception = await Assert.ThrowsAsync<LearningPlanDataAccessException>(() =>
+                accessor.GetLearningLibraryPageAsync(
+                    "Japanese",
+                    offset: 0,
+                    limit: 10,
+                    TestContext.Current.CancellationToken));
+            Assert.Equal("读取学习库失败。", exception.Message);
+            Assert.IsType<SqliteException>(exception.InnerException);
         }
 
         [Fact]
