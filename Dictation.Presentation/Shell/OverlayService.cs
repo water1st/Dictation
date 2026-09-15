@@ -32,7 +32,7 @@ namespace Dictation.Presentation.Shell
         internal CancellationTokenRegistration CancellationRegistration { get; set; }
     }
 
-    public sealed class OverlayService : INotifyPropertyChanged, IDisposable
+    public sealed class OverlayService : IOverlayRequester, IOverlayHost, IDisposable
     {
         private OverlayRequest? currentRequest;
         private bool isDisposed;

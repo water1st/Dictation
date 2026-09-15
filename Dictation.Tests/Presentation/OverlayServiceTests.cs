@@ -1,9 +1,54 @@
+using Dictation.Presentation;
 using Dictation.Presentation.Shell;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Presentation
 {
     public sealed class OverlayServiceTests
     {
+        [Fact]
+        public void AddDictationPresentation_OverlayCapabilitiesAliasTheOriginalSingleton()
+        {
+            var services = new ServiceCollection();
+            services.AddDictationPresentation();
+            using var provider = services.BuildServiceProvider();
+
+            var implementation = provider.GetRequiredService<OverlayService>();
+
+            Assert.Same(implementation, provider.GetRequiredService<IOverlayRequester>());
+            Assert.Same(implementation, provider.GetRequiredService<IOverlayHost>());
+        }
+
+        [Fact]
+        public async Task DisposingRealProviderAfterResolvingOverlayAliases_CompletesActiveRequestOnce()
+        {
+            var services = new ServiceCollection();
+            services.AddDictationPresentation();
+            var provider = services.BuildServiceProvider();
+            var requester = provider.GetRequiredService<IOverlayRequester>();
+            var host = provider.GetRequiredService<IOverlayHost>();
+            var implementation = provider.GetRequiredService<OverlayService>();
+            Assert.Same(implementation, requester);
+            Assert.Same(implementation, host);
+            var hiddenNotificationCount = 0;
+            host.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(IOverlayHost.CurrentRequest)
+                    && !host.IsVisible)
+                {
+                    hiddenNotificationCount++;
+                }
+            };
+            var completion = requester.ConfirmAsync("确认", "退出吗？");
+
+            var exception = Record.Exception(provider.Dispose);
+
+            Assert.Null(exception);
+            Assert.False(await completion);
+            Assert.False(host.IsVisible);
+            Assert.Equal(1, hiddenNotificationCount);
+        }
+
         [Fact]
         public async Task ShowMessageAsync_ExposesMessageUntilDismissed()
         {

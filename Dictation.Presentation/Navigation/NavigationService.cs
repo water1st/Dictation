@@ -7,7 +7,12 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Presentation.Navigation
 {
-    public sealed class NavigationService : INotifyPropertyChanged, IDisposable
+    public sealed class NavigationService :
+        IHomeNavigation,
+        IBackNavigation,
+        IImportInboxDetailNavigation,
+        INavigationHost,
+        IDisposable
     {
         private readonly IServiceScopeFactory scopeFactory;
         private readonly List<NavigationEntry> backStack = new();

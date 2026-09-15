@@ -2,6 +2,7 @@ using Dictation.DataAccess;
 using Dictation.DataAccess.Importing;
 using Dictation.DataAccess.Lexicon;
 using Dictation.DataAccess.Runtime;
+using Dictation.Presentation;
 using Dictation.Presentation.Navigation;
 using Dictation.Presentation.Shell;
 using Dictation.Presentation.ViewModels;
@@ -16,6 +17,65 @@ namespace Dictation.Tests.Presentation
 {
     public sealed class NavigationServiceTests
     {
+        [Fact]
+        public void AddDictationPresentation_NavigationCapabilitiesAliasTheOriginalSingleton()
+        {
+            var services = new ServiceCollection();
+            services.AddDictationPresentation();
+            using var provider = services.BuildServiceProvider();
+
+            var implementation = provider.GetRequiredService<NavigationService>();
+
+            Assert.Same(implementation, provider.GetRequiredService<IHomeNavigation>());
+            Assert.Same(implementation, provider.GetRequiredService<IBackNavigation>());
+            Assert.Same(implementation, provider.GetRequiredService<IImportInboxDetailNavigation>());
+            Assert.Same(implementation, provider.GetRequiredService<INavigationHost>());
+        }
+
+        [Fact]
+        public async Task DisposingRealProviderAfterResolvingAllNavigationAliases_ReleasesPageScopeOnce()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var pageServices = new ServiceCollection();
+            pageServices.AddSingleton<ILexiconSearch, EmptyLexiconSearch>();
+            pageServices.AddSingleton<IImportStaging, EmptyImportStaging>();
+            pageServices.AddSingleton(new NavigationService(new RejectingScopeFactory()));
+            pageServices.AddSingleton<OverlayService>();
+            pageServices.AddScoped<LexiconLookupViewModel>();
+            using var pageProvider = pageServices.BuildServiceProvider();
+            var scopeFactory = new CountingScopeFactory(
+                pageProvider.GetRequiredService<IServiceScopeFactory>());
+            var navigation = new NavigationService(scopeFactory);
+            var services = new ServiceCollection();
+            services.AddDictationPresentation();
+            services.AddSingleton(navigation);
+            var provider = services.BuildServiceProvider();
+            var home = new HomeViewModel(
+                new SettingsService(
+                    new ConfigurationBuilder().Build(),
+                    new ApplicationPaths(temporaryDirectory.Path)),
+                navigation);
+            navigation.InitializeHome(home);
+
+            var homeNavigation = provider.GetRequiredService<IHomeNavigation>();
+            var backNavigation = provider.GetRequiredService<IBackNavigation>();
+            var detailNavigation = provider.GetRequiredService<IImportInboxDetailNavigation>();
+            var hostNavigation = provider.GetRequiredService<INavigationHost>();
+            Assert.Same(navigation, homeNavigation);
+            Assert.Same(navigation, backNavigation);
+            Assert.Same(navigation, detailNavigation);
+            Assert.Same(navigation, hostNavigation);
+            await homeNavigation.OpenLexiconLookupAsync(LearningLanguage.Japanese);
+            hostNavigation.CompleteTransition();
+            await backNavigation.GoBackAsync();
+            Assert.Equal(0, scopeFactory.DisposeCallCount);
+
+            var exception = Record.Exception(provider.Dispose);
+
+            Assert.Null(exception);
+            Assert.Equal(1, scopeFactory.DisposeCallCount);
+        }
+
         [Fact]
         public void InitializeHome_OnlyAcceptsOneRootViewModel()
         {
@@ -418,6 +478,73 @@ namespace Dictation.Tests.Presentation
             public void Dispose()
             {
                 IsDisposed = true;
+            }
+        }
+
+        private sealed class EmptyLexiconSearch : ILexiconSearch
+        {
+            public Task<IReadOnlyList<LexiconLookupResultDto>> SearchAsync(
+                LexiconSearchRequestDto request,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<LexiconLookupResultDto>>(
+                    Array.Empty<LexiconLookupResultDto>());
+            }
+        }
+
+        private sealed class EmptyImportStaging : IImportStaging
+        {
+            public Task<StageImportBatchResultDto> StageAsync(
+                StageImportBatchRequestDto request,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromException<StageImportBatchResultDto>(
+                    new InvalidOperationException("该测试不会执行导入暂存。"));
+            }
+        }
+
+        private sealed class RejectingScopeFactory : IServiceScopeFactory
+        {
+            public IServiceScope CreateScope()
+            {
+                throw new InvalidOperationException("该测试导航不会创建页面作用域。 ");
+            }
+        }
+
+        private sealed class CountingScopeFactory : IServiceScopeFactory
+        {
+            private readonly IServiceScopeFactory inner;
+
+            public CountingScopeFactory(IServiceScopeFactory inner)
+            {
+                this.inner = inner;
+            }
+
+            public int DisposeCallCount { get; private set; }
+
+            public IServiceScope CreateScope()
+            {
+                return new CountingScope(inner.CreateScope(), this);
+            }
+
+            private sealed class CountingScope : IServiceScope
+            {
+                private readonly IServiceScope innerScope;
+                private readonly CountingScopeFactory owner;
+
+                public CountingScope(IServiceScope innerScope, CountingScopeFactory owner)
+                {
+                    this.innerScope = innerScope;
+                    this.owner = owner;
+                }
+
+                public IServiceProvider ServiceProvider => innerScope.ServiceProvider;
+
+                public void Dispose()
+                {
+                    owner.DisposeCallCount++;
+                    innerScope.Dispose();
+                }
             }
         }
     }
