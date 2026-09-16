@@ -9,17 +9,9 @@ using System.Text.RegularExpressions;
 
 namespace Dictation.LexiconBuilder.WordNet
 {
-    internal enum WordNetSourceFileKind
-    {
-        Entries = 0,
-        Synsets = 1
-    }
-
-    internal readonly record struct WordNetSourceFile(
-        string FullPath,
-        string RelativePath,
-        WordNetSourceFileKind Kind);
-
+    /// <summary>
+    /// 发现并稳定排序 WordNet YAML 输入，并计算与路径和内容绑定的来源指纹。
+    /// </summary>
     internal static class WordNetSourceFiles
     {
         private static readonly Regex EntryFilePattern = new(
@@ -30,6 +22,9 @@ namespace Dictation.LexiconBuilder.WordNet
             @"^(adj|adv|noun|verb)\..+\.ya?ml$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
+        /// <summary>
+        /// 枚举受支持的 entries 与 synset YAML，并排除 .git 目录。
+        /// </summary>
         internal static IReadOnlyList<WordNetSourceFile> Enumerate(string directoryPath)
         {
             if (string.IsNullOrWhiteSpace(directoryPath))
@@ -52,6 +47,9 @@ namespace Dictation.LexiconBuilder.WordNet
                 .ToArray();
         }
 
+        /// <summary>
+        /// 按规范化相对路径、文件长度和文件内容计算稳定的 SHA-256 指纹。
+        /// </summary>
         internal static string ComputeFingerprint(IReadOnlyList<WordNetSourceFile> sourceFiles)
         {
             ArgumentNullException.ThrowIfNull(sourceFiles);

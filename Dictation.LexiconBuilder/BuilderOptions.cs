@@ -2,12 +2,9 @@ using System;
 
 namespace Dictation.LexiconBuilder
 {
-    internal enum LexiconSourceKind
-    {
-        JmDict = 0,
-        WordNet = 1
-    }
-
+    /// <summary>
+    /// 表示一次日语或英语词库构建所需的输入与隔离输出路径。
+    /// </summary>
     internal sealed class BuilderOptions
     {
         private BuilderOptions(
@@ -37,6 +34,9 @@ namespace Dictation.LexiconBuilder
                 : RequirePath(ecdictDatabasePath, nameof(ecdictDatabasePath));
         }
 
+        /// <summary>
+        /// 创建 JMdict 与 Tomoshi 中文释义构建参数。
+        /// </summary>
         internal static BuilderOptions ForJapanese(
             string jmDictPath,
             string tomoshiDatabasePath,
@@ -51,6 +51,9 @@ namespace Dictation.LexiconBuilder
                 null);
         }
 
+        /// <summary>
+        /// 创建 WordNet、Chinese Open WordNet 与 ECDICT 构建参数。
+        /// </summary>
         internal static BuilderOptions ForEnglish(
             string wordNetDirectory,
             string chineseWordNetXmlPath,
@@ -84,56 +87,5 @@ namespace Dictation.LexiconBuilder
                 ? throw new ArgumentException("路径不能为空。", parameterName)
                 : path;
         }
-    }
-
-    internal sealed class JapaneseLexiconBuildSummary
-    {
-        internal JapaneseLexiconBuildSummary(
-            int sourceEntryCount,
-            int entryCount,
-            int senseCount,
-            int formCount,
-            int glossCount,
-            int chineseMeaningCount,
-            int missingChineseEntryCount,
-            string inputSha256,
-            string tomoshiSha256,
-            string createdDate,
-            string outputPath)
-        {
-            SourceEntryCount = sourceEntryCount;
-            EntryCount = entryCount;
-            SenseCount = senseCount;
-            FormCount = formCount;
-            GlossCount = glossCount;
-            ChineseMeaningCount = chineseMeaningCount;
-            MissingChineseEntryCount = missingChineseEntryCount;
-            InputSha256 = inputSha256;
-            TomoshiSha256 = tomoshiSha256;
-            CreatedDate = createdDate;
-            OutputPath = outputPath;
-        }
-
-        internal int SourceEntryCount { get; }
-
-        internal int EntryCount { get; }
-
-        internal int SenseCount { get; }
-
-        internal int FormCount { get; }
-
-        internal int GlossCount { get; }
-
-        internal int ChineseMeaningCount { get; }
-
-        internal int MissingChineseEntryCount { get; }
-
-        internal string InputSha256 { get; }
-
-        internal string TomoshiSha256 { get; }
-
-        internal string CreatedDate { get; }
-
-        internal string OutputPath { get; }
     }
 }

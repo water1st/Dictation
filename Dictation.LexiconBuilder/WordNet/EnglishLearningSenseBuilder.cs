@@ -7,20 +7,14 @@ using Dictation.LexiconBuilder;
 
 namespace Dictation.LexiconBuilder.WordNet
 {
-    internal sealed record EnglishLearningSense(
-        string LearningSenseId,
-        string SourceLexemeId,
-        string Headword,
-        EnglishPartOfSpeech PartOfSpeech,
-        bool IsPhrase,
-        string MeaningSource,
-        string MeaningPrecision,
-        int SortOrder,
-        IReadOnlyList<string> SourceSenseIds,
-        IReadOnlyList<string> Meanings);
-
+    /// <summary>
+    /// 将 WordNet 词义与中文来源合并为稳定排序的学习词义。
+    /// </summary>
     internal sealed class EnglishLearningSenseBuilder
     {
+        /// <summary>
+        /// 优先采用 ILI 精确中文释义，并仅为未覆盖词义生成 ECDICT 宽泛回退。
+        /// </summary>
         internal IReadOnlyList<EnglishLearningSense> Build(
             WordNetLexicon lexicon,
             IReadOnlyDictionary<string, IReadOnlyList<string>> chineseMeaningsByIli,

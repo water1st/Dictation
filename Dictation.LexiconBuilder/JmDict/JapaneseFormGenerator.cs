@@ -4,59 +4,9 @@ using System.Linq;
 
 namespace Dictation.LexiconBuilder.JmDict
 {
-    internal enum JapaneseFormKind
-    {
-        Dictionary = 0,
-        Polite = 1,
-        Te = 2,
-        Ta = 3
-    }
-
-    internal enum JapaneseScriptKind
-    {
-        Kanji = 0,
-        Kana = 1
-    }
-
-    internal sealed class JapaneseLexiconForm
-    {
-        public JapaneseLexiconForm(
-            string surface,
-            string reading,
-            JapaneseFormKind formKind,
-            JapaneseScriptKind scriptKind,
-            JapaneseLexicalRole lexicalRole,
-            bool isCommon,
-            bool isPrimary)
-        {
-            Surface = string.IsNullOrWhiteSpace(surface)
-                ? throw new ArgumentException("词形不能为空。", nameof(surface))
-                : surface;
-            Reading = string.IsNullOrWhiteSpace(reading)
-                ? throw new ArgumentException("读音不能为空。", nameof(reading))
-                : reading;
-            FormKind = formKind;
-            ScriptKind = scriptKind;
-            LexicalRole = lexicalRole;
-            IsCommon = isCommon;
-            IsPrimary = isPrimary;
-        }
-
-        public string Surface { get; }
-
-        public string Reading { get; }
-
-        public JapaneseFormKind FormKind { get; }
-
-        public JapaneseScriptKind ScriptKind { get; }
-
-        public JapaneseLexicalRole LexicalRole { get; }
-
-        public bool IsCommon { get; }
-
-        public bool IsPrimary { get; }
-    }
-
+    /// <summary>
+    /// 根据 JMdict 限制、词汇角色与活用规则生成稳定去重的日语学习词形。
+    /// </summary>
     internal sealed class JapaneseFormGenerator
     {
         private static readonly IReadOnlyDictionary<JapaneseVerbClass, JapaneseVerbRule> VerbRules =
@@ -80,6 +30,9 @@ namespace Dictation.LexiconBuilder.JmDict
                 [JapaneseVerbClass.Kuru] = new("くる", "きます", "きて", "きた")
             };
 
+        /// <summary>
+        /// 生成字典形、礼貌形、て形与た形，并保持主词形和常用度优先级。
+        /// </summary>
         internal IReadOnlyList<JapaneseLexiconForm> Generate(JmDictEntry entry, JmDictSense sense)
         {
             ArgumentNullException.ThrowIfNull(entry);
@@ -227,6 +180,7 @@ namespace Dictation.LexiconBuilder.JmDict
             }
 
             var rule = VerbRules[verbClass];
+            // 来る和ある的汉字/假名词尾不能直接套用通用 Kuru/Aru 替换长度。
             if (verbClass == JapaneseVerbClass.Kuru && source.EndsWith("来る", StringComparison.Ordinal))
             {
                 rule = new JapaneseVerbRule("る", "ます", "て", "た");

@@ -4,71 +4,16 @@ using System.Linq;
 
 namespace Dictation.LexiconBuilder.JmDict
 {
-    internal enum JapaneseLexicalCategory
-    {
-        Phrase,
-        NounVerb,
-        Verb,
-        IAdjective,
-        NaAdjective,
-        Adverb,
-        Noun,
-        Other
-    }
-
-    internal enum JapaneseLexicalRole
-    {
-        Noun,
-        Verb,
-        Adjective,
-        Adverb,
-        Other
-    }
-
-    internal enum JapaneseVerbClass
-    {
-        None,
-        Ichidan,
-        GodanU,
-        GodanK,
-        GodanG,
-        GodanS,
-        GodanT,
-        GodanN,
-        GodanB,
-        GodanM,
-        GodanR,
-        Iku,
-        USpecial,
-        Suru,
-        Zuru,
-        Aru,
-        Kuru
-    }
-
-    internal sealed class JapaneseLexicalClassification
-    {
-        public JapaneseLexicalClassification(
-            JapaneseLexicalCategory category,
-            IReadOnlyList<JapaneseLexicalRole> roles,
-            JapaneseVerbClass verbClass)
-        {
-            Category = category;
-            Roles = roles;
-            VerbClass = verbClass;
-        }
-
-        public JapaneseLexicalCategory Category { get; }
-
-        public IReadOnlyList<JapaneseLexicalRole> Roles { get; }
-
-        public JapaneseVerbClass VerbClass { get; }
-    }
-
+    /// <summary>
+    /// 将 JMdict 词性标签归并为学习词库所需的类别、角色与动词活用类。
+    /// </summary>
     internal static class JapaneseLexicalClassifier
     {
         private const string NounOrSuruPos = "noun or participle which takes the aux. verb suru";
 
+        /// <summary>
+        /// 按 JMdict 标签优先级确定词汇类别，并保留名词兼动词等多角色语义。
+        /// </summary>
         public static JapaneseLexicalClassification Classify(IReadOnlyList<string> partsOfSpeech)
         {
             if (partsOfSpeech.Count == 0)
