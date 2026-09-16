@@ -3,35 +3,9 @@ using System.Text;
 
 namespace Dictation.Core.Tts
 {
-    public enum TtsPipeMessageType
-    {
-        Ping = 1,
-        Synthesize = 2,
-        Shutdown = 3,
-        Pong = 4,
-        Audio = 5,
-        Error = 6,
-        ShutdownAcknowledged = 7
-    }
-
-    public sealed record TtsPipeRequest(
-        TtsPipeMessageType Type,
-        TtsLanguage? Language = null,
-        string? Text = null);
-
-    public sealed record TtsPipeResponse(
-        TtsPipeMessageType Type,
-        byte[]? Payload = null,
-        string? Error = null);
-
-    public sealed class TtsPipeProtocolException : Exception
-    {
-        public TtsPipeProtocolException(string message) : base(message) { }
-
-        public TtsPipeProtocolException(string message, Exception innerException)
-            : base(message, innerException) { }
-    }
-
+    /// <summary>
+    /// 按固定字节协议编解码 TTS 请求与响应帧。
+    /// </summary>
     public static class TtsPipeCodec
     {
         public const byte ProtocolVersion = 1;
@@ -43,8 +17,16 @@ namespace Dictation.Core.Tts
         private const byte NoLanguage = 0xff;
         private const int RequestHeaderLength = 7;
         private const int ResponseHeaderLength = 6;
+
+        // 禁止替换字符，避免损坏的文本或错误信息在跨进程传输时被静默接受。
         private static readonly UTF8Encoding StrictUtf8 = new(false, true);
 
+        /// <summary>
+        /// 将请求写入流，并原样传播调用方取消。
+        /// </summary>
+        /// <param name="stream">可写的双向管道流。</param>
+        /// <param name="request">待编码的请求。</param>
+        /// <param name="cancellationToken">用于中止写入的取消标记。</param>
         public static Task WriteRequestAsync(Stream stream, TtsPipeRequest request, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(stream);
@@ -53,6 +35,12 @@ namespace Dictation.Core.Tts
             return WriteFrameAsync(stream, request.Type, language, payload, true, cancellationToken);
         }
 
+        /// <summary>
+        /// 从流读取完整请求；分段到达的协议头和负载会持续读取到完整或被取消。
+        /// </summary>
+        /// <param name="stream">可读的双向管道流。</param>
+        /// <param name="cancellationToken">用于中止读取的取消标记。</param>
+        /// <returns>经过协议约束验证的请求。</returns>
         public static async Task<TtsPipeRequest> ReadRequestAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             var frame = await ReadFrameAsync(stream, true, cancellationToken).ConfigureAwait(false);
@@ -63,6 +51,12 @@ namespace Dictation.Core.Tts
                 : new TtsPipeRequest(type, language, DecodeUtf8(frame.Payload, MaximumTextLength, true, "文本"));
         }
 
+        /// <summary>
+        /// 将响应写入流，并原样传播调用方取消。
+        /// </summary>
+        /// <param name="stream">可写的双向管道流。</param>
+        /// <param name="response">待编码的响应。</param>
+        /// <param name="cancellationToken">用于中止写入的取消标记。</param>
         public static Task WriteResponseAsync(Stream stream, TtsPipeResponse response, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(stream);
@@ -70,6 +64,12 @@ namespace Dictation.Core.Tts
             return WriteFrameAsync(stream, response.Type, NoLanguage, EncodeResponse(response), false, cancellationToken);
         }
 
+        /// <summary>
+        /// 从流读取完整响应，并在分配负载前执行协议长度上限检查。
+        /// </summary>
+        /// <param name="stream">可读的双向管道流。</param>
+        /// <param name="cancellationToken">用于中止读取的取消标记。</param>
+        /// <returns>经过协议约束验证的响应。</returns>
         public static async Task<TtsPipeResponse> ReadResponseAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             var frame = await ReadFrameAsync(stream, false, cancellationToken).ConfigureAwait(false);
@@ -292,6 +292,7 @@ namespace Dictation.Core.Tts
         {
             try
             {
+                // Stream.ReadExactlyAsync 负责处理部分帧；取消标记由底层读取原样传播。
                 await stream.ReadExactlyAsync(buffer, cancellationToken).ConfigureAwait(false);
             }
             catch (EndOfStreamException exception)

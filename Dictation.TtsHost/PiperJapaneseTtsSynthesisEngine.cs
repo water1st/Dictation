@@ -9,7 +9,10 @@ using PiperPlus.Core.Phonemize;
 
 namespace Dictation.TtsHost
 {
-    public sealed class PiperJapaneseTtsSynthesisEngine : ITtsSynthesisEngine, IDisposable
+    /// <summary>
+    /// 使用 Piper 与日语 G2P 资源按需生成内存 WAV 音频。
+    /// </summary>
+    internal sealed class PiperJapaneseTtsSynthesisEngine : ITtsSynthesisEngine, IDisposable
     {
         private static readonly IReadOnlyCollection<TtsLanguage> Languages =
             Array.AsReadOnly(new[] { TtsLanguage.Japanese });
@@ -40,6 +43,7 @@ namespace Dictation.TtsHost
 
         public IReadOnlyCollection<TtsLanguage> SupportedLanguages => Languages;
 
+        /// <inheritdoc />
         public Task<byte[]> SynthesizeAsync(
             TtsSynthesisRequestDto request,
             CancellationToken cancellationToken = default)

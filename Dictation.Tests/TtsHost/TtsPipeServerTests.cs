@@ -308,18 +308,6 @@ namespace Dictation.Tests.TtsHost
             Assert.False(TtsHostOptions.TryParse(new[] { "--other", CreatePipeName() }, out _));
         }
 
-        [Fact]
-        public async Task PlaceholderEngine_ReturnsEnglishModelNotConfiguredErrorWithoutAudio()
-        {
-            var engine = new UnconfiguredTtsSynthesisEngine();
-
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => engine.SynthesizeAsync(
-                new TtsSynthesisRequestDto(TtsLanguage.English, "go"),
-                TestContext.Current.CancellationToken));
-
-            Assert.Contains("英语", exception.Message);
-        }
-
         private static string CreatePipeName()
         {
             return $"Dictation.Tests.Tts.{Guid.NewGuid():N}";

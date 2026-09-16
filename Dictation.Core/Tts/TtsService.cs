@@ -1,16 +1,29 @@
 namespace Dictation.Core.Tts
 {
+    /// <summary>
+    /// 校验语音合成请求，并将 Provider 输出约束为有效 WAV 音频。
+    /// </summary>
     public sealed class TtsService
     {
         private const int MaximumTextLength = 500;
         private readonly ITtsProvider provider;
 
+        /// <summary>
+        /// 使用可替换的 Provider 执行实际合成。
+        /// </summary>
+        /// <param name="provider">负责生成内存音频的 Provider。</param>
         public TtsService(ITtsProvider provider)
         {
             ArgumentNullException.ThrowIfNull(provider);
             this.provider = provider;
         }
 
+        /// <summary>
+        /// 生成内存 WAV 音频；不在业务层持久化音频文件。
+        /// </summary>
+        /// <param name="request">包含语言和文本的合成请求。</param>
+        /// <param name="cancellationToken">用于中止合成的取消标记。</param>
+        /// <returns>经过 WAV 头校验的内存音频。</returns>
         public async Task<TtsAudioDto> SynthesizeAsync(
             TtsSynthesisRequestDto request,
             CancellationToken cancellationToken = default)

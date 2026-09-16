@@ -3,8 +3,14 @@ using Microsoft.Extensions.Configuration;
 
 namespace Dictation.Core.Configuration
 {
+    /// <summary>
+    /// 为现有 <see cref="IConfiguration"/> 提供原子 JSON 写回能力。
+    /// </summary>
     internal static class ConfigurationWriteExtensions
     {
+        /// <summary>
+        /// 先写同目录临时文件，再以原子替换保存配置并重新加载配置根。
+        /// </summary>
         internal static async Task SetValueAsync<T>(
             this IConfiguration configuration,
             string filePath,

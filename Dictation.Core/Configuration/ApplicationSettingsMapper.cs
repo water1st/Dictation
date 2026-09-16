@@ -1,8 +1,14 @@
 namespace Dictation.Core.Configuration
 {
-    public static class ApplicationSettingsMapper
+    /// <summary>
+    /// 在配置文件文档与应用设置 DTO 之间执行严格的边界转换。
+    /// </summary>
+    internal static class ApplicationSettingsMapper
     {
-        public static ApplicationSettingsDto ToDto(ApplicationSettingsDocument document)
+        /// <summary>
+        /// 将持久化文档转换为应用设置，并拒绝未知枚举文本。
+        /// </summary>
+        internal static ApplicationSettingsDto ToDto(ApplicationSettingsDocument document)
         {
             ArgumentNullException.ThrowIfNull(document);
 
@@ -11,7 +17,10 @@ namespace Dictation.Core.Configuration
                 ParseLearningLanguage(document.LastLanguage));
         }
 
-        public static ApplicationSettingsDocument ToDocument(ApplicationSettingsDto settings)
+        /// <summary>
+        /// 将应用设置转换为保持既有字段格式的持久化文档。
+        /// </summary>
+        internal static ApplicationSettingsDocument ToDocument(ApplicationSettingsDto settings)
         {
             ArgumentNullException.ThrowIfNull(settings);
 

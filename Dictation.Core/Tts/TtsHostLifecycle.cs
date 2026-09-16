@@ -6,7 +6,10 @@ using Microsoft.Extensions.Hosting;
 
 namespace Dictation.Core.Tts
 {
-    public sealed class TtsHostLifecycle : IHostedService, IDisposable
+    /// <summary>
+    /// 随 Generic Host 启停隐藏的 TTS 子进程，并通过 Ping/Pong 确认就绪。
+    /// </summary>
+    internal sealed class TtsHostLifecycle : IHostedService, IDisposable
     {
         private static readonly TimeSpan StartupTimeout = TimeSpan.FromSeconds(10);
         private static readonly TimeSpan ControlTimeout = TimeSpan.FromSeconds(1);
@@ -17,7 +20,7 @@ namespace Dictation.Core.Tts
         private Process? process;
         private int disposed;
 
-        public TtsHostLifecycle(string executablePath, TtsHostSession session)
+        internal TtsHostLifecycle(string executablePath, TtsHostSession session)
         {
             if (string.IsNullOrWhiteSpace(executablePath))
             {
@@ -32,6 +35,7 @@ namespace Dictation.Core.Tts
 
         public int? ProcessId => process?.Id;
 
+        /// <inheritdoc />
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             ObjectDisposedException.ThrowIf(disposed != 0, this);
@@ -67,6 +71,7 @@ namespace Dictation.Core.Tts
             }
         }
 
+        /// <inheritdoc />
         public async Task StopAsync(CancellationToken cancellationToken)
         {
             var startedProcess = process;

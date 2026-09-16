@@ -3,7 +3,10 @@ using Dictation.Core.Tts;
 
 namespace Dictation.TtsHost
 {
-    public sealed class TtsPipeServer : IDisposable
+    /// <summary>
+    /// 串行接收命名管道请求，并按语言路由到同一 DI 容器中的合成引擎。
+    /// </summary>
+    internal sealed class TtsPipeServer : IDisposable
     {
         private readonly TtsHostSession session;
         private readonly IReadOnlyDictionary<TtsLanguage, ITtsSynthesisEngine> engines;
@@ -19,7 +22,10 @@ namespace Dictation.TtsHost
             this.engines = BuildEngineMap(engines);
         }
 
-        public async Task RunAsync(CancellationToken cancellationToken = default)
+        /// <summary>
+        /// 持续处理客户端连接，直到收到关闭请求或取消信号。
+        /// </summary>
+        internal async Task RunAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(

@@ -2,7 +2,10 @@ using System.IO.Pipes;
 
 namespace Dictation.Core.Tts
 {
-    public sealed class NamedPipeTtsProvider : ITtsProvider
+    /// <summary>
+    /// 通过当前 TTS 宿主会话的命名管道请求语音合成。
+    /// </summary>
+    internal sealed class NamedPipeTtsProvider : ITtsProvider
     {
         private static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(2);
         private readonly TtsHostSession session;
@@ -12,6 +15,7 @@ namespace Dictation.Core.Tts
             this.session = session ?? throw new ArgumentNullException(nameof(session));
         }
 
+        /// <inheritdoc />
         public async Task<TtsAudioDto> SynthesizeAsync(
             TtsSynthesisRequestDto request,
             CancellationToken cancellationToken = default)

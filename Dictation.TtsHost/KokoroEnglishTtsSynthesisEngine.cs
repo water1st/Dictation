@@ -4,7 +4,10 @@ using SherpaOnnx;
 
 namespace Dictation.TtsHost
 {
-    public sealed class KokoroEnglishTtsSynthesisEngine : ITtsSynthesisEngine, IDisposable
+    /// <summary>
+    /// 使用 Kokoro CPU 模型按需生成内存 WAV 音频。
+    /// </summary>
+    internal sealed class KokoroEnglishTtsSynthesisEngine : ITtsSynthesisEngine, IDisposable
     {
         private const int SpeakerId = 21;
         private const int ThreadCount = 2;
@@ -38,6 +41,7 @@ namespace Dictation.TtsHost
 
         public IReadOnlyCollection<TtsLanguage> SupportedLanguages => Languages;
 
+        /// <inheritdoc />
         public Task<byte[]> SynthesizeAsync(
             TtsSynthesisRequestDto request,
             CancellationToken cancellationToken = default)

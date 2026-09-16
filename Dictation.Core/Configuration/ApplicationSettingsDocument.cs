@@ -1,6 +1,9 @@
 namespace Dictation.Core.Configuration
 {
-    public sealed class ApplicationSettingsDocument
+    /// <summary>
+    /// 表示 settings.json 的持久化字段，不承载业务默认值。
+    /// </summary>
+    internal sealed class ApplicationSettingsDocument
     {
         public string? ThemeMode { get; init; }
 

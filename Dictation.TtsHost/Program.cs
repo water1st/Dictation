@@ -5,6 +5,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.TtsHost
 {
+    /// <summary>
+    /// 配置独立 TTS 宿主进程，并在父进程退出或收到关闭请求时结束服务。
+    /// </summary>
     internal static class Program
     {
         [STAThread]

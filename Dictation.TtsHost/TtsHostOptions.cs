@@ -3,9 +3,15 @@ using Dictation.Core.Tts;
 
 namespace Dictation.TtsHost
 {
-    public sealed record TtsHostOptions(TtsHostSession Session, int ParentProcessId)
+    /// <summary>
+    /// 表示 TTS 宿主启动所需的管道会话与父进程标识。
+    /// </summary>
+    internal sealed record TtsHostOptions(TtsHostSession Session, int ParentProcessId)
     {
-        public static bool TryParse(string[]? args, out TtsHostOptions? options)
+        /// <summary>
+        /// 严格解析宿主命令行；仅接受既定的四段参数格式。
+        /// </summary>
+        internal static bool TryParse(string[]? args, out TtsHostOptions? options)
         {
             options = null;
             if (args is null
