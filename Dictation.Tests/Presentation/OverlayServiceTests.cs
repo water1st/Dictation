@@ -39,7 +39,10 @@ namespace Dictation.Tests.Presentation
                     hiddenNotificationCount++;
                 }
             };
-            var completion = requester.ConfirmAsync("确认", "退出吗？");
+            var completion = requester.ConfirmAsync(
+                "确认",
+                "退出吗？",
+                TestContext.Current.CancellationToken);
 
             var exception = Record.Exception(provider.Dispose);
 

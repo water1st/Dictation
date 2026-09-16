@@ -67,9 +67,11 @@ namespace Dictation.Tests.Presentation
             Assert.Same(navigation, backNavigation);
             Assert.Same(navigation, detailNavigation);
             Assert.Same(navigation, hostNavigation);
-            await homeNavigation.OpenLexiconLookupAsync(LearningLanguage.Japanese);
+            await homeNavigation.OpenLexiconLookupAsync(
+                LearningLanguage.Japanese,
+                TestContext.Current.CancellationToken);
             hostNavigation.CompleteTransition();
-            await backNavigation.GoBackAsync();
+            await backNavigation.GoBackAsync(TestContext.Current.CancellationToken);
             Assert.Equal(0, scopeFactory.DisposeCallCount);
 
             var exception = Record.Exception(provider.Dispose);
