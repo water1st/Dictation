@@ -21,6 +21,7 @@ namespace Dictation.Presentation.Shell
 
         public bool IsConfirmation => currentRequest?.Kind == OverlayKind.Confirmation;
 
+        /// <inheritdoc />
         public Task ShowMessageAsync(
             string title,
             string message,
@@ -29,6 +30,7 @@ namespace Dictation.Presentation.Shell
             return AwaitMessageAsync(ShowAsync(OverlayKind.Message, title, message, cancellationToken));
         }
 
+        /// <inheritdoc />
         public Task<bool> ConfirmAsync(
             string title,
             string message,
@@ -38,6 +40,7 @@ namespace Dictation.Presentation.Shell
                 ShowAsync(OverlayKind.Confirmation, title, message, cancellationToken));
         }
 
+        /// <inheritdoc />
         public Task ShowBusyAsync(
             string title,
             string message,
@@ -46,21 +49,25 @@ namespace Dictation.Presentation.Shell
             return AwaitMessageAsync(ShowAsync(OverlayKind.Busy, title, message, cancellationToken));
         }
 
+        /// <inheritdoc />
         public void Accept()
         {
             Complete(true);
         }
 
+        /// <inheritdoc />
         public void Cancel()
         {
             Complete(false);
         }
 
+        /// <inheritdoc />
         public void Dismiss()
         {
             Complete(null);
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (isDisposed)
@@ -72,6 +79,9 @@ namespace Dictation.Presentation.Shell
             Complete(null);
         }
 
+        /// <summary>
+        /// 建立唯一在途弹层请求和取消订阅；已有弹层时拒绝并发显示。
+        /// </summary>
         private Task<bool?> ShowAsync(
             OverlayKind kind,
             string title,

@@ -4,10 +4,18 @@ using Dictation.Core.Importing;
 
 namespace Dictation.Presentation.ViewModels
 {
+    /// <summary>
+    /// 将导入条目快照投影为收件箱列表所需的显示和选择状态。
+    /// </summary>
     public sealed class ImportInboxItemViewModel : INotifyPropertyChanged
     {
         private bool isSelected;
 
+        /// <summary>
+        /// 将导入条目快照投影为收件箱列表所需的显示和选择状态。
+        /// </summary>
+        /// <param name="batch">包含目标条目及词组快照的导入批次。</param>
+        /// <param name="item">列表显示的导入条目快照。</param>
         public ImportInboxItemViewModel(ImportBatchDto batch, ImportBatchItemDto item)
         {
             Batch = batch ?? throw new ArgumentNullException(nameof(batch));

@@ -6,8 +6,15 @@ using Dictation.LexiconBuilder;
 
 namespace Dictation.LexiconBuilder.WordNet
 {
+    /// <summary>
+    /// 结合规则和已审定例外生成英语词形，保留来源信息。
+    /// </summary>
     internal sealed class EnglishFormGenerator
     {
+        /// <summary>
+        /// 生成基本形、规则形和来源支持的例外形，并保留各词形来源。
+        /// </summary>
+        /// <param name="lexeme">包含来源词形和词性的英语词元。</param>
         internal IReadOnlyList<EnglishForm> Generate(EnglishLexeme lexeme)
         {
             ArgumentNullException.ThrowIfNull(lexeme);
@@ -53,6 +60,9 @@ namespace Dictation.LexiconBuilder.WordNet
             return SortForms(forms);
         }
 
+        /// <summary>
+        /// 优先匹配规则和已审定范式，再按受支持后缀分类来源形式；无法分类时显式失败。
+        /// </summary>
         private static IReadOnlyList<EnglishFormKind> ClassifySourceForm(
             EnglishLexeme lexeme,
             string sourceForm,
@@ -120,6 +130,9 @@ namespace Dictation.LexiconBuilder.WordNet
                 $"无法分类英语来源词形：lemma={lexeme.Lemma}, POS={ToCode(lexeme.PartOfSpeech)}, form={sourceForm}。");
         }
 
+        /// <summary>
+        /// 先加入已审定范式，仅对未覆盖类别补规则形式，避免错误规则覆盖不规则变体。
+        /// </summary>
         private static IReadOnlyList<EnglishForm> BuildRuleForms(
             string lemma,
             EnglishPartOfSpeech partOfSpeech)

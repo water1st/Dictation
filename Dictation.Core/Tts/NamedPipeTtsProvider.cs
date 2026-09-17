@@ -10,6 +10,10 @@ namespace Dictation.Core.Tts
         private static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(2);
         private readonly TtsHostSession session;
 
+        /// <summary>
+        /// 通过当前 TTS 宿主会话的命名管道请求语音合成。
+        /// </summary>
+        /// <param name="session">当前 TTS 宿主会话和管道连接信息。</param>
         public NamedPipeTtsProvider(TtsHostSession session)
         {
             this.session = session ?? throw new ArgumentNullException(nameof(session));

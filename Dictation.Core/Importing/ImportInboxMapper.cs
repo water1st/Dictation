@@ -35,6 +35,9 @@ namespace Dictation.Core.Importing
                 batch.Items.Select(ToDto).ToArray());
         }
 
+        /// <summary>
+        /// 将批次条目投影为业务 DTO；存在词组快照时复用共享词组映射。
+        /// </summary>
         private static ImportBatchItemDto ToDto(ImportBatchItemPo item)
         {
             return new ImportBatchItemDto(

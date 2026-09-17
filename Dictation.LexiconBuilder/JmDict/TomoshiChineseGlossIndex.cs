@@ -5,16 +5,27 @@ using Microsoft.Data.Sqlite;
 
 namespace Dictation.LexiconBuilder.JmDict
 {
+    /// <summary>
+    /// 按 JMdict 条目及义项建立 Tomoshi 中文释义索引。
+    /// </summary>
     internal sealed class TomoshiChineseGlossIndex
     {
         private readonly IReadOnlyDictionary<(long EntryId, int ZeroBasedSenseIndex), IReadOnlyList<string>> meanings;
 
+        /// <summary>
+        /// 按 JMdict 条目及义项建立 Tomoshi 中文释义索引。
+        /// </summary>
+        /// <param name="meanings">按条目及从零开始的来源义项索引组织的中文释义。</param>
         private TomoshiChineseGlossIndex(
             IReadOnlyDictionary<(long EntryId, int ZeroBasedSenseIndex), IReadOnlyList<string>> meanings)
         {
             this.meanings = meanings;
         }
 
+        /// <summary>
+        /// 读取 Tomoshi 数据库并构建按条目和义项查找的中文释义索引。
+        /// </summary>
+        /// <param name="databasePath">只读中文来源 SQLite 数据库路径。</param>
         internal static TomoshiChineseGlossIndex Load(string databasePath)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(databasePath);
@@ -56,6 +67,12 @@ namespace Dictation.LexiconBuilder.JmDict
             return new TomoshiChineseGlossIndex(values);
         }
 
+        /// <summary>
+        /// 按来源条目和从一开始的义项序号读取中文释义。
+        /// </summary>
+        /// <param name="jmDictEntryId">JMdict 原始条目序列号。</param>
+        /// <param name="oneBasedSenseIndex">从一开始的原始义项序号。</param>
+        /// <returns>对应义项的中文释义；无匹配时为空集合。</returns>
         internal IReadOnlyList<string> GetMeanings(long jmDictEntryId, int oneBasedSenseIndex)
         {
             if (oneBasedSenseIndex <= 0)
@@ -68,6 +85,9 @@ namespace Dictation.LexiconBuilder.JmDict
                 : Array.Empty<string>();
         }
 
+        /// <summary>
+        /// 解析来源条目的零基义项键并保存中文释义；无效条目标识或 JSON 结构阻止构建。
+        /// </summary>
         private static void ReadEntry(
             IDictionary<(long EntryId, int ZeroBasedSenseIndex), IReadOnlyList<string>> values,
             long entryId,

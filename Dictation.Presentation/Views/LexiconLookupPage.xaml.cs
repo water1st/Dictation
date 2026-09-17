@@ -2,8 +2,14 @@ using Dictation.Presentation.ViewModels;
 
 namespace Dictation.Presentation.Views
 {
+    /// <summary>
+    /// 显示日英语词库查询结果和导入操作。
+    /// </summary>
     public sealed partial class LexiconLookupPage : System.Windows.Controls.UserControl
     {
+        /// <summary>
+        /// 显示日英语词库查询结果和导入操作。
+        /// </summary>
         public LexiconLookupPage()
         {
             InitializeComponent();

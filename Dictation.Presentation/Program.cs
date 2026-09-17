@@ -8,6 +8,9 @@ using Microsoft.Extensions.Hosting;
 
 namespace Dictation.Presentation
 {
+    /// <summary>
+    /// 创建唯一 Generic Host，完成单实例、业务初始化和 WPF 启动。
+    /// </summary>
     internal static class Program
     {
         private static readonly TimeSpan SecondaryActivationTimeout = TimeSpan.FromMilliseconds(750);

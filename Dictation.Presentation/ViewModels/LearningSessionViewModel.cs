@@ -9,6 +9,9 @@ using Dictation.Presentation.Audio;
 
 namespace Dictation.Presentation.ViewModels
 {
+    /// <summary>
+    /// 协调学习页面状态、业务调用与内存音频播放，不执行判题或持久化规则。
+    /// </summary>
     public sealed class LearningSessionViewModel : INotifyPropertyChanged, IDisposable
     {
         private readonly ILearningSessionOperations sessionOperations;
@@ -37,6 +40,13 @@ namespace Dictation.Presentation.ViewModels
         private bool hasHeardQuestion;
         private bool isDisposed;
 
+        /// <summary>
+        /// 协调学习页面状态、业务调用与内存音频播放，不执行判题或持久化规则。
+        /// </summary>
+        /// <param name="sessionOperations">启动、读取和提交学习会话的业务能力。</param>
+        /// <param name="planReader">读取当前语言计划的能力。</param>
+        /// <param name="ttsService">生成题目或浏览词形音频的业务服务。</param>
+        /// <param name="audioPlayer">播放内存 WAV 数据的可替换输出适配器。</param>
         public LearningSessionViewModel(
             ILearningSessionOperations sessionOperations,
             ILearningPlanReader planReader,
@@ -139,6 +149,10 @@ namespace Dictation.Presentation.ViewModels
         private bool CanReplayQuestion => !isDisposed && !isBusy && !isBrowsing && question is not null
             && (question.Channel == LearningChannel.Dictation || feedback is not null);
 
+        /// <summary>
+        /// 初始化会话语言；初始化后禁止切换为另一语言。
+        /// </summary>
+        /// <param name="language">当前学习语言。</param>
         public void Initialize(LearningLanguage language)
         {
             ObjectDisposedException.ThrowIf(isDisposed, this);
@@ -151,6 +165,11 @@ namespace Dictation.Presentation.ViewModels
             NotifyState();
         }
 
+        /// <summary>
+        /// 读取计划并启动或恢复会话，加载浏览内容与当前题；听写题准备后先播放。
+        /// </summary>
+        /// <param name="selectedWordGroupIds">手动模式选择的词组标识；自动选择时可为空。</param>
+        /// <param name="cancellationToken">调用方取消令牌，传递到当前异步操作。</param>
         public Task StartAsync(
             IReadOnlyList<string>? selectedWordGroupIds = null,
             CancellationToken cancellationToken = default)
@@ -181,6 +200,10 @@ namespace Dictation.Presentation.ViewModels
             }, cancellationToken, "准备学习失败");
         }
 
+        /// <summary>
+        /// 在可提交状态下把答案交给业务层，并展示返回的反馈。
+        /// </summary>
+        /// <param name="cancellationToken">调用方取消令牌，传递到当前异步操作。</param>
         public Task SubmitAsync(CancellationToken cancellationToken = default)
         {
             EnsureReady();
@@ -193,6 +216,10 @@ namespace Dictation.Presentation.ViewModels
             }, cancellationToken, "提交答案失败");
         }
 
+        /// <summary>
+        /// 从反馈切换到下一题或总结；下一道听写题自动播放。
+        /// </summary>
+        /// <param name="cancellationToken">调用方取消令牌，传递到当前异步操作。</param>
         public Task ContinueAsync(CancellationToken cancellationToken = default)
         {
             EnsureReady();
@@ -209,6 +236,10 @@ namespace Dictation.Presentation.ViewModels
             }, cancellationToken, "读取下一题失败");
         }
 
+        /// <summary>
+        /// 仅在听写题或答案已揭示后重放当前题音频。
+        /// </summary>
+        /// <param name="cancellationToken">调用方取消令牌，传递到当前异步操作。</param>
         public Task ReplayQuestionAsync(CancellationToken cancellationToken = default)
         {
             EnsureReady();
@@ -216,6 +247,10 @@ namespace Dictation.Presentation.ViewModels
             return RunOperationAsync(PlayQuestionCoreAsync, cancellationToken, "播放发音失败");
         }
 
+        /// <summary>
+        /// 播放当前浏览词形；日语优先使用读音。
+        /// </summary>
+        /// <param name="cancellationToken">调用方取消令牌，传递到当前异步操作。</param>
         public Task ReplayBrowseAsync(CancellationToken cancellationToken = default)
         {
             EnsureReady();
@@ -226,6 +261,9 @@ namespace Dictation.Presentation.ViewModels
                 token), cancellationToken, "播放词形失败");
         }
 
+        /// <summary>
+        /// 听写题使用题目发音；看义写词只在反馈已经揭示答案后播放，成功后更新已听状态。
+        /// </summary>
         private async Task PlayQuestionCoreAsync(CancellationToken cancellationToken)
         {
             if (question is null) return;
@@ -258,6 +296,9 @@ namespace Dictation.Presentation.ViewModels
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// 用非阻塞信号量防止重叠 UI 操作，关联页面寿命取消；业务错误写入提示，取消继续向上传播。
+        /// </summary>
         private async Task RunOperationAsync(
             Func<CancellationToken, Task> operation,
             CancellationToken cancellationToken,
@@ -315,6 +356,7 @@ namespace Dictation.Presentation.ViewModels
             foreach (var command in commands) command.NotifyCanExecuteChanged();
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (isDisposed) return;

@@ -5,11 +5,19 @@ using Dictation.Presentation.ViewModels;
 
 namespace Dictation.Presentation
 {
+    /// <summary>
+    /// 将首页主题选择与 WPF 应用资源连接，并在退出时解除事件订阅。
+    /// </summary>
     public sealed partial class App : System.Windows.Application
     {
         private readonly ThemeManager themeManager;
         private readonly HomeViewModel viewModel;
 
+        /// <summary>
+        /// 将首页主题选择与 WPF 应用资源连接，并在退出时解除事件订阅。
+        /// </summary>
+        /// <param name="themeManager">解析并通知应用主题的管理器。</param>
+        /// <param name="viewModel">提供首页主题选择状态的 ViewModel。</param>
         public App(ThemeManager themeManager, HomeViewModel viewModel)
         {
             this.themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));

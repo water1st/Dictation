@@ -11,6 +11,10 @@ namespace Dictation.Presentation.ViewModels
     {
         private string chineseMeaningDraft;
 
+        /// <summary>
+        /// 管理导入词组成员的只读来源信息与可编辑中文释义草稿。
+        /// </summary>
+        /// <param name="member">用于显示和编辑的词组成员快照。</param>
         public ImportMemberEditorViewModel(ImportWordGroupMemberDto member)
         {
             Member = member ?? throw new ArgumentNullException(nameof(member));

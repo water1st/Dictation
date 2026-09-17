@@ -28,6 +28,10 @@ namespace Dictation.Presentation.Navigation
         private bool navigationOperationPending;
         private bool isDisposed;
 
+        /// <summary>
+        /// 维护单窗口页面栈、异步导航互斥与转场结束后的页面作用域释放。
+        /// </summary>
+        /// <param name="scopeFactory">为每个导航页面创建独立服务作用域的工厂。</param>
         public NavigationService(IServiceScopeFactory scopeFactory)
         {
             this.scopeFactory = scopeFactory
@@ -48,6 +52,10 @@ namespace Dictation.Presentation.Navigation
 
         public NavigationDirection LastDirection { get; private set; } = NavigationDirection.Forward;
 
+        /// <summary>
+        /// 设置首页状态；首页由应用级单例提供，不创建页面作用域。
+        /// </summary>
+        /// <param name="homeViewModel">应用级首页模型。</param>
         public void InitializeHome(HomeViewModel homeViewModel)
         {
             ObjectDisposedException.ThrowIf(isDisposed, this);
@@ -65,6 +73,7 @@ namespace Dictation.Presentation.Navigation
             OnPropertyChanged(nameof(LastDirection));
         }
 
+        /// <inheritdoc />
         public Task OpenLexiconLookupAsync(
             LearningLanguage language,
             CancellationToken cancellationToken = default)
@@ -94,6 +103,7 @@ namespace Dictation.Presentation.Navigation
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc />
         public async Task OpenImportInboxAsync(
             LearningLanguage language,
             CancellationToken cancellationToken = default)
@@ -137,6 +147,7 @@ namespace Dictation.Presentation.Navigation
             }
         }
 
+        /// <inheritdoc />
         public async Task OpenLearningPlanAsync(
             LearningLanguage language,
             CancellationToken cancellationToken = default)
@@ -179,6 +190,7 @@ namespace Dictation.Presentation.Navigation
             }
         }
 
+        /// <inheritdoc />
         public Task OpenImportInboxDetailAsync(
             ImportBatchDto batch,
             long itemId,
@@ -222,6 +234,7 @@ namespace Dictation.Presentation.Navigation
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc />
         public async Task GoBackAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -266,6 +279,7 @@ namespace Dictation.Presentation.Navigation
             }
         }
 
+        /// <inheritdoc />
         public void CompleteTransition()
         {
             if (isDisposed)
@@ -284,6 +298,7 @@ namespace Dictation.Presentation.Navigation
             OnPropertyChanged(nameof(CanGoBack));
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (isDisposed)
@@ -304,6 +319,9 @@ namespace Dictation.Presentation.Navigation
             }
         }
 
+        /// <summary>
+        /// 将调用方已构建的目标页置为当前页，并把旧页连同作用域压入返回栈，发起前进转场。
+        /// </summary>
         private void NavigateForward(NavigationEntry nextEntry)
         {
             EnsureTransitionCompleted();

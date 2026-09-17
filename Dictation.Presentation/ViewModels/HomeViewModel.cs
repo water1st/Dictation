@@ -6,6 +6,9 @@ using Dictation.Core.Configuration;
 
 namespace Dictation.Presentation.ViewModels
 {
+    /// <summary>
+    /// 承载首页语言和主题选择，并通过首页导航能力打开页面。
+    /// </summary>
     public sealed class HomeViewModel : INotifyPropertyChanged
     {
         private readonly SettingsService settingsService;
@@ -16,6 +19,11 @@ namespace Dictation.Presentation.ViewModels
         private string? errorMessage;
         private bool isInitialized;
 
+        /// <summary>
+        /// 承载首页语言和主题选择，并通过首页导航能力打开页面。
+        /// </summary>
+        /// <param name="settingsService">读取和保存应用设置的业务服务。</param>
+        /// <param name="homeNavigation">首页所需的业务页面导航能力。</param>
         public HomeViewModel(
             SettingsService settingsService,
             IHomeNavigation homeNavigation)
@@ -85,6 +93,10 @@ namespace Dictation.Presentation.ViewModels
 
         public ICommand OpenLearningPlanCommand { get; }
 
+        /// <summary>
+        /// 读取保存的语言与主题选择，并更新首页显示状态。
+        /// </summary>
+        /// <param name="cancellationToken">调用方取消令牌，传递到当前异步操作。</param>
         public async Task InitializeAsync(CancellationToken cancellationToken = default)
         {
             if (isInitialized)
@@ -123,6 +135,11 @@ namespace Dictation.Presentation.ViewModels
             }
         }
 
+        /// <summary>
+        /// 保存语言选择并更新首页显示；失败时保留错误信息。
+        /// </summary>
+        /// <param name="language">当前学习语言。</param>
+        /// <param name="cancellationToken">调用方取消令牌，传递到当前异步操作。</param>
         public Task SelectLanguageAsync(
             LearningLanguage language,
             CancellationToken cancellationToken = default)
@@ -131,6 +148,11 @@ namespace Dictation.Presentation.ViewModels
             return SaveSettingsAsync(language, selectedThemeMode, cancellationToken);
         }
 
+        /// <summary>
+        /// 保存主题选择并更新绑定状态；失败时保留错误信息。
+        /// </summary>
+        /// <param name="themeMode">待保存的主题选择。</param>
+        /// <param name="cancellationToken">调用方取消令牌，传递到当前异步操作。</param>
         public Task SelectThemeAsync(
             ThemeMode themeMode,
             CancellationToken cancellationToken = default)
@@ -139,6 +161,10 @@ namespace Dictation.Presentation.ViewModels
             return SaveSettingsAsync(selectedLanguage, themeMode, cancellationToken);
         }
 
+        /// <summary>
+        /// 按当前语言请求打开词库查询页面。
+        /// </summary>
+        /// <param name="cancellationToken">调用方取消令牌，传递到当前异步操作。</param>
         public Task OpenLexiconLookupAsync(CancellationToken cancellationToken = default)
         {
             return homeNavigation.OpenLexiconLookupAsync(
@@ -146,6 +172,10 @@ namespace Dictation.Presentation.ViewModels
                 cancellationToken);
         }
 
+        /// <summary>
+        /// 按当前语言请求打开导入收件箱。
+        /// </summary>
+        /// <param name="cancellationToken">调用方取消令牌，传递到当前异步操作。</param>
         public Task OpenImportInboxAsync(CancellationToken cancellationToken = default)
         {
             return homeNavigation.OpenImportInboxAsync(
@@ -153,6 +183,10 @@ namespace Dictation.Presentation.ViewModels
                 cancellationToken);
         }
 
+        /// <summary>
+        /// 按当前语言请求打开学习计划页面。
+        /// </summary>
+        /// <param name="cancellationToken">调用方取消令牌，传递到当前异步操作。</param>
         public Task OpenLearningPlanAsync(CancellationToken cancellationToken = default)
         {
             return homeNavigation.OpenLearningPlanAsync(selectedLanguage, cancellationToken);

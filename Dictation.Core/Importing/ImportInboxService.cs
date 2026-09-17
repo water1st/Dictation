@@ -211,6 +211,9 @@ namespace Dictation.Core.Importing
             }
         }
 
+        /// <summary>
+        /// 去除空白项并按序去重人工释义；此步骤只规范化文本，不判断文本是否包含汉字。
+        /// </summary>
         private static IReadOnlyList<string>? NormalizeMeaningList(
             IReadOnlyList<string>? meanings,
             bool allowNull)
@@ -233,6 +236,9 @@ namespace Dictation.Core.Importing
                 .ToArray();
         }
 
+        /// <summary>
+        /// 根据中文语言标记和至少一条非空释义判断完整性；不在此处重新识别文本语言。
+        /// </summary>
         private static bool HasChineseMeaning(ImportWordGroupMemberPo member)
         {
             return string.Equals(member.MeaningLanguage, "zh-CN", StringComparison.Ordinal)

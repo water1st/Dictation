@@ -10,10 +10,18 @@ using Microsoft.Data.Sqlite;
 
 namespace Dictation.LexiconBuilder.WordNet
 {
+    /// <summary>
+    /// 将 WordNet、中文来源与词形写入英语词库并记录构建元数据。
+    /// </summary>
     internal sealed class EnglishLexiconDatabaseBuilder
     {
         internal const string SchemaVersion = "2";
 
+        /// <summary>
+        /// 按构建选项读取来源并写入词库数据库，返回构建统计与来源校验信息。
+        /// </summary>
+        /// <param name="options">包含来源、语言和输出路径的已解析构建选项。</param>
+        /// <returns>含实际输出统计和来源哈希的构建结果。</returns>
         internal EnglishLexiconBuildSummary Build(BuilderOptions options)
         {
             ArgumentNullException.ThrowIfNull(options);

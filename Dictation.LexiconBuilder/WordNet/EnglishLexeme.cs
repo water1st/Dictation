@@ -8,6 +8,16 @@ namespace Dictation.LexiconBuilder.WordNet
     /// </summary>
     internal sealed class EnglishLexeme
     {
+        /// <summary>
+        /// 表示一个英语词元及其源词形、词义和短语标记。
+        /// </summary>
+        /// <param name="lexemeId">稳定来源词元标识。</param>
+        /// <param name="lemma">要查找的规范化英语词元。</param>
+        /// <param name="sourceEntryKey">WordNet 来源条目的原始键。</param>
+        /// <param name="partOfSpeech">用于词形或翻译分类的英语词性。</param>
+        /// <param name="sourceForms">来源显式列出的补充词形，不代表完整范式。</param>
+        /// <param name="senses">按来源顺序排列的义项。</param>
+        /// <param name="isPhrase">是否为多词短语。</param>
         public EnglishLexeme(
             string lexemeId,
             string lemma,

@@ -7,6 +7,15 @@ namespace Dictation.LexiconBuilder
     /// </summary>
     internal sealed class BuilderOptions
     {
+        /// <summary>
+        /// 表示一次日语或英语词库构建所需的输入与隔离输出路径。
+        /// </summary>
+        /// <param name="sourceKind">选择日语 JMdict 或英语 WordNet 来源。</param>
+        /// <param name="sourcePath">主词库来源文件或目录路径。</param>
+        /// <param name="outputPath">生成数据库的目标路径。</param>
+        /// <param name="tomoshiDatabasePath">可选 Tomoshi 中文来源数据库路径。</param>
+        /// <param name="chineseWordNetXmlPath">可选中文 WordNet XML 来源路径。</param>
+        /// <param name="ecdictDatabasePath">可选 ECDICT 来源数据库路径。</param>
         private BuilderOptions(
             LexiconSourceKind sourceKind,
             string sourcePath,

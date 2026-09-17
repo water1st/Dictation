@@ -5,6 +5,10 @@ namespace Dictation.Core.Configuration
     /// </summary>
     public sealed class SettingsConfigurationException : Exception
     {
+        /// <summary>
+        /// 记录失败说明及原始原因。
+        /// </summary>
+        /// <param name="message">供上层展示或记录的失败说明。</param>
         public SettingsConfigurationException(string message)
             : base(message)
         {

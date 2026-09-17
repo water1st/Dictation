@@ -85,6 +85,9 @@ namespace Dictation.LexiconBuilder.WordNet
             return results;
         }
 
+        /// <summary>
+        /// 当没有精确中文映射时，以词元和词性级中文创建宽泛回退义项，不冒充精确义项。
+        /// </summary>
         private static EnglishLearningSense CreateFallback(
             FamilyKey family,
             IReadOnlyList<SourceSense> uncovered,

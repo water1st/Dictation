@@ -7,6 +7,10 @@ namespace Dictation.LexiconBuilder.JmDict
     /// </summary>
     internal static class JmDictPriority
     {
+        /// <summary>
+        /// 按 JMdict 优先级标记判断是否属于常用词形。
+        /// </summary>
+        /// <param name="priority">JMdict 来源优先级代码。</param>
         public static bool IsCommon(string priority)
         {
             return priority.StartsWith("news", StringComparison.OrdinalIgnoreCase)

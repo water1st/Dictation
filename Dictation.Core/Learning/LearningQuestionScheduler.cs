@@ -143,6 +143,9 @@ namespace Dictation.Core.Learning
             return new QuestionCandidate(unit, channel, output, uncovered, errorRate, lastOrdinal);
         }
 
+        /// <summary>
+        /// 在计数最少的选项中随机选择，平衡题型或输出方式的覆盖。
+        /// </summary>
         private T SelectWeakest<T>(IReadOnlyList<T> values, Func<T, int> countSelector)
             where T : struct, Enum
         {

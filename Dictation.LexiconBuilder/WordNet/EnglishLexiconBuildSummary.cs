@@ -2,8 +2,31 @@ using System;
 
 namespace Dictation.LexiconBuilder.WordNet
 {
+    /// <summary>
+    /// 记录英语词库构建数量、来源哈希与输出位置，供校验和发布追踪。
+    /// </summary>
     internal sealed class EnglishLexiconBuildSummary
     {
+        /// <summary>
+        /// 记录英语词库构建数量、来源哈希与输出位置，供校验和发布追踪。
+        /// </summary>
+        /// <param name="sourceFileCount">参与构建的来源文件数量。</param>
+        /// <param name="lexemeCount">词元数量。</param>
+        /// <param name="senseCount">输出或来源模型的义项数量。</param>
+        /// <param name="synsetCount">同义词集数量。</param>
+        /// <param name="definitionCount">来源定义数量。</param>
+        /// <param name="exampleCount">来源例句数量。</param>
+        /// <param name="formCount">输出词形数量。</param>
+        /// <param name="derivationCount">来源派生关联数量。</param>
+        /// <param name="learningSenseCount">聚合后的学习义项数量。</param>
+        /// <param name="exactLearningSenseCount">具有精确中文释义的学习义项数量。</param>
+        /// <param name="broadLearningSenseCount">仅有宽泛中文释义的学习义项数量。</param>
+        /// <param name="missingLearningSenseCount">缺少中文释义的学习义项数量。</param>
+        /// <param name="unclassifiedSourceFormCount">尚未归类的来源词形数量。</param>
+        /// <param name="sourceFingerprintSha256">WordNet 来源集合的稳定 SHA-256 指纹。</param>
+        /// <param name="cowSha256">中文 WordNet 文件 SHA-256。</param>
+        /// <param name="ecdictSha256">ECDICT 文件 SHA-256。</param>
+        /// <param name="outputPath">生成数据库的目标路径。</param>
         internal EnglishLexiconBuildSummary(
             int sourceFileCount,
             int lexemeCount,

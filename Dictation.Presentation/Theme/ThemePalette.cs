@@ -4,8 +4,16 @@ using MediaColor = System.Windows.Media.Color;
 
 namespace Dictation.Presentation.Theme
 {
-    public static class ThemePalette
+    /// <summary>
+    /// 将已解析的主题颜色写入 WPF 动态资源字典。
+    /// </summary>
+    internal static class ThemePalette
     {
+        /// <summary>
+        /// 替换颜色资源并使用可冻结画刷，供动态资源绑定刷新。
+        /// </summary>
+        /// <param name="resources">写入应用颜色与画刷的资源字典。</param>
+        /// <param name="theme">已解析的明色或暗色主题。</param>
         public static void Apply(ResourceDictionary resources, ResolvedTheme theme)
         {
             ArgumentNullException.ThrowIfNull(resources);

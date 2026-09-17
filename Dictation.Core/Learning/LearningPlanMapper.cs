@@ -65,6 +65,9 @@ namespace Dictation.Core.Learning
                 page.Groups.Select(ToDto).ToArray());
         }
 
+        /// <summary>
+        /// 投影学习库中的单个词组快照，复用共享成员映射。
+        /// </summary>
         private static LearningWordGroupDto ToDto(LearningWordGroupPo group)
         {
             return new LearningWordGroupDto(

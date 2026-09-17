@@ -212,6 +212,9 @@ namespace Dictation.Core.Learning
             };
         }
 
+        /// <summary>
+        /// 按语言允许的词形集合校验并去重所选代码，拒绝空集合与不受支持的形式。
+        /// </summary>
         private static IReadOnlyList<string> NormalizeForms(IReadOnlyList<string> forms, LearningLanguage language)
         {
             if (forms is null || forms.Count == 0)
@@ -245,6 +248,9 @@ namespace Dictation.Core.Learning
             return values.Distinct().ToArray();
         }
 
+        /// <summary>
+        /// 校验英语标签选项及输出方式与学习语言的兼容性，避免保存无法执行的语言组合。
+        /// </summary>
         private static void ValidateLanguageOptions(
             SaveLearningPlanRequestDto request,
             IReadOnlyList<LearningOutputMode> outputs)

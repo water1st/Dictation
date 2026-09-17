@@ -4,10 +4,17 @@ using Dictation.Core.Learning;
 
 namespace Dictation.Presentation.ViewModels
 {
+    /// <summary>
+    /// 承载学习库列表项的显示文本和勾选状态。
+    /// </summary>
     public sealed class LearningLibraryItemViewModel : INotifyPropertyChanged
     {
         private bool isSelected;
 
+        /// <summary>
+        /// 承载学习库列表项的显示文本和勾选状态。
+        /// </summary>
+        /// <param name="group">学习库列表显示的词组快照。</param>
         public LearningLibraryItemViewModel(LearningWordGroupDto group)
         {
             Group = group ?? throw new ArgumentNullException(nameof(group));

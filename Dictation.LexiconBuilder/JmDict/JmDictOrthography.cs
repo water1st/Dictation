@@ -9,6 +9,11 @@ namespace Dictation.LexiconBuilder.JmDict
     /// </summary>
     internal sealed class JmDictOrthography
     {
+        /// <summary>
+        /// 表示 JMdict 的一个书写形式及其常用度标记。
+        /// </summary>
+        /// <param name="text">来源记录的文本内容。</param>
+        /// <param name="priorities">来源提供的常用度和频率标记。</param>
         public JmDictOrthography(string text, IReadOnlyList<string> priorities)
         {
             Text = RequireText(text, nameof(text));

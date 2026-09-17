@@ -7,6 +7,9 @@ using Dictation.Presentation.Shell;
 
 namespace Dictation.Presentation
 {
+    /// <summary>
+    /// 承载单窗口页面、导航动画和弹层的 WPF 主窗口。
+    /// </summary>
     public sealed partial class HomeWindow : System.Windows.Window
     {
         private static readonly System.Windows.Duration TransitionDuration =
@@ -14,6 +17,10 @@ namespace Dictation.Presentation
         private readonly ShellViewModel shellViewModel;
         private bool isTransitioning;
 
+        /// <summary>
+        /// 承载单窗口页面、导航动画和弹层的 WPF 主窗口。
+        /// </summary>
+        /// <param name="shellViewModel">提供页面、转场和弹层状态的窗口宿主模型。</param>
         public HomeWindow(ShellViewModel shellViewModel)
         {
             this.shellViewModel = shellViewModel
@@ -25,6 +32,9 @@ namespace Dictation.Presentation
 
         public ShellViewModel ViewModel => shellViewModel;
 
+        /// <summary>
+        /// 将主窗口恢复到可见状态并请求前台激活。
+        /// </summary>
         public void RestoreAndActivate()
         {
             if (!Dispatcher.CheckAccess())

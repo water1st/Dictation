@@ -6,6 +6,9 @@ using Dictation.Core.Importing;
 
 namespace Dictation.Presentation.ViewModels
 {
+    /// <summary>
+    /// 呈现当前导入词组的成员详情与中文释义编辑状态。
+    /// </summary>
     public sealed class ImportInboxDetailViewModel : INotifyPropertyChanged
     {
         private LearningLanguage selectedLanguage;
@@ -14,6 +17,9 @@ namespace Dictation.Presentation.ViewModels
         private double scrollOffset;
         private bool isInitialized;
 
+        /// <summary>
+        /// 呈现当前导入词组的成员详情与中文释义编辑状态。
+        /// </summary>
         public ImportInboxDetailViewModel()
         {
             Members = new ObservableCollection<ImportMemberEditorViewModel>();
@@ -74,6 +80,11 @@ namespace Dictation.Presentation.ViewModels
             }
         }
 
+        /// <summary>
+        /// 从给定批次选择条目，并构建仅供显示和编辑的成员状态。
+        /// </summary>
+        /// <param name="batch">包含目标条目及词组快照的导入批次。</param>
+        /// <param name="itemId">批次内当前显示的条目标识。</param>
         public void Initialize(ImportBatchDto batch, long itemId)
         {
             ArgumentNullException.ThrowIfNull(batch);

@@ -77,6 +77,9 @@ namespace Dictation.Core.Importing
                 member.KanjiUsageCode);
         }
 
+        /// <summary>
+        /// 将词库词形投影为导入词形快照，保留字形、角色和优先级元数据。
+        /// </summary>
         private static ImportWordGroupFormPo ToSnapshotPo(LexiconLookupFormDto form)
         {
             return new ImportWordGroupFormPo(
@@ -91,6 +94,9 @@ namespace Dictation.Core.Importing
                 form.IsPrimary);
         }
 
+        /// <summary>
+        /// 将持久化词形快照投影为业务词形，保留标签及常用、主形式标记。
+        /// </summary>
         private static ImportWordGroupFormDto ToDto(ImportWordGroupFormPo form)
         {
             return new ImportWordGroupFormDto(

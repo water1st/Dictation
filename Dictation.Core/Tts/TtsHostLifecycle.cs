@@ -20,6 +20,11 @@ namespace Dictation.Core.Tts
         private Process? process;
         private int disposed;
 
+        /// <summary>
+        /// 随 Generic Host 启停隐藏的 TTS 子进程，并通过 Ping/Pong 确认就绪。
+        /// </summary>
+        /// <param name="executablePath">本地 TTS 宿主可执行文件路径。</param>
+        /// <param name="session">当前 TTS 宿主会话和管道连接信息。</param>
         internal TtsHostLifecycle(string executablePath, TtsHostSession session)
         {
             if (string.IsNullOrWhiteSpace(executablePath))
@@ -123,6 +128,7 @@ namespace Dictation.Core.Tts
             cancellationToken.ThrowIfCancellationRequested();
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (Interlocked.Exchange(ref disposed, 1) != 0)
@@ -175,6 +181,9 @@ namespace Dictation.Core.Tts
             }
         }
 
+        /// <summary>
+        /// 在启动超时内反复探测宿主就绪状态；宿主退出或取消时结束等待。
+        /// </summary>
         private async Task WaitForReadyAsync(Process startedProcess, CancellationToken cancellationToken)
         {
             var stopwatch = Stopwatch.StartNew();

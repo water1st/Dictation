@@ -2,12 +2,19 @@ using Dictation.Core.Configuration;
 
 namespace Dictation.Presentation.Theme
 {
+    /// <summary>
+    /// 根据用户选择或系统主题解析应用主题并发布变化通知。
+    /// </summary>
     public sealed class ThemeManager : IDisposable
     {
         private readonly ISystemThemeProvider systemThemeProvider;
         private ResolvedTheme currentTheme;
         private bool isDisposed;
 
+        /// <summary>
+        /// 根据用户选择或系统主题解析应用主题并发布变化通知。
+        /// </summary>
+        /// <param name="systemThemeProvider">可替换的系统主题读取及通知来源。</param>
         public ThemeManager(ISystemThemeProvider systemThemeProvider)
         {
             this.systemThemeProvider = systemThemeProvider
@@ -23,6 +30,10 @@ namespace Dictation.Presentation.Theme
 
         public event EventHandler? ThemeChanged;
 
+        /// <summary>
+        /// 应用明确主题或跟随系统；系统读取失败时使用明色。
+        /// </summary>
+        /// <param name="mode">固定明暗或跟随系统的主题模式。</param>
         public void SetThemeMode(ThemeMode mode)
         {
             ValidateThemeMode(mode);
@@ -42,6 +53,7 @@ namespace Dictation.Presentation.Theme
             }
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (isDisposed)

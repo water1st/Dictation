@@ -9,6 +9,9 @@ using Dictation.LexiconBuilder;
 
 namespace Dictation.LexiconBuilder.JmDict
 {
+    /// <summary>
+    /// 流式解析 JMdict 条目及其义项、读音和字形限制。
+    /// </summary>
     internal sealed class JmDictParser
     {
         private static readonly Regex CreatedDatePattern = new(
@@ -17,6 +20,11 @@ namespace Dictation.LexiconBuilder.JmDict
 
         internal string CreatedDate { get; private set; } = "unknown";
 
+        /// <summary>
+        /// 流式读取 XML 条目，不取得输入流的所有权。
+        /// </summary>
+        /// <param name="xmlStream">由调用方提供并负责释放的 JMdict XML 流。</param>
+        /// <returns>按来源顺序延迟读取的条目集合。</returns>
         internal IEnumerable<JmDictEntry> Parse(Stream xmlStream)
         {
             ArgumentNullException.ThrowIfNull(xmlStream);
@@ -127,6 +135,9 @@ namespace Dictation.LexiconBuilder.JmDict
             }
         }
 
+        /// <summary>
+        /// 解析来源条目并继承 JMdict 省略重复的词性等义项信息，保留书写与读音限制。
+        /// </summary>
         private static JmDictEntry ParseEntry(XElement entryElement)
         {
             var sequenceText = ChildValue(entryElement, "ent_seq");

@@ -11,12 +11,20 @@ using Dictation.LexiconBuilder;
 
 namespace Dictation.LexiconBuilder.WordNet
 {
+    /// <summary>
+    /// 读取 WordNet YAML 目录并建立词元、义项和同义词集模型。
+    /// </summary>
     internal sealed class WordNetYamlParser
     {
         private readonly IDeserializer deserializer = new DeserializerBuilder()
             .IgnoreUnmatchedProperties()
             .Build();
 
+        /// <summary>
+        /// 解析指定目录的 WordNet YAML 文件并合并词元及同义词集。
+        /// </summary>
+        /// <param name="directoryPath">WordNet YAML 来源目录。</param>
+        /// <returns>已解析的完整 WordNet 词元和同义词集。</returns>
         internal WordNetLexicon ParseDirectory(string directoryPath)
         {
             if (string.IsNullOrWhiteSpace(directoryPath))
@@ -328,6 +336,9 @@ namespace Dictation.LexiconBuilder.WordNet
             return result.ToArray();
         }
 
+        /// <summary>
+        /// 验证词元、义项、同义词集和派生引用的完整性，拒绝悬空来源关系。
+        /// </summary>
         private static void ValidateReferences(
             IReadOnlyList<ParsedLexeme> lexemes,
             IReadOnlyList<ParsedSynset> synsets)

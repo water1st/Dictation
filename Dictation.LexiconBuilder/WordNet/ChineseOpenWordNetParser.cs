@@ -9,8 +9,15 @@ using Dictation.LexiconBuilder;
 
 namespace Dictation.LexiconBuilder.WordNet
 {
+    /// <summary>
+    /// 按跨语言 ILI 标识读取中文 WordNet 释义。
+    /// </summary>
     internal sealed class ChineseOpenWordNetParser
     {
+        /// <summary>
+        /// 解析中文 WordNet XML，并按 ILI 标识聚合中文释义。
+        /// </summary>
+        /// <param name="xmlPath">中文 WordNet XML 文件路径。</param>
         public IReadOnlyDictionary<string, IReadOnlyList<string>> ParseByIli(string xmlPath)
         {
             if (string.IsNullOrWhiteSpace(xmlPath))

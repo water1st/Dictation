@@ -4,6 +4,9 @@ using System.Linq;
 
 namespace Dictation.LexiconBuilder.WordNet
 {
+    /// <summary>
+    /// 保存已审定的英语不规则范式及形式分类，不把来源词形视为完整范式。
+    /// </summary>
     internal static class EnglishIrregularParadigms
     {
         private static readonly IReadOnlyDictionary<(string Lemma, EnglishPartOfSpeech PartOfSpeech), IReadOnlyDictionary<EnglishFormKind, IReadOnlyList<string>>> Paradigms =
@@ -1024,6 +1027,13 @@ namespace Dictation.LexiconBuilder.WordNet
                 [("write", EnglishPartOfSpeech.Verb)] = CreateVerb("writes", "wrote", "written", "writing")
             };
 
+        /// <summary>
+        /// 查找词元及词性的已审定不规则范式。
+        /// </summary>
+        /// <param name="lemma">要查找的规范化英语词元。</param>
+        /// <param name="partOfSpeech">用于词形或翻译分类的英语词性。</param>
+        /// <param name="paradigm">找到的词形类别到表面形式列表的映射；返回假时不得使用此输出。</param>
+        /// <returns>是否找到该词元与词性的已审定范式。</returns>
         internal static bool TryGetParadigm(
             string lemma,
             EnglishPartOfSpeech partOfSpeech,
@@ -1032,6 +1042,14 @@ namespace Dictation.LexiconBuilder.WordNet
             return Paradigms.TryGetValue((lemma, partOfSpeech), out paradigm!);
         }
 
+        /// <summary>
+        /// 在已审定范式中查找给定表面形式对应的所有词形类别。
+        /// </summary>
+        /// <param name="lemma">要查找的规范化英语词元。</param>
+        /// <param name="partOfSpeech">用于词形或翻译分类的英语词性。</param>
+        /// <param name="surface">实际书写的词形表面文本。</param>
+        /// <param name="kinds">给定表面形式命中的词形类别；未找到时为空集合。</param>
+        /// <returns>是否找到至少一个匹配词形类别。</returns>
         internal static bool TryGetKinds(
             string lemma,
             EnglishPartOfSpeech partOfSpeech,

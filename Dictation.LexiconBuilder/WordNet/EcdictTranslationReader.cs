@@ -8,6 +8,9 @@ using Microsoft.Data.Sqlite;
 
 namespace Dictation.LexiconBuilder.WordNet
 {
+    /// <summary>
+    /// 从只读 ECDICT 数据库提取按词性匹配的中文翻译。
+    /// </summary>
     internal sealed class EcdictTranslationReader : IDisposable
     {
         private readonly SqliteConnection connection;
@@ -15,6 +18,10 @@ namespace Dictation.LexiconBuilder.WordNet
         private readonly Dictionary<string, IReadOnlyList<EcdictRow>> rowsByLemma = new(StringComparer.Ordinal);
         private bool disposed;
 
+        /// <summary>
+        /// 从只读 ECDICT 数据库提取按词性匹配的中文翻译。
+        /// </summary>
+        /// <param name="databasePath">只读中文来源 SQLite 数据库路径。</param>
         internal EcdictTranslationReader(string databasePath)
         {
             if (string.IsNullOrWhiteSpace(databasePath))
@@ -50,6 +57,11 @@ namespace Dictation.LexiconBuilder.WordNet
             }
         }
 
+        /// <summary>
+        /// 按规范化词元和词性读取中文翻译，过滤不对应的词性段。
+        /// </summary>
+        /// <param name="normalizedLemma">用于来源查找的规范化词元。</param>
+        /// <param name="partOfSpeech">用于词形或翻译分类的英语词性。</param>
         internal IReadOnlyList<string> Read(
             string normalizedLemma,
             EnglishPartOfSpeech partOfSpeech)
@@ -85,6 +97,7 @@ namespace Dictation.LexiconBuilder.WordNet
             return result;
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (disposed)

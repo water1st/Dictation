@@ -2,7 +2,10 @@ using Microsoft.Win32;
 
 namespace Dictation.Presentation.Theme
 {
-    public sealed class WindowsSystemThemeProvider : ISystemThemeProvider
+    /// <summary>
+    /// 从 Windows 个性化配置读取主题，并订阅系统偏好变化。
+    /// </summary>
+    internal sealed class WindowsSystemThemeProvider : ISystemThemeProvider
     {
         private const string PersonalizeRegistryPath =
             @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
@@ -13,11 +16,19 @@ namespace Dictation.Presentation.Theme
         private ResolvedTheme currentTheme;
         private bool isDisposed;
 
+        /// <summary>
+        /// 从 Windows 个性化配置读取主题，并订阅系统偏好变化。
+        /// </summary>
         public WindowsSystemThemeProvider()
             : this(ReadAppsUseLightThemeValue, subscribeToSystemEvents: true)
         {
         }
 
+        /// <summary>
+        /// 从 Windows 个性化配置读取主题，并订阅系统偏好变化。
+        /// </summary>
+        /// <param name="readThemeValue">读取系统主题整数值的委托；为空时使用注册表。</param>
+        /// <param name="subscribeToSystemEvents">是否订阅 Windows 用户偏好变化事件。</param>
         public WindowsSystemThemeProvider(
             Func<int?>? readThemeValue,
             bool subscribeToSystemEvents = true)
@@ -45,6 +56,7 @@ namespace Dictation.Presentation.Theme
 
         public event EventHandler? ThemeChanged;
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (isDisposed)

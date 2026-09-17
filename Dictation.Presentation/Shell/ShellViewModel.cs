@@ -6,11 +6,19 @@ using Dictation.Presentation.ViewModels;
 
 namespace Dictation.Presentation.Shell
 {
+    /// <summary>
+    /// 向窗口转发导航和弹层状态，并提供宿主命令。
+    /// </summary>
     public sealed class ShellViewModel : INotifyPropertyChanged
     {
         private readonly INavigationHost navigationHost;
         private readonly IOverlayHost overlayHost;
 
+        /// <summary>
+        /// 向窗口转发导航和弹层状态，并提供宿主命令。
+        /// </summary>
+        /// <param name="navigationHost">提供导航状态和转场生命周期的宿主能力。</param>
+        /// <param name="overlayHost">提供弹层显示状态和完成操作的宿主能力。</param>
         public ShellViewModel(
             INavigationHost navigationHost,
             IOverlayHost overlayHost)
@@ -60,6 +68,9 @@ namespace Dictation.Presentation.Shell
 
         public ICommand DismissOverlayCommand { get; }
 
+        /// <summary>
+        /// 通知导航宿主动画结束，以释放离开的页面作用域。
+        /// </summary>
         public void CompleteTransition()
         {
             navigationHost.CompleteTransition();

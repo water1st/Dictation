@@ -5,6 +5,12 @@ namespace Dictation.Presentation.Shell
     /// </summary>
     public sealed class OverlayRequest
     {
+        /// <summary>
+        /// 描述宿主正在显示的一次弹层请求及其异步完成状态。
+        /// </summary>
+        /// <param name="kind">消息、确认或忙碌弹层类型。</param>
+        /// <param name="title">弹层标题。</param>
+        /// <param name="message">供上层展示或记录的失败说明。</param>
         internal OverlayRequest(OverlayKind kind, string title, string message)
         {
             Kind = kind;

@@ -256,6 +256,9 @@ namespace Dictation.Core.Learning
                 SelectPreferredSpokenText(currentUnit, output, language));
         }
 
+        /// <summary>
+        /// 根据当前题型、输出方式与判题结果生成新的词形状态；不就地修改输入快照。
+        /// </summary>
         private static LearningFormUnitPo ApplyOutcome(
             LearningFormUnitPo unit,
             LearningQuestionStatePo question,
@@ -278,6 +281,9 @@ namespace Dictation.Core.Learning
             };
         }
 
+        /// <summary>
+        /// 按计划选择提示标签与发音字段并组装题目；看义写词在提交前不携带发音答案，因此不是无条件字段复制。
+        /// </summary>
         private static LearningQuestionDto MapQuestion(
             LearningSchedulingSnapshotPo snapshot,
             LearningQuestionStatePo question,
@@ -302,6 +308,9 @@ namespace Dictation.Core.Learning
                 channel == LearningChannel.Dictation ? SelectPreferredSpokenText(unit, output, language) : null);
         }
 
+        /// <summary>
+        /// 按计划选择英语示例词形标签；没有对应示例时使用原语法标签。
+        /// </summary>
         private static string GetFormLabel(
             LearningFormUnitPo unit,
             LearningPlanDto plan,
@@ -330,6 +339,9 @@ namespace Dictation.Core.Learning
             _ => throw new ArgumentOutOfRangeException(nameof(output))
         };
 
+        /// <summary>
+        /// 按语言与输出字形筛选可接受答案并去重；候选为空表示持久化状态不完整。
+        /// </summary>
         private static IReadOnlyList<string> GetAnswers(
             LearningFormUnitPo unit,
             LearningOutputMode output,
@@ -352,6 +364,9 @@ namespace Dictation.Core.Learning
             LearningOutputMode output,
             LearningLanguage language) => GetAnswers(unit, output, language)[0];
 
+        /// <summary>
+        /// 先选当前输出方式的首个答案；日语优先读音，英语直接使用表面形式。
+        /// </summary>
         private static string SelectPreferredSpokenText(
             LearningFormUnitPo unit,
             LearningOutputMode output,
@@ -382,6 +397,9 @@ namespace Dictation.Core.Learning
         private static bool IsSameUnit(LearningFormUnitPo unit, LearningQuestionHistoryPo question) =>
             unit.MemberId == question.MemberId && string.Equals(unit.FormCode, question.FormCode, StringComparison.Ordinal);
 
+        /// <summary>
+        /// 从已答历史统计答题数，并按词组、成员和词形去重错误项以生成总结。
+        /// </summary>
         private static LearningSessionSummaryDto CreateSummary(
             string sessionId,
             LearningSchedulingSnapshotPo snapshot,
@@ -406,6 +424,9 @@ namespace Dictation.Core.Learning
                 errors);
         }
 
+        /// <summary>
+        /// 先由启动准备能力校验手选标识，再按手选顺序施加每日新词额度和本轮上限。
+        /// </summary>
         private async Task<IReadOnlyList<EligibleCandidate>> SelectManualAsync(
             StartLearningSessionRequestDto request,
             LearningPlanDto plan,
@@ -447,6 +468,9 @@ namespace Dictation.Core.Learning
             return selected;
         }
 
+        /// <summary>
+        /// 优先选择已有进度的候选，再补入不超过剩余每日额度的新词组，并截取本轮上限。
+        /// </summary>
         private IReadOnlyList<EligibleCandidate> SelectAutomatic(
             LearningPlanDto plan,
             IReadOnlyList<EligibleCandidate> eligible,
@@ -462,6 +486,9 @@ namespace Dictation.Core.Learning
             return historical.Concat(newCandidates).Take(plan.SessionWordLimit).ToArray();
         }
 
+        /// <summary>
+        /// 先以创建时间和标识建立稳定顺序；随机模式在该序列上用注入的随机源洗牌。
+        /// </summary>
         private IReadOnlyList<EligibleCandidate> OrderCandidates(
             IEnumerable<EligibleCandidate> candidates,
             LearningSelectionMode selectionMode)
@@ -482,6 +509,9 @@ namespace Dictation.Core.Learning
             return ordered;
         }
 
+        /// <summary>
+        /// 仅保留计划启用且输出方式可练习的词形；已全部掌握或无可练习形式时返回空。
+        /// </summary>
         private static EligibleCandidate? CreateEligibleCandidate(
             LearningSessionCandidatePo candidate,
             IReadOnlySet<string> enabledForms,
@@ -506,6 +536,9 @@ namespace Dictation.Core.Learning
             return requiresPractice ? new EligibleCandidate(candidate, forms) : null;
         }
 
+        /// <summary>
+        /// 英语要求拉丁输出；日语汉字输出只允许常用汉字形式，假名输出使用假名形式。
+        /// </summary>
         private static bool IsApplicableCandidateForm(
             LearningFormIdentityPo form,
             IReadOnlyList<LearningOutputMode> outputModes,

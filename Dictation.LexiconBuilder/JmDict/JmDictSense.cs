@@ -8,6 +8,14 @@ namespace Dictation.LexiconBuilder.JmDict
     /// </summary>
     internal sealed class JmDictSense
     {
+        /// <summary>
+        /// 表示 JMdict 词义及其词性、书写、读音限制和多语言释义。
+        /// </summary>
+        /// <param name="index">义项在来源条目中的序号。</param>
+        /// <param name="partsOfSpeech">来源词性标记集合。</param>
+        /// <param name="kanjiRestrictions">义项适用的汉字书写限制。</param>
+        /// <param name="readingRestrictions">义项适用的读音限制。</param>
+        /// <param name="glosses">该义项的来源释义集合。</param>
         public JmDictSense(
             int index,
             IReadOnlyList<string> partsOfSpeech,
