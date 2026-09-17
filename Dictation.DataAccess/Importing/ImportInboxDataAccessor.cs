@@ -48,6 +48,11 @@ namespace Dictation.DataAccess.Importing
                 ?? throw new ArgumentNullException(nameof(wordGroupMemberSnapshotReader));
         }
 
+        /// <summary>
+        /// 在事务中写入导入批次和词组快照，并保留已存在义项的重复关系。
+        /// </summary>
+        /// <param name="request">已由业务层准备的持久化请求。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
         public async Task<ImportBatchPo> StageAsync(
             ImportBatchStagePo request,
             CancellationToken cancellationToken = default)
@@ -167,6 +172,11 @@ namespace Dictation.DataAccess.Importing
             }
         }
 
+        /// <summary>
+        /// 读取指定语言仍待处理的导入批次。
+        /// </summary>
+        /// <param name="language">持久化使用的语言代码。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
         public async Task<IReadOnlyList<ImportBatchPo>> ListPendingAsync(
             string language,
             CancellationToken cancellationToken = default)
@@ -219,6 +229,12 @@ namespace Dictation.DataAccess.Importing
             }
         }
 
+        /// <summary>
+        /// 读取导入批次及其条目和词组快照。
+        /// </summary>
+        /// <param name="batchId">目标导入批次标识。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        /// <returns>完整批次快照；不存在时抛出收件箱访问异常。</returns>
         public async Task<ImportBatchPo> GetBatchAsync(
             string batchId,
             CancellationToken cancellationToken = default)
@@ -245,6 +261,13 @@ namespace Dictation.DataAccess.Importing
             }
         }
 
+        /// <summary>
+        /// 事务性替换指定成员的人工中文释义及来源元数据。
+        /// </summary>
+        /// <param name="wordGroupId">目标词组标识。</param>
+        /// <param name="sourceSenseId">目标成员的来源义项标识。</param>
+        /// <param name="meanings">按顺序保存的非空人工释义。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
         public async Task UpdateMeaningsAsync(
             string wordGroupId,
             string sourceSenseId,
@@ -342,6 +365,13 @@ namespace Dictation.DataAccess.Importing
             }
         }
 
+        /// <summary>
+        /// 在事务中处理选中条目的去向，并同步词组位置和批次完成状态。
+        /// </summary>
+        /// <param name="batchId">目标导入批次标识。</param>
+        /// <param name="itemIds">本次要处理的批次条目标识集合。</param>
+        /// <param name="decision">条目的持久化去向代码。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
         public async Task DecideAsync(
             string batchId,
             IReadOnlyList<long> itemIds,

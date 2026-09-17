@@ -6,8 +6,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.DataAccess
 {
+    /// <summary>
+    /// 在唯一容器中注册持久化组件及共享快照读取实例。
+    /// </summary>
     public static class DictationDataAccessServiceCollectionExtensions
     {
+        /// <summary>
+        /// 注册路径、连接工厂和单例 DAO；共享读取器由同一容器实例提供。
+        /// </summary>
+        /// <param name="services">应用唯一依赖注入容器的注册集合。</param>
+        /// <param name="applicationRootDirectory">应用完全限定根目录。</param>
+        /// <returns>原注册集合，以支持连续注册。</returns>
         public static IServiceCollection AddDictationDataAccess(
             this IServiceCollection services,
             string applicationRootDirectory)

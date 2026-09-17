@@ -3,21 +3,36 @@ using Microsoft.Data.Sqlite;
 
 namespace Dictation.DataAccess.Lexicon
 {
+    /// <summary>
+    /// 按语言定位不可变词库并创建只读、无连接池的 SQLite 连接。
+    /// </summary>
     public sealed class LexiconSqliteConnectionFactory
     {
         private readonly ApplicationPaths applicationPaths;
 
+        /// <summary>
+        /// 按语言定位不可变词库并创建只读、无连接池的 SQLite 连接。
+        /// </summary>
+        /// <param name="applicationPaths">资源、运行数据和备份路径。</param>
         public LexiconSqliteConnectionFactory(ApplicationPaths applicationPaths)
         {
             this.applicationPaths = applicationPaths
                 ?? throw new ArgumentNullException(nameof(applicationPaths));
         }
 
+        /// <summary>
+        /// 创建尚未打开的日语只读词库连接，由调用方打开并释放。
+        /// </summary>
+        /// <returns>未打开的日语只读连接。</returns>
         public SqliteConnection CreateJapaneseConnection()
         {
             return CreateConnection(applicationPaths.JapaneseLexiconDatabase, "日语");
         }
 
+        /// <summary>
+        /// 创建尚未打开的英语只读词库连接，由调用方打开并释放。
+        /// </summary>
+        /// <returns>未打开的英语只读连接。</returns>
         public SqliteConnection CreateEnglishConnection()
         {
             return CreateConnection(applicationPaths.EnglishLexiconDatabase, "英语");

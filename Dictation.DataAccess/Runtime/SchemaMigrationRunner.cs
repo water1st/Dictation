@@ -4,6 +4,9 @@ using Dictation.DataAccess;
 
 namespace Dictation.DataAccess.Runtime
 {
+    /// <summary>
+    /// 校验迁移连续性，备份既有数据库并在事务内执行待应用迁移。
+    /// </summary>
     public sealed class SchemaMigrationRunner
     {
         private const string SchemaMigrationsTableName = "SchemaMigrations";
@@ -11,6 +14,11 @@ namespace Dictation.DataAccess.Runtime
         private readonly SqliteConnectionFactory connectionFactory;
         private readonly IReadOnlyList<SchemaMigration> migrations;
 
+        /// <summary>
+        /// 校验迁移连续性，备份既有数据库并在事务内执行待应用迁移。
+        /// </summary>
+        /// <param name="applicationPaths">资源、运行数据和备份路径。</param>
+        /// <param name="connectionFactory">创建本层所需 SQLite 连接的工厂。</param>
         public SchemaMigrationRunner(
             ApplicationPaths applicationPaths,
             SqliteConnectionFactory connectionFactory)
@@ -18,6 +26,12 @@ namespace Dictation.DataAccess.Runtime
         {
         }
 
+        /// <summary>
+        /// 校验迁移连续性，备份既有数据库并在事务内执行待应用迁移。
+        /// </summary>
+        /// <param name="applicationPaths">资源、运行数据和备份路径。</param>
+        /// <param name="connectionFactory">创建本层所需 SQLite 连接的工厂。</param>
+        /// <param name="migrations">按版本严格递增的迁移定义。</param>
         public SchemaMigrationRunner(
             ApplicationPaths applicationPaths,
             SqliteConnectionFactory connectionFactory,
@@ -29,6 +43,10 @@ namespace Dictation.DataAccess.Runtime
             this.migrations = migrations.ToArray();
         }
 
+        /// <summary>
+        /// 检查已应用版本，先备份既有数据库，再事务性执行全部待处理迁移。
+        /// </summary>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
         public async Task MigrateAsync(CancellationToken cancellationToken = default)
         {
             ValidateMigrations();
@@ -81,6 +99,11 @@ namespace Dictation.DataAccess.Runtime
             }
         }
 
+        /// <summary>
+        /// 要求数据库版本恰为迁移定义的连续前缀，避免跨版本缺口继续启动。
+        /// </summary>
+        /// <param name="appliedVersions">从数据库按版本排序读取的已应用版本。</param>
+        /// <returns>尚未应用的有序迁移；重复、未知或缺口版本会被拒绝。</returns>
         private IReadOnlyList<SchemaMigration> GetPendingMigrations(IReadOnlyList<int> appliedVersions)
         {
             var migrationsByVersion = migrations.ToDictionary(migration => migration.Version);
@@ -115,6 +138,11 @@ namespace Dictation.DataAccess.Runtime
             return migrations.Skip(appliedVersions.Count).ToArray();
         }
 
+        /// <summary>
+        /// 在一个事务中执行迁移及版本记录；失败时尝试回滚并保留原始原因。
+        /// </summary>
+        /// <param name="pendingMigrations">按版本排序的待执行迁移。</param>
+        /// <param name="cancellationToken">数据库操作取消令牌。</param>
         private async Task ApplyPendingMigrationsAsync(
             IReadOnlyList<SchemaMigration> pendingMigrations,
             CancellationToken cancellationToken)
@@ -174,6 +202,13 @@ namespace Dictation.DataAccess.Runtime
             }
         }
 
+        /// <summary>
+        /// 消费批量 SQL 的全部结果集，确保后续语句不会因只读首个结果而被遗漏。
+        /// </summary>
+        /// <param name="connection">当前迁移连接。</param>
+        /// <param name="transaction">覆盖整批迁移的事务。</param>
+        /// <param name="sql">迁移定义中的完整 SQL。</param>
+        /// <param name="cancellationToken">数据库操作取消令牌。</param>
         private static async Task ExecuteMigrationSqlAsync(
             System.Data.Common.DbConnection connection,
             System.Data.Common.DbTransaction transaction,

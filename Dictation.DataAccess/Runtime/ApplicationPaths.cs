@@ -1,7 +1,14 @@
 namespace Dictation.DataAccess.Runtime
 {
+    /// <summary>
+    /// 集中计算应用资源与用户运行数据路径，不在构造时创建目录。
+    /// </summary>
     public sealed class ApplicationPaths
     {
+        /// <summary>
+        /// 集中计算应用资源与用户运行数据路径，不在构造时创建目录。
+        /// </summary>
+        /// <param name="rootDirectory">应用完全限定根目录。</param>
         public ApplicationPaths(string rootDirectory)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(rootDirectory);
@@ -48,6 +55,9 @@ namespace Dictation.DataAccess.Runtime
 
         public string UserDataDatabase { get; }
 
+        /// <summary>
+        /// 创建配置、数据、日志和备份目录，不创建可选缓存目录。
+        /// </summary>
         public void EnsureRuntimeDirectories()
         {
             Directory.CreateDirectory(Config);
@@ -56,6 +66,9 @@ namespace Dictation.DataAccess.Runtime
             Directory.CreateDirectory(Backups);
         }
 
+        /// <summary>
+        /// 在需要缓存时创建缓存目录。
+        /// </summary>
         public void EnsureCacheDirectory()
         {
             Directory.CreateDirectory(Cache);

@@ -29,6 +29,12 @@ namespace Dictation.DataAccess.Learning
                 ?? throw new ArgumentNullException(nameof(wordGroupMemberSnapshotReader));
         }
 
+        /// <summary>
+        /// 读取指定语言保存的学习计划及选项。
+        /// </summary>
+        /// <param name="language">持久化使用的语言代码。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        /// <returns>已保存的计划；尚未保存时为空。</returns>
         public async Task<LearningPlanPo?> GetPlanAsync(string language, CancellationToken cancellationToken = default)
         {
             ValidateLanguage(language);
@@ -76,6 +82,11 @@ namespace Dictation.DataAccess.Learning
             }
         }
 
+        /// <summary>
+        /// 在事务内保存指定语言的学习计划及关联选项。
+        /// </summary>
+        /// <param name="plan">待保存的学习计划及选项快照。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
         public async Task SavePlanAsync(LearningPlanPo plan, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(plan);
@@ -144,6 +155,13 @@ namespace Dictation.DataAccess.Learning
             }
         }
 
+        /// <summary>
+        /// 读取学习库分页并通过共享读取器补齐成员快照。
+        /// </summary>
+        /// <param name="language">持久化使用的语言代码。</param>
+        /// <param name="offset">从零开始的分页偏移。</param>
+        /// <param name="limit">分页大小，范围为 1–500。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
         public async Task<LearningLibraryPagePo> GetLearningLibraryPageAsync(
             string language,
             int offset,
@@ -189,6 +207,12 @@ namespace Dictation.DataAccess.Learning
             }
         }
 
+        /// <summary>
+        /// 统计指定标识中仍属于该语言学习库的词组数量。
+        /// </summary>
+        /// <param name="language">持久化使用的语言代码。</param>
+        /// <param name="wordGroupIds">待统计的词组标识集合。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
         public async Task<int> CountLearningWordGroupsAsync(
             string language,
             IReadOnlyList<string> wordGroupIds,
@@ -226,6 +250,13 @@ namespace Dictation.DataAccess.Learning
             }
         }
 
+        /// <summary>
+        /// 事务性删除学习库词组及其关联状态。
+        /// </summary>
+        /// <param name="language">持久化使用的语言代码。</param>
+        /// <param name="wordGroupId">目标词组标识。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        /// <returns>已删除，或未找到、语言不符、位置不符的具体结果。</returns>
         public async Task<DeleteLearningWordGroupResult> DeleteWordGroupAsync(
             string language,
             string wordGroupId,

@@ -2,16 +2,30 @@ using Dapper;
 
 namespace Dictation.DataAccess.Lexicon
 {
+    /// <summary>
+    /// 通过只读 SQL 查询英语学习义项、派生关联与词形快照。
+    /// </summary>
     public sealed class EnglishLexiconDataAccessor
     {
         private readonly LexiconSqliteConnectionFactory connectionFactory;
 
+        /// <summary>
+        /// 通过只读 SQL 查询英语学习义项、派生关联与词形快照。
+        /// </summary>
+        /// <param name="connectionFactory">创建本层所需 SQLite 连接的工厂。</param>
         public EnglishLexiconDataAccessor(LexiconSqliteConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory
                 ?? throw new ArgumentNullException(nameof(connectionFactory));
         }
 
+        /// <summary>
+        /// 按字面前缀检索词形，优先精确匹配并按 SQL 顺序读取完整快照。
+        /// </summary>
+        /// <param name="normalizedQuery">已由业务层规范化的非空检索文本。</param>
+        /// <param name="limit">最多返回的记录数，词库检索范围为 1–50。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        /// <returns>按查询优先级排列的快照；无匹配时为空集合。</returns>
         public async Task<IReadOnlyList<EnglishLexiconLookupPo>> SearchAsync(
             string normalizedQuery,
             int limit,
@@ -68,6 +82,12 @@ namespace Dictation.DataAccess.Lexicon
             }
         }
 
+        /// <summary>
+        /// 读取锚点及直接派生关联义项；短语只返回锚点自身。
+        /// </summary>
+        /// <param name="learningSenseId">作为派生组锚点的稳定学习义项标识。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        /// <returns>锚点优先的义项快照；锚点不存在时为空集合。</returns>
         public async Task<IReadOnlyList<EnglishLexiconLookupPo>> GetSenseGroupAsync(
             string learningSenseId,
             CancellationToken cancellationToken = default)

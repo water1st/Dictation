@@ -30,6 +30,12 @@ namespace Dictation.DataAccess.Learning
                 ?? throw new ArgumentNullException(nameof(wordGroupMemberSnapshotReader));
         }
 
+        /// <summary>
+        /// 读取指定语言尚未完成的学习会话。
+        /// </summary>
+        /// <param name="language">持久化使用的语言代码。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        /// <returns>未完成会话；不存在时为空。</returns>
         public async Task<LearningSessionPo?> GetActiveAsync(
             string language,
             CancellationToken cancellationToken = default)
@@ -64,6 +70,11 @@ namespace Dictation.DataAccess.Learning
             }
         }
 
+        /// <summary>
+        /// 读取指定语言学习库的会话候选词组与累计状态。
+        /// </summary>
+        /// <param name="language">持久化使用的语言代码。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
         public async Task<IReadOnlyList<LearningSessionCandidatePo>> GetCandidatesAsync(
             string language,
             CancellationToken cancellationToken = default)
@@ -152,6 +163,12 @@ namespace Dictation.DataAccess.Learning
             }
         }
 
+        /// <summary>
+        /// 统计指定本地日期已开始的学习词组数量。
+        /// </summary>
+        /// <param name="language">持久化使用的语言代码。</param>
+        /// <param name="localDate">用于统计的本地日期文本。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
         public async Task<int> CountStartedOnDateAsync(
             string language,
             string localDate,
@@ -182,6 +199,11 @@ namespace Dictation.DataAccess.Learning
             }
         }
 
+        /// <summary>
+        /// 在事务内创建学习会话及词组关联快照。
+        /// </summary>
+        /// <param name="request">已由业务层准备的持久化请求。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
         public async Task<LearningSessionPo> CreateAsync(
             CreateLearningSessionPo request,
             CancellationToken cancellationToken = default)
@@ -309,6 +331,11 @@ namespace Dictation.DataAccess.Learning
             }
         }
 
+        /// <summary>
+        /// 读取会话浏览所需的词组和成员快照。
+        /// </summary>
+        /// <param name="sessionId">目标学习会话标识。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
         public async Task<IReadOnlyList<LearningBrowseItemPo>> GetBrowseItemsAsync(
             string sessionId,
             CancellationToken cancellationToken = default)
@@ -354,6 +381,12 @@ namespace Dictation.DataAccess.Learning
             }
         }
 
+        /// <summary>
+        /// 读取会话、待答题及出题状态，供业务层决定下一题。
+        /// </summary>
+        /// <param name="sessionId">目标学习会话标识。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        /// <returns>完整调度快照；会话不存在时抛出会话访问异常。</returns>
         public async Task<LearningSchedulingSnapshotPo> GetSchedulingSnapshotAsync(
             string sessionId,
             CancellationToken cancellationToken = default)
@@ -497,6 +530,11 @@ namespace Dictation.DataAccess.Learning
             }
         }
 
+        /// <summary>
+        /// 事务性写入待答题并更新对应出题状态。
+        /// </summary>
+        /// <param name="question">待持久化的题目和调度状态。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
         public async Task<LearningQuestionStatePo> CreatePendingQuestionAsync(
             CreateLearningQuestionPo question,
             CancellationToken cancellationToken = default)
@@ -543,6 +581,12 @@ namespace Dictation.DataAccess.Learning
             }
         }
 
+        /// <summary>
+        /// 在事务内保存答案结果并推进词组与会话状态。
+        /// </summary>
+        /// <param name="answer">待持久化的答案与状态变化。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        /// <returns>本次写入的下一道题；没有下一题时为空。</returns>
         public async Task<LearningQuestionStatePo?> ApplyAnswerAsync(
             ApplyLearningAnswerPo answer,
             CancellationToken cancellationToken = default)

@@ -2,16 +2,30 @@ using Dapper;
 
 namespace Dictation.DataAccess.Lexicon
 {
+    /// <summary>
+    /// 通过只读 SQL 查询日语条目、释义和词形快照。
+    /// </summary>
     public sealed class JapaneseLexiconDataAccessor
     {
         private readonly LexiconSqliteConnectionFactory connectionFactory;
 
+        /// <summary>
+        /// 通过只读 SQL 查询日语条目、释义和词形快照。
+        /// </summary>
+        /// <param name="connectionFactory">创建本层所需 SQLite 连接的工厂。</param>
         public JapaneseLexiconDataAccessor(LexiconSqliteConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory
                 ?? throw new ArgumentNullException(nameof(connectionFactory));
         }
 
+        /// <summary>
+        /// 按字面前缀检索词形，优先精确匹配并按 SQL 顺序读取完整快照。
+        /// </summary>
+        /// <param name="normalizedQuery">已由业务层规范化的非空检索文本。</param>
+        /// <param name="limit">最多返回的记录数，词库检索范围为 1–50。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        /// <returns>按查询优先级排列的快照；无匹配时为空集合。</returns>
         public async Task<IReadOnlyList<JapaneseLexiconLookupPo>> SearchAsync(
             string normalizedQuery,
             int limit,
@@ -71,6 +85,12 @@ namespace Dictation.DataAccess.Lexicon
             }
         }
 
+        /// <summary>
+        /// 按稳定条目标识读取完整日语词库快照。
+        /// </summary>
+        /// <param name="entryId">稳定日语条目标识。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        /// <returns>条目快照；不存在时为空。</returns>
         public async Task<JapaneseLexiconLookupPo?> GetByEntryIdAsync(
             string entryId,
             CancellationToken cancellationToken = default)
