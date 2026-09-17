@@ -11,6 +11,9 @@ namespace Dictation.TtsHost
         /// <summary>
         /// 严格解析宿主命令行；仅接受既定的四段参数格式。
         /// </summary>
+        /// <param name="args">必须依次包含管道名和正整数父进程 ID 的启动参数。</param>
+        /// <param name="options">成功时返回已验证的会话与父进程 ID；失败时为 null。</param>
+        /// <returns>参数格式、管道名和父进程 ID 均有效时返回 true，否则返回 false。</returns>
         internal static bool TryParse(string[]? args, out TtsHostOptions? options)
         {
             options = null;

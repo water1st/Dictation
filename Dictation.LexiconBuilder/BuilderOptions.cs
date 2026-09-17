@@ -37,6 +37,10 @@ namespace Dictation.LexiconBuilder
         /// <summary>
         /// 创建 JMdict 与 Tomoshi 中文释义构建参数。
         /// </summary>
+        /// <param name="jmDictPath">JMdict 压缩输入文件路径。</param>
+        /// <param name="tomoshiDatabasePath">Tomoshi 中文释义数据库路径。</param>
+        /// <param name="outputPath">不得覆盖输入资源的词库输出路径。</param>
+        /// <returns>来源类型固定为 JMdict 的构建参数。</returns>
         internal static BuilderOptions ForJapanese(
             string jmDictPath,
             string tomoshiDatabasePath,
@@ -54,6 +58,11 @@ namespace Dictation.LexiconBuilder
         /// <summary>
         /// 创建 WordNet、Chinese Open WordNet 与 ECDICT 构建参数。
         /// </summary>
+        /// <param name="wordNetDirectory">Open English WordNet YAML 根目录。</param>
+        /// <param name="chineseWordNetXmlPath">Chinese Open WordNet XML 路径。</param>
+        /// <param name="ecdictDatabasePath">ECDICT SQLite 数据库路径。</param>
+        /// <param name="outputPath">不得覆盖输入资源的词库输出路径。</param>
+        /// <returns>来源类型固定为 WordNet 的构建参数。</returns>
         internal static BuilderOptions ForEnglish(
             string wordNetDirectory,
             string chineseWordNetXmlPath,

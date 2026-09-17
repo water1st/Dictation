@@ -25,6 +25,8 @@ namespace Dictation.LexiconBuilder.WordNet
         /// <summary>
         /// 枚举受支持的 entries 与 synset YAML，并排除 .git 目录。
         /// </summary>
+        /// <param name="directoryPath">Open English WordNet YAML 根目录。</param>
+        /// <returns>按规范化相对路径进行序数排序的来源文件。</returns>
         internal static IReadOnlyList<WordNetSourceFile> Enumerate(string directoryPath)
         {
             if (string.IsNullOrWhiteSpace(directoryPath))
@@ -50,6 +52,8 @@ namespace Dictation.LexiconBuilder.WordNet
         /// <summary>
         /// 按规范化相对路径、文件长度和文件内容计算稳定的 SHA-256 指纹。
         /// </summary>
+        /// <param name="sourceFiles">参与构建的来源文件；计算时会按相对路径重新稳定排序。</param>
+        /// <returns>小写十六进制 SHA-256；任一相对路径、长度或内容变化都会改变结果。</returns>
         internal static string ComputeFingerprint(IReadOnlyList<WordNetSourceFile> sourceFiles)
         {
             ArgumentNullException.ThrowIfNull(sourceFiles);

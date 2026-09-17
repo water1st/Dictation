@@ -33,6 +33,9 @@ namespace Dictation.LexiconBuilder.JmDict
         /// <summary>
         /// 生成字典形、礼貌形、て形与た形，并保持主词形和常用度优先级。
         /// </summary>
+        /// <param name="entry">提供正字法、读音、限制与常用度的 JMdict 条目。</param>
+        /// <param name="sense">限定本次生成所适用的词性、正字法与读音。</param>
+        /// <returns>按词形、角色、主词形、常用度和文本稳定排序且去重后的学习词形。</returns>
         internal IReadOnlyList<JapaneseLexiconForm> Generate(JmDictEntry entry, JmDictSense sense)
         {
             ArgumentNullException.ThrowIfNull(entry);

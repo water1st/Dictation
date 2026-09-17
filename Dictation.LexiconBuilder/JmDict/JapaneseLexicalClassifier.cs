@@ -14,6 +14,8 @@ namespace Dictation.LexiconBuilder.JmDict
         /// <summary>
         /// 按 JMdict 标签优先级确定词汇类别，并保留名词兼动词等多角色语义。
         /// </summary>
+        /// <param name="partsOfSpeech">JMdict 当前词义的原始词性标签。</param>
+        /// <returns>用于展示和词形生成的主类别、全部角色与动词活用类。</returns>
         public static JapaneseLexicalClassification Classify(IReadOnlyList<string> partsOfSpeech)
         {
             if (partsOfSpeech.Count == 0)

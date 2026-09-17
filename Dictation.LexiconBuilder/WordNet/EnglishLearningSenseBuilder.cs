@@ -15,6 +15,10 @@ namespace Dictation.LexiconBuilder.WordNet
         /// <summary>
         /// 优先采用 ILI 精确中文释义，并仅为未覆盖词义生成 ECDICT 宽泛回退。
         /// </summary>
+        /// <param name="lexicon">已解析且保持源顺序的 WordNet 词元与同义词集。</param>
+        /// <param name="chineseMeaningsByIli">按 ILI 索引的 Chinese Open WordNet 中文释义。</param>
+        /// <param name="ecdict">仅为未获精确释义的词义族提供宽泛中文回退。</param>
+        /// <returns>按源词元族和词义顺序稳定排列的学习词义；无中文回退时明确标记为 Missing。</returns>
         internal IReadOnlyList<EnglishLearningSense> Build(
             WordNetLexicon lexicon,
             IReadOnlyDictionary<string, IReadOnlyList<string>> chineseMeaningsByIli,
