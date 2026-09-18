@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Dictation.Tests.Core
 {
     /// <summary>
-    /// 验证合成请求校验、Provider调用及返回WAV数据完整性。
+    /// 验证合成请求、Provider调用及返回音频的最小 RIFF/WAVE 头部签名检查，不代表完整块长度、采样数据或截断校验。
     /// </summary>
     public sealed class TtsServiceTests
     {

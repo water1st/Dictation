@@ -76,7 +76,7 @@ namespace Dictation.Core.Tts
         }
 
         /// <summary>
-        /// 校验返回音频的 RIFF/WAVE 结构与数据边界，拒绝截断或无效响应。
+        /// 仅检查返回音频至少有12字节及 RIFF/WAVE 签名，不校验完整块长度、采样数据或截断情况。
         /// </summary>
         private static bool IsValidWav(byte[]? data)
         {
