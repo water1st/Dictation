@@ -4,6 +4,9 @@ using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.DataAccess
 {
+    /// <summary>
+    /// 验证导入暂存、重复识别、中文修改、确认去向及事务回滚。
+    /// </summary>
     public sealed class ImportInboxDataAccessorTests
     {
         [Fact]

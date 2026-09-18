@@ -7,6 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Core
 {
+    /// <summary>
+    /// 验证启动目录创建、数据库迁移和失败时停止初始化。
+    /// </summary>
     public sealed class StartupInitializerTests
     {
         [Fact]

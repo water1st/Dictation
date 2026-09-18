@@ -3,6 +3,9 @@ using Dictation.Core.Learning;
 
 namespace Dictation.Tests.Core
 {
+    /// <summary>
+    /// 验证日英语答案规范化、大小写比较、非法输入及取消边界。
+    /// </summary>
     public sealed class AnswerEvaluationServiceTests
     {
         private readonly AnswerEvaluationService service = new();

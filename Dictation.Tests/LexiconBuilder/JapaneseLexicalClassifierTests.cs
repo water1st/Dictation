@@ -2,6 +2,9 @@ using Dictation.LexiconBuilder.JmDict;
 
 namespace Dictation.Tests.LexiconBuilder
 {
+    /// <summary>
+    /// 验证日语词性、动词类别和短语分类。
+    /// </summary>
     public sealed class JapaneseLexicalClassifierTests
     {
         [Theory]

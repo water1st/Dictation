@@ -6,6 +6,9 @@ using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.LexiconBuilder
 {
+    /// <summary>
+    /// 验证WordNet词元与同义词集解析及引用完整性。
+    /// </summary>
     public sealed class WordNetYamlParserTests
     {
         [Fact]

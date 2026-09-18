@@ -5,6 +5,9 @@ using Microsoft.Data.Sqlite;
 
 namespace Dictation.Tests.DataAccess
 {
+    /// <summary>
+    /// 验证有序迁移、备份、版本异常和事务失败回滚。
+    /// </summary>
     public sealed class SchemaMigrationRunnerTests
     {
         [Fact]

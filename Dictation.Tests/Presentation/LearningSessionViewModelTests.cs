@@ -8,6 +8,9 @@ using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.Presentation
 {
+    /// <summary>
+    /// 验证学习页面启动、提交反馈、浏览播放及释放状态。
+    /// </summary>
     public sealed class LearningSessionViewModelTests
     {
         [Fact]
@@ -190,7 +193,7 @@ namespace Dictation.Tests.Presentation
             };
             using var viewModel = environment.CreateViewModel();
             var start = viewModel.StartAsync(cancellationToken: TestContext.Current.CancellationToken);
-            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
             var original = viewModel.Question;
             viewModel.AnswerText = "たべます";
             Assert.True(viewModel.IsBusy);
@@ -221,12 +224,12 @@ namespace Dictation.Tests.Presentation
             };
             var viewModel = environment.CreateViewModel();
             var start = viewModel.StartAsync(cancellationToken: TestContext.Current.CancellationToken);
-            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
 
             viewModel.Dispose();
 
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => start);
-            await Assert.ThrowsAsync<ObjectDisposedException>(() => viewModel.ReplayQuestionAsync());
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => viewModel.ReplayQuestionAsync(cancellationToken: TestContext.Current.CancellationToken));
             Assert.False(viewModel.SubmitCommand.CanExecute(null));
             Assert.Equal(0L, await environment.CountAttemptsAsync());
         }

@@ -4,6 +4,9 @@ using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.DataAccess
 {
+    /// <summary>
+    /// 通过真实SQLite验证英语义项检索、派生分组、排序及异常包装。
+    /// </summary>
     public sealed class EnglishLexiconDataAccessorTests
     {
         [Fact]

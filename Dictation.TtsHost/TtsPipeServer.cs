@@ -13,6 +13,11 @@ namespace Dictation.TtsHost
         private readonly CancellationTokenSource stop = new();
         private int disposed;
 
+        /// <summary>
+        /// 使用宿主会话和按语言分派的合成引擎建立管道服务，不触发模型加载。
+        /// </summary>
+        /// <param name="session">包含管道名称的当前宿主会话。</param>
+        /// <param name="engines">由宿主容器管理的合成引擎集合，支持语言不得重叠。</param>
         public TtsPipeServer(
             TtsHostSession session,
             IEnumerable<ITtsSynthesisEngine> engines)
@@ -63,6 +68,7 @@ namespace Dictation.TtsHost
             }
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (Interlocked.Exchange(ref disposed, 1) != 0)

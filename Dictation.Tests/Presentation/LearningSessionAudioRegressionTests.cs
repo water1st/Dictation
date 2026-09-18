@@ -8,6 +8,9 @@ using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.Presentation
 {
+    /// <summary>
+    /// 验证学习题目音频来源、播放取消和答案揭示边界。
+    /// </summary>
     public sealed class LearningSessionAudioRegressionTests
     {
         [Theory]
@@ -58,7 +61,7 @@ namespace Dictation.Tests.Presentation
                 await Task.Delay(Timeout.InfiniteTimeSpan, token);
             };
             var replay = viewModel.ReplayQuestionAsync(TestContext.Current.CancellationToken);
-            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
 
             viewModel.CancelCommand.Execute(null);
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => replay);

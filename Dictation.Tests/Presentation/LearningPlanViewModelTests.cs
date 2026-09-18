@@ -14,6 +14,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Presentation
 {
+    /// <summary>
+    /// 验证计划选项绑定、保存、学习库选择和启动请求。
+    /// </summary>
     public sealed class LearningPlanViewModelTests
     {
         [Fact]

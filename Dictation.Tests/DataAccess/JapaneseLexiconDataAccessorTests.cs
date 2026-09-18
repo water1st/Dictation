@@ -4,6 +4,9 @@ using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.DataAccess
 {
+    /// <summary>
+    /// 通过真实SQLite验证日语前缀检索、条目快照和词库错误边界。
+    /// </summary>
     public sealed class JapaneseLexiconDataAccessorTests
     {
         [Fact]

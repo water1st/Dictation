@@ -6,6 +6,9 @@ using Microsoft.Extensions.Primitives;
 
 namespace Dictation.Tests.Core
 {
+    /// <summary>
+    /// 验证应用设置读取、保存、错误传播和默认值恢复。
+    /// </summary>
     public sealed class SettingsServiceTests
     {
         [Fact]

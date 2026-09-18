@@ -11,6 +11,9 @@ using Microsoft.Data.Sqlite;
 
 namespace Dictation.Tests.DataAccess
 {
+    /// <summary>
+    /// 验证计划持久化、学习库分页删除以及共享读取失败的异常包装。
+    /// </summary>
     public sealed class LearningPlanDataAccessorTests
     {
         [Fact]

@@ -10,6 +10,9 @@ using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.DataAccess
 {
+    /// <summary>
+    /// 验证会话、候选与题目状态的数据库持久化和事务边界。
+    /// </summary>
     public sealed class LearningSessionDataAccessorTests
     {
         [Fact]

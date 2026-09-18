@@ -7,6 +7,9 @@ using Microsoft.Data.Sqlite;
 
 namespace Dictation.Tests.DataAccess
 {
+    /// <summary>
+    /// 验证共享快照读取字段、顺序、空结果和调用方事务可见性。
+    /// </summary>
     public sealed class WordGroupMemberSnapshotReaderTests
     {
         [Fact]

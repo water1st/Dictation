@@ -13,6 +13,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Presentation
 {
+    /// <summary>
+    /// 验证收件箱刷新、筛选选择、确认交互及返回状态保持。
+    /// </summary>
     public sealed class ImportInboxListViewModelTests
     {
         [Fact]
@@ -36,11 +39,11 @@ namespace Dictation.Tests.Presentation
             using var environment = new TestEnvironment();
             var viewModel = environment.CreateViewModel();
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => viewModel.RefreshAsync());
+            await Assert.ThrowsAsync<InvalidOperationException>(() => viewModel.RefreshAsync(cancellationToken: TestContext.Current.CancellationToken));
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                viewModel.RefreshPreservingStateAsync());
+                viewModel.RefreshPreservingStateAsync(cancellationToken: TestContext.Current.CancellationToken));
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                viewModel.OpenSelectedDetailAsync());
+                viewModel.OpenSelectedDetailAsync(cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -52,7 +55,7 @@ namespace Dictation.Tests.Presentation
             var viewModel = environment.CreateViewModel();
             viewModel.Initialize(LearningLanguage.English);
 
-            await viewModel.RefreshAsync();
+            await viewModel.RefreshAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             var batch = Assert.Single(viewModel.Batches);
             var item = Assert.Single(viewModel.Items);
@@ -74,7 +77,7 @@ namespace Dictation.Tests.Presentation
                 new ImportSelectionDto("take off", "take_off%2:38:00::"));
             var viewModel = environment.CreateViewModel();
             viewModel.Initialize(LearningLanguage.English);
-            await viewModel.RefreshAsync();
+            await viewModel.RefreshAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             var selected = viewModel.Items.Single(item => item.SourceText == "went");
             selected.IsSelected = true;
@@ -99,7 +102,7 @@ namespace Dictation.Tests.Presentation
                 new DecideImportBatchRequestDto(
                     firstBatch.Batch.BatchId,
                     new[] { Assert.Single(firstBatch.Batch.Items).ItemId },
-                    ImportDecision.Learning));
+                    ImportDecision.Learning), cancellationToken: TestContext.Current.CancellationToken);
             await StageAsync(
                 service,
                 new ImportSelectionDto("went", "go%2:01:00::"),
@@ -107,7 +110,7 @@ namespace Dictation.Tests.Presentation
 
             var viewModel = environment.CreateViewModel();
             viewModel.Initialize(LearningLanguage.English);
-            await viewModel.RefreshAsync();
+            await viewModel.RefreshAsync(cancellationToken: TestContext.Current.CancellationToken);
             var duplicate = Assert.Single(viewModel.Items, item => !item.IsSelectable);
             var pending = Assert.Single(viewModel.Items, item => item.IsSelectable);
 
@@ -136,12 +139,12 @@ namespace Dictation.Tests.Presentation
                 new ImportSelectionDto("take off", "take_off%2:38:00::"));
             var viewModel = environment.CreateViewModel();
             viewModel.Initialize(LearningLanguage.English);
-            await viewModel.RefreshAsync();
+            await viewModel.RefreshAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             var batchId = Assert.Single(viewModel.Batches).BatchId;
             var first = viewModel.Items.Single(item => item.SourceText == "went");
             first.IsSelected = true;
-            await viewModel.DecideAsync(ImportDecision.Learning);
+            await viewModel.DecideAsync(ImportDecision.Learning, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(batchId, viewModel.SelectedBatch?.BatchId);
             Assert.False(Assert.Single(viewModel.Items, item => item.ItemId == first.ItemId).IsSelectable);
@@ -150,7 +153,7 @@ namespace Dictation.Tests.Presentation
             Assert.Equal(ImportItemDecision.Pending, remaining.Decision);
 
             remaining.IsSelected = true;
-            await viewModel.DecideAsync(ImportDecision.Review);
+            await viewModel.DecideAsync(ImportDecision.Review, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Empty(viewModel.Batches);
             Assert.Empty(viewModel.Items);
         }
@@ -162,13 +165,13 @@ namespace Dictation.Tests.Presentation
             await StageAsync(environment.ImportInboxService, new ImportSelectionDto("went", "go%2:01:00::"));
             var viewModel = environment.CreateViewModel();
             viewModel.Initialize(LearningLanguage.English);
-            await viewModel.RefreshAsync();
+            await viewModel.RefreshAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-            await viewModel.DecideAsync((ImportDecision)99);
+            await viewModel.DecideAsync((ImportDecision)99, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Contains("决定", viewModel.ErrorMessage, StringComparison.Ordinal);
-            await viewModel.DecideAsync(ImportDecision.Learning);
+            await viewModel.DecideAsync(ImportDecision.Learning, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Contains("选择", viewModel.ErrorMessage, StringComparison.Ordinal);
-            Assert.Single(await environment.ImportInboxService.GetPendingBatchesAsync(LearningLanguage.English));
+            Assert.Single(await environment.ImportInboxService.GetPendingBatchesAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -178,18 +181,18 @@ namespace Dictation.Tests.Presentation
             await StageAsync(environment.ImportInboxService, new ImportSelectionDto("went", "go%2:01:00::"));
             var viewModel = environment.CreateViewModel();
             viewModel.Initialize(LearningLanguage.English);
-            await viewModel.RefreshAsync();
+            await viewModel.RefreshAsync(cancellationToken: TestContext.Current.CancellationToken);
             var item = Assert.Single(viewModel.Items);
             item.IsSelected = true;
 
-            var decision = viewModel.DecideAsync(ImportDecision.Discard);
+            var decision = viewModel.DecideAsync(ImportDecision.Discard, cancellationToken: TestContext.Current.CancellationToken);
             await WaitForOverlayAsync(environment.Overlay);
             environment.Overlay.Cancel();
             await decision;
 
             Assert.True(item.IsSelected);
             Assert.Equal(ImportItemDecision.Pending, item.Decision);
-            Assert.Single(await environment.ImportInboxService.GetPendingBatchesAsync(LearningLanguage.English));
+            Assert.Single(await environment.ImportInboxService.GetPendingBatchesAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -199,17 +202,17 @@ namespace Dictation.Tests.Presentation
             await StageAsync(environment.ImportInboxService, new ImportSelectionDto("went", "go%2:01:00::"));
             var viewModel = environment.CreateViewModel();
             viewModel.Initialize(LearningLanguage.English);
-            await viewModel.RefreshAsync();
+            await viewModel.RefreshAsync(cancellationToken: TestContext.Current.CancellationToken);
             viewModel.Items[0].IsSelected = true;
 
-            var decision = viewModel.DecideAsync(ImportDecision.Discard);
+            var decision = viewModel.DecideAsync(ImportDecision.Discard, cancellationToken: TestContext.Current.CancellationToken);
             await WaitForOverlayAsync(environment.Overlay);
             environment.Overlay.Accept();
             await decision;
 
             Assert.Empty(viewModel.Batches);
             Assert.Empty(viewModel.Items);
-            Assert.Empty(await environment.ImportInboxService.GetPendingBatchesAsync(LearningLanguage.English));
+            Assert.Empty(await environment.ImportInboxService.GetPendingBatchesAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -220,7 +223,7 @@ namespace Dictation.Tests.Presentation
             await StageAsync(environment.ImportInboxService, new ImportSelectionDto("take off", "take_off%2:38:00::"));
             var viewModel = environment.CreateViewModel();
             viewModel.Initialize(LearningLanguage.English);
-            await viewModel.RefreshAsync();
+            await viewModel.RefreshAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             var oldViewModel = viewModel;
             var selectedBatch = viewModel.Batches.Single(batch => batch.Items[0].SourceText == "take off");
@@ -232,7 +235,7 @@ namespace Dictation.Tests.Presentation
             var oldBatch = selectedBatch;
             var oldItem = selectedItem;
 
-            await viewModel.RefreshPreservingStateAsync();
+            await viewModel.RefreshPreservingStateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Same(oldViewModel, viewModel);
             Assert.NotSame(oldBatch, viewModel.SelectedBatch);
@@ -260,7 +263,7 @@ namespace Dictation.Tests.Presentation
                 navigation,
                 overlay);
             viewModel.Initialize(LearningLanguage.English);
-            var refresh = viewModel.RefreshAsync();
+            var refresh = viewModel.RefreshAsync(cancellationToken: TestContext.Current.CancellationToken);
             await WaitForOverlayAsync(overlay);
             Assert.Equal(OverlayKind.Message, overlay.CurrentRequest?.Kind);
             overlay.Dismiss();
@@ -280,7 +283,7 @@ namespace Dictation.Tests.Presentation
             await StageAsync(environment.ImportInboxService, new ImportSelectionDto("went", "go%2:01:00::"));
             var viewModel = environment.CreateViewModel();
             viewModel.Initialize(LearningLanguage.English);
-            await viewModel.RefreshAsync();
+            await viewModel.RefreshAsync(cancellationToken: TestContext.Current.CancellationToken);
             viewModel.Items[0].IsSelected = true;
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();

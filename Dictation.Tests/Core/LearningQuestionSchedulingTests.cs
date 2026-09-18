@@ -11,6 +11,9 @@ using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.Core
 {
+    /// <summary>
+    /// 验证真实会话出题、连续正确、重练间隔及语言字形约束。
+    /// </summary>
     public sealed class LearningQuestionSchedulingTests
     {
         [Fact]

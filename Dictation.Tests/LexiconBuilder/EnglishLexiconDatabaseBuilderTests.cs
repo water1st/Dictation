@@ -10,6 +10,9 @@ using Microsoft.Data.Sqlite;
 
 namespace Dictation.Tests.LexiconBuilder
 {
+    /// <summary>
+    /// 验证英语数据库结构、构建统计、来源指纹和可重复构建。
+    /// </summary>
     public sealed class EnglishLexiconDatabaseBuilderTests
     {
         [Fact]

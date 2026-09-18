@@ -109,7 +109,7 @@ Resources/Lexicons/
 
 词库生成输出来源 commit/日期、生成器版本、输入哈希、中文覆盖与缺失数量。上述加工结果不是用户数据；用户词条、集合、进度、错题和历史留在根目录 `DATA/`，更新 ZIP 不得覆盖。
 
-英语 TTS 后续切片仍需从 Kokoro 的 British voice 中选择并记录一个默认 speaker。日语 TTS 已固定使用上述 Piper Plus 资源布局和 CPU 运行时。OCR 切片需要验证 Windows CPU 推理依赖、模型是否裁剪以及运行时文件清单；本资源表不预先承诺识别效果。
+英语 TTS 已固定使用上述 Kokoro 英式女声 `bf_emma`（speaker id `21`）。日语 TTS 已固定使用上述 Piper Plus 资源布局和 CPU 运行时。OCR 切片需要验证 Windows CPU 推理依赖、模型是否裁剪以及运行时文件清单；本资源表不预先承诺识别效果。
 
 发布只携带运行所需子集和许可证/归属文件，不携带完整原始仓库、嵌套 `.git`、样例数据、训练文件或未使用的大模型。构建缓存可位于工作区外，但不能成为用户运行时的隐式依赖。每个 ZIP 必须带同名 `.sha256` 和资源 manifest；客户端更新先校验 ZIP 哈希，再替换程序与不可变 Resources。
 

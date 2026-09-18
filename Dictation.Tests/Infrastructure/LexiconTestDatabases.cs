@@ -3,6 +3,9 @@ using Microsoft.Data.Sqlite;
 
 namespace Dictation.Tests.Infrastructure
 {
+    /// <summary>
+    /// 在测试临时目录创建最小日英语SQLite词库夹具。
+    /// </summary>
     internal static class LexiconTestDatabases
     {
         public static void CreateBoth(ApplicationPaths paths)

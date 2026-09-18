@@ -3,6 +3,9 @@ using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.LexiconBuilder
 {
+    /// <summary>
+    /// 验证英语学习义项聚合、精确中文与宽泛回退的职责边界。
+    /// </summary>
     public sealed class EnglishLearningSenseBuilderTests
     {
         [Fact]

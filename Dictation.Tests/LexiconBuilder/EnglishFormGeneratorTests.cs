@@ -3,6 +3,9 @@ using Dictation.LexiconBuilder.WordNet;
 
 namespace Dictation.Tests.LexiconBuilder
 {
+    /// <summary>
+    /// 验证规则及不规则英语词形完整性、来源归类和边界例外。
+    /// </summary>
     public sealed class EnglishFormGeneratorTests
     {
         [Theory]

@@ -6,6 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.TtsHost
 {
+    /// <summary>
+    /// 验证命名管道协议、合成路由、错误响应及服务生命周期。
+    /// </summary>
     public sealed class TtsPipeServerTests
     {
         [Fact]

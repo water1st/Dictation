@@ -3,6 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Core
 {
+    /// <summary>
+    /// 验证合成请求校验、Provider调用及返回WAV数据完整性。
+    /// </summary>
     public sealed class TtsServiceTests
     {
         [Fact]

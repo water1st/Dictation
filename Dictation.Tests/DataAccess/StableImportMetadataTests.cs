@@ -11,6 +11,9 @@ using Microsoft.Data.Sqlite;
 
 namespace Dictation.Tests.DataAccess
 {
+    /// <summary>
+    /// 验证导入及学习链路持久保存稳定词形代码与中文来源元数据。
+    /// </summary>
     public sealed class StableImportMetadataTests
     {
         [Fact]

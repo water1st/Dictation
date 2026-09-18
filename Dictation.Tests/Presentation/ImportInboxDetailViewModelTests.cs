@@ -4,6 +4,9 @@ using Dictation.Core.Importing;
 
 namespace Dictation.Tests.Presentation
 {
+    /// <summary>
+    /// 验证导入条目详情、成员选择和人工中文释义编辑状态。
+    /// </summary>
     public sealed class ImportInboxDetailViewModelTests
     {
         [Fact]

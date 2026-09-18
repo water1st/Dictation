@@ -11,6 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Infrastructure
 {
+    /// <summary>
+    /// 为学习表现层测试准备隔离数据库、真实业务服务和可替换外部能力。
+    /// </summary>
     internal sealed class LearningPresentationTestEnvironment : IDisposable
     {
         private readonly TemporaryDirectory directory = new();

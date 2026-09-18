@@ -106,6 +106,9 @@ namespace Dictation.Presentation.Shell
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        /// <summary>
+        /// 适配宿主的同步操作；这些命令始终可执行，无需订阅状态变化。
+        /// </summary>
         private sealed class RelayCommand : ICommand
         {
             private readonly Action execute;
@@ -120,7 +123,11 @@ namespace Dictation.Presentation.Shell
                 return true;
             }
 
-            public event EventHandler? CanExecuteChanged;
+            public event EventHandler? CanExecuteChanged
+            {
+                add { }
+                remove { }
+            }
 
             public void Execute(object? parameter)
             {

@@ -1,5 +1,8 @@
 namespace Dictation.Tests.Infrastructure
 {
+    /// <summary>
+    /// 管理单个测试独占的临时目录及其释放清理。
+    /// </summary>
     internal sealed class TemporaryDirectory : IDisposable
     {
         public TemporaryDirectory()

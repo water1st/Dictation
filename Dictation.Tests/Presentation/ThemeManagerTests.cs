@@ -3,6 +3,9 @@ using Dictation.Core.Configuration;
 
 namespace Dictation.Tests.Presentation
 {
+    /// <summary>
+    /// 验证固定主题、跟随系统、错误回退及事件释放。
+    /// </summary>
     public sealed class ThemeManagerTests
     {
         [Fact]

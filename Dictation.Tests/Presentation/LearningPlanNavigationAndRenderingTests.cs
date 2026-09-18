@@ -17,6 +17,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Presentation
 {
+    /// <summary>
+    /// 验证学习计划入口按当前语言导航及页面真实WPF控件结构。
+    /// </summary>
     public sealed class LearningPlanNavigationAndRenderingTests
     {
         [Fact]
@@ -33,7 +36,7 @@ namespace Dictation.Tests.Presentation
             navigation.TransitionRequested += (_, args) => reachedPage.TrySetResult(args.CurrentPage);
 
             home.OpenLearningPlanCommand.Execute(null);
-            var currentPage = await reachedPage.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var currentPage = await reachedPage.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
 
             var plan = Assert.IsType<LearningPlanViewModel>(currentPage);
             Assert.Same(plan, navigation.CurrentPage);

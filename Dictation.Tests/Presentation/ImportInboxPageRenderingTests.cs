@@ -23,6 +23,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Presentation
 {
+    /// <summary>
+    /// 在WPF线程加载收件箱页面，验证绑定、控件显示与交互。
+    /// </summary>
     public sealed class ImportInboxPageRenderingTests
     {
         [Fact]

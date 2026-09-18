@@ -3,6 +3,9 @@ using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.DataAccess
 {
+    /// <summary>
+    /// 验证应用根路径校验、目录计算和运行目录创建边界。
+    /// </summary>
     public sealed class ApplicationPathsTests
     {
         [Fact]

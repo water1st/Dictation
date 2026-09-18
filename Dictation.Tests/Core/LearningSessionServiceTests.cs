@@ -11,6 +11,9 @@ using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.Core
 {
+    /// <summary>
+    /// 验证会话启动恢复、候选选择、计划读取与持久化协作。
+    /// </summary>
     public sealed class LearningSessionServiceTests
     {
         [Fact]

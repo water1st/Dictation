@@ -4,6 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Presentation
 {
+    /// <summary>
+    /// 验证弹层显示、确认取消、并发限制及单例释放。
+    /// </summary>
     public sealed class OverlayServiceTests
     {
         [Fact]
@@ -57,7 +60,7 @@ namespace Dictation.Tests.Presentation
         {
             using var service = new OverlayService();
 
-            var completion = service.ShowMessageAsync("错误", "加载失败");
+            var completion = service.ShowMessageAsync("错误", "加载失败", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(service.IsVisible);
             Assert.Equal(OverlayKind.Message, service.CurrentRequest?.Kind);
@@ -75,7 +78,7 @@ namespace Dictation.Tests.Presentation
         public async Task ConfirmAsync_ResolvesTrueWhenAccepted()
         {
             using var service = new OverlayService();
-            var completion = service.ConfirmAsync("删除", "确定删除吗？");
+            var completion = service.ConfirmAsync("删除", "确定删除吗？", cancellationToken: TestContext.Current.CancellationToken);
 
             service.Accept();
 
@@ -87,12 +90,12 @@ namespace Dictation.Tests.Presentation
         public async Task ConfirmAsync_ResolvesFalseWhenCancelledOrDismissed()
         {
             using var service = new OverlayService();
-            var cancelled = service.ConfirmAsync("删除", "确定删除吗？");
+            var cancelled = service.ConfirmAsync("删除", "确定删除吗？", cancellationToken: TestContext.Current.CancellationToken);
             service.Cancel();
 
             Assert.False(await cancelled);
 
-            var dismissed = service.ConfirmAsync("删除", "确定删除吗？");
+            var dismissed = service.ConfirmAsync("删除", "确定删除吗？", cancellationToken: TestContext.Current.CancellationToken);
             service.Dismiss();
 
             Assert.False(await dismissed);
@@ -103,7 +106,7 @@ namespace Dictation.Tests.Presentation
         {
             using var service = new OverlayService();
 
-            var completion = service.ShowBusyAsync("加载", "正在加载词库");
+            var completion = service.ShowBusyAsync("加载", "正在加载词库", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(service.IsVisible);
             Assert.True(service.IsBusy);
@@ -117,10 +120,10 @@ namespace Dictation.Tests.Presentation
         public async Task ShowAsync_RejectsConcurrentRequests()
         {
             using var service = new OverlayService();
-            var completion = service.ShowMessageAsync("提示", "先完成当前提示");
+            var completion = service.ShowMessageAsync("提示", "先完成当前提示", cancellationToken: TestContext.Current.CancellationToken);
 
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                service.ConfirmAsync("确认", "不能并发显示"));
+                service.ConfirmAsync("确认", "不能并发显示", cancellationToken: TestContext.Current.CancellationToken));
 
             service.Dismiss();
             await completion;
@@ -130,14 +133,14 @@ namespace Dictation.Tests.Presentation
         public async Task Dispose_CompletesActiveRequestAndHidesOverlay()
         {
             var service = new OverlayService();
-            var completion = service.ConfirmAsync("确认", "退出吗？");
+            var completion = service.ConfirmAsync("确认", "退出吗？", cancellationToken: TestContext.Current.CancellationToken);
 
             service.Dispose();
 
             Assert.False(await completion);
             Assert.False(service.IsVisible);
             await Assert.ThrowsAsync<ObjectDisposedException>(() =>
-                service.ShowMessageAsync("提示", "已释放"));
+                service.ShowMessageAsync("提示", "已释放", cancellationToken: TestContext.Current.CancellationToken));
         }
     }
 }

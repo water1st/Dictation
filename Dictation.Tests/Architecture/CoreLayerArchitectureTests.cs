@@ -17,6 +17,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Architecture
 {
+    /// <summary>
+    /// 验证真实程序集依赖、服务注册身份、消费者能力边界及旧层移除。
+    /// </summary>
     public sealed class CoreLayerArchitectureTests
     {
         private static readonly string[] ServiceNames =

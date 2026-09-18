@@ -5,6 +5,9 @@ using Microsoft.Data.Sqlite;
 
 namespace Dictation.Tests.LexiconBuilder
 {
+    /// <summary>
+    /// 验证Tomoshi中文义项索引及零基到一基序号衔接。
+    /// </summary>
     public sealed class TomoshiChineseGlossIndexTests
     {
         [Fact]

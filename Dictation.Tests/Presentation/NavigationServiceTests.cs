@@ -15,6 +15,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Presentation
 {
+    /// <summary>
+    /// 验证真实导航容器的单例别名、页面作用域、返回栈和转场释放。
+    /// </summary>
     public sealed class NavigationServiceTests
     {
         [Fact]
@@ -102,7 +105,7 @@ namespace Dictation.Tests.Presentation
             var transitions = new List<NavigationTransitionEventArgs>();
             fixture.Navigation.TransitionRequested += (_, args) => transitions.Add(args);
 
-            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.English);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken);
 
             var lookup = Assert.IsType<LexiconLookupViewModel>(fixture.Navigation.CurrentPage);
             Assert.Equal(LearningLanguage.English, lookup.SelectedLanguage);
@@ -123,7 +126,7 @@ namespace Dictation.Tests.Presentation
             using var fixture = new NavigationFixture();
             fixture.Navigation.InitializeHome(fixture.HomeViewModel);
 
-            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
 
             var lookup = Assert.IsType<LexiconLookupViewModel>(fixture.Navigation.CurrentPage);
             var canGoBackChanges = new List<string?>();
@@ -136,7 +139,7 @@ namespace Dictation.Tests.Presentation
             };
 
             Assert.False(fixture.Navigation.CanGoBack);
-            await fixture.Navigation.GoBackAsync();
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Same(lookup, fixture.Navigation.CurrentPage);
             Assert.False(fixture.Navigation.CanGoBack);
@@ -152,11 +155,11 @@ namespace Dictation.Tests.Presentation
         {
             using var fixture = new NavigationFixture();
             fixture.Navigation.InitializeHome(fixture.HomeViewModel);
-            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
             fixture.Navigation.CompleteTransition();
             var lookup = fixture.Navigation.CurrentPage;
 
-            await fixture.Navigation.GoBackAsync();
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(NavigationDirection.Backward, fixture.Navigation.LastDirection);
             Assert.Same(fixture.HomeViewModel, fixture.Navigation.CurrentPage);
@@ -175,7 +178,7 @@ namespace Dictation.Tests.Presentation
             shell.TransitionRequested += (_, args) => transitions.Add(args);
             fixture.Navigation.InitializeHome(fixture.HomeViewModel);
 
-            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
 
             var lookup = Assert.IsType<LexiconLookupViewModel>(fixture.Navigation.CurrentPage);
             var forwardTransition = Assert.Single(transitions);
@@ -184,7 +187,7 @@ namespace Dictation.Tests.Presentation
             shell.CompleteTransition();
             var probe = Assert.Single(fixture.ScopeProbes);
 
-            await fixture.Navigation.GoBackAsync();
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             var backwardTransition = Assert.Single(transitions.Skip(1));
             Assert.Same(fixture.HomeViewModel, backwardTransition.CurrentPage);
@@ -202,7 +205,7 @@ namespace Dictation.Tests.Presentation
             var transitionCount = 0;
             fixture.Navigation.TransitionRequested += (_, _) => transitionCount++;
 
-            await fixture.Navigation.GoBackAsync();
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, transitionCount);
             Assert.Same(fixture.HomeViewModel, fixture.Navigation.CurrentPage);
@@ -214,11 +217,11 @@ namespace Dictation.Tests.Presentation
         {
             using var fixture = new NavigationFixture();
             fixture.Navigation.InitializeHome(fixture.HomeViewModel);
-            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.English);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken);
             fixture.Navigation.CompleteTransition();
             var probe = Assert.Single(fixture.ScopeProbes);
 
-            await fixture.Navigation.GoBackAsync();
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(probe.IsDisposed);
             fixture.Navigation.CompleteTransition();
@@ -230,14 +233,14 @@ namespace Dictation.Tests.Presentation
         {
             using var fixture = new NavigationFixture();
             fixture.Navigation.InitializeHome(fixture.HomeViewModel);
-            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
             fixture.Navigation.CompleteTransition();
-            await fixture.Navigation.GoBackAsync();
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
             fixture.Navigation.CompleteTransition();
 
-            await fixture.Navigation.OpenImportInboxAsync(LearningLanguage.Japanese);
+            await fixture.Navigation.OpenImportInboxAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
             fixture.Navigation.CompleteTransition();
-            await fixture.Navigation.GoBackAsync();
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Same(fixture.HomeViewModel, fixture.Navigation.CurrentPage);
             Assert.False(fixture.Navigation.CanGoBack);
@@ -249,9 +252,9 @@ namespace Dictation.Tests.Presentation
         {
             using var fixture = new NavigationFixture();
             fixture.Navigation.InitializeHome(fixture.HomeViewModel);
-            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
             fixture.Navigation.CompleteTransition();
-            await fixture.Navigation.OpenImportInboxAsync(LearningLanguage.English);
+            await fixture.Navigation.OpenImportInboxAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken);
             fixture.Navigation.CompleteTransition();
 
             Assert.Equal(2, fixture.ScopeProbes.Count);
@@ -267,9 +270,9 @@ namespace Dictation.Tests.Presentation
         {
             using var fixture = new NavigationFixture();
             fixture.Navigation.InitializeHome(fixture.HomeViewModel);
-            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
             fixture.Navigation.CompleteTransition();
-            await fixture.Navigation.GoBackAsync();
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
             var probe = Assert.Single(fixture.ScopeProbes);
 
             fixture.Navigation.Dispose();
@@ -286,7 +289,7 @@ namespace Dictation.Tests.Presentation
             cancellation.Cancel();
 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
-                fixture.Navigation.OpenLexiconLookupAsync((LearningLanguage)99));
+                fixture.Navigation.OpenLexiconLookupAsync((LearningLanguage)99, cancellationToken: TestContext.Current.CancellationToken));
             await Assert.ThrowsAsync<OperationCanceledException>(() =>
                 fixture.Navigation.OpenImportInboxAsync(
                     LearningLanguage.Japanese,
@@ -301,10 +304,10 @@ namespace Dictation.Tests.Presentation
         {
             using var fixture = new NavigationFixture();
             fixture.Navigation.InitializeHome(fixture.HomeViewModel);
-            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
 
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                fixture.Navigation.OpenImportInboxAsync(LearningLanguage.Japanese));
+                fixture.Navigation.OpenImportInboxAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken));
 
             fixture.Navigation.CompleteTransition();
         }
@@ -315,10 +318,10 @@ namespace Dictation.Tests.Presentation
             using var fixture = new NavigationFixture(initializeData: false);
             fixture.Navigation.InitializeHome(fixture.HomeViewModel);
 
-            var inboxNavigation = fixture.Navigation.OpenImportInboxAsync(LearningLanguage.English);
+            var inboxNavigation = fixture.Navigation.OpenImportInboxAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken);
             await WaitForOverlayAsync(fixture.Overlay);
 
-            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.English);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken);
             var pageDuringLoad = fixture.Navigation.CurrentPage;
             fixture.Overlay.Dismiss();
             var navigationException = await Record.ExceptionAsync(() => inboxNavigation);
@@ -338,13 +341,13 @@ namespace Dictation.Tests.Presentation
                 new StageImportBatchRequestDto(
                     LearningLanguage.English,
                     ImportSourceKind.Manual,
-                    new[] { new ImportSelectionDto("symbols", "missing:symbols:v") }));
+                    new[] { new ImportSelectionDto("symbols", "missing:symbols:v") }), cancellationToken: TestContext.Current.CancellationToken);
             await fixture.ImportInboxService.StageAsync(
                 new StageImportBatchRequestDto(
                     LearningLanguage.English,
                     ImportSourceKind.Manual,
-                    new[] { new ImportSelectionDto("go", "ecdict:go:v") }));
-            await fixture.Navigation.OpenImportInboxAsync(LearningLanguage.English);
+                    new[] { new ImportSelectionDto("go", "ecdict:go:v") }), cancellationToken: TestContext.Current.CancellationToken);
+            await fixture.Navigation.OpenImportInboxAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken);
             fixture.Navigation.CompleteTransition();
             var list = Assert.IsType<ImportInboxListViewModel>(fixture.Navigation.CurrentPage);
             var selectedBatch = list.Batches.Single(batch => batch.Items[0].SourceText == "go");
@@ -354,13 +357,13 @@ namespace Dictation.Tests.Presentation
             list.FilterText = "go";
             list.ScrollOffset = 91.25;
 
-            await list.OpenSelectedDetailAsync();
+            await list.OpenSelectedDetailAsync(cancellationToken: TestContext.Current.CancellationToken);
             var detail = Assert.IsType<ImportInboxDetailViewModel>(fixture.Navigation.CurrentPage);
             Assert.Equal("go", detail.SourceText);
             fixture.Navigation.CompleteTransition();
             var detailProbe = fixture.ScopeProbes[^1];
 
-            await fixture.Navigation.GoBackAsync();
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Same(list, fixture.Navigation.CurrentPage);
             Assert.Equal(selectedBatch.BatchId, list.SelectedBatch?.BatchId);

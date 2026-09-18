@@ -18,7 +18,7 @@
 - 同一实现的能力接口别名必须保留实例身份、生命周期及释放责任；无抽象价值的具体类继续通过 DI 使用。
 - 纯映射归 Mapper，不把查询、业务校验、状态变化或调度算法搬进 Mapper。纯请求创建、WPF 绑定不是需要机械抽层的理由。
 - 正常、边界、非法、异常、取消和状态测试先行。RED 必须构建成功、测试真实执行、行为断言失败；冻结测试后只修实现转绿，不提交 mutation。测试断言有误则修正后重新冻结并重做整轮证据。
-- 纯文件移动和注释不制造无意义 RED，用静态审查和前后回归验证。接口／映射／算法调整需要真实行为证据；现有基线 1392 项，数量变化逐项说明，不跳过测试规避失败。
+- 纯文件移动和注释不制造无意义 RED，用静态审查和前后回归验证。接口／映射／算法调整需要真实行为证据；Task 7 后当前基线 1410 项，数量变化逐项说明，不跳过测试规避失败。
 - 每批同步受影响调用方、DI 和测试；不铺空接口。一个实现可实现多个小能力接口，已有合理接口、框架继承和私有附属类型保留。
 - 每个类／接口说明职责；公开及业务方法说明用途、参数和非直观返回值；注释用简体中文，复杂逻辑解释原因和边界，不逐行翻译。
 
@@ -104,7 +104,7 @@
 
 ```powershell
 dotnet build Dictation.sln --configuration Debug --no-restore
-dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 1392
+dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 1410
 git diff --check
 ```
 

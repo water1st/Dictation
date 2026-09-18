@@ -19,6 +19,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Presentation
 {
+    /// <summary>
+    /// 验证主窗口页面宿主和导航弹层的WPF结构合同。
+    /// </summary>
     public sealed class SingleWindowArchitectureTests
     {
         [Fact]

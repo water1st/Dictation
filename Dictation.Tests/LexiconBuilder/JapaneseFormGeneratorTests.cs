@@ -7,6 +7,9 @@ using Dictation.LexiconBuilder.JmDict;
 namespace Dictation.Tests.LexiconBuilder
 {
 
+    /// <summary>
+    /// 验证日语词形生成、活用、词汇角色及书写限制。
+    /// </summary>
     public sealed class JapaneseFormGeneratorTests
     {
         [Theory]

@@ -212,7 +212,7 @@ namespace Dictation.Core.Importing
         }
 
         /// <summary>
-        /// 去除空白项并按序去重人工释义；此步骤只规范化文本，不判断文本是否包含汉字。
+        /// 拒绝空白项，规范化首尾空白并按序去重人工释义；不判断文本是否包含汉字。
         /// </summary>
         private static IReadOnlyList<string>? NormalizeMeaningList(
             IReadOnlyList<string>? meanings,

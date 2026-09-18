@@ -4,6 +4,9 @@ using Dictation.DataAccess.Importing;
 
 namespace Dictation.Tests.Core
 {
+    /// <summary>
+    /// 验证导入成员转换保留词形、来源和中文释义元数据。
+    /// </summary>
     public sealed class ImportWordGroupMapperTests
     {
         [Fact]

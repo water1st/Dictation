@@ -5,6 +5,9 @@ using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.TtsHost
 {
+    /// <summary>
+    /// 验证日语合成引擎参数、资源边界和内存音频输出。
+    /// </summary>
     public sealed class PiperJapaneseTtsSynthesisEngineTests
     {
         [Fact]

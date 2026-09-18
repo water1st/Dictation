@@ -6,6 +6,9 @@ using Dictation.LexiconBuilder.JmDict;
 namespace Dictation.Tests.LexiconBuilder
 {
 
+    /// <summary>
+    /// 验证JMdict流式解析、义项继承和非法来源处理。
+    /// </summary>
     public sealed class JmDictParserTests
     {
         [Fact]

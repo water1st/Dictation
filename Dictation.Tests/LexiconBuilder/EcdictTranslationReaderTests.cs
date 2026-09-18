@@ -4,6 +4,9 @@ using Microsoft.Data.Sqlite;
 
 namespace Dictation.Tests.LexiconBuilder
 {
+    /// <summary>
+    /// 验证ECDICT按词元与词性读取中文翻译的规则。
+    /// </summary>
     public sealed class EcdictTranslationReaderTests
     {
         [Fact]

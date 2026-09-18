@@ -7,6 +7,9 @@ using Microsoft.Data.Sqlite;
 
 namespace Dictation.Tests.Core
 {
+    /// <summary>
+    /// 验证日英语检索与完整词组解析的业务标签、映射及异常边界。
+    /// </summary>
     public sealed class LexiconLookupServiceTests
     {
         [Fact]

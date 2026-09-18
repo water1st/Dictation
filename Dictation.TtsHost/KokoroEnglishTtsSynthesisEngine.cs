@@ -20,6 +20,9 @@ namespace Dictation.TtsHost
         private readonly Lazy<KokoroEnglishRuntime> runtime;
         private int disposed;
 
+        /// <summary>
+        /// 使用应用发布目录内的英语资源；构造时不检查文件或加载模型。
+        /// </summary>
         public KokoroEnglishTtsSynthesisEngine()
             : this(Path.Combine(
                 AppContext.BaseDirectory,
@@ -30,6 +33,10 @@ namespace Dictation.TtsHost
         {
         }
 
+        /// <summary>
+        /// 固定英语模型资源目录，首次合成时才创建 CPU 推理运行时。
+        /// </summary>
+        /// <param name="resourceDirectory">包含 Kokoro 模型、音色、词典和音素数据的目录。</param>
         internal KokoroEnglishTtsSynthesisEngine(string resourceDirectory)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(resourceDirectory);
@@ -66,6 +73,7 @@ namespace Dictation.TtsHost
             return Task.FromResult(audio);
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (Interlocked.Exchange(ref disposed, 1) != 0)

@@ -10,6 +10,9 @@ using System.Security.Cryptography;
 
 namespace Dictation.Tests.Core
 {
+    /// <summary>
+    /// 通过真实暂存和确认链路验证导入校验、词组快照及状态变化。
+    /// </summary>
     public sealed class ImportInboxServiceTests
     {
         [Fact]

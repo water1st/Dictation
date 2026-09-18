@@ -20,6 +20,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Presentation
 {
+    /// <summary>
+    /// 验证日英语查询页面的实际控件、绑定和结果呈现。
+    /// </summary>
     public sealed class LexiconLookupPageRenderingTests
     {
         [Fact]

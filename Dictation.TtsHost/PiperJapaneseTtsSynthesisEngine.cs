@@ -21,6 +21,9 @@ namespace Dictation.TtsHost
         private readonly Lazy<PiperJapaneseRuntime> runtime;
         private int disposed;
 
+        /// <summary>
+        /// 使用应用发布目录内的日语资源；构造时不检查文件或加载模型。
+        /// </summary>
         public PiperJapaneseTtsSynthesisEngine()
             : this(Path.Combine(
                 AppContext.BaseDirectory,
@@ -31,6 +34,10 @@ namespace Dictation.TtsHost
         {
         }
 
+        /// <summary>
+        /// 固定日语资源目录，首次合成时才创建模型及 G2P 运行时。
+        /// </summary>
+        /// <param name="resourceDirectory">包含 Piper 模型、配置及 OpenJTalk 词典的目录。</param>
         internal PiperJapaneseTtsSynthesisEngine(string resourceDirectory)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(resourceDirectory);
@@ -68,6 +75,7 @@ namespace Dictation.TtsHost
             return Task.FromResult(audio);
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (Interlocked.Exchange(ref disposed, 1) != 0)

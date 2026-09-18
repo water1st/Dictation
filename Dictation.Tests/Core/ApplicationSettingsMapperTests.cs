@@ -2,6 +2,9 @@ using Dictation.Core.Configuration;
 
 namespace Dictation.Tests.Core
 {
+    /// <summary>
+    /// 验证配置文档到应用设置的枚举转换、默认值和无效配置处理。
+    /// </summary>
     public sealed class ApplicationSettingsMapperTests
     {
         [Theory]

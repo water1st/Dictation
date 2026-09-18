@@ -8,6 +8,9 @@ using Microsoft.Extensions.Hosting;
 
 namespace Dictation.Tests.TtsHost
 {
+    /// <summary>
+    /// 验证本地TTS宿主启动、就绪探测、停止和进程释放。
+    /// </summary>
     public sealed class TtsHostLifecycleTests
     {
         [Fact]
@@ -155,7 +158,7 @@ namespace Dictation.Tests.TtsHost
 
                 parent.Kill();
                 await parent.WaitForExitAsync(TestContext.Current.CancellationToken);
-                await host.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
+                await host.WaitForExitAsync(cancellationToken: TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
 
                 Assert.True(host.HasExited);
             }

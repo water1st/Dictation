@@ -22,6 +22,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Presentation
 {
+    /// <summary>
+    /// 在WPF页面验证检索输入与查询命令交互。
+    /// </summary>
     public sealed class LexiconLookupPageInteractionTests
     {
         [Fact]

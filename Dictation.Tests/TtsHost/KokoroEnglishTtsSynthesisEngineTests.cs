@@ -4,6 +4,9 @@ using Dictation.TtsHost;
 
 namespace Dictation.Tests.TtsHost
 {
+    /// <summary>
+    /// 验证英语合成引擎请求、懒加载资源、取消与内存音频输出。
+    /// </summary>
     public sealed class KokoroEnglishTtsSynthesisEngineTests
     {
         [Fact]

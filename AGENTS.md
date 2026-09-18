@@ -54,11 +54,11 @@ DTO、业务模型和持久化对象（PO）按职责分离，不要求机械地
 ```powershell
 dotnet restore Dictation.sln
 dotnet build Dictation.sln --configuration Debug --no-restore
-dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 1392
+dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 1410
 dotnet run --project Dictation.Presentation/Dictation.Presentation.csproj
 ```
 
-`Dictation.Tests` 使用 xUnit v3 与 Microsoft.Testing.Platform，测试命名采用 `行为_场景_预期`。聚焦测试用 `--filter-class` 或 `--filter-method`，并指定合理的 `--minimum-expected-tests`；零测试不算通过。全量数量不得少于当前基线 1392 项；有意删除失效测试时必须记录原因及数量变化，不能用跳过测试或降低门槛掩盖回归。开发不应依赖 Edge、Windows TTS、Node、Docker、SQL Server、EF 或 CUDA。
+`Dictation.Tests` 使用 xUnit v3 与 Microsoft.Testing.Platform，测试命名采用 `行为_场景_预期`。聚焦测试用 `--filter-class` 或 `--filter-method`，并指定合理的 `--minimum-expected-tests`；零测试不算通过。全量数量不得少于当前基线 1410 项；有意删除失效测试时必须记录原因及数量变化，不能用跳过测试或降低门槛掩盖回归。开发不应依赖 Edge、Windows TTS、Node、Docker、SQL Server、EF 或 CUDA。
 
 ## 编码约定
 

@@ -6,6 +6,9 @@ using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.LexiconBuilder
 {
+    /// <summary>
+    /// 验证中文WordNet解析和按ILI聚合的来源语义。
+    /// </summary>
     public sealed class ChineseOpenWordNetParserTests
     {
         [Fact]

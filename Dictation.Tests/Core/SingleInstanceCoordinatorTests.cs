@@ -4,6 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Core
 {
+    /// <summary>
+    /// 验证真实命名管道和互斥体的主实例判定、激活与释放。
+    /// </summary>
     public sealed class SingleInstanceCoordinatorTests
     {
         [Fact]

@@ -14,6 +14,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Presentation
 {
+    /// <summary>
+    /// 验证首页设置状态、语言主题切换及导航入口。
+    /// </summary>
     public sealed class HomeViewModelTests
     {
         [Fact]
@@ -168,7 +171,7 @@ namespace Dictation.Tests.Presentation
             navigation.TransitionRequested += (_, args) => reachedPage.TrySetResult(args.CurrentPage);
 
             viewModel.OpenLexiconLookupCommand.Execute(null);
-            var page = await reachedPage.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var page = await reachedPage.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
 
             var lookupViewModel = Assert.IsType<LexiconLookupViewModel>(page);
             Assert.Equal(LearningLanguage.English, lookupViewModel.SelectedLanguage);
@@ -191,7 +194,7 @@ namespace Dictation.Tests.Presentation
             navigation.TransitionRequested += (_, args) => reachedPage.TrySetResult(args.CurrentPage);
 
             viewModel.OpenImportInboxCommand.Execute(null);
-            var page = await reachedPage.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var page = await reachedPage.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
 
             var inboxViewModel = Assert.IsType<ImportInboxListViewModel>(page);
             Assert.Equal(LearningLanguage.Japanese, inboxViewModel.SelectedLanguage);

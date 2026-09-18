@@ -10,6 +10,9 @@ using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.Core
 {
+    /// <summary>
+    /// 验证学习计划保存、语言约束、学习库分页与会话启动选择。
+    /// </summary>
     public sealed class LearningPlanServiceTests
     {
         private static readonly DateTimeOffset FixedNow = new(2026, 9, 5, 2, 3, 4, TimeSpan.Zero);

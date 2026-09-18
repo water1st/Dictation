@@ -14,6 +14,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Presentation
 {
+    /// <summary>
+    /// 验证查询状态、日英语结果、导入动作和返回导航。
+    /// </summary>
     public sealed class LexiconLookupViewModelTests
     {
         [Fact]
@@ -383,7 +386,7 @@ namespace Dictation.Tests.Presentation
             navigation.TransitionRequested += (_, args) => returned.TrySetResult(args.CurrentPage);
 
             lookup.BackCommand.Execute(null);
-            var page = await returned.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var page = await returned.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Same(home, page);
             Assert.Same(home, navigation.CurrentPage);

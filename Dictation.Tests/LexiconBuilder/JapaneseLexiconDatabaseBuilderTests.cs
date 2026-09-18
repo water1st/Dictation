@@ -12,6 +12,9 @@ using Dictation.Tests.Infrastructure;
 namespace Dictation.Tests.LexiconBuilder
 {
 
+    /// <summary>
+    /// 验证日语数据库输出、中文释义、词形及来源元数据。
+    /// </summary>
     public sealed class JapaneseLexiconDatabaseBuilderTests
     {
         [Fact]
