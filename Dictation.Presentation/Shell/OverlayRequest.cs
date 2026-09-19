@@ -10,7 +10,7 @@ namespace Dictation.Presentation.Shell
         /// </summary>
         /// <param name="kind">消息、确认或忙碌弹层类型。</param>
         /// <param name="title">弹层标题。</param>
-        /// <param name="message">供上层展示或记录的失败说明。</param>
+        /// <param name="message">弹层正文说明。</param>
         internal OverlayRequest(OverlayKind kind, string title, string message)
         {
             Kind = kind;

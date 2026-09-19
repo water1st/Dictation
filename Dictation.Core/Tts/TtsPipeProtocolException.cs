@@ -6,7 +6,7 @@ namespace Dictation.Core.Tts
     public sealed class TtsPipeProtocolException : Exception
     {
         /// <summary>
-        /// 记录失败说明及原始原因。
+        /// 记录失败说明。
         /// </summary>
         /// <param name="message">供上层展示或记录的失败说明。</param>
         public TtsPipeProtocolException(string message) : base(message) { }

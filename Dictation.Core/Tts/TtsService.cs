@@ -1,7 +1,7 @@
 namespace Dictation.Core.Tts
 {
     /// <summary>
-    /// 校验语音合成请求，并将 Provider 输出约束为有效 WAV 音频。
+    /// 校验语音合成请求，并对 Provider 输出执行最小 RIFF/WAVE 签名检查。
     /// </summary>
     public sealed class TtsService
     {
