@@ -27,5 +27,12 @@ namespace Dictation.Presentation.Navigation
         Task OpenLearningPlanAsync(
             LearningLanguage language,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 打开固定语言的学习会话。
+        /// </summary>
+        Task OpenLearningAsync(
+            LearningLanguage language,
+            CancellationToken cancellationToken = default);
     }
 }

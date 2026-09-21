@@ -40,6 +40,7 @@ namespace Dictation.Presentation.ViewModels
             OpenLexiconLookupCommand = new AsyncCommand(() => OpenLexiconLookupAsync());
             OpenImportInboxCommand = new AsyncCommand(() => OpenImportInboxAsync());
             OpenLearningPlanCommand = new AsyncCommand(() => OpenLearningPlanAsync());
+            OpenLearningCommand = new AsyncCommand(() => OpenLearningAsync());
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -92,6 +93,8 @@ namespace Dictation.Presentation.ViewModels
         public ICommand OpenImportInboxCommand { get; }
 
         public ICommand OpenLearningPlanCommand { get; }
+
+        public ICommand OpenLearningCommand { get; }
 
         /// <summary>
         /// 读取保存的语言与主题选择，并更新首页显示状态。
@@ -190,6 +193,15 @@ namespace Dictation.Presentation.ViewModels
         public Task OpenLearningPlanAsync(CancellationToken cancellationToken = default)
         {
             return homeNavigation.OpenLearningPlanAsync(selectedLanguage, cancellationToken);
+        }
+
+        /// <summary>
+        /// 按当前语言请求打开或恢复学习会话。
+        /// </summary>
+        /// <param name="cancellationToken">调用方取消令牌，传递到当前异步操作。</param>
+        public Task OpenLearningAsync(CancellationToken cancellationToken = default)
+        {
+            return homeNavigation.OpenLearningAsync(selectedLanguage, cancellationToken);
         }
 
         private async Task SaveSettingsAsync(

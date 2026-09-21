@@ -2,6 +2,7 @@ using Dictation.Presentation.Theme;
 using Dictation.Presentation.ViewModels;
 using Dictation.Presentation.Navigation;
 using Dictation.Presentation.Shell;
+using Dictation.Presentation.Audio;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Presentation
@@ -40,11 +41,13 @@ namespace Dictation.Presentation
             services.AddSingleton<HomeWindow>();
             services.AddSingleton<ThemeManager>();
             services.AddSingleton<ISystemThemeProvider, WindowsSystemThemeProvider>();
+            services.AddSingleton<IAudioPlayer, MemoryWavAudioPlayer>();
 
             services.AddScoped<LexiconLookupViewModel>();
             services.AddScoped<ImportInboxListViewModel>();
             services.AddScoped<ImportInboxDetailViewModel>();
             services.AddScoped<LearningPlanViewModel>();
+            services.AddScoped<LearningSessionViewModel>();
 
             return services;
         }

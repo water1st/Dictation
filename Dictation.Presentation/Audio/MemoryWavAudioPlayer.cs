@@ -59,7 +59,14 @@ namespace Dictation.Presentation.Audio
                 using var registration = cancellationToken.Register(() =>
                 {
                     completion.TrySetCanceled(cancellationToken);
-                    player.Stop();
+                    try
+                    {
+                        player.Stop();
+                    }
+                    catch
+                    {
+                        // 取消结果已经确定；设备停止失败由随后的 Dispose 继续清理，不能逃逸到 UI 取消命令。
+                    }
                 });
                 player.Play();
                 await completion.Task;

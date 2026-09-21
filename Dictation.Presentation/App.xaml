@@ -20,5 +20,8 @@
         <DataTemplate DataType="{x:Type viewModels:LearningPlanViewModel}">
             <views:LearningPlanPage />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:LearningSessionViewModel}">
+            <views:LearningSessionPage />
+        </DataTemplate>
     </Application.Resources>
 </Application>

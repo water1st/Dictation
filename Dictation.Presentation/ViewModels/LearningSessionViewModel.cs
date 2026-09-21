@@ -88,6 +88,7 @@ namespace Dictation.Presentation.ViewModels
         public bool IsQuestionVisible => question is not null && !isBrowsing;
         public bool IsFeedbackVisible => feedback is not null && !isBrowsing;
         public bool IsSummaryVisible => IsCompleted && !isBrowsing;
+        public bool IsQuestionReplayVisible => CanReplayQuestion;
         public string MeaningText => question is null ? string.Empty : string.Join("；", question.Meanings);
         public string ProgressLabel => session is null ? string.Empty
             : question is null ? $"本轮 {session.WordGroupIds.Count} 个词组"

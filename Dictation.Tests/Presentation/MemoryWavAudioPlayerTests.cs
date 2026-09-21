@@ -72,6 +72,30 @@ namespace Dictation.Tests.Presentation
             Assert.True(input.IsDisposed);
         }
 
+        [Fact]
+        public async Task PlaybackCancellation_WhenStopFails_StillCancelsAndReleasesResources()
+        {
+            var output = new ControlledWavePlayer
+            {
+                StopFailure = new InvalidOperationException("设备停止失败")
+            };
+            var input = new TrackingMemoryStream(OneSampleWav);
+            var player = new MemoryWavAudioPlayer(() => output, _ => input);
+            using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                TestContext.Current.CancellationToken);
+            var playback = player.PlayWavAsync(OneSampleWav, cancellation.Token);
+            await output.Played.Task.WaitAsync(
+                TimeSpan.FromSeconds(5),
+                TestContext.Current.CancellationToken);
+
+            var cancelException = Record.Exception(cancellation.Cancel);
+
+            Assert.Null(cancelException);
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => playback);
+            Assert.True(output.IsDisposed);
+            Assert.True(input.IsDisposed);
+        }
+
         private sealed class TrackingMemoryStream : MemoryStream
         {
             public TrackingMemoryStream(byte[] buffer)
@@ -97,6 +121,8 @@ namespace Dictation.Tests.Presentation
             public bool CompleteWhenPlayed { get; init; }
 
             public Exception? PlaybackFailure { get; init; }
+
+            public Exception? StopFailure { get; init; }
 
             public int PlayCallCount { get; private set; }
 
@@ -144,6 +170,10 @@ namespace Dictation.Tests.Presentation
             public void Stop()
             {
                 StopCallCount++;
+                if (StopFailure is not null)
+                {
+                    throw StopFailure;
+                }
                 PlaybackState = PlaybackState.Stopped;
                 PlaybackStopped?.Invoke(this, new StoppedEventArgs());
             }

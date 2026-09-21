@@ -299,6 +299,13 @@ namespace Dictation.Tests.Presentation
             {
                 return Task.FromException(new InvalidOperationException("该设置测试不执行页面导航。"));
             }
+
+            public Task OpenLearningAsync(
+                LearningLanguage language,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromException(new InvalidOperationException("该设置测试不执行学习导航。"));
+            }
         }
     }
 }

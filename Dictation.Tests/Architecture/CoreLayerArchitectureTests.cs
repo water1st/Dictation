@@ -280,6 +280,13 @@ namespace Dictation.Tests.Architecture
             {
                 return Task.FromException(new InvalidOperationException("该架构测试不执行页面导航。"));
             }
+
+            public Task OpenLearningAsync(
+                LearningLanguage language,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromException(new InvalidOperationException("该架构测试不执行学习导航。"));
+            }
         }
     }
 }
