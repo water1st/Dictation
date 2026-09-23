@@ -96,6 +96,45 @@ namespace Dictation.Tests.Presentation
             Assert.True(input.IsDisposed);
         }
 
+        [Fact]
+        public async Task CancellationDuringInit_DoesNotStartPlaybackAndReleasesResources()
+        {
+            using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                TestContext.Current.CancellationToken);
+            var output = new ControlledWavePlayer { OnInit = cancellation.Cancel };
+            var input = new TrackingMemoryStream(OneSampleWav);
+            var player = new MemoryWavAudioPlayer(() => output, _ => input);
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                player.PlayWavAsync(OneSampleWav, cancellation.Token));
+
+            Assert.Equal(0, output.PlayCallCount);
+            Assert.True(output.IsDisposed);
+            Assert.True(input.IsDisposed);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task SynchronousDeviceFailure_ReleasesPlayerAndInput(bool failDuringInit)
+        {
+            var failure = new InvalidOperationException("设备启动失败");
+            var output = new ControlledWavePlayer
+            {
+                InitFailure = failDuringInit ? failure : null,
+                PlayFailure = failDuringInit ? null : failure
+            };
+            var input = new TrackingMemoryStream(OneSampleWav);
+            var player = new MemoryWavAudioPlayer(() => output, _ => input);
+
+            var actual = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                player.PlayWavAsync(OneSampleWav, TestContext.Current.CancellationToken));
+
+            Assert.Same(failure, actual);
+            Assert.True(output.IsDisposed);
+            Assert.True(input.IsDisposed);
+        }
+
         private sealed class TrackingMemoryStream : MemoryStream
         {
             public TrackingMemoryStream(byte[] buffer)
@@ -124,6 +163,12 @@ namespace Dictation.Tests.Presentation
 
             public Exception? StopFailure { get; init; }
 
+            public Exception? InitFailure { get; init; }
+
+            public Exception? PlayFailure { get; init; }
+
+            public Action? OnInit { get; init; }
+
             public int PlayCallCount { get; private set; }
 
             public int StopCallCount { get; private set; }
@@ -143,11 +188,14 @@ namespace Dictation.Tests.Presentation
             public void Init(IWaveProvider waveProvider)
             {
                 Provider = waveProvider;
+                OnInit?.Invoke();
+                if (InitFailure is not null) throw InitFailure;
             }
 
             public void Play()
             {
                 PlayCallCount++;
+                if (PlayFailure is not null) throw PlayFailure;
                 PlaybackState = PlaybackState.Playing;
                 Played.TrySetResult();
                 if (PlaybackFailure is not null)

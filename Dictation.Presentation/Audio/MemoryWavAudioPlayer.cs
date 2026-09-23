@@ -39,6 +39,9 @@ namespace Dictation.Presentation.Audio
             using var stream = streamFactory(wavData);
             using var reader = new WaveFileReader(stream);
             using var player = wavePlayerFactory();
+            var startGate = new object();
+            var started = false;
+            var cancelled = false;
             var completion = new TaskCompletionSource(
                 TaskCreationOptions.RunContinuationsAsynchronously);
             EventHandler<StoppedEventArgs> stopped = (_, args) =>
@@ -58,7 +61,14 @@ namespace Dictation.Presentation.Audio
                 player.Init(reader);
                 using var registration = cancellationToken.Register(() =>
                 {
-                    completion.TrySetCanceled(cancellationToken);
+                    bool shouldStop;
+                    lock (startGate)
+                    {
+                        cancelled = true;
+                        shouldStop = started;
+                        completion.TrySetCanceled(cancellationToken);
+                    }
+                    if (!shouldStop) return;
                     try
                     {
                         player.Stop();
@@ -68,7 +78,16 @@ namespace Dictation.Presentation.Audio
                         // 取消结果已经确定；设备停止失败由随后的 Dispose 继续清理，不能逃逸到 UI 取消命令。
                     }
                 });
-                player.Play();
+                lock (startGate)
+                {
+                    if (cancelled || cancellationToken.IsCancellationRequested)
+                    {
+                        completion.TrySetCanceled(cancellationToken);
+                        throw new OperationCanceledException(cancellationToken);
+                    }
+                    started = true;
+                    player.Play();
+                }
                 await completion.Task;
             }
             finally

@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Dictation.Core.Configuration;
+using Dictation.Core.Learning;
 using Dictation.Core.Tts;
 using Dictation.DataAccess;
 using Dictation.DataAccess.Runtime;
@@ -77,6 +78,55 @@ namespace Dictation.Tests.Presentation
             Assert.Equal(LearningLanguage.English, resumed.SelectedLanguage);
             Assert.Equal(sessionId, resumed.Session!.SessionId);
             Assert.Equal(questionId, resumed.Question!.QuestionId);
+        }
+
+        [Fact]
+        public async Task DictationStartup_WhenSpeechWaits_ShowsCancellablePageAndReleasesScopeOnBack()
+        {
+            using var environment = await LearningPresentationTestEnvironment.CreateAsync(dictation: true);
+            var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            environment.Tts.BeforeReturnAsync = async token =>
+            {
+                entered.TrySetResult();
+                await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            };
+            using var provider = CreateProvider(environment);
+            var navigation = provider.GetRequiredService<NavigationService>();
+            var home = provider.GetRequiredService<HomeViewModel>();
+            navigation.InitializeHome(home);
+            using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                TestContext.Current.CancellationToken);
+            var opening = navigation.OpenLearningAsync(
+                LearningLanguage.Japanese, cancellation.Token);
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+            try
+            {
+                var page = Assert.IsType<LearningSessionViewModel>(navigation.CurrentPage);
+                Assert.True(page.CancelCommand.CanExecute(null));
+                page.CancelCommand.Execute(null);
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => opening);
+                Assert.False(page.IsBusy);
+                navigation.CompleteTransition();
+                await navigation.GoBackAsync(TestContext.Current.CancellationToken);
+                Assert.Same(home, navigation.CurrentPage);
+                navigation.CompleteTransition();
+                Assert.Throws<ObjectDisposedException>(() =>
+                {
+                    _ = page.ReplayQuestionAsync(TestContext.Current.CancellationToken);
+                });
+            }
+            finally
+            {
+                cancellation.Cancel();
+                try
+                {
+                    await opening;
+                }
+                catch (OperationCanceledException)
+                {
+                }
+            }
         }
 
         [Fact]
@@ -164,6 +214,58 @@ namespace Dictation.Tests.Presentation
                 Assert.Contains(FindVisualChildren<TextBlock>(page), text =>
                     text.Text.Contains("本轮完成", StringComparison.Ordinal));
             });
+        }
+
+        [Fact]
+        public void LearningPage_StartupFailure_OffersWorkingRetryButton()
+        {
+            RunOnSta(() =>
+            {
+                using var environment = LearningPresentationTestEnvironment.CreateAsync()
+                    .GetAwaiter().GetResult();
+                using var viewModel = environment.CreateViewModel(
+                    new FailOncePlanReader(environment.PlanReader));
+                viewModel.StartAsync(cancellationToken: TestContext.Current.CancellationToken)
+                    .GetAwaiter().GetResult();
+                Assert.NotNull(viewModel.ErrorMessage);
+                Assert.Null(viewModel.Question);
+                var page = new LearningSessionPage { DataContext = viewModel };
+                RenderControl(page);
+
+                var retry = Assert.IsType<Button>(page.FindName("RetryStartButton"));
+                Assert.Equal(Visibility.Visible, retry.Visibility);
+                Assert.Same(viewModel.RetryStartCommand, retry.Command);
+                Assert.True(retry.Command.CanExecute(null));
+                retry.Command.Execute(null);
+                Assert.True(SpinWait.SpinUntil(
+                    () => viewModel.Question is not null && !viewModel.IsBusy,
+                    TimeSpan.FromSeconds(5)));
+                Assert.Null(viewModel.ErrorMessage);
+            });
+        }
+
+        private sealed class FailOncePlanReader : ILearningPlanReader
+        {
+            private readonly ILearningPlanReader inner;
+            private bool failed;
+
+            public FailOncePlanReader(ILearningPlanReader inner)
+            {
+                this.inner = inner;
+            }
+
+            public Task<LearningPlanDto> LoadAsync(
+                LearningLanguage language,
+                CancellationToken cancellationToken = default)
+            {
+                if (!failed)
+                {
+                    failed = true;
+                    return Task.FromException<LearningPlanDto>(
+                        new InvalidOperationException("计划暂不可用"));
+                }
+                return inner.LoadAsync(language, cancellationToken);
+            }
         }
 
         private static Border FindPanel(FrameworkElement page, string name)

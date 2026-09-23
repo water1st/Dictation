@@ -211,7 +211,6 @@ namespace Dictation.Presentation.Navigation
                 {
                     var viewModel = scope.ServiceProvider.GetRequiredService<LearningSessionViewModel>();
                     viewModel.Initialize(language);
-                    await viewModel.StartAsync(cancellationToken: cancellationToken);
                     cancellationToken.ThrowIfCancellationRequested();
                     NavigateForward(new NavigationEntry(
                         viewModel,
@@ -219,10 +218,15 @@ namespace Dictation.Presentation.Navigation
                         language,
                         scope,
                         null));
+                    // 首题听写可能等待语音服务；先展示页面，用户才能使用页面内的取消命令。
+                    await viewModel.StartAsync(cancellationToken: cancellationToken);
                 }
                 catch
                 {
-                    scope.Dispose();
+                    if (!ReferenceEquals(currentEntry?.Scope, scope))
+                    {
+                        scope.Dispose();
+                    }
                     throw;
                 }
             }

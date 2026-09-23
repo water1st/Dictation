@@ -22,6 +22,7 @@ namespace Dictation.Tests.Infrastructure
         public LearningLanguage Language { get; private init; }
         public ApplicationPaths Paths => provider.GetRequiredService<ApplicationPaths>();
         public LearningSessionService Sessions => provider.GetRequiredService<LearningSessionService>();
+        public ILearningPlanReader PlanReader => provider.GetRequiredService<ILearningPlanReader>();
         public ControlledTtsProvider Tts { get; } = new();
         public ControlledAudioPlayer Audio { get; } = new();
 
@@ -73,11 +74,11 @@ namespace Dictation.Tests.Infrastructure
             }
         }
 
-        public LearningSessionViewModel CreateViewModel()
+        public LearningSessionViewModel CreateViewModel(ILearningPlanReader? planReader = null)
         {
             var viewModel = new LearningSessionViewModel(
                 provider.GetRequiredService<ILearningSessionOperations>(),
-                provider.GetRequiredService<ILearningPlanReader>(),
+                planReader ?? PlanReader,
                 provider.GetRequiredService<TtsService>(), Audio);
             viewModel.Initialize(Language);
             return viewModel;
