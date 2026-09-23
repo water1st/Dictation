@@ -65,6 +65,74 @@ namespace Dictation.Tests.DataAccess
         }
 
         [Fact]
+        public async Task GetDailyProgressCountsAsync_CountsGroupsByLanguageAndLocalDate()
+        {
+            using var environment = await TestEnvironment.CreateAsync();
+            var first = await environment.StageLearningAsync(LearningLanguage.Japanese, "食べる", "jmdict:1:1");
+            var second = await environment.StageLearningAsync(LearningLanguage.Japanese, "食前", "jmdict:2:1");
+            var english = await environment.StageLearningAsync(LearningLanguage.English, "gone", "go%2:01:00::");
+            var accessor = environment.CreateAccessor();
+            await accessor.CreateAsync(
+                await environment.CreateRequestAsync("daily-jp", "Japanese", new[] { first, second }),
+                TestContext.Current.CancellationToken);
+            await accessor.CreateAsync(
+                await environment.CreateRequestAsync("daily-en", "English", new[] { english }),
+                TestContext.Current.CancellationToken);
+            await using var connection = new SqliteConnectionFactory(environment.Paths).CreateConnection();
+            await connection.OpenAsync(TestContext.Current.CancellationToken);
+            await connection.ExecuteAsync(
+                "UPDATE LearningGroupProgress SET CompletedLocalDate = @Date WHERE WordGroupId IN @WordGroupIds;",
+                new { Date = "2026-09-05", WordGroupIds = new[] { first, english } });
+            await connection.ExecuteAsync(
+                "UPDATE LearningGroupProgress SET CompletedLocalDate = @Date WHERE WordGroupId = @WordGroupId;",
+                new { Date = "2026-09-06", WordGroupId = second });
+
+            var japaneseToday = await accessor.GetDailyProgressCountsAsync(
+                "Japanese", "2026-09-05", TestContext.Current.CancellationToken);
+            var englishToday = await accessor.GetDailyProgressCountsAsync(
+                "English", "2026-09-05", TestContext.Current.CancellationToken);
+            var japaneseTomorrow = await accessor.GetDailyProgressCountsAsync(
+                "Japanese", "2026-09-06", TestContext.Current.CancellationToken);
+
+            Assert.Equal(2, japaneseToday.StartedGroupCount);
+            Assert.Equal(1, japaneseToday.CompletedGroupCount);
+            Assert.Equal(1, englishToday.StartedGroupCount);
+            Assert.Equal(1, englishToday.CompletedGroupCount);
+            Assert.Equal(0, japaneseTomorrow.StartedGroupCount);
+            Assert.Equal(1, japaneseTomorrow.CompletedGroupCount);
+            Assert.True(await connection.ExecuteScalarAsync<long>(
+                "SELECT COUNT(*) FROM LearningFormStates WHERE WordGroupId = @WordGroupId;",
+                new { WordGroupId = first }) >= 1);
+        }
+
+        [Fact]
+        public async Task GetDailyProgressCountsAsync_RejectsInvalidInputAndPropagatesCancellation()
+        {
+            using var environment = await TestEnvironment.CreateAsync();
+            var accessor = environment.CreateAccessor();
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => accessor.GetDailyProgressCountsAsync(
+                "Unknown", "2026-09-05", TestContext.Current.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentException>(() => accessor.GetDailyProgressCountsAsync(
+                "Japanese", " ", TestContext.Current.CancellationToken));
+            using var cancellation = new CancellationTokenSource();
+            cancellation.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => accessor.GetDailyProgressCountsAsync(
+                "Japanese", "2026-09-05", cancellation.Token));
+        }
+
+        [Fact]
+        public async Task GetDailyProgressCountsAsync_WhenSchemaMissing_WrapsDatabaseFailure()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            paths.EnsureRuntimeDirectories();
+            var accessor = DataAccessorTestFactory.CreateLearningSession(new SqliteConnectionFactory(paths));
+
+            await Assert.ThrowsAsync<LearningSessionDataAccessException>(() => accessor.GetDailyProgressCountsAsync(
+                "Japanese", "2026-09-05", TestContext.Current.CancellationToken));
+        }
+
+        [Fact]
         public async Task CreateAsync_EnforcesOneActiveSessionPerLanguageButKeepsLanguagesIndependent()
         {
             using var environment = await TestEnvironment.CreateAsync();

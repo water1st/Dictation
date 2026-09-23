@@ -200,6 +200,46 @@ namespace Dictation.DataAccess.Learning
         }
 
         /// <summary>
+        /// 按语言和本地日期读取首次开始及完成的不同词组数量。
+        /// </summary>
+        /// <param name="language">持久化使用的语言代码。</param>
+        /// <param name="localDate">要查询的本地日期文本。</param>
+        /// <param name="cancellationToken">取消数据库查询的令牌。</param>
+        /// <returns>当天首次开始及完成的词组数量。</returns>
+        public async Task<LearningDailyProgressCountsPo> GetDailyProgressCountsAsync(
+            string language,
+            string localDate,
+            CancellationToken cancellationToken = default)
+        {
+            ValidateLanguage(language);
+            localDate = RequireText(localDate, nameof(localDate));
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await using var connection = connectionFactory.CreateConnection();
+                await connection.OpenAsync(cancellationToken);
+                return await connection.QuerySingleAsync<LearningDailyProgressCountsPo>(new CommandDefinition(
+                    """
+                    SELECT
+                        COUNT(CASE WHEN FirstStartedLocalDate = @LocalDate THEN 1 END) AS StartedGroupCount,
+                        COUNT(CASE WHEN CompletedLocalDate = @LocalDate THEN 1 END) AS CompletedGroupCount
+                    FROM LearningGroupProgress
+                    WHERE Language = @Language;
+                    """,
+                    new { Language = language, LocalDate = localDate },
+                    cancellationToken: cancellationToken));
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw new LearningSessionDataAccessException("读取每日学习进度失败。", exception);
+            }
+        }
+
+        /// <summary>
         /// 在事务内创建学习会话及词组关联快照。
         /// </summary>
         /// <param name="request">已由业务层准备的持久化请求。</param>
