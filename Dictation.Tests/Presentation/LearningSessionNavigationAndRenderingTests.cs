@@ -96,8 +96,7 @@ namespace Dictation.Tests.Presentation
             navigation.InitializeHome(home);
             using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
                 TestContext.Current.CancellationToken);
-            var opening = navigation.OpenLearningAsync(
-                LearningLanguage.Japanese, cancellation.Token);
+            var opening = home.OpenLearningAsync(cancellation.Token);
             await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
             try
@@ -105,7 +104,7 @@ namespace Dictation.Tests.Presentation
                 var page = Assert.IsType<LearningSessionViewModel>(navigation.CurrentPage);
                 Assert.True(page.CancelCommand.CanExecute(null));
                 page.CancelCommand.Execute(null);
-                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => opening);
+                await opening;
                 Assert.False(page.IsBusy);
                 navigation.CompleteTransition();
                 await navigation.GoBackAsync(TestContext.Current.CancellationToken);
@@ -127,6 +126,30 @@ namespace Dictation.Tests.Presentation
                 {
                 }
             }
+        }
+
+        [Fact]
+        public async Task DictationStartup_WhenCallerCancels_PropagatesCancellation()
+        {
+            using var environment = await LearningPresentationTestEnvironment.CreateAsync(dictation: true);
+            var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            environment.Tts.BeforeReturnAsync = async token =>
+            {
+                entered.TrySetResult();
+                await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            };
+            using var provider = CreateProvider(environment);
+            var navigation = provider.GetRequiredService<NavigationService>();
+            var home = provider.GetRequiredService<HomeViewModel>();
+            navigation.InitializeHome(home);
+            using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                TestContext.Current.CancellationToken);
+            var opening = home.OpenLearningAsync(cancellation.Token);
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+            cancellation.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => opening);
+            Assert.IsType<LearningSessionViewModel>(navigation.CurrentPage);
         }
 
         [Fact]

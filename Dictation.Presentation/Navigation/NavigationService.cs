@@ -221,6 +221,12 @@ namespace Dictation.Presentation.Navigation
                     // 首题听写可能等待语音服务；先展示页面，用户才能使用页面内的取消命令。
                     await viewModel.StartAsync(cancellationToken: cancellationToken);
                 }
+                catch (OperationCanceledException) when (
+                    !cancellationToken.IsCancellationRequested
+                    && ReferenceEquals(currentEntry?.Scope, scope))
+                {
+                    // 页面内取消只停止首题准备；页面仍可重试或返回。
+                }
                 catch
                 {
                     if (!ReferenceEquals(currentEntry?.Scope, scope))
