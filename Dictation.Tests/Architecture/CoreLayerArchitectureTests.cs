@@ -32,6 +32,7 @@ namespace Dictation.Tests.Architecture
             "Importing.ImportInboxService",
             "Learning.LearningPlanService",
             "Learning.LearningSessionService",
+            "Learning.LearningProgressService",
             "Learning.AnswerEvaluationService"
         };
 
@@ -43,6 +44,7 @@ namespace Dictation.Tests.Architecture
             {
                 "Configuration.ApplicationSettingsDto", "Configuration.LearningLanguage",
                 "Importing.ImportBatchDto", "Learning.LearningSessionDto",
+                "Learning.ILearningProgressReader", "Learning.LearningDailyProgressDto",
                 "Learning.LearningQuestionDto", "Lexicon.LexiconLookupResultDto",
                 "Tts.ITtsProvider", "Tts.TtsSynthesisRequestDto", "Tts.TtsAudioDto"
             };
@@ -95,6 +97,10 @@ namespace Dictation.Tests.Architecture
             services.AddSingleton<IConfiguration>(configuration);
             services.AddSingleton<IHomeNavigation, RejectingHomeNavigation>();
             services.AddDictationDataAccess(temporaryDirectory.Path).AddDictationCore();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            paths.EnsureRuntimeDirectories();
+            await new SchemaMigrationRunner(paths, new SqliteConnectionFactory(paths))
+                .MigrateAsync(TestContext.Current.CancellationToken);
             var core = Assembly.Load("Dictation.Core");
             using var provider = services.BuildServiceProvider();
 
@@ -112,6 +118,7 @@ namespace Dictation.Tests.Architecture
             var home = ActivatorUtilities.CreateInstance<HomeViewModel>(provider);
             await home.InitializeAsync(TestContext.Current.CancellationToken);
             Assert.Equal("英语模式", home.CurrentLanguageLabel);
+            Assert.Equal("学习 0/20", home.LearningProgressLabel);
             Assert.Null(home.ErrorMessage);
             var entryPoints = core.GetTypes().SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static))
                 .Where(method => method.Name is "AddDictationCore" or "AddDictationServices").ToArray();
@@ -174,6 +181,9 @@ namespace Dictation.Tests.Architecture
             Assert.Same(
                 provider.GetRequiredService<ILearningSessionOperations>(),
                 provider.GetRequiredService<ILearningSessionOperations>());
+
+            var progressImplementation = provider.GetRequiredService<LearningProgressService>();
+            Assert.Same(progressImplementation, provider.GetRequiredService<ILearningProgressReader>());
         }
 
         [Fact]
@@ -236,7 +246,9 @@ namespace Dictation.Tests.Architecture
                 .GetParameters()
                 .Select(parameter => parameter.ParameterType)
                 .ToArray();
-            Assert.Equal(new[] { typeof(SettingsService), typeof(IHomeNavigation) }, homeParameters);
+            Assert.Equal(
+                new[] { typeof(SettingsService), typeof(IHomeNavigation), typeof(ILearningProgressReader) },
+                homeParameters);
 
             var shellParameters = Assert.Single(typeof(ShellViewModel).GetConstructors())
                 .GetParameters()

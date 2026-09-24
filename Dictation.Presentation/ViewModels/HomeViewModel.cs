@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Dictation.Presentation.Navigation;
 using Dictation.Core.Configuration;
+using Dictation.Core.Learning;
 
 namespace Dictation.Presentation.ViewModels
 {
@@ -13,9 +14,11 @@ namespace Dictation.Presentation.ViewModels
     {
         private readonly SettingsService settingsService;
         private readonly IHomeNavigation homeNavigation;
+        private readonly ILearningProgressReader learningProgressReader;
         private readonly SemaphoreSlim persistenceGate = new(1, 1);
         private ThemeMode selectedThemeMode = ThemeMode.System;
         private LearningLanguage selectedLanguage = LearningLanguage.Japanese;
+        private string learningProgressLabel = "学习进度暂不可用";
         private string? errorMessage;
         private bool isInitialized;
 
@@ -24,14 +27,18 @@ namespace Dictation.Presentation.ViewModels
         /// </summary>
         /// <param name="settingsService">读取和保存应用设置的业务服务。</param>
         /// <param name="homeNavigation">首页所需的业务页面导航能力。</param>
+        /// <param name="learningProgressReader">读取当前语言每日学习进度的业务能力。</param>
         public HomeViewModel(
             SettingsService settingsService,
-            IHomeNavigation homeNavigation)
+            IHomeNavigation homeNavigation,
+            ILearningProgressReader learningProgressReader)
         {
             this.settingsService = settingsService
                 ?? throw new ArgumentNullException(nameof(settingsService));
             this.homeNavigation = homeNavigation
                 ?? throw new ArgumentNullException(nameof(homeNavigation));
+            this.learningProgressReader = learningProgressReader
+                ?? throw new ArgumentNullException(nameof(learningProgressReader));
             SelectJapaneseCommand = new AsyncCommand(() => SelectLanguageAsync(LearningLanguage.Japanese));
             SelectEnglishCommand = new AsyncCommand(() => SelectLanguageAsync(LearningLanguage.English));
             SelectSystemThemeCommand = new AsyncCommand(() => SelectThemeAsync(ThemeMode.System));
@@ -56,6 +63,21 @@ namespace Dictation.Presentation.ViewModels
         public string CurrentLanguageLabel => selectedLanguage == LearningLanguage.Japanese
             ? "日语模式"
             : "英语模式";
+
+        public string LearningProgressLabel
+        {
+            get => learningProgressLabel;
+            private set
+            {
+                if (learningProgressLabel == value)
+                {
+                    return;
+                }
+
+                learningProgressLabel = value;
+                OnPropertyChanged();
+            }
+        }
 
         public bool IsSystemThemeSelected => selectedThemeMode == ThemeMode.System;
 
@@ -97,6 +119,48 @@ namespace Dictation.Presentation.ViewModels
         public ICommand OpenLearningCommand { get; }
 
         /// <summary>
+        /// 重新读取当前语言的每日学习进度。
+        /// </summary>
+        /// <param name="cancellationToken">取消查询的令牌。</param>
+        public async Task RefreshLearningProgressAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var language = selectedLanguage;
+            try
+            {
+                var progress = await learningProgressReader.GetTodayAsync(language, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                if (selectedLanguage != language)
+                {
+                    return;
+                }
+
+                if (progress.Language != language)
+                {
+                    throw new InvalidDataException("每日学习进度的语言与首页不一致。");
+                }
+
+                LearningProgressLabel = $"学习 {progress.CompletedGroupCount}/{progress.DailyTarget}";
+                if (ErrorMessage?.StartsWith("读取学习进度失败", StringComparison.Ordinal) == true)
+                {
+                    ErrorMessage = null;
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                if (selectedLanguage == language)
+                {
+                    LearningProgressLabel = "学习进度暂不可用";
+                    ErrorMessage = $"读取学习进度失败：{exception.Message}";
+                }
+            }
+        }
+
+        /// <summary>
         /// 读取保存的语言与主题选择，并更新首页显示状态。
         /// </summary>
         /// <param name="cancellationToken">调用方取消令牌，传递到当前异步操作。</param>
@@ -122,6 +186,7 @@ namespace Dictation.Presentation.ViewModels
                     ApplySettings(settings);
                     ErrorMessage = null;
                     isInitialized = true;
+                    await RefreshLearningProgressAsync(cancellationToken);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
@@ -143,12 +208,16 @@ namespace Dictation.Presentation.ViewModels
         /// </summary>
         /// <param name="language">当前学习语言。</param>
         /// <param name="cancellationToken">调用方取消令牌，传递到当前异步操作。</param>
-        public Task SelectLanguageAsync(
+        public async Task SelectLanguageAsync(
             LearningLanguage language,
             CancellationToken cancellationToken = default)
         {
             ValidateLanguage(language);
-            return SaveSettingsAsync(language, selectedThemeMode, cancellationToken);
+            await SaveSettingsAsync(language, selectedThemeMode, cancellationToken);
+            if (selectedLanguage == language)
+            {
+                await RefreshLearningProgressAsync(cancellationToken);
+            }
         }
 
         /// <summary>

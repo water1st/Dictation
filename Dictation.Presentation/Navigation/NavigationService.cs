@@ -65,7 +65,8 @@ namespace Dictation.Presentation.Navigation
                 throw new InvalidOperationException("首页已经初始化，不能重复初始化。");
             }
 
-            currentEntry = new NavigationEntry(homeViewModel, "首页", null, null, null);
+            currentEntry = new NavigationEntry(
+                homeViewModel, "首页", null, null, homeViewModel.RefreshLearningProgressAsync);
             isInitialized = true;
             OnPropertyChanged(nameof(CurrentPage));
             OnPropertyChanged(nameof(PageTitle));

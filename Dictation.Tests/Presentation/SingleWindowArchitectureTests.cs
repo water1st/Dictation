@@ -90,7 +90,8 @@ namespace Dictation.Tests.Presentation
                     provider.GetRequiredService<IServiceScopeFactory>());
                 var homeViewModel = new HomeViewModel(
                     new SettingsService(new ConfigurationBuilder().Build(), paths),
-                    navigation);
+                    navigation,
+                    new StubLearningProgressReader());
                 navigation.InitializeHome(homeViewModel);
                 var shell = new ShellViewModel(navigation, overlay);
                 var homeWindow = new HomeWindow(shell);
@@ -206,7 +207,8 @@ namespace Dictation.Tests.Presentation
                     provider.GetRequiredService<IServiceScopeFactory>());
                 var homeViewModel = new HomeViewModel(
                     new SettingsService(new ConfigurationBuilder().Build(), paths),
-                    navigation);
+                    navigation,
+                    new StubLearningProgressReader());
                 navigation.InitializeHome(homeViewModel);
                 var shell = new ShellViewModel(navigation, overlay);
                 var homeWindow = new HomeWindow(shell);

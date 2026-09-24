@@ -52,6 +52,9 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<LearningSessionService>();
             services.AddSingleton<ILearningSessionOperations>(serviceProvider =>
                 serviceProvider.GetRequiredService<LearningSessionService>());
+            services.AddSingleton<LearningProgressService>();
+            services.AddSingleton<ILearningProgressReader>(serviceProvider =>
+                serviceProvider.GetRequiredService<LearningProgressService>());
             services.AddSingleton<AnswerEvaluationService>();
             return services;
         }

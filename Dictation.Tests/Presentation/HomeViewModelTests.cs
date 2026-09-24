@@ -2,6 +2,7 @@ using Dictation.DataAccess;
 using Dictation.DataAccess.Importing;
 using Dictation.DataAccess.Lexicon;
 using Dictation.DataAccess.Runtime;
+using Dictation.DataAccess.Learning;
 using Dictation.Presentation.Navigation;
 using Dictation.Presentation.Shell;
 using Dictation.Presentation.ViewModels;
@@ -30,6 +31,79 @@ namespace Dictation.Tests.Presentation
 
             Assert.Equal(ThemeMode.System, viewModel.SelectedThemeMode);
             Assert.Equal(LearningLanguage.Japanese, viewModel.SelectedLanguage);
+            Assert.Null(viewModel.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task LearningProgress_TracksSelectedLanguageAndChangedDailyTarget()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var target = 20;
+            var reader = new StubLearningProgressReader
+            {
+                ReadAsync = (language, _) => Task.FromResult(new Dictation.Core.Learning.LearningDailyProgressDto(
+                    language,
+                    language == LearningLanguage.Japanese ? 3 : 5,
+                    language == LearningLanguage.Japanese ? 2 : 4,
+                    target))
+            };
+            var viewModel = new HomeViewModel(
+                CreateSettingsService(new ApplicationPaths(temporaryDirectory.Path)),
+                new RejectingHomeNavigation(),
+                reader);
+            var changes = new List<string?>();
+            viewModel.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
+
+            await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+            Assert.Equal("学习 2/20", viewModel.LearningProgressLabel);
+            await viewModel.SelectLanguageAsync(LearningLanguage.English, TestContext.Current.CancellationToken);
+            Assert.Equal("学习 4/20", viewModel.LearningProgressLabel);
+            target = 8;
+            await viewModel.RefreshLearningProgressAsync(TestContext.Current.CancellationToken);
+            Assert.Equal("学习 4/8", viewModel.LearningProgressLabel);
+            Assert.Contains(nameof(HomeViewModel.LearningProgressLabel), changes);
+        }
+
+        [Fact]
+        public async Task LearningProgress_WhenDataAccessFails_ShowsInlineErrorWithoutOldCount()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var reader = new StubLearningProgressReader();
+            var viewModel = new HomeViewModel(
+                CreateSettingsService(new ApplicationPaths(temporaryDirectory.Path)),
+                new RejectingHomeNavigation(),
+                reader);
+            await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+            reader.ReadAsync = (_, _) => Task.FromException<Dictation.Core.Learning.LearningDailyProgressDto>(
+                new LearningSessionDataAccessException("数据库不可用", new IOException("模拟故障")));
+
+            await viewModel.RefreshLearningProgressAsync(TestContext.Current.CancellationToken);
+
+            Assert.Equal("学习进度暂不可用", viewModel.LearningProgressLabel);
+            Assert.Contains("读取学习进度失败", viewModel.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task LearningProgress_WhenCancelled_PropagatesAndKeepsPreviousLabel()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var reader = new StubLearningProgressReader();
+            var viewModel = new HomeViewModel(
+                CreateSettingsService(new ApplicationPaths(temporaryDirectory.Path)),
+                new RejectingHomeNavigation(),
+                reader);
+            await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+            reader.ReadAsync = async (_, token) =>
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, token);
+                throw new InvalidOperationException("不应完成");
+            };
+            using var cancellation = new CancellationTokenSource();
+            var refresh = viewModel.RefreshLearningProgressAsync(cancellation.Token);
+            cancellation.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => refresh);
+            Assert.Equal("学习 0/20", viewModel.LearningProgressLabel);
             Assert.Null(viewModel.ErrorMessage);
         }
 
@@ -163,7 +237,8 @@ namespace Dictation.Tests.Presentation
             var navigation = provider.GetRequiredService<NavigationService>();
             var viewModel = new HomeViewModel(
                 CreateSettingsService(paths),
-                navigation);
+                navigation,
+                new StubLearningProgressReader());
             navigation.InitializeHome(viewModel);
             await viewModel.SelectLanguageAsync(LearningLanguage.English, CancellationToken.None);
             var reachedPage = new TaskCompletionSource<object?>(
@@ -187,7 +262,8 @@ namespace Dictation.Tests.Presentation
             var navigation = provider.GetRequiredService<NavigationService>();
             var viewModel = new HomeViewModel(
                 CreateSettingsService(paths),
-                navigation);
+                navigation,
+                new StubLearningProgressReader());
             navigation.InitializeHome(viewModel);
             var reachedPage = new TaskCompletionSource<object?>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
@@ -208,7 +284,8 @@ namespace Dictation.Tests.Presentation
             return new HomeViewModel(new SettingsService(
                 BuildConfiguration(paths, ignoreConfigurationLoadErrors),
                 paths),
-                new RejectingHomeNavigation());
+                new RejectingHomeNavigation(),
+                new StubLearningProgressReader());
         }
 
         private static SettingsService CreateSettingsService(ApplicationPaths paths)

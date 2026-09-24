@@ -11,6 +11,7 @@ using Dictation.Presentation.Navigation;
 using Dictation.Presentation.ViewModels;
 using Dictation.Presentation.Views;
 using Dictation.Core.Configuration;
+using Dictation.Core.Learning;
 using Dictation.Tests.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,6 +46,47 @@ namespace Dictation.Tests.Presentation
             Assert.False(navigation.CanGoBack);
             navigation.CompleteTransition();
             Assert.True(navigation.CanGoBack);
+        }
+
+        [Fact]
+        public async Task ReturningFromLearningPlan_RefreshesHomeDailyTarget()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            using var provider = await CreateProviderAsync(temporaryDirectory.Path);
+            var navigation = provider.GetRequiredService<NavigationService>();
+            var home = provider.GetRequiredService<HomeViewModel>();
+            await home.InitializeAsync(TestContext.Current.CancellationToken);
+            navigation.InitializeHome(home);
+            Assert.Equal("学习 0/20", home.LearningProgressLabel);
+            await navigation.OpenLearningPlanAsync(LearningLanguage.Japanese, TestContext.Current.CancellationToken);
+            navigation.CompleteTransition();
+            var plan = await provider.GetRequiredService<ILearningPlanReader>().LoadAsync(
+                LearningLanguage.Japanese, TestContext.Current.CancellationToken);
+            await provider.GetRequiredService<ILearningPlanEditor>().SaveAsync(
+                new SaveLearningPlanRequestDto(
+                    LearningLanguage.Japanese, 9, plan.SessionWordLimit, plan.SelectionMode,
+                    plan.EnglishFormLabelMode, plan.EnglishExampleSourceSenseId,
+                    plan.FormCodes, plan.Channels, plan.OutputModes),
+                TestContext.Current.CancellationToken);
+
+            await navigation.GoBackAsync(TestContext.Current.CancellationToken);
+
+            Assert.Same(home, navigation.CurrentPage);
+            Assert.Equal("学习 0/9", home.LearningProgressLabel);
+            navigation.CompleteTransition();
+        }
+
+        [Fact]
+        public void HomePage_BindsLearningProgressLabel()
+        {
+            RunOnSta(() =>
+            {
+                var page = new HomePage { DataContext = new { LearningProgressLabel = "学习 3/7" } };
+                RenderControl(page);
+                var label = Assert.Single(FindVisualChildren<TextBlock>(page),
+                    item => item.Name == "LearningProgressText");
+                Assert.Equal("学习 3/7", label.Text);
+            });
         }
 
         [Fact]

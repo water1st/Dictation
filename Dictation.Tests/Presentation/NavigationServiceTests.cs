@@ -59,7 +59,8 @@ namespace Dictation.Tests.Presentation
                 new SettingsService(
                     new ConfigurationBuilder().Build(),
                     new ApplicationPaths(temporaryDirectory.Path)),
-                navigation);
+                navigation,
+                new StubLearningProgressReader());
             navigation.InitializeHome(home);
 
             var homeNavigation = provider.GetRequiredService<IHomeNavigation>();
@@ -453,7 +454,8 @@ namespace Dictation.Tests.Presentation
                 ImportInboxService = ServiceProvider.GetRequiredService<ImportInboxService>();
                 HomeViewModel = new HomeViewModel(
                     new SettingsService(new ConfigurationBuilder().Build(), paths),
-                    Navigation);
+                    Navigation,
+                    new StubLearningProgressReader());
             }
 
             public List<ScopeProbe> ScopeProbes { get; } = new();

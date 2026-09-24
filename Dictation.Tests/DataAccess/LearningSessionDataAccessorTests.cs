@@ -106,6 +106,50 @@ namespace Dictation.Tests.DataAccess
         }
 
         [Fact]
+        public async Task GetDailyProgressCountsAsync_MultipleAnswersStillCountOneCompletedGroup()
+        {
+            using var environment = await TestEnvironment.CreateAsync();
+            var groupId = await environment.StageLearningAsync(
+                LearningLanguage.Japanese, "食前", "jmdict:2:1");
+            var accessor = environment.CreateAccessor();
+            await accessor.CreateAsync(
+                await environment.CreateRequestAsync("answer-count", "Japanese", new[] { groupId }),
+                TestContext.Current.CancellationToken);
+            var form = Assert.Single((await environment.ReadGroupSeedAsync(groupId)).Forms);
+            await using var connection = new SqliteConnectionFactory(environment.Paths).CreateConnection();
+            await connection.OpenAsync(TestContext.Current.CancellationToken);
+            await connection.ExecuteAsync(
+                "UPDATE LearningGroupProgress SET CompletedLocalDate = '2026-09-05' WHERE WordGroupId = @WordGroupId;",
+                new { WordGroupId = groupId });
+            for (var ordinal = 0; ordinal < 3; ordinal++)
+            {
+                await connection.ExecuteAsync(
+                    """
+                    INSERT INTO LearningQuestions (
+                        SessionId, WordGroupId, MemberId, FormCode, Channel, OutputMode,
+                        QuestionOrdinal, Status, CreatedAtUtc)
+                    VALUES ('answer-count', @WordGroupId, @MemberId, @FormCode,
+                        'MeaningWriting', 'Kana', @Ordinal, 'Answered', '2026-09-05T01:00:00Z');
+                    """,
+                    new { WordGroupId = groupId, form.MemberId, form.FormCode, Ordinal = ordinal });
+                var questionId = await connection.ExecuteScalarAsync<long>("SELECT last_insert_rowid();");
+                await connection.ExecuteAsync(
+                    """
+                    INSERT INTO LearningQuestionAttempts (QuestionId, SubmittedText, WasCorrect, AnsweredAtUtc)
+                    VALUES (@QuestionId, 'test', 1, '2026-09-05T01:00:00Z');
+                    """,
+                    new { QuestionId = questionId });
+            }
+
+            var counts = await accessor.GetDailyProgressCountsAsync(
+                "Japanese", "2026-09-05", TestContext.Current.CancellationToken);
+
+            Assert.Equal(3L, await connection.ExecuteScalarAsync<long>("SELECT COUNT(*) FROM LearningQuestionAttempts;"));
+            Assert.Equal(1, counts.StartedGroupCount);
+            Assert.Equal(1, counts.CompletedGroupCount);
+        }
+
+        [Fact]
         public async Task GetDailyProgressCountsAsync_RejectsInvalidInputAndPropagatesCancellation()
         {
             using var environment = await TestEnvironment.CreateAsync();

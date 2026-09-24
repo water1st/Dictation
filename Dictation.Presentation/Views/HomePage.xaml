@@ -182,7 +182,10 @@
                         </StackPanel>
                         <Border Grid.Column="2" Padding="11,7"
                                 Background="{DynamicResource AccentSoftBrush}" CornerRadius="14">
-                            <TextBlock Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold" Text="学习 0/20" />
+                            <TextBlock x:Name="LearningProgressText"
+                                       Foreground="{DynamicResource AccentBrush}"
+                                       FontWeight="SemiBold"
+                                       Text="{Binding LearningProgressLabel}" />
                         </Border>
                     </Grid>
                 </Button>

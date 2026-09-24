@@ -1,4 +1,5 @@
 using System.Runtime.ExceptionServices;
+using Dapper;
 using System.Threading;
 using System.Windows;
 using System.Windows.Automation;
@@ -34,7 +35,8 @@ namespace Dictation.Tests.Presentation
             var home = new HomeViewModel(
                 new SettingsService(new ConfigurationBuilder().Build(),
                     new ApplicationPaths(temporaryDirectory.Path)),
-                navigation);
+                navigation,
+                new StubLearningProgressReader());
             await home.SelectLanguageAsync(
                 LearningLanguage.English,
                 TestContext.Current.CancellationToken);
@@ -78,6 +80,31 @@ namespace Dictation.Tests.Presentation
             Assert.Equal(LearningLanguage.English, resumed.SelectedLanguage);
             Assert.Equal(sessionId, resumed.Session!.SessionId);
             Assert.Equal(questionId, resumed.Question!.QuestionId);
+        }
+
+        [Fact]
+        public async Task ReturningFromLearningSession_RefreshesCompletedGroupCount()
+        {
+            using var environment = await LearningPresentationTestEnvironment.CreateAsync();
+            using var provider = CreateProvider(environment);
+            var navigation = provider.GetRequiredService<NavigationService>();
+            var home = provider.GetRequiredService<HomeViewModel>();
+            await home.InitializeAsync(TestContext.Current.CancellationToken);
+            navigation.InitializeHome(home);
+            Assert.Equal("学习 0/20", home.LearningProgressLabel);
+            await home.OpenLearningAsync(TestContext.Current.CancellationToken);
+            navigation.CompleteTransition();
+            await using var connection = new SqliteConnectionFactory(environment.Paths).CreateConnection();
+            await connection.OpenAsync(TestContext.Current.CancellationToken);
+            await connection.ExecuteAsync(
+                "UPDATE LearningGroupProgress SET CompletedLocalDate = @Date;",
+                new { Date = DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) });
+
+            await navigation.GoBackAsync(TestContext.Current.CancellationToken);
+
+            Assert.Same(home, navigation.CurrentPage);
+            Assert.Equal("学习 1/20", home.LearningProgressLabel);
+            navigation.CompleteTransition();
         }
 
         [Fact]
