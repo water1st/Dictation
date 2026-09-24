@@ -105,6 +105,23 @@ namespace Dictation.Core.Learning
         }
 
         /// <summary>
+        /// 判断当前计划中是否仍有答错且尚未按同一题型和字形答对的题目。
+        /// </summary>
+        /// <param name="unit">待检查的成员词形。</param>
+        /// <param name="plan">当前学习计划。</param>
+        /// <param name="language">会话语言。</param>
+        /// <param name="history">包含本次答题结果的会话历史。</param>
+        /// <returns>仍需重练时为 <see langword="true"/>。</returns>
+        internal bool HasUnresolvedRetry(
+            LearningFormUnitPo unit,
+            LearningPlanDto plan,
+            LearningLanguage language,
+            IReadOnlyList<LearningQuestionHistoryPo> history)
+        {
+            return FindUnresolvedRetry(unit, plan, language, history) is not null;
+        }
+
+        /// <summary>
         /// 为词形选择练习次数最少的通道和可用字形，并汇总未覆盖维度与历史错误率，
         /// 供外层先按覆盖缺口、再按错误率确定调度优先级。
         /// </summary>
@@ -125,12 +142,18 @@ namespace Dictation.Core.Learning
                 return null;
             }
 
-            var channel = SelectWeakest(
-                plan.Channels,
-                value => value == LearningChannel.MeaningWriting
-                    ? unit.MeaningWritingCount
-                    : unit.DictationCount);
-            var output = SelectWeakest(outputs, value => GetOutputCount(unit, value));
+            var hasUncoveredChannel = plan.Channels.Any(value => GetChannelCount(unit, value) == 0);
+            var hasUncoveredOutput = outputs.Any(value => GetOutputCount(unit, value) == 0);
+            // 先覆盖计划中的题型与字形，再回到曾经答错的精确题型／字形组合。
+            var retry = hasUncoveredChannel || hasUncoveredOutput
+                ? null
+                : FindUnresolvedRetry(unit, plan, language, history);
+            var channel = retry is null
+                ? SelectWeakest(plan.Channels, value => GetChannelCount(unit, value))
+                : ParseEnum<LearningChannel>(retry.Channel, "题型");
+            var output = retry is null
+                ? SelectWeakest(outputs, value => GetOutputCount(unit, value))
+                : ParseEnum<LearningOutputMode>(retry.OutputMode, "输出方式");
             var uncovered = (GetChannelCount(unit, channel) == 0 ? 1 : 0)
                 + (GetOutputCount(unit, output) == 0 ? 1 : 0);
             var totalAnswers = unit.CorrectCount + unit.ErrorCount;
@@ -141,6 +164,38 @@ namespace Dictation.Core.Learning
                 .DefaultIfEmpty(-1)
                 .Max();
             return new QuestionCandidate(unit, channel, output, uncovered, errorRate, lastOrdinal);
+        }
+
+        private static LearningQuestionHistoryPo? FindUnresolvedRetry(
+            LearningFormUnitPo unit,
+            LearningPlanDto plan,
+            LearningLanguage language,
+            IReadOnlyList<LearningQuestionHistoryPo> history)
+        {
+            var outputs = GetApplicableOutputs(unit, plan, language)
+                .Select(value => value.ToString())
+                .ToHashSet(StringComparer.Ordinal);
+            var channels = plan.Channels.Select(value => value.ToString())
+                .ToHashSet(StringComparer.Ordinal);
+            var examined = new HashSet<(string Channel, string OutputMode)>();
+            foreach (var question in history
+                .Where(item => IsSameUnit(unit, item) && item.WasCorrect.HasValue)
+                .OrderByDescending(item => item.QuestionOrdinal))
+            {
+                if (!channels.Contains(question.Channel)
+                    || !outputs.Contains(question.OutputMode)
+                    || !examined.Add((question.Channel, question.OutputMode)))
+                {
+                    continue;
+                }
+
+                if (question.WasCorrect == false)
+                {
+                    return question;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>

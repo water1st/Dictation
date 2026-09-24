@@ -172,6 +172,45 @@ namespace Dictation.Tests.Core
         }
 
         [Fact]
+        public async Task SubmitAnswerAsync_WrongOutputMustBeRetriedBeforeFormIsMastered()
+        {
+            using var environment = await TestEnvironment.CreateAsync(seed: 1234);
+            await environment.StageLearningAsync(LearningLanguage.Japanese, "食べる", "jmdict:1:1");
+            await environment.SavePlanAsync(
+                LearningLanguage.Japanese,
+                new[] { "Dictionary" },
+                new[] { LearningChannel.MeaningWriting },
+                new[] { LearningOutputMode.Kana, LearningOutputMode.Kanji });
+            var session = await environment.StartAsync(LearningLanguage.Japanese);
+            var first = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+                session.SessionId,
+                TestContext.Current.CancellationToken));
+            var wrong = await environment.Service.SubmitAnswerAsync(
+                new SubmitLearningAnswerRequestDto(session.SessionId, first.QuestionId, "错误"),
+                TestContext.Current.CancellationToken);
+            var next = Assert.IsType<LearningQuestionDto>(wrong.NextQuestion);
+            var retried = false;
+
+            for (var count = 0; count < 5; count++)
+            {
+                if (next.Channel == first.Channel && next.OutputMode == first.OutputMode)
+                {
+                    retried = true;
+                    break;
+                }
+
+                var result = await environment.SubmitCorrectAsync(next);
+                Assert.Null(result.Summary);
+                next = Assert.IsType<LearningQuestionDto>(result.NextQuestion);
+            }
+
+            Assert.True(retried);
+            var retryResult = await environment.SubmitCorrectAsync(next);
+            Assert.True(retryResult.WasCorrect);
+            Assert.True(retryResult.HadErrorInSession);
+        }
+
+        [Fact]
         public async Task SubmitAnswerAsync_ErrorResetsOnlyTargetForm()
         {
             using var environment = await TestEnvironment.CreateAsync();

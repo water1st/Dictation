@@ -191,14 +191,17 @@ namespace Dictation.Core.Learning
                 .Normalize(System.Text.NormalizationForm.FormC);
             var newStreak = wasCorrect ? Math.Min(2, currentUnit.CorrectStreak + 1) : 0;
             var nextEligibleOrdinal = questionScheduler.GetNextEligibleOrdinal(currentQuestion.QuestionOrdinal);
-            var updatedUnit = ApplyOutcome(currentUnit, currentQuestion, wasCorrect, newStreak, nextEligibleOrdinal);
-            var updatedUnits = snapshot.Units
-                .Select(unit => IsSameUnit(unit, currentQuestion) ? updatedUnit : unit)
-                .ToArray();
             var updatedHistory = snapshot.History
                 .Select(history => history.QuestionId == currentQuestion.QuestionId
                     ? history with { WasCorrect = wasCorrect }
                     : history)
+                .ToArray();
+            var hasUnresolvedRetry = questionScheduler.HasUnresolvedRetry(
+                currentUnit, plan, language, updatedHistory);
+            var updatedUnit = ApplyOutcome(
+                currentUnit, currentQuestion, wasCorrect, newStreak, nextEligibleOrdinal, hasUnresolvedRetry);
+            var updatedUnits = snapshot.Units
+                .Select(unit => IsSameUnit(unit, currentQuestion) ? updatedUnit : unit)
                 .ToArray();
             var nextOrdinal = currentQuestion.QuestionOrdinal + 1;
             var transitionedSnapshot = snapshot with
@@ -264,12 +267,13 @@ namespace Dictation.Core.Learning
             LearningQuestionStatePo question,
             bool wasCorrect,
             int correctStreak,
-            int nextEligibleOrdinal)
+            int nextEligibleOrdinal,
+            bool hasUnresolvedRetry)
         {
             return unit with
             {
                 CorrectStreak = correctStreak,
-                IsMastered = correctStreak == 2,
+                IsMastered = correctStreak == 2 && !hasUnresolvedRetry,
                 NextEligibleOrdinal = nextEligibleOrdinal,
                 MeaningWritingCount = unit.MeaningWritingCount + (question.Channel == LearningChannel.MeaningWriting.ToString() ? 1 : 0),
                 DictationCount = unit.DictationCount + (question.Channel == LearningChannel.Dictation.ToString() ? 1 : 0),
