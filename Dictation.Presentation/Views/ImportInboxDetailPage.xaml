@@ -5,6 +5,29 @@
              Background="{DynamicResource WindowBackgroundBrush}"
              Foreground="{DynamicResource ForegroundBrush}">
     <UserControl.Resources>
+        <Style x:Key="DetailSaveButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Padding" Value="16,9" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="14"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="DetailBadgeStyle" TargetType="Border">
             <Setter Property="Margin" Value="0,0,8,8" />
             <Setter Property="Padding" Value="10,5" />
@@ -110,6 +133,16 @@
                              Text="{Binding ChineseMeaningDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              TextWrapping="Wrap"
                              VerticalScrollBarVisibility="Auto" />
+                    <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
+                        <Button Command="{Binding SaveCommand}"
+                                Content="保存中文释义"
+                                Style="{StaticResource DetailSaveButtonStyle}" />
+                        <TextBlock Margin="12,0,0,0"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                   Text="{Binding SaveStatusMessage}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
                 </StackPanel>
             </Border>
         </DataTemplate>

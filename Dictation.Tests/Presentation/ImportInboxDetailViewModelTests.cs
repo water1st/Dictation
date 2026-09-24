@@ -13,7 +13,7 @@ namespace Dictation.Tests.Presentation
         public void Initialize_ProjectsEveryMemberOfTheSelectedGroup()
         {
             var batch = CreateBatch(includeWordGroup: true);
-            var viewModel = new ImportInboxDetailViewModel();
+            var viewModel = new ImportInboxDetailViewModel(new UnusedImportActions());
 
             viewModel.Initialize(batch, 2);
 
@@ -47,7 +47,7 @@ namespace Dictation.Tests.Presentation
         [Fact]
         public void Initialize_RejectsInvalidBatchItemLanguageAndRepeatedInitialization()
         {
-            var viewModel = new ImportInboxDetailViewModel();
+            var viewModel = new ImportInboxDetailViewModel(new UnusedImportActions());
             var batch = CreateBatch(includeWordGroup: true);
 
             Assert.Throws<ArgumentNullException>(() => viewModel.Initialize(null!, 2));
@@ -71,7 +71,7 @@ namespace Dictation.Tests.Presentation
         [Fact]
         public void Initialize_ItemWithoutSnapshotHasNoMembers()
         {
-            var viewModel = new ImportInboxDetailViewModel();
+            var viewModel = new ImportInboxDetailViewModel(new UnusedImportActions());
 
             viewModel.Initialize(CreateBatch(includeWordGroup: false), 2);
 
@@ -82,7 +82,7 @@ namespace Dictation.Tests.Presentation
         [Fact]
         public void ScrollOffset_NormalizesNegativeAndNonFiniteValues()
         {
-            var viewModel = new ImportInboxDetailViewModel();
+            var viewModel = new ImportInboxDetailViewModel(new UnusedImportActions());
 
             viewModel.ScrollOffset = 73.5;
             Assert.Equal(73.5, viewModel.ScrollOffset);
@@ -167,6 +167,23 @@ namespace Dictation.Tests.Presentation
                         new[] { "转化" },
                         Array.Empty<ImportWordGroupFormDto>())
                 });
+        }
+
+        private sealed class UnusedImportActions : IImportInboxActions
+        {
+            public Task DecideAsync(
+                DecideImportBatchRequestDto request,
+                CancellationToken cancellationToken = default)
+            {
+                throw new NotSupportedException("此测试不执行导入决定。");
+            }
+
+            public Task UpdateMeaningsAsync(
+                UpdateImportMeaningsRequestDto request,
+                CancellationToken cancellationToken = default)
+            {
+                throw new NotSupportedException("此测试不保存释义。");
+            }
         }
     }
 }

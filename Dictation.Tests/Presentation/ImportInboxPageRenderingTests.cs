@@ -107,8 +107,9 @@ namespace Dictation.Tests.Presentation
         {
             RunOnSta(() =>
             {
+                using var environment = new TestEnvironment();
                 var batch = CreateBatch();
-                var viewModel = new ImportInboxDetailViewModel();
+                var viewModel = new ImportInboxDetailViewModel(environment.ImportInboxService);
                 viewModel.Initialize(batch, 1);
 
                 var page = new ImportInboxDetailPage { DataContext = viewModel };
@@ -126,6 +127,27 @@ namespace Dictation.Tests.Presentation
                 Assert.Contains(meaningEditors, editor => editor.Text.Contains("去", StringComparison.Ordinal));
                 Assert.Contains(meaningEditors, editor => string.IsNullOrEmpty(editor.Text));
                 Assert.All(meaningEditors, editor => Assert.False(editor.IsReadOnly));
+            });
+        }
+
+        [Fact]
+        public void DetailPage_BindsEachMemberSaveButtonToItsOwnCommand()
+        {
+            RunOnSta(() =>
+            {
+                using var environment = new TestEnvironment();
+                var viewModel = new ImportInboxDetailViewModel(environment.ImportInboxService);
+                viewModel.Initialize(CreateBatch(), 1);
+                var page = new ImportInboxDetailPage { DataContext = viewModel };
+                RenderControl(page);
+
+                var saveButtons = FindVisualChildren<Button>(page)
+                    .Where(button => string.Equals(button.Content as string, "保存中文释义", StringComparison.Ordinal))
+                    .ToArray();
+
+                Assert.Equal(2, saveButtons.Length);
+                Assert.Same(viewModel.Members[0].SaveCommand, saveButtons[0].Command);
+                Assert.Same(viewModel.Members[1].SaveCommand, saveButtons[1].Command);
             });
         }
 

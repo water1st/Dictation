@@ -11,6 +11,7 @@ namespace Dictation.Presentation.ViewModels
     /// </summary>
     public sealed class ImportInboxDetailViewModel : INotifyPropertyChanged
     {
+        private readonly IImportInboxActions importInboxActions;
         private LearningLanguage selectedLanguage;
         private ImportBatchDto? batch;
         private ImportBatchItemDto? item;
@@ -20,8 +21,11 @@ namespace Dictation.Presentation.ViewModels
         /// <summary>
         /// 呈现当前导入词组的成员详情与中文释义编辑状态。
         /// </summary>
-        public ImportInboxDetailViewModel()
+        /// <param name="importInboxActions">保存词组中文释义的业务能力。</param>
+        public ImportInboxDetailViewModel(IImportInboxActions importInboxActions)
         {
+            this.importInboxActions = importInboxActions
+                ?? throw new ArgumentNullException(nameof(importInboxActions));
             Members = new ObservableCollection<ImportMemberEditorViewModel>();
         }
 
@@ -105,7 +109,10 @@ namespace Dictation.Presentation.ViewModels
             {
                 foreach (var member in selectedItem.WordGroup.Members)
                 {
-                    Members.Add(new ImportMemberEditorViewModel(member));
+                    Members.Add(new ImportMemberEditorViewModel(
+                        member,
+                        selectedItem.WordGroup.WordGroupId,
+                        importInboxActions));
                 }
             }
 
