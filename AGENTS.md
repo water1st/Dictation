@@ -49,7 +49,7 @@ DTO、业务模型和持久化对象（PO）按职责分离，不要求机械地
 
 ## 开发环境与命令
 
-环境为 Windows 11、稳定版 Visual Studio 2026 和 `global.json` 指定的 .NET 10 SDK。常用验证命令：
+环境以 Windows 11、稳定版 Visual Studio 2026 和 .NET 10 SDK 为最低基线；`global.json` 允许向前选择能构建本项目的较新稳定 SDK，不锁定某个补丁版本。常用验证命令：
 
 ```powershell
 dotnet restore Dictation.sln
