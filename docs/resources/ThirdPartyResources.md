@@ -51,12 +51,12 @@ DotNetG2P.MeCab 依赖的 MeCab/NMeCab 第三方 notices 也必须随发布包�
 
 ## 2.2 英语 Kokoro 运行时固定依赖
 
-英语使用 `org.k2fsa.sherpa.onnx` 1.13.5（Apache-2.0）和 `Microsoft.ML.OnnxRuntime` 1.27.1（MIT），仅发布 `win-x64` CPU 原生运行时。官方 Kokoro v1.0 Sherpa-ONNX 归档地址为 [`kokoro-multi-lang-v1_0.tar.bz2`](https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_0.tar.bz2)，归档大小为 349,418,188 bytes，SHA-256 为 `C133D26353D776DA730870DAC7DA07DBFC9A5E3BC80CC5E8E83AB6E823BE7046`。发布只抽取英语运行时子集，并在发布 manifest 中再次核验：
+英语使用 `org.k2fsa.sherpa.onnx` 1.13.5（Apache-2.0）和 `Microsoft.ML.OnnxRuntime` 1.27.1（MIT），仅发布 `win-x64` CPU 原生运行时。官方 Kokoro v1.0 Sherpa-ONNX 归档地址为 [`kokoro-multi-lang-v1_0.tar.bz2`](https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_0.tar.bz2)。上游于 2026-09-08 更新了同名 Release 资产；2026-09-28 下载的归档为 349,906,910 bytes，SHA-256 为 `C5F7E2D2CAF082BC1D20FB70334A61D99D20B484500AAD32E7CF84C128EA3298`，与 GitHub Release API 的大小及 `digest` 一致。发布只抽取英语运行时子集，并在发布 manifest 中再次核验：
 
 | 文件 | 大小 | SHA-256 |
 | --- | ---: | --- |
-| `model.onnx` | 325,630,829 bytes | `C436DC6A842B62ABA06AF67E40BAFCFB9C60AC3AF895358F1974AD9A7F7C026B` |
-| `voices.bin` | 27,678,720 bytes | `8A77C0D397026208D22211F37670B5B3B11E03F190756B25A1D24041FCED82A9` |
+| `model.onnx` | 325,560,556 bytes | `B40F62B166AC8164B0627EF48A0B358EDA0985E272FB03EF5252E7206305DA11` |
+| `voices.bin` | 28,200,960 bytes | `1C5A5B983D3D50D8586D437A51F3FAA2DA7919CE76A013C081E65671A3447C29` |
 | `tokens.txt` | 687 bytes | `6EBB6BB288F20F3AE8D004D3C2CA27697DA27C037D75E81A60E2A6A663F95425` |
 | `lexicon-gb-en.txt` | 6,366,635 bytes | `C4CBB37316F62210DFF52718A7AFCAAE24F50C032CC75AB47AE67B831D1049E7` |
 
