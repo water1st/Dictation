@@ -111,6 +111,10 @@ namespace Dictation.Presentation.ViewModels
                 selectedResult = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(CanStageSelected));
+                if (value is not null)
+                {
+                    IsResultDropDownOpen = false;
+                }
             }
         }
 
@@ -271,7 +275,6 @@ namespace Dictation.Presentation.ViewModels
 
                 lastSuccessfulSourceText = searchQuery.Trim().Normalize(System.Text.NormalizationForm.FormC);
                 SelectedResult = Results[0];
-                IsResultDropDownOpen = true;
                 OnPropertyChanged(nameof(CanStageSelected));
             }
             catch (OperationCanceledException)

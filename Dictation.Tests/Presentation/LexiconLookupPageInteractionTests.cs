@@ -27,6 +27,37 @@ namespace Dictation.Tests.Presentation
     /// </summary>
     public sealed class LexiconLookupPageInteractionTests
     {
+        [Theory]
+        [InlineData(720)]
+        [InlineData(1024)]
+        public void SearchDropDown_DoesNotCoverStageButton(int pageWidth)
+        {
+            RunOnSta(() =>
+            {
+                using var temporaryDirectory = new TemporaryDirectory();
+                var viewModel = CreateViewModel(new ApplicationPaths(temporaryDirectory.Path));
+                viewModel.Initialize(LearningLanguage.Japanese);
+                viewModel.IsResultDropDownOpen = true;
+                var page = new LexiconLookupPage { DataContext = viewModel };
+                using var source = RenderControl(page, pageWidth);
+                var queryBox = FindVisualChildren<ComboBox>(page).Single();
+                var stageButton = FindVisualChildren<Button>(page)
+                    .Single(button => string.Equals(
+                        button.Content as string,
+                        "加入导入收件箱",
+                        StringComparison.Ordinal));
+
+                Assert.True(queryBox.ActualWidth > 0);
+                Assert.True(stageButton.ActualWidth > 0);
+                var dropDownRight = queryBox.TranslatePoint(
+                    new Point(queryBox.ActualWidth, 0), page).X;
+                var stageButtonLeft = stageButton.TranslatePoint(new Point(0, 0), page).X;
+
+                Assert.True(dropDownRight <= stageButtonLeft,
+                    $"宽度 {pageWidth} 下候选下拉层右缘 {dropDownRight} 遮住加入按钮左缘 {stageButtonLeft}。");
+            });
+        }
+
         [Fact]
         public void SearchAfterSelectingPreviousResultUsesNewBoundQuery()
         {
@@ -100,15 +131,15 @@ namespace Dictation.Tests.Presentation
             queryBox.RaiseEvent(keyEvent);
         }
 
-        private static HwndSource RenderControl(UserControl control)
+        private static HwndSource RenderControl(UserControl control, int width = 1024)
         {
             var source = new HwndSource(new HwndSourceParameters("LexiconLookupPageInteractionTest")
             {
-                Width = 1024,
+                Width = width,
                 Height = 720
             });
             source.RootVisual = control;
-            control.Width = 1024;
+            control.Width = width;
             control.Height = 720;
             control.ApplyTemplate();
             control.Measure(new Size(control.Width, control.Height));

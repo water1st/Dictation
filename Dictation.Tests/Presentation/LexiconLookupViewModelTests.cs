@@ -103,7 +103,7 @@ namespace Dictation.Tests.Presentation
         }
 
         [Fact]
-        public async Task SearchAsync_SuccessSelectsFirstResultAndOpensDropDown()
+        public async Task SearchAsync_SuccessSelectsFirstResultWithoutCoveringActions()
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = new ApplicationPaths(temporaryDirectory.Path);
@@ -116,9 +116,29 @@ namespace Dictation.Tests.Presentation
 
             Assert.NotEmpty(viewModel.Results);
             Assert.Same(viewModel.Results[0], viewModel.SelectedResult);
-            Assert.True(viewModel.IsResultDropDownOpen);
+            Assert.False(viewModel.IsResultDropDownOpen);
             Assert.Null(viewModel.ErrorMessage);
             Assert.Equal(string.Empty, viewModel.EmptyStateText);
+        }
+
+        [Fact]
+        public async Task SelectedResult_ChoosingAnotherSenseClosesSearchDropDown()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            LexiconTestDatabases.CreateBoth(paths);
+            var viewModel = CreateViewModel(paths);
+            viewModel.Initialize(LearningLanguage.English);
+            viewModel.Query = "went";
+            await viewModel.SearchAsync(TestContext.Current.CancellationToken);
+
+            viewModel.IsResultDropDownOpen = true;
+            Assert.Equal(2, viewModel.Results.Count);
+
+            viewModel.SelectedResult = viewModel.Results[1];
+
+            Assert.Same(viewModel.Results[1], viewModel.SelectedResult);
+            Assert.False(viewModel.IsResultDropDownOpen);
         }
 
         [Fact]
@@ -191,7 +211,7 @@ namespace Dictation.Tests.Presentation
             Assert.Equal("take off", result.Headword);
             Assert.Equal("take off%v", result.SourceLexemeId);
             Assert.Same(result, viewModel.SelectedResult);
-            Assert.True(viewModel.IsResultDropDownOpen);
+            Assert.False(viewModel.IsResultDropDownOpen);
         }
 
         [Fact]
