@@ -26,6 +26,8 @@ namespace Dictation.Presentation
             services.AddSingleton<NavigationService>();
             services.AddSingleton<IHomeNavigation>(serviceProvider =>
                 serviceProvider.GetRequiredService<NavigationService>());
+            services.AddSingleton<ILearningSessionNavigation>(serviceProvider =>
+                serviceProvider.GetRequiredService<NavigationService>());
             services.AddSingleton<IBackNavigation>(serviceProvider =>
                 serviceProvider.GetRequiredService<NavigationService>());
             services.AddSingleton<IImportInboxDetailNavigation>(serviceProvider =>

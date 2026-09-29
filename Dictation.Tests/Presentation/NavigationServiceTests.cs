@@ -30,6 +30,7 @@ namespace Dictation.Tests.Presentation
             var implementation = provider.GetRequiredService<NavigationService>();
 
             Assert.Same(implementation, provider.GetRequiredService<IHomeNavigation>());
+            Assert.Same(implementation, provider.GetRequiredService<ILearningSessionNavigation>());
             Assert.Same(implementation, provider.GetRequiredService<IBackNavigation>());
             Assert.Same(implementation, provider.GetRequiredService<IImportInboxDetailNavigation>());
             Assert.Same(implementation, provider.GetRequiredService<INavigationHost>());
@@ -60,7 +61,9 @@ namespace Dictation.Tests.Presentation
                     new ConfigurationBuilder().Build(),
                     new ApplicationPaths(temporaryDirectory.Path)),
                 navigation,
-                new StubLearningProgressReader());
+                new StubLearningProgressReader(),
+                new StubLearningPlanReader(),
+                new StubLearningSessionReader());
             navigation.InitializeHome(home);
 
             var homeNavigation = provider.GetRequiredService<IHomeNavigation>();
@@ -455,7 +458,9 @@ namespace Dictation.Tests.Presentation
                 HomeViewModel = new HomeViewModel(
                     new SettingsService(new ConfigurationBuilder().Build(), paths),
                     Navigation,
-                    new StubLearningProgressReader());
+                    new StubLearningProgressReader(),
+                    new StubLearningPlanReader(),
+                    new StubLearningSessionReader());
             }
 
             public List<ScopeProbe> ScopeProbes { get; } = new();

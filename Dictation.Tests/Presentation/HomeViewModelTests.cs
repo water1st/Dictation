@@ -50,7 +50,9 @@ namespace Dictation.Tests.Presentation
             var viewModel = new HomeViewModel(
                 CreateSettingsService(new ApplicationPaths(temporaryDirectory.Path)),
                 new RejectingHomeNavigation(),
-                reader);
+                reader,
+                new StubLearningPlanReader(),
+                new StubLearningSessionReader());
             var changes = new List<string?>();
             viewModel.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
 
@@ -72,7 +74,9 @@ namespace Dictation.Tests.Presentation
             var viewModel = new HomeViewModel(
                 CreateSettingsService(new ApplicationPaths(temporaryDirectory.Path)),
                 new RejectingHomeNavigation(),
-                reader);
+                reader,
+                new StubLearningPlanReader(),
+                new StubLearningSessionReader());
             await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
             reader.ReadAsync = (_, _) => Task.FromException<Dictation.Core.Learning.LearningDailyProgressDto>(
                 new LearningSessionDataAccessException("数据库不可用", new IOException("模拟故障")));
@@ -91,7 +95,9 @@ namespace Dictation.Tests.Presentation
             var viewModel = new HomeViewModel(
                 CreateSettingsService(new ApplicationPaths(temporaryDirectory.Path)),
                 new RejectingHomeNavigation(),
-                reader);
+                reader,
+                new StubLearningPlanReader(),
+                new StubLearningSessionReader());
             await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
             reader.ReadAsync = async (_, token) =>
             {
@@ -238,7 +244,9 @@ namespace Dictation.Tests.Presentation
             var viewModel = new HomeViewModel(
                 CreateSettingsService(paths),
                 navigation,
-                new StubLearningProgressReader());
+                new StubLearningProgressReader(),
+                new StubLearningPlanReader(),
+                new StubLearningSessionReader());
             navigation.InitializeHome(viewModel);
             await viewModel.SelectLanguageAsync(LearningLanguage.English, CancellationToken.None);
             var reachedPage = new TaskCompletionSource<object?>(
@@ -263,7 +271,9 @@ namespace Dictation.Tests.Presentation
             var viewModel = new HomeViewModel(
                 CreateSettingsService(paths),
                 navigation,
-                new StubLearningProgressReader());
+                new StubLearningProgressReader(),
+                new StubLearningPlanReader(),
+                new StubLearningSessionReader());
             navigation.InitializeHome(viewModel);
             var reachedPage = new TaskCompletionSource<object?>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
@@ -285,7 +295,9 @@ namespace Dictation.Tests.Presentation
                 BuildConfiguration(paths, ignoreConfigurationLoadErrors),
                 paths),
                 new RejectingHomeNavigation(),
-                new StubLearningProgressReader());
+                new StubLearningProgressReader(),
+                new StubLearningPlanReader(),
+                new StubLearningSessionReader());
         }
 
         private static SettingsService CreateSettingsService(ApplicationPaths paths)

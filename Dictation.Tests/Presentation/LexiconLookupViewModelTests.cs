@@ -396,7 +396,9 @@ namespace Dictation.Tests.Presentation
             var home = new HomeViewModel(
                 new SettingsService(BuildConfiguration(paths), paths),
                 navigation,
-                new StubLearningProgressReader());
+                new StubLearningProgressReader(),
+                new StubLearningPlanReader(),
+                new StubLearningSessionReader());
             navigation.InitializeHome(home);
             await navigation.OpenLexiconLookupAsync(
                 LearningLanguage.English,

@@ -7,7 +7,7 @@ namespace Dictation.Core.Learning
     /// <summary>
     /// 编排学习会话的启动、浏览、出题、答题与完成持久化流程。
     /// </summary>
-    internal sealed class LearningSessionService : ILearningSessionOperations
+    internal sealed class LearningSessionService : ILearningSessionOperations, ILearningSessionReader
     {
         private readonly LearningSessionDataAccessor dataAccessor;
         private readonly ILearningPlanReader learningPlanReader;

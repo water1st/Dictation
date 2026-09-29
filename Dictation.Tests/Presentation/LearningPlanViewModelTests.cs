@@ -68,10 +68,9 @@ namespace Dictation.Tests.Presentation
 
             await viewModel.StartAsync(TestContext.Current.CancellationToken);
 
-            var request = Assert.IsType<LearningStartRequestDto>(viewModel.LastStartRequest);
-            Assert.Equal(LearningLanguage.Japanese, request.Language);
-            Assert.Equal(LearningSelectionMode.Manual, request.SelectionMode);
-            Assert.Equal(new[] { viewModel.LibraryItems[0].WordGroupId }, request.SelectedWordGroupIds);
+            Assert.Equal(LearningLanguage.Japanese, environment.LearningNavigation.LastLanguage);
+            Assert.Equal(new[] { viewModel.LibraryItems[0].WordGroupId },
+                environment.LearningNavigation.LastSelectedWordGroupIds);
         }
 
         [Fact]
@@ -216,6 +215,7 @@ namespace Dictation.Tests.Presentation
                 LexiconLookupService = lexiconLookupService;
                 ImportInboxService = importInboxService;
                 Navigation = new NavigationService(new TestScopeFactory());
+                LearningNavigation = new RecordingLearningSessionNavigation();
                 Overlay = new OverlayService();
             }
 
@@ -223,6 +223,7 @@ namespace Dictation.Tests.Presentation
             public LexiconLookupService LexiconLookupService { get; }
             public ImportInboxService ImportInboxService { get; }
             public NavigationService Navigation { get; }
+            public RecordingLearningSessionNavigation LearningNavigation { get; }
             public OverlayService Overlay { get; }
 
             public static async Task<TestEnvironment> CreateAsync()
@@ -253,6 +254,7 @@ namespace Dictation.Tests.Presentation
                     LearningPlanService,
                     LearningPlanService,
                     LearningPlanService,
+                    LearningNavigation,
                     LexiconLookupService,
                     Navigation,
                     Overlay);
@@ -290,6 +292,23 @@ namespace Dictation.Tests.Presentation
             public IServiceScope CreateScope()
             {
                 throw new NotSupportedException("该测试不执行页面导航。");
+            }
+        }
+
+        private sealed class RecordingLearningSessionNavigation : ILearningSessionNavigation
+        {
+            public LearningLanguage? LastLanguage { get; private set; }
+            public IReadOnlyList<string>? LastSelectedWordGroupIds { get; private set; }
+
+            public Task OpenLearningSessionAsync(
+                LearningLanguage language,
+                IReadOnlyList<string>? selectedWordGroupIds,
+                CancellationToken cancellationToken = default)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                LastLanguage = language;
+                LastSelectedWordGroupIds = selectedWordGroupIds;
+                return Task.CompletedTask;
             }
         }
     }

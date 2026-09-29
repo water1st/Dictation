@@ -18,6 +18,7 @@ namespace Dictation.Presentation.ViewModels
         private readonly ILearningPlanEditor learningPlanEditor;
         private readonly ILearningLibraryManager learningLibraryManager;
         private readonly ILearningSessionStartPreparer sessionStartPreparer;
+        private readonly ILearningSessionNavigation learningSessionNavigation;
         private readonly ILexiconSearch lexiconSearch;
         private readonly IBackNavigation backNavigation;
         private readonly IOverlayRequester overlayRequester;
@@ -43,6 +44,7 @@ namespace Dictation.Presentation.ViewModels
         /// <param name="learningPlanEditor">用于加载和保存学习计划的编辑能力。</param>
         /// <param name="learningLibraryManager">用于分页读取和整组删除学习库的管理能力。</param>
         /// <param name="sessionStartPreparer">用于按计划校验学习启动选择的准备能力。</param>
+        /// <param name="learningSessionNavigation">用于在当前窗口打开已选词组的学习会话。</param>
         /// <param name="lexiconSearch">用于检索符合示例范式条件的英语词条。</param>
         /// <param name="backNavigation">用于返回上一页面的导航能力。</param>
         /// <param name="overlayRequester">用于在删除整组词条前请求用户确认的弹层能力。</param>
@@ -50,6 +52,7 @@ namespace Dictation.Presentation.ViewModels
             ILearningPlanEditor learningPlanEditor,
             ILearningLibraryManager learningLibraryManager,
             ILearningSessionStartPreparer sessionStartPreparer,
+            ILearningSessionNavigation learningSessionNavigation,
             ILexiconSearch lexiconSearch,
             IBackNavigation backNavigation,
             IOverlayRequester overlayRequester)
@@ -57,6 +60,7 @@ namespace Dictation.Presentation.ViewModels
             this.learningPlanEditor = learningPlanEditor ?? throw new ArgumentNullException(nameof(learningPlanEditor));
             this.learningLibraryManager = learningLibraryManager ?? throw new ArgumentNullException(nameof(learningLibraryManager));
             this.sessionStartPreparer = sessionStartPreparer ?? throw new ArgumentNullException(nameof(sessionStartPreparer));
+            this.learningSessionNavigation = learningSessionNavigation ?? throw new ArgumentNullException(nameof(learningSessionNavigation));
             this.lexiconSearch = lexiconSearch ?? throw new ArgumentNullException(nameof(lexiconSearch));
             this.backNavigation = backNavigation ?? throw new ArgumentNullException(nameof(backNavigation));
             this.overlayRequester = overlayRequester ?? throw new ArgumentNullException(nameof(overlayRequester));
@@ -253,8 +257,6 @@ namespace Dictation.Presentation.ViewModels
             private set => SetField(ref statusMessage, value);
         }
 
-        public LearningStartRequestDto? LastStartRequest { get; private set; }
-
         public ICommand BackCommand { get; }
         public ICommand RefreshCommand { get; }
         public ICommand SaveCommand { get; }
@@ -383,7 +385,7 @@ namespace Dictation.Presentation.ViewModels
         }
 
         /// <summary>
-        /// 先保存当前计划，再生成并公开本轮学习的启动请求。
+        /// 先保存当前计划，再进入只包含本轮选中词组的学习会话。
         /// </summary>
         /// <param name="cancellationToken">取消保存或准备学习范围的令牌。</param>
         public Task StartAsync(CancellationToken cancellationToken = default)
@@ -517,12 +519,14 @@ namespace Dictation.Presentation.ViewModels
             var selectedIds = SelectionMode == LearningSelectionMode.Manual
                 ? LibraryItems.Where(item => item.IsSelected).Select(item => item.WordGroupId).ToArray()
                 : null;
-            LastStartRequest = await sessionStartPreparer.CreateStartRequestAsync(
+            var startRequest = await sessionStartPreparer.CreateStartRequestAsync(
                 selectedLanguage,
                 selectedIds,
                 cancellationToken);
-            OnPropertyChanged(nameof(LastStartRequest));
-            StatusMessage = "本轮学习范围已准备完成。";
+            await learningSessionNavigation.OpenLearningSessionAsync(
+                startRequest.Language,
+                startRequest.SelectedWordGroupIds,
+                cancellationToken);
         }
 
         /// <summary>

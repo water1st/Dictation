@@ -36,7 +36,9 @@ namespace Dictation.Tests.Presentation
                 new SettingsService(new ConfigurationBuilder().Build(),
                     new ApplicationPaths(temporaryDirectory.Path)),
                 navigation,
-                new StubLearningProgressReader());
+                new StubLearningProgressReader(),
+                new StubLearningPlanReader(),
+                new StubLearningSessionReader());
             await home.SelectLanguageAsync(
                 LearningLanguage.English,
                 TestContext.Current.CancellationToken);

@@ -12,6 +12,7 @@ namespace Dictation.Presentation.Navigation
     /// </summary>
     internal sealed class NavigationService :
         IHomeNavigation,
+        ILearningSessionNavigation,
         IBackNavigation,
         IImportInboxDetailNavigation,
         INavigationHost,
@@ -192,8 +193,17 @@ namespace Dictation.Presentation.Navigation
         }
 
         /// <inheritdoc />
-        public async Task OpenLearningAsync(
+        public Task OpenLearningAsync(
             LearningLanguage language,
+            CancellationToken cancellationToken = default)
+        {
+            return OpenLearningSessionAsync(language, null, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public async Task OpenLearningSessionAsync(
+            LearningLanguage language,
+            IReadOnlyList<string>? selectedWordGroupIds,
             CancellationToken cancellationToken = default)
         {
             ValidateLanguage(language);
@@ -220,7 +230,7 @@ namespace Dictation.Presentation.Navigation
                         scope,
                         null));
                     // 首题听写可能等待语音服务；先展示页面，用户才能使用页面内的取消命令。
-                    await viewModel.StartAsync(cancellationToken: cancellationToken);
+                    await viewModel.StartAsync(selectedWordGroupIds, cancellationToken);
                 }
                 catch (OperationCanceledException) when (
                     !cancellationToken.IsCancellationRequested

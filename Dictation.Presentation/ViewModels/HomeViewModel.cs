@@ -15,6 +15,8 @@ namespace Dictation.Presentation.ViewModels
         private readonly SettingsService settingsService;
         private readonly IHomeNavigation homeNavigation;
         private readonly ILearningProgressReader learningProgressReader;
+        private readonly ILearningPlanReader learningPlanReader;
+        private readonly ILearningSessionReader learningSessionReader;
         private readonly SemaphoreSlim persistenceGate = new(1, 1);
         private ThemeMode selectedThemeMode = ThemeMode.System;
         private LearningLanguage selectedLanguage = LearningLanguage.Japanese;
@@ -28,10 +30,14 @@ namespace Dictation.Presentation.ViewModels
         /// <param name="settingsService">读取和保存应用设置的业务服务。</param>
         /// <param name="homeNavigation">首页所需的业务页面导航能力。</param>
         /// <param name="learningProgressReader">读取当前语言每日学习进度的业务能力。</param>
+        /// <param name="learningPlanReader">判断当前语言是否要求手动选词的计划读取能力。</param>
+        /// <param name="learningSessionReader">判断当前语言是否有应优先恢复的活动会话。</param>
         public HomeViewModel(
             SettingsService settingsService,
             IHomeNavigation homeNavigation,
-            ILearningProgressReader learningProgressReader)
+            ILearningProgressReader learningProgressReader,
+            ILearningPlanReader learningPlanReader,
+            ILearningSessionReader learningSessionReader)
         {
             this.settingsService = settingsService
                 ?? throw new ArgumentNullException(nameof(settingsService));
@@ -39,6 +45,10 @@ namespace Dictation.Presentation.ViewModels
                 ?? throw new ArgumentNullException(nameof(homeNavigation));
             this.learningProgressReader = learningProgressReader
                 ?? throw new ArgumentNullException(nameof(learningProgressReader));
+            this.learningPlanReader = learningPlanReader
+                ?? throw new ArgumentNullException(nameof(learningPlanReader));
+            this.learningSessionReader = learningSessionReader
+                ?? throw new ArgumentNullException(nameof(learningSessionReader));
             SelectJapaneseCommand = new AsyncCommand(() => SelectLanguageAsync(LearningLanguage.Japanese));
             SelectEnglishCommand = new AsyncCommand(() => SelectLanguageAsync(LearningLanguage.English));
             SelectSystemThemeCommand = new AsyncCommand(() => SelectThemeAsync(ThemeMode.System));
@@ -268,9 +278,21 @@ namespace Dictation.Presentation.ViewModels
         /// 按当前语言请求打开或恢复学习会话。
         /// </summary>
         /// <param name="cancellationToken">调用方取消令牌，传递到当前异步操作。</param>
-        public Task OpenLearningAsync(CancellationToken cancellationToken = default)
+        public async Task OpenLearningAsync(CancellationToken cancellationToken = default)
         {
-            return homeNavigation.OpenLearningAsync(selectedLanguage, cancellationToken);
+            var language = selectedLanguage;
+            var active = await learningSessionReader.GetActiveAsync(language, cancellationToken);
+            if (active is null)
+            {
+                var plan = await learningPlanReader.LoadAsync(language, cancellationToken);
+                if (plan.SelectionMode == LearningSelectionMode.Manual)
+                {
+                    await homeNavigation.OpenLearningPlanAsync(language, cancellationToken);
+                    return;
+                }
+            }
+
+            await homeNavigation.OpenLearningAsync(language, cancellationToken);
         }
 
         private async Task SaveSettingsAsync(

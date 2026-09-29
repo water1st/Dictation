@@ -11,7 +11,9 @@ using Dictation.Presentation.Navigation;
 using Dictation.Presentation.ViewModels;
 using Dictation.Presentation.Views;
 using Dictation.Core.Configuration;
+using Dictation.Core.Importing;
 using Dictation.Core.Learning;
+using Dictation.Core.Tts;
 using Dictation.Tests.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -46,6 +48,144 @@ namespace Dictation.Tests.Presentation
             Assert.False(navigation.CanGoBack);
             navigation.CompleteTransition();
             Assert.True(navigation.CanGoBack);
+        }
+
+        [Fact]
+        public async Task LearningPlanStart_NavigatesToSessionWithOnlySelectedManualGroup()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            using var provider = await CreateProviderAsync(temporaryDirectory.Path);
+            var importer = provider.GetRequiredService<ImportInboxService>();
+            var batch = await importer.StageAsync(
+                new StageImportBatchRequestDto(
+                    LearningLanguage.Japanese,
+                    ImportSourceKind.Manual,
+                    new[]
+                    {
+                        new ImportSelectionDto("食前", "jmdict:2:1"),
+                        new ImportSelectionDto("食事", "jmdict:10:1")
+                    }),
+                TestContext.Current.CancellationToken);
+            await importer.DecideAsync(
+                new DecideImportBatchRequestDto(
+                    batch.Batch.BatchId,
+                    batch.Batch.Items.Select(item => item.ItemId).ToArray(),
+                    ImportDecision.Learning),
+                TestContext.Current.CancellationToken);
+            var selectedGroupId = Assert.IsType<string>(batch.Batch.Items[0].WordGroupId);
+            var navigation = provider.GetRequiredService<NavigationService>();
+            var home = provider.GetRequiredService<HomeViewModel>();
+            await home.InitializeAsync(TestContext.Current.CancellationToken);
+            navigation.InitializeHome(home);
+            await navigation.OpenLearningPlanAsync(
+                LearningLanguage.Japanese, TestContext.Current.CancellationToken);
+            navigation.CompleteTransition();
+            var plan = Assert.IsType<LearningPlanViewModel>(navigation.CurrentPage);
+            plan.SelectionMode = LearningSelectionMode.Manual;
+            foreach (var option in plan.ChannelOptions)
+            {
+                option.IsSelected = option.Code == nameof(LearningChannel.MeaningWriting);
+            }
+
+            Assert.Equal(2, plan.LibraryItems.Count);
+            Assert.Single(plan.LibraryItems, item => item.WordGroupId == selectedGroupId).IsSelected = true;
+            await plan.StartAsync(TestContext.Current.CancellationToken);
+
+            Assert.Null(plan.ErrorMessage);
+            var session = Assert.IsType<LearningSessionViewModel>(navigation.CurrentPage);
+            Assert.Equal(LearningLanguage.Japanese, session.SelectedLanguage);
+            Assert.Equal(new[] { selectedGroupId }, session.Session!.WordGroupIds);
+            Assert.NotNull(session.Question);
+        }
+
+        [Fact]
+        public async Task HomeLearning_WhenManualPlanHasNoActiveSession_OpensSelectionPage()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            using var provider = await CreateProviderAsync(temporaryDirectory.Path);
+            var plans = provider.GetRequiredService<ILearningPlanReader>();
+            var plan = await plans.LoadAsync(
+                LearningLanguage.Japanese, TestContext.Current.CancellationToken);
+            await provider.GetRequiredService<ILearningPlanEditor>().SaveAsync(
+                new SaveLearningPlanRequestDto(
+                    LearningLanguage.Japanese,
+                    plan.DailyNewTarget,
+                    plan.SessionWordLimit,
+                    LearningSelectionMode.Manual,
+                    plan.EnglishFormLabelMode,
+                    plan.EnglishExampleSourceSenseId,
+                    plan.FormCodes,
+                    plan.Channels,
+                    plan.OutputModes),
+                TestContext.Current.CancellationToken);
+            var navigation = provider.GetRequiredService<NavigationService>();
+            var home = provider.GetRequiredService<HomeViewModel>();
+            await home.InitializeAsync(TestContext.Current.CancellationToken);
+            navigation.InitializeHome(home);
+
+            await home.OpenLearningAsync(TestContext.Current.CancellationToken);
+
+            Assert.IsType<LearningPlanViewModel>(navigation.CurrentPage);
+            Assert.Null(await provider.GetRequiredService<LearningSessionService>().GetActiveAsync(
+                LearningLanguage.Japanese, TestContext.Current.CancellationToken));
+        }
+
+        [Fact]
+        public async Task HomeLearning_WhenManualPlanHasActiveSession_ResumesIt()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            using var provider = await CreateProviderAsync(temporaryDirectory.Path);
+            var importer = provider.GetRequiredService<ImportInboxService>();
+            var batch = await importer.StageAsync(
+                new StageImportBatchRequestDto(
+                    LearningLanguage.Japanese,
+                    ImportSourceKind.Manual,
+                    new[] { new ImportSelectionDto("食前", "jmdict:2:1") }),
+                TestContext.Current.CancellationToken);
+            await importer.DecideAsync(
+                new DecideImportBatchRequestDto(
+                    batch.Batch.BatchId,
+                    new[] { Assert.Single(batch.Batch.Items).ItemId },
+                    ImportDecision.Learning),
+                TestContext.Current.CancellationToken);
+            var plans = provider.GetRequiredService<ILearningPlanReader>();
+            var defaultPlan = await plans.LoadAsync(
+                LearningLanguage.Japanese, TestContext.Current.CancellationToken);
+            var editor = provider.GetRequiredService<ILearningPlanEditor>();
+            await editor.SaveAsync(new SaveLearningPlanRequestDto(
+                LearningLanguage.Japanese,
+                defaultPlan.DailyNewTarget,
+                defaultPlan.SessionWordLimit,
+                LearningSelectionMode.Random,
+                defaultPlan.EnglishFormLabelMode,
+                defaultPlan.EnglishExampleSourceSenseId,
+                new[] { "Dictionary" },
+                new[] { LearningChannel.MeaningWriting },
+                new[] { LearningOutputMode.Kana }), TestContext.Current.CancellationToken);
+            var sessions = provider.GetRequiredService<LearningSessionService>();
+            var active = await sessions.StartOrResumeAsync(
+                new StartLearningSessionRequestDto(LearningLanguage.Japanese),
+                TestContext.Current.CancellationToken);
+            await editor.SaveAsync(new SaveLearningPlanRequestDto(
+                LearningLanguage.Japanese,
+                defaultPlan.DailyNewTarget,
+                defaultPlan.SessionWordLimit,
+                LearningSelectionMode.Manual,
+                defaultPlan.EnglishFormLabelMode,
+                defaultPlan.EnglishExampleSourceSenseId,
+                new[] { "Dictionary" },
+                new[] { LearningChannel.MeaningWriting },
+                new[] { LearningOutputMode.Kana }), TestContext.Current.CancellationToken);
+            var navigation = provider.GetRequiredService<NavigationService>();
+            var home = provider.GetRequiredService<HomeViewModel>();
+            await home.InitializeAsync(TestContext.Current.CancellationToken);
+            navigation.InitializeHome(home);
+
+            await home.OpenLearningAsync(TestContext.Current.CancellationToken);
+
+            var resumed = Assert.IsType<LearningSessionViewModel>(navigation.CurrentPage);
+            Assert.Equal(active.SessionId, resumed.Session!.SessionId);
+            Assert.NotNull(resumed.Question);
         }
 
         [Fact]
@@ -117,6 +257,7 @@ namespace Dictation.Tests.Presentation
             services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
             services.AddDictationDataAccess(root);
             services.AddDictationCore();
+            services.AddSingleton<ITtsProvider>(new LearningPresentationTestEnvironment.ControlledTtsProvider());
             services.AddDictationPresentation();
             return services.BuildServiceProvider();
         }

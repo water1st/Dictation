@@ -178,6 +178,7 @@ namespace Dictation.Tests.Architecture
 
             var sessionImplementation = provider.GetRequiredService<LearningSessionService>();
             Assert.Same(sessionImplementation, provider.GetRequiredService<ILearningSessionOperations>());
+            Assert.Same(sessionImplementation, provider.GetRequiredService<ILearningSessionReader>());
             Assert.Same(
                 provider.GetRequiredService<ILearningSessionOperations>(),
                 provider.GetRequiredService<ILearningSessionOperations>());
@@ -199,6 +200,7 @@ namespace Dictation.Tests.Architecture
                     typeof(ILearningPlanEditor),
                     typeof(ILearningLibraryManager),
                     typeof(ILearningSessionStartPreparer),
+                    typeof(ILearningSessionNavigation),
                     typeof(ILexiconSearch),
                     typeof(IBackNavigation),
                     typeof(IOverlayRequester)
@@ -247,7 +249,14 @@ namespace Dictation.Tests.Architecture
                 .Select(parameter => parameter.ParameterType)
                 .ToArray();
             Assert.Equal(
-                new[] { typeof(SettingsService), typeof(IHomeNavigation), typeof(ILearningProgressReader) },
+                new[]
+                {
+                    typeof(SettingsService),
+                    typeof(IHomeNavigation),
+                    typeof(ILearningProgressReader),
+                    typeof(ILearningPlanReader),
+                    typeof(ILearningSessionReader)
+                },
                 homeParameters);
 
             var shellParameters = Assert.Single(typeof(ShellViewModel).GetConstructors())
