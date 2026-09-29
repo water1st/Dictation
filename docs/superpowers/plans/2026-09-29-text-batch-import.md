@@ -44,7 +44,7 @@
 
 **Files:** 新增 `Dictation.Presentation/ViewModels/TextImportViewModel.cs`、`TextImportLineViewModel.cs`、`Dictation.Presentation/Views/TextImportPage.xaml`、`TextImportPage.xaml.cs`；修改 `IHomeNavigation.cs`、`NavigationService.cs`、`DictationPresentationServiceCollectionExtensions.cs`、`HomeViewModel.cs`、`HomePage.xaml`、`App.xaml`；新增 Presentation 单元与真实 SQLite 导航测试。
 
-**Interfaces:** Consumes Task 1 的 `ITextImportPreparation`；调用已有 `IImportStaging.StageAsync(StageImportBatchRequestDto)`；新增 `IHomeNavigation.OpenTextImportAsync(LearningLanguage language, string? initialFilePath = null, CancellationToken cancellationToken = default)`。页面固定首页选择的语言，输入多行文本；每行展示匹配／未匹配及候选中文、词性、词形，只有明确选择才能加入 Inbox。
+**Interfaces:** Consumes Task 1 的 `ITextImportPreparation`；调用已有 `IImportStaging.StageAsync(StageImportBatchRequestDto)`；produces `TextImportViewModel.LoadTextAsync(string text, CancellationToken cancellationToken)` 与 `IHomeNavigation.OpenTextImportAsync(LearningLanguage language, string? initialFilePath = null, CancellationToken cancellationToken = default)`。页面固定首页选择的语言，输入多行文本；每行展示匹配／未匹配及候选中文、词性、词形，只有明确选择才能加入 Inbox。
 
 - [ ] **Step 1：先写 VM 和导航测试。** 断言多义未选不能暂存、选中后只暂存该义项、无匹配保留在页面、重复项被忽略、取消不写库、日英隔离及单窗口返回栈。
 - [ ] **Step 2：有效 RED。** 测试编译成功后，对生产暂存选择过滤做临时 mutation，聚焦测试须执行并因行为断言失败；恢复 mutation。
