@@ -214,11 +214,12 @@ namespace Dictation.Core.Learning
             var activeUnits = updatedUnits
                 .Where(unit => questionScheduler.IsEnabledUnit(unit, plan, language))
                 .ToArray();
-            var completedWordGroupIds = activeUnits
-                .GroupBy(unit => unit.WordGroupId, StringComparer.Ordinal)
-                .Where(group => group.All(unit => unit.IsMastered))
-                .Select(group => group.Key)
+            var currentGroupUnits = activeUnits
+                .Where(unit => string.Equals(unit.WordGroupId, currentUnit.WordGroupId, StringComparison.Ordinal))
                 .ToArray();
+            var completedWordGroupIds = currentGroupUnits.Length > 0 && currentGroupUnits.All(unit => unit.IsMastered)
+                ? new[] { currentUnit.WordGroupId }
+                : Array.Empty<string>();
             var completeSession = activeUnits.Length == 0 || activeUnits.All(unit => unit.IsMastered);
             var nextScheduled = completeSession
                 ? null

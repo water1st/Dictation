@@ -604,6 +604,46 @@ namespace Dictation.Tests.Core
                 TestContext.Current.CancellationToken));
         }
 
+        [Fact]
+        public async Task SubmitAnswerAsync_CrossDayAnswerPreservesEarlierGroupCompletionDate()
+        {
+            using var environment = await TestEnvironment.CreateAsync();
+            var firstId = await environment.StageLearningAsync(
+                LearningLanguage.Japanese, "食前", "jmdict:2:1");
+            var secondId = await environment.StageLearningAsync(
+                LearningLanguage.Japanese, "食事", "jmdict:10:1");
+            await environment.SavePlanAsync(
+                LearningLanguage.Japanese,
+                new[] { "Dictionary" },
+                new[] { LearningChannel.MeaningWriting },
+                new[] { LearningOutputMode.Kana });
+            var session = await environment.StartAsync(LearningLanguage.Japanese);
+            Assert.Equal(2, session.WordGroupIds.Count);
+            Assert.Contains(firstId, session.WordGroupIds);
+            Assert.Contains(secondId, session.WordGroupIds);
+            var question = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+                session.SessionId, TestContext.Current.CancellationToken));
+            string? completedId = null;
+            for (var attempt = 0; attempt < 20 && completedId is null; attempt++)
+            {
+                var result = await environment.SubmitCorrectAsync(question);
+                completedId = await environment.ExecuteScalarAsync<string?>(
+                    "SELECT WordGroupId FROM LearningGroupProgress WHERE CompletedLocalDate IS NOT NULL LIMIT 1;");
+                question = Assert.IsType<LearningQuestionDto>(result.NextQuestion);
+            }
+
+            Assert.NotNull(completedId);
+            Assert.Equal("2026-09-06", await environment.ExecuteScalarAsync<string>(
+                "SELECT CompletedLocalDate FROM LearningGroupProgress WHERE WordGroupId = @WordGroupId;",
+                new { WordGroupId = completedId }));
+            environment.TimeProvider.Value = environment.TimeProvider.Value.AddDays(1);
+            await environment.SubmitCorrectAsync(question);
+
+            Assert.Equal("2026-09-06", await environment.ExecuteScalarAsync<string>(
+                "SELECT CompletedLocalDate FROM LearningGroupProgress WHERE WordGroupId = @WordGroupId;",
+                new { WordGroupId = completedId }));
+        }
+
         private sealed class TestEnvironment : IDisposable
         {
             private readonly TemporaryDirectory temporaryDirectory;
