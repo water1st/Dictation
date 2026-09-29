@@ -255,11 +255,13 @@ namespace Dictation.DataAccess.Learning
         /// </summary>
         /// <param name="language">持久化使用的语言代码。</param>
         /// <param name="wordGroupId">目标词组标识。</param>
+        /// <param name="completedAtUtc">本次删除导致活动会话结算时的 UTC 时间。</param>
         /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
         /// <returns>已删除，或未找到、语言不符、位置不符的具体结果。</returns>
         public async Task<DeleteLearningWordGroupResult> DeleteWordGroupAsync(
             string language,
             string wordGroupId,
+            DateTimeOffset completedAtUtc,
             CancellationToken cancellationToken = default)
         {
             ValidateLanguage(language);
@@ -286,11 +288,60 @@ namespace Dictation.DataAccess.Learning
                     };
                     if (result == DeleteLearningWordGroupResult.Deleted)
                     {
+                        var affectedSessionIds = (await connection.QueryAsync<string>(new CommandDefinition(
+                            """
+                            SELECT LearningSessions.SessionId
+                            FROM LearningSessions
+                            INNER JOIN LearningSessionGroups
+                                ON LearningSessionGroups.SessionId = LearningSessions.SessionId
+                            WHERE LearningSessions.Status = 'InProgress'
+                              AND LearningSessionGroups.WordGroupId = @WordGroupId;
+                            """,
+                            new { WordGroupId = wordGroupId },
+                            transaction,
+                            cancellationToken: cancellationToken))).ToArray();
                         await connection.ExecuteAsync(new CommandDefinition(
                             "DELETE FROM WordGroups WHERE WordGroupId = @WordGroupId;",
                             new { WordGroupId = wordGroupId },
                             transaction,
                             cancellationToken: cancellationToken));
+                        if (affectedSessionIds.Length > 0)
+                        {
+                            // 只清理本次删除导致的空会话，保留其他语言及仍有词组的会话。
+                            await connection.ExecuteAsync(new CommandDefinition(
+                                """
+                                DELETE FROM LearningSessions
+                                WHERE SessionId IN @SessionIds
+                                  AND Status = 'InProgress'
+                                  AND NOT EXISTS (
+                                      SELECT 1 FROM LearningSessionGroups
+                                      WHERE LearningSessionGroups.SessionId = LearningSessions.SessionId);
+                                """,
+                                new { SessionIds = affectedSessionIds },
+                                transaction,
+                                cancellationToken: cancellationToken));
+                            await connection.ExecuteAsync(new CommandDefinition(
+                                """
+                                UPDATE LearningSessions
+                                SET Status = 'Completed', CompletedAtUtc = @CompletedAtUtc
+                                WHERE SessionId IN @SessionIds
+                                  AND Status = 'InProgress'
+                                  AND NOT EXISTS (
+                                      SELECT 1
+                                      FROM LearningSessionGroups AS Groups
+                                      INNER JOIN LearningFormStates AS Forms
+                                          ON Forms.WordGroupId = Groups.WordGroupId
+                                      WHERE Groups.SessionId = LearningSessions.SessionId
+                                        AND Forms.IsMastered = 0);
+                                """,
+                                new
+                                {
+                                    SessionIds = affectedSessionIds,
+                                    CompletedAtUtc = FormatDateTime(completedAtUtc)
+                                },
+                                transaction,
+                                cancellationToken: cancellationToken));
+                        }
                     }
 
                     await transaction.CommitAsync(cancellationToken);

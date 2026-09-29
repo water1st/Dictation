@@ -127,7 +127,8 @@ namespace Dictation.Core.Learning
             ValidateLanguage(language);
             ArgumentException.ThrowIfNullOrWhiteSpace(wordGroupId);
             cancellationToken.ThrowIfCancellationRequested();
-            var result = await dataAccessor.DeleteWordGroupAsync(language.ToString(), wordGroupId.Trim(), cancellationToken);
+            var result = await dataAccessor.DeleteWordGroupAsync(
+                language.ToString(), wordGroupId.Trim(), timeProvider.GetUtcNow(), cancellationToken);
             switch (result)
             {
                 case DeleteLearningWordGroupResult.Deleted:

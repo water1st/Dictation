@@ -206,6 +206,77 @@ namespace Dictation.Tests.Core
         }
 
         [Fact]
+        public async Task DeleteWordGroupAsync_RemovingOnlyActiveGroupAllowsStartingAnotherSession()
+        {
+            using var environment = await TestEnvironment.CreateAsync();
+            var removedId = await environment.StageLearningAsync(
+                LearningLanguage.Japanese, "食前", "jmdict:2:1");
+            var first = await environment.Service.StartOrResumeAsync(
+                new StartLearningSessionRequestDto(LearningLanguage.Japanese),
+                TestContext.Current.CancellationToken);
+            Assert.NotNull(await environment.Service.GetCurrentQuestionAsync(
+                first.SessionId, TestContext.Current.CancellationToken));
+
+            await environment.LearningPlanService.DeleteWordGroupAsync(
+                LearningLanguage.Japanese, removedId, TestContext.Current.CancellationToken);
+
+            Assert.Null(await environment.Service.GetActiveAsync(
+                LearningLanguage.Japanese, TestContext.Current.CancellationToken));
+            var nextId = await environment.StageLearningAsync(
+                LearningLanguage.Japanese, "食事", "jmdict:10:1");
+            var next = await environment.Service.StartOrResumeAsync(
+                new StartLearningSessionRequestDto(LearningLanguage.Japanese),
+                TestContext.Current.CancellationToken);
+            Assert.NotEqual(first.SessionId, next.SessionId);
+            Assert.Equal(new[] { nextId }, next.WordGroupIds);
+            Assert.NotNull(await environment.Service.GetCurrentQuestionAsync(
+                next.SessionId, TestContext.Current.CancellationToken));
+        }
+
+        [Fact]
+        public async Task DeleteWordGroupAsync_RemovingLastUnfinishedGroupCompletesRemainingSession()
+        {
+            using var environment = await TestEnvironment.CreateAsync();
+            var completedId = await environment.StageLearningAsync(
+                LearningLanguage.Japanese, "食前", "jmdict:2:1");
+            var removedId = await environment.StageLearningAsync(
+                LearningLanguage.Japanese, "食事", "jmdict:10:1");
+            await environment.SaveJapanesePlanAsync(
+                LearningSelectionMode.Sequential, 2, 20, new[] { "Dictionary" });
+            var session = await environment.Service.StartOrResumeAsync(
+                new StartLearningSessionRequestDto(LearningLanguage.Japanese),
+                TestContext.Current.CancellationToken);
+            Assert.Equal(new[] { completedId, removedId }, session.WordGroupIds);
+            await using (var connection = new SqliteConnectionFactory(environment.Paths).CreateConnection())
+            {
+                await connection.OpenAsync(TestContext.Current.CancellationToken);
+                await connection.ExecuteAsync(
+                    "UPDATE LearningFormStates SET CorrectStreak = 2, IsMastered = 1 WHERE WordGroupId = @WordGroupId;",
+                    new { WordGroupId = completedId });
+                await connection.ExecuteAsync(
+                    "UPDATE WordGroups SET Placement = 'Review' WHERE WordGroupId = @WordGroupId;",
+                    new { WordGroupId = completedId });
+                await connection.ExecuteAsync(
+                    "UPDATE LearningGroupProgress SET CompletedLocalDate = '2026-09-05' WHERE WordGroupId = @WordGroupId;",
+                    new { WordGroupId = completedId });
+            }
+
+            await environment.LearningPlanService.DeleteWordGroupAsync(
+                LearningLanguage.Japanese, removedId, TestContext.Current.CancellationToken);
+
+            Assert.Null(await environment.Service.GetActiveAsync(
+                LearningLanguage.Japanese, TestContext.Current.CancellationToken));
+            await using var verification = new SqliteConnectionFactory(environment.Paths).CreateConnection();
+            await verification.OpenAsync(TestContext.Current.CancellationToken);
+            Assert.Equal("Completed", await verification.ExecuteScalarAsync<string>(
+                "SELECT Status FROM LearningSessions WHERE SessionId = @SessionId;",
+                new { session.SessionId }));
+            Assert.Equal("2026-09-05", await verification.ExecuteScalarAsync<string>(
+                "SELECT CompletedLocalDate FROM LearningGroupProgress WHERE WordGroupId = @WordGroupId;",
+                new { WordGroupId = completedId }));
+        }
+
+        [Fact]
         public async Task GetBrowseItemsAsync_MapsChineseSnapshotWithoutChangingLearningState()
         {
             using var environment = await TestEnvironment.CreateAsync();

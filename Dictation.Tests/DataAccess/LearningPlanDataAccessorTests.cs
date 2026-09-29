@@ -129,6 +129,7 @@ namespace Dictation.Tests.DataAccess
             var result = await accessor.DeleteWordGroupAsync(
                 "Japanese",
                 groupId,
+                DateTimeOffset.UtcNow,
                 TestContext.Current.CancellationToken);
 
             Assert.Equal(DeleteLearningWordGroupResult.Deleted, result);
@@ -160,13 +161,13 @@ namespace Dictation.Tests.DataAccess
 
             Assert.Equal(
                 DeleteLearningWordGroupResult.NotFound,
-                await accessor.DeleteWordGroupAsync("Japanese", "missing", TestContext.Current.CancellationToken));
+                await accessor.DeleteWordGroupAsync("Japanese", "missing", DateTimeOffset.UtcNow, TestContext.Current.CancellationToken));
             Assert.Equal(
                 DeleteLearningWordGroupResult.WrongLanguage,
-                await accessor.DeleteWordGroupAsync("English", learningGroupId, TestContext.Current.CancellationToken));
+                await accessor.DeleteWordGroupAsync("English", learningGroupId, DateTimeOffset.UtcNow, TestContext.Current.CancellationToken));
             Assert.Equal(
                 DeleteLearningWordGroupResult.WrongPlacement,
-                await accessor.DeleteWordGroupAsync("Japanese", reviewGroupId, TestContext.Current.CancellationToken));
+                await accessor.DeleteWordGroupAsync("Japanese", reviewGroupId, DateTimeOffset.UtcNow, TestContext.Current.CancellationToken));
             Assert.Equal(1L, await CountRowsAsync(paths, "WordGroups", "WordGroupId", learningGroupId));
             Assert.Equal(1L, await CountRowsAsync(paths, "WordGroups", "WordGroupId", reviewGroupId));
         }
