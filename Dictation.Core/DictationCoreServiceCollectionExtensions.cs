@@ -2,6 +2,7 @@ using Dictation.Core.Configuration;
 using Dictation.Core.Importing;
 using Dictation.Core.Learning;
 using Dictation.Core.Lexicon;
+using Dictation.Core.Review;
 using Dictation.Core.SingleInstance;
 using Dictation.Core.Startup;
 using Dictation.Core.Tts;
@@ -59,6 +60,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<ILearningProgressReader>(serviceProvider =>
                 serviceProvider.GetRequiredService<LearningProgressService>());
             services.AddSingleton<AnswerEvaluationService>();
+            services.AddSingleton<FsrsScheduler>();
             return services;
         }
     }

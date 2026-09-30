@@ -19,6 +19,7 @@
   <ItemGroup>
     <Content Include="pen.ico" />
     <Content Include="Samples\*.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\LICENSES\py-fsrs.txt" Link="LICENSES\py-fsrs.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
