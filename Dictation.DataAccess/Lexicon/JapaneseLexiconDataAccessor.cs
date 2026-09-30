@@ -25,15 +25,20 @@ namespace Dictation.DataAccess.Lexicon
         /// <param name="normalizedQuery">已由业务层规范化的非空检索文本。</param>
         /// <param name="limit">最多返回的记录数，词库检索范围为 1–50。</param>
         /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        /// <param name="offset">跳过的有序条目数量。</param>
+        /// <param name="exactOnly">仅检索精确词形，不混入前缀建议。</param>
         /// <returns>按查询优先级排列的快照；无匹配时为空集合。</returns>
         public async Task<IReadOnlyList<JapaneseLexiconLookupPo>> SearchAsync(
             string normalizedQuery,
             int limit,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            int offset = 0,
+            bool exactOnly = false)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(normalizedQuery);
             ArgumentOutOfRangeException.ThrowIfLessThan(limit, 1);
             ArgumentOutOfRangeException.ThrowIfGreaterThan(limit, 50);
+            ArgumentOutOfRangeException.ThrowIfNegative(offset);
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
@@ -45,23 +50,27 @@ namespace Dictation.DataAccess.Lexicon
                     cancellationToken);
 
                 var escapedQuery = LexiconSqliteQuerySupport.EscapeLikePattern(normalizedQuery);
+                // 谓词仅由内部模式选择；用户输入始终使用 SQL 参数。
+                var matchCondition = exactOnly
+                    ? "Forms.Surface = @Query"
+                    : "Forms.Surface = @Query OR Forms.Surface LIKE @Prefix ESCAPE '\\'";
                 var entryIds = (await connection.QueryAsync<string>(new CommandDefinition(
-                    """
+                    $"""
                     SELECT Forms.EntryId
                     FROM Forms
                     INNER JOIN Entries ON Entries.EntryId = Forms.EntryId
-                    WHERE Forms.Surface = @Query
-                       OR Forms.Surface LIKE @Prefix ESCAPE '\'
+                    WHERE {matchCondition}
                     GROUP BY Forms.EntryId, Entries.SourceSequence, Entries.SenseIndex
                     ORDER BY MIN(CASE WHEN Forms.Surface = @Query THEN 0 ELSE 1 END),
                              Entries.SourceSequence, Entries.SenseIndex, Forms.EntryId
-                    LIMIT @Limit;
+                    LIMIT @Limit OFFSET @Offset;
                     """,
                     new
                     {
                         Query = normalizedQuery,
                         Prefix = escapedQuery + "%",
-                        Limit = limit
+                        Limit = limit,
+                        Offset = offset
                     },
                     cancellationToken: cancellationToken))).ToArray();
                 if (entryIds.Length == 0)

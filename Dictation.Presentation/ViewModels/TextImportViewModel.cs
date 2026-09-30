@@ -12,9 +12,11 @@ namespace Dictation.Presentation.ViewModels
     /// <summary>
     /// 管理固定语言的文本候选确认并复用统一导入收件箱。
     /// </summary>
-    public sealed class TextImportViewModel : INotifyPropertyChanged
+    public sealed class TextImportViewModel : INotifyPropertyChanged, IDisposable
     {
         private bool isInitialized;
+        private bool isDisposed;
+        private CancellationTokenSource? operationCancellation;
         private readonly ITextImportPreparation preparation;
         private readonly IImportStaging staging;
         private readonly IHomeNavigation navigation;
@@ -26,6 +28,7 @@ namespace Dictation.Presentation.ViewModels
         private readonly AsyncCommand prepareCommand;
         private readonly AsyncCommand stageCommand;
         private readonly AsyncCommand inboxCommand;
+        private readonly AsyncCommand cancelCommand;
 
         /// <summary>组合文本准备、整组暂存与首页页面导航能力。</summary>
         /// <param name="preparation">解析词表并查询精确来源义项。</param>
@@ -42,6 +45,7 @@ namespace Dictation.Presentation.ViewModels
             prepareCommand = new AsyncCommand(() => LoadTextAsync(SourceText), () => CanEdit);
             stageCommand = new AsyncCommand(async () => await StageSelectedAsync(), () => CanStage);
             inboxCommand = new AsyncCommand(() => OpenInboxAsync(), () => CanEdit);
+            cancelCommand = new AsyncCommand(() => { CancelOperation(); return Task.CompletedTask; }, () => IsBusy);
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -84,7 +88,7 @@ namespace Dictation.Presentation.ViewModels
                 }
             }
         }
-        public bool CanEdit => isInitialized && !IsBusy;
+        public bool CanEdit => isInitialized && !isDisposed && !IsBusy;
         public bool CanStage => CanEdit && SelectedCount > 0;
         public int SelectedCount => Lines.Count(line => line.IsSelected && line.CanSelect);
         public bool AreAllSelected
@@ -106,11 +110,37 @@ namespace Dictation.Presentation.ViewModels
         public ICommand StageSelectedCommand => stageCommand;
         public ICommand PrepareCommand => prepareCommand;
         public ICommand OpenInboxCommand => inboxCommand;
+        public ICommand CancelCommand => cancelCommand;
+
+        /// <summary>取消当前页面的输入准备或暂存，不撤销已经提交的批次。</summary>
+        public void CancelOperation()
+        {
+            operationCancellation?.Cancel();
+        }
+
+        /// <summary>页面作用域释放时停止未完成的操作。</summary>
+        public void Dispose()
+        {
+            if (isDisposed)
+            {
+                return;
+            }
+            isDisposed = true;
+            CancelOperation();
+            foreach (var line in Lines)
+            {
+                line.PropertyChanged -= OnLineChanged;
+            }
+            IsBusy = false;
+            OnPropertyChanged(nameof(CanEdit));
+            NotifySelectionChanged();
+        }
 
         /// <summary>绑定页面的唯一语言，防止候选跨语言复用。</summary>
         /// <param name="language">首页选定的学习语言。</param>
         public void Initialize(LearningLanguage language)
         {
+            ObjectDisposedException.ThrowIf(isDisposed, this);
             if (!Enum.IsDefined(language))
             {
                 throw new ArgumentOutOfRangeException(nameof(language));
@@ -150,15 +180,21 @@ namespace Dictation.Presentation.ViewModels
             ClearLines();
             StatusMessage = null;
             ErrorMessage = null;
-            IsBusy = true;
+            using var operation = BeginOperation(cancellationToken);
             try
             {
-                var text = await readText(cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
-                SetProperty(ref sourceText, text, nameof(SourceText));
-                var result = await preparation.PrepareAsync(SelectedLanguage, text, cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
-                foreach (var line in result.Lines)
+                var language = SelectedLanguage;
+                // SQLite 的异步 API 可能同步执行；输入解码和业务准备均离开 Dispatcher。
+                var prepared = await Task.Run(async () =>
+                {
+                    var text = await readText(operation.Token).ConfigureAwait(false);
+                    operation.Token.ThrowIfCancellationRequested();
+                    var result = await preparation.PrepareAsync(language, text, operation.Token).ConfigureAwait(false);
+                    return (Text: text, Result: result);
+                }, operation.Token);
+                operation.Token.ThrowIfCancellationRequested();
+                SetProperty(ref sourceText, prepared.Text, nameof(SourceText));
+                foreach (var line in prepared.Result.Lines)
                 {
                     var row = new TextImportLineViewModel(line);
                     row.PropertyChanged += OnLineChanged;
@@ -166,17 +202,27 @@ namespace Dictation.Presentation.ViewModels
                 }
                 StatusMessage = $"共 {Lines.Count} 项，未匹配 {Lines.Count(line => line.Candidates.Count == 0)} 项。多义词请先选择中文义项。";
             }
+            catch (OperationCanceledException) when (operation.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+            {
+                if (!isDisposed)
+                {
+                    StatusMessage = "已取消匹配，可重新准备词表。";
+                }
+            }
             catch (OperationCanceledException)
             {
                 throw;
             }
             catch (Exception exception)
             {
-                ErrorMessage = $"准备词表失败：{exception.Message}";
+                if (!isDisposed)
+                {
+                    ErrorMessage = $"准备词表失败：{exception.Message}";
+                }
             }
             finally
             {
-                IsBusy = false;
+                EndOperation();
             }
         }
 
@@ -199,13 +245,23 @@ namespace Dictation.Presentation.ViewModels
                 ErrorMessage = "请先选择要导入的义项。";
                 return null;
             }
-            IsBusy = true;
+            using var operation = BeginOperation(cancellationToken);
             try
             {
-                var result = await staging.StageAsync(
-                    new StageImportBatchRequestDto(SelectedLanguage, ImportSourceKind.Text, selections), cancellationToken);
+                var request = new StageImportBatchRequestDto(SelectedLanguage, ImportSourceKind.Text, selections);
+                var result = await Task.Run(() => staging.StageAsync(request, operation.Token), operation.Token);
+                operation.Token.ThrowIfCancellationRequested();
                 StatusMessage = $"已加入导入收件箱：新增 {result.AddedCount} 项，忽略重复 {result.DuplicateCount} 项。请在收件箱决定学习、复习或丢弃。";
                 return result;
+            }
+            catch (OperationCanceledException) when (operation.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+            {
+                if (!isDisposed)
+                {
+                    // 取消不是撤销：若事务已提交，批次仍可在统一收件箱查看。
+                    StatusMessage = "已取消暂存操作；已经提交的批次仍保留在收件箱。";
+                }
+                return null;
             }
             catch (OperationCanceledException)
             {
@@ -213,12 +269,15 @@ namespace Dictation.Presentation.ViewModels
             }
             catch (Exception exception)
             {
-                ErrorMessage = $"暂存词表失败：{exception.Message}";
+                if (!isDisposed)
+                {
+                    ErrorMessage = $"暂存词表失败：{exception.Message}";
+                }
                 return null;
             }
             finally
             {
-                IsBusy = false;
+                EndOperation();
             }
         }
 
@@ -268,10 +327,32 @@ namespace Dictation.Presentation.ViewModels
             prepareCommand.NotifyCanExecuteChanged();
             stageCommand.NotifyCanExecuteChanged();
             inboxCommand.NotifyCanExecuteChanged();
+            cancelCommand.NotifyCanExecuteChanged();
+        }
+
+        /// <summary>每次操作拥有独立的关联令牌，页面取消不会污染下一次重试。</summary>
+        /// <param name="cancellationToken">调用方取消令牌。</param>
+        /// <returns>由当前异步操作负责释放的取消源。</returns>
+        private CancellationTokenSource BeginOperation(CancellationToken cancellationToken)
+        {
+            operationCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            IsBusy = true;
+            return operationCancellation;
+        }
+
+        /// <summary>结束忙状态；已释放页面不得再通知旧界面或应用旧结果。</summary>
+        private void EndOperation()
+        {
+            operationCancellation = null;
+            if (!isDisposed)
+            {
+                IsBusy = false;
+            }
         }
 
         private void EnsureInitialized()
         {
+            ObjectDisposedException.ThrowIf(isDisposed, this);
             if (!isInitialized)
             {
                 throw new InvalidOperationException("文本导入页面尚未初始化。");

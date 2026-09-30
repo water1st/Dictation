@@ -87,8 +87,6 @@ namespace Dictation.Presentation.Navigation
             {
                 return;
             }
-            navigationOperationPending = true;
-            OnPropertyChanged(nameof(CanGoBack));
             var scope = scopeFactory.CreateScope();
             try
             {
@@ -107,11 +105,6 @@ namespace Dictation.Presentation.Navigation
                     scope.Dispose();
                 }
                 throw;
-            }
-            finally
-            {
-                navigationOperationPending = false;
-                OnPropertyChanged(nameof(CanGoBack));
             }
         }
 
@@ -350,6 +343,11 @@ namespace Dictation.Presentation.Navigation
 
             EnsureTransitionCompleted();
             var previousEntry = backStack[^1];
+            // 返回开始即取消导入，不能等退场动画结束才阻止后台暂存。
+            if (currentEntry?.ViewModel is TextImportViewModel textImport)
+            {
+                textImport.CancelOperation();
+            }
             navigationOperationPending = true;
             OnPropertyChanged(nameof(CanGoBack));
             try

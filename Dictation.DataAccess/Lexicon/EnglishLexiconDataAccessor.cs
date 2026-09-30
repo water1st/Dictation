@@ -25,15 +25,20 @@ namespace Dictation.DataAccess.Lexicon
         /// <param name="normalizedQuery">已由业务层规范化的非空检索文本。</param>
         /// <param name="limit">最多返回的记录数，词库检索范围为 1–50。</param>
         /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        /// <param name="offset">跳过的有序义项数量。</param>
+        /// <param name="exactOnly">仅检索精确词形，不混入前缀建议；英语字母忽略大小写。</param>
         /// <returns>按查询优先级排列的快照；无匹配时为空集合。</returns>
         public async Task<IReadOnlyList<EnglishLexiconLookupPo>> SearchAsync(
             string normalizedQuery,
             int limit,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            int offset = 0,
+            bool exactOnly = false)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(normalizedQuery);
             ArgumentOutOfRangeException.ThrowIfLessThan(limit, 1);
             ArgumentOutOfRangeException.ThrowIfGreaterThan(limit, 50);
+            ArgumentOutOfRangeException.ThrowIfNegative(offset);
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
@@ -45,25 +50,29 @@ namespace Dictation.DataAccess.Lexicon
                     cancellationToken);
 
                 var escapedQuery = LexiconSqliteQuerySupport.EscapeLikePattern(normalizedQuery);
+                // 谓词仅由内部模式选择；大小写策略与英语录入规范一致。
+                var matchCondition = exactOnly
+                    ? "Forms.Surface = @Query COLLATE NOCASE"
+                    : "Forms.Surface = @Query COLLATE NOCASE OR Forms.Surface LIKE @Prefix ESCAPE '\\'";
                 var learningSenseIds = (await connection.QueryAsync<string>(new CommandDefinition(
-                    """
+                    $"""
                     SELECT LearningSenses.LearningSenseId
                     FROM Forms
                     INNER JOIN Senses ON Senses.LexemeId = Forms.LexemeId
                     INNER JOIN LearningSenseSources ON LearningSenseSources.SenseId = Senses.SenseId
                     INNER JOIN LearningSenses ON LearningSenses.LearningSenseId = LearningSenseSources.LearningSenseId
-                    WHERE Forms.Surface = @Query
-                       OR Forms.Surface LIKE @Prefix ESCAPE '\'
+                    WHERE {matchCondition}
                     GROUP BY LearningSenses.LearningSenseId, LearningSenses.SortOrder
-                    ORDER BY MIN(CASE WHEN Forms.Surface = @Query THEN 0 ELSE 1 END),
+                    ORDER BY MIN(CASE WHEN Forms.Surface = @Query COLLATE NOCASE THEN 0 ELSE 1 END),
                              LearningSenses.SortOrder, LearningSenses.LearningSenseId
-                    LIMIT @Limit;
+                    LIMIT @Limit OFFSET @Offset;
                     """,
                     new
                     {
                         Query = normalizedQuery,
                         Prefix = escapedQuery + "%",
-                        Limit = limit
+                        Limit = limit,
+                        Offset = offset
                     },
                     cancellationToken: cancellationToken))).ToArray();
                 return await LoadLearningSensesAsync(connection, learningSenseIds, cancellationToken);

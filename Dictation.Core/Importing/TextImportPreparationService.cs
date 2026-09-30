@@ -56,9 +56,23 @@ namespace Dictation.Core.Importing
                     continue;
                 }
 
-                var results = await lexiconSearch.SearchAsync(
-                    new LexiconSearchRequestDto(language, query, 50),
-                    cancellationToken);
+                var results = new List<LexiconLookupResultDto>();
+                const int pageSize = 50;
+                var offset = 0;
+                // 普通查词仍限制每页大小；导入需要完整的精确义项，不能静默截断。
+                while (true)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var page = await lexiconSearch.SearchAsync(
+                        new LexiconSearchRequestDto(language, query, pageSize, offset, ExactOnly: true),
+                        cancellationToken);
+                    results.AddRange(page);
+                    if (page.Count < pageSize)
+                    {
+                        break;
+                    }
+                    offset += pageSize;
+                }
                 cancellationToken.ThrowIfCancellationRequested();
                 var candidates = results
                     .Where(result => result.Language == language && IsExactMatch(result, query, language))

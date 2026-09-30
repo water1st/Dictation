@@ -37,6 +37,7 @@ namespace Dictation.Core.Lexicon
             ArgumentException.ThrowIfNullOrWhiteSpace(normalizedQuery);
             ArgumentOutOfRangeException.ThrowIfLessThan(request.Limit, 1);
             ArgumentOutOfRangeException.ThrowIfGreaterThan(request.Limit, 50);
+            ArgumentOutOfRangeException.ThrowIfNegative(request.Offset);
             cancellationToken.ThrowIfCancellationRequested();
 
             return request.Language switch
@@ -44,11 +45,15 @@ namespace Dictation.Core.Lexicon
                 LearningLanguage.Japanese => (await japaneseAccessor.SearchAsync(
                     normalizedQuery,
                     request.Limit,
-                    cancellationToken)).Select(JapaneseLexiconMapper.Map).ToArray(),
+                    cancellationToken,
+                    request.Offset,
+                    request.ExactOnly)).Select(JapaneseLexiconMapper.Map).ToArray(),
                 LearningLanguage.English => (await englishAccessor.SearchAsync(
                     normalizedQuery,
                     request.Limit,
-                    cancellationToken)).Select(EnglishLexiconMapper.Map).ToArray(),
+                    cancellationToken,
+                    request.Offset,
+                    request.ExactOnly)).Select(EnglishLexiconMapper.Map).ToArray(),
                 _ => throw new ArgumentOutOfRangeException(nameof(request.Language), request.Language, "不支持的学习语言。")
             };
         }
