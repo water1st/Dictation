@@ -662,6 +662,42 @@ namespace Dictation.DataAccess.Runtime
                         FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE
                     );
                     CREATE INDEX IX_ReviewPlanGroups_WordGroupId ON ReviewPlanGroups (WordGroupId);
+                    """),
+                new SchemaMigration(
+                    9,
+                    "创建独立可恢复复习会话",
+                    """
+                    CREATE TABLE ReviewSessions (
+                        SessionId TEXT NOT NULL PRIMARY KEY,
+                        Language TEXT NOT NULL CHECK (Language IN ('Japanese', 'English')),
+                        Status TEXT NOT NULL CHECK (Status IN ('InProgress', 'Completed')),
+                        PlanJson TEXT NOT NULL CHECK (json_valid(PlanJson)),
+                        CreatedAtUtc TEXT NOT NULL,
+                        StartedLocalDate TEXT NOT NULL,
+                        CompletedAtUtc TEXT NULL
+                    );
+                    CREATE UNIQUE INDEX UX_ReviewSessions_ActiveLanguage
+                        ON ReviewSessions (Language) WHERE Status = 'InProgress';
+                    CREATE TABLE ReviewSessionGroups (
+                        SessionId TEXT NOT NULL,
+                        WordGroupId TEXT NOT NULL,
+                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
+                        CompletedLocalDate TEXT NULL,
+                        PRIMARY KEY (SessionId, WordGroupId),
+                        UNIQUE (SessionId, SortOrder),
+                        FOREIGN KEY (SessionId) REFERENCES ReviewSessions (SessionId) ON DELETE CASCADE,
+                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE
+                    );
+                    CREATE INDEX IX_ReviewSessionGroups_WordGroupId ON ReviewSessionGroups (WordGroupId);
+                    CREATE TABLE ReviewSessionForms (
+                        SessionId TEXT NOT NULL,
+                        WordGroupId TEXT NOT NULL,
+                        MemberId INTEGER NOT NULL,
+                        FormCode TEXT NOT NULL CHECK (length(trim(FormCode)) > 0),
+                        PRIMARY KEY (SessionId, MemberId, FormCode),
+                        FOREIGN KEY (SessionId, WordGroupId) REFERENCES ReviewSessionGroups (SessionId, WordGroupId) ON DELETE CASCADE,
+                        FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE
+                    );
                     """)
             };
         }

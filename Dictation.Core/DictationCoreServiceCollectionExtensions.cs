@@ -69,6 +69,10 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IReviewPlanReader>(provider => provider.GetRequiredService<ReviewPlanService>());
             services.AddSingleton<IReviewPlanEditor>(provider => provider.GetRequiredService<ReviewPlanService>());
             services.AddSingleton<IReviewLibraryManager>(provider => provider.GetRequiredService<ReviewPlanService>());
+            services.AddSingleton<ReviewSessionSelectionPlanner>();
+            services.AddSingleton<ReviewSessionService>();
+            services.AddSingleton<IReviewSessionStarter>(provider => provider.GetRequiredService<ReviewSessionService>());
+            services.AddSingleton<IReviewSessionReader>(provider => provider.GetRequiredService<ReviewSessionService>());
             return services;
         }
     }

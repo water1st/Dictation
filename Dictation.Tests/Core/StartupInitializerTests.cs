@@ -48,6 +48,9 @@ namespace Dictation.Tests.Core
                     "ReviewPlanGroups",
                     "ReviewPlanOutputs",
                     "ReviewPlans",
+                    "ReviewSessionForms",
+                    "ReviewSessionGroups",
+                    "ReviewSessions",
                     "SchemaMigrations",
                     "WordGroupForms",
                     "WordGroupMeanings",
@@ -55,7 +58,7 @@ namespace Dictation.Tests.Core
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3, 4, 5, 6, 7, 8 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]
@@ -90,6 +93,9 @@ namespace Dictation.Tests.Core
                     "ReviewPlanGroups",
                     "ReviewPlanOutputs",
                     "ReviewPlans",
+                    "ReviewSessionForms",
+                    "ReviewSessionGroups",
+                    "ReviewSessions",
                     "SchemaMigrations",
                     "WordGroupForms",
                     "WordGroupMeanings",
@@ -97,7 +103,7 @@ namespace Dictation.Tests.Core
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3, 4, 5, 6, 7, 8 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]
@@ -135,6 +141,9 @@ namespace Dictation.Tests.Core
                     "ReviewPlanGroups",
                     "ReviewPlanOutputs",
                     "ReviewPlans",
+                    "ReviewSessionForms",
+                    "ReviewSessionGroups",
+                    "ReviewSessions",
                     "SchemaMigrations",
                     "WordGroupForms",
                     "WordGroupMeanings",
@@ -142,7 +151,7 @@ namespace Dictation.Tests.Core
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3, 4, 5, 6, 7, 8 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]

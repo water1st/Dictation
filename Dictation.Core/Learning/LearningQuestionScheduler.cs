@@ -244,38 +244,13 @@ namespace Dictation.Core.Learning
             LearningPlanDto plan,
             LearningLanguage language)
         {
-            return plan.OutputModes.Where(output =>
-            {
-                if (language == LearningLanguage.English)
-                {
-                    return output == LearningOutputMode.Latin && unit.Variants.Count > 0;
-                }
-
-                return output switch
-                {
-                    LearningOutputMode.Kana => unit.Variants.Any(variant =>
-                        string.Equals(variant.ScriptCode, "Kana", StringComparison.Ordinal)),
-                    LearningOutputMode.Kanji => string.Equals(
-                            unit.KanjiUsageCode,
-                            "Common",
-                            StringComparison.Ordinal)
-                        && unit.Variants.Any(variant =>
-                            string.Equals(variant.ScriptCode, "Kanji", StringComparison.Ordinal)),
-                    _ => false
-                };
-            }).ToArray();
+            return plan.OutputModes.Where(output => PracticeFormApplicability.HasOutput(
+                language, unit.KanjiUsageCode, unit.Variants.Select(variant => variant.ScriptCode), output)).ToArray();
         }
 
         private static bool IsApplicableForm(LearningFormUnitPo unit, LearningLanguage language)
         {
-            if (!unit.IsPhrase)
-            {
-                return true;
-            }
-
-            return language == LearningLanguage.English
-                ? string.Equals(unit.FormCode, "Base", StringComparison.Ordinal)
-                : string.Equals(unit.FormCode, "Dictionary", StringComparison.Ordinal);
+            return PracticeFormApplicability.IsFormApplicable(language, unit.IsPhrase, unit.FormCode);
         }
 
         private static int GetChannelCount(LearningFormUnitPo unit, LearningChannel channel)

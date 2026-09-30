@@ -22,7 +22,7 @@ namespace Dictation.Tests.DataAccess
             await using var connection = new SqliteConnectionFactory(environment.Paths).CreateConnection();
             await connection.OpenAsync(TestContext.Current.CancellationToken);
 
-            Assert.Equal(8L, await connection.ExecuteScalarAsync<long>("SELECT MAX(Version) FROM SchemaMigrations;"));
+            Assert.Equal(9L, await connection.ExecuteScalarAsync<long>("SELECT MAX(Version) FROM SchemaMigrations;"));
             var tables = (await connection.QueryAsync<string>(
                 "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'Learning%' ORDER BY name;"))
                 .ToArray();
