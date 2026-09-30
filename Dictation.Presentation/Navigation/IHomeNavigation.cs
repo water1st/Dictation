@@ -7,6 +7,11 @@ namespace Dictation.Presentation.Navigation
     /// </summary>
     public interface IHomeNavigation
     {
+        /// <summary>打开固定语言的只读复习词库页面。</summary>
+        /// <param name="language">首页选定语言。</param>
+        /// <param name="cancellationToken">取消导航和首轮加载的令牌。</param>
+        Task OpenReviewLibraryAsync(LearningLanguage language, CancellationToken cancellationToken = default);
+
         /// <summary>打开固定语言的文本词表导入页面。</summary>
         /// <param name="language">首页选定的学习语言。</param>
         /// <param name="initialFilePath">可选的首次加载 TXT 路径。</param>

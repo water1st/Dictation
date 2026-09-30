@@ -1,6 +1,6 @@
 # FSRS 记忆与复习队列验证记录
 
-本计划分片执行；当前完成数值内核和学习完成后的原子记忆初始化，不表示复习答题、队列页面或每日计划已经交付。最终验收仍在原 `Dictation` 目录，OCR 后置。
+本计划分片执行；当前完成数值内核、学习完成后的原子记忆初始化与只读复习词库页面，不表示复习答题或每日计划已经交付。最终验收仍在原 `Dictation` 目录，OCR 后置。
 
 ## 数值内核
 
@@ -45,7 +45,7 @@ dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-bu
 dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 1537
 ```
 
-## 风险队列查询能力（页面尚未接入）
+## 风险队列查询能力
 
 通过 `IReviewLibraryQuery` 复用实际 Core→DataAccess→SQLite 链路；延迟只读事务读取词组、共享成员快照与记忆，保持一次查询的快照一致性。中文释义映射复用已有词组 Mapper；FSRS 保持率只由 Core 计算。未测试旧词在最前，其后按最低预计保持率排序，同级依到期时间、创建时间及标识稳定排列。
 
@@ -58,6 +58,25 @@ dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-bu
 dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 1549
 ```
 
+## 单窗口复习词库页面
+
+首页固定当前语言进入圆角词组列表，选中后展示各成员词形的记忆详情。页面复用唯一导航容器、页面作用域和转场释放；先呈现页面再后台读取 SQLite，读取中可以取消或返回，取消后即使业务返回较晚也不能回写旧页。刷新保留所选词组，读取异常显示可重试状态；无第二窗口、语言切换或假答题按钮。
+
+`ReviewLibraryPageTests.cs` 冻结 SHA-256 `C8900373AB089D04C00C83173495622D00943A3979769876CECA38E1F5185983`。API 编译适配后，可编译页面／导航骨架实际执行 **10 项，10 个行为断言失败**；随后只修改生产实现，**10/10**。恢复工作时不重写已验证查询或重复 RED，继续原冻结批次。
+
+STA 真实模板渲染发现 ListBox 继承系统前景色。补 `ReviewLibraryThemeTests.cs` 并冻结 `B4A6722252B71E474A0C51DC91D645D85367810F99618CFAD15D784EE73BA813`：先构建 **0 警告／错误**，实际 **1 项失败**（期望主题色 `#FF1F2937`，实际系统黑色 `#FF000000`）；只补生产 ListBox 动态前景色后同哈希 **1/1**，包含浅色→深色切换与选中卡片。未修改原冻结页面测试。
+
+正式词库冒烟使用既有两个 schema v2 数据库的只读硬链接和独立空用户数据库，实际从 DI 调用导入、确认学习、计划、作答、记忆查询、WPF 页渲染与返回：日语 `jmdict:1358280:1`（吃／食用）2 次正确作答，英语动词 `go%2:38:00::`（离开／移动／行动／行进／运行）2 次正确作答；两种语言分别计 1 组、1 个已评价形式，下次日期均为 2026-10-02，页面返回成功。冒烟工具最初将 Latin 输出方式误当词库 ScriptCode，造成取不到英文答案；仅修工具的 SQL 过滤，未改生产实现或测试。正式词库未重新生成，原预览 `DATA/UserData.db` 保持 196608 字节及 2026-09-29 17:41:03 修改时间。
+
+页面完成后的全量 **1560/1560**，失败／跳过均为 0；solution 构建 **0 警告、0 错误**；两个冻结页面测试哈希相同，`git diff --check` 通过。独立最终审查在本计划收尾时补充。未做人工点击验收；界面证据为 STA 绑定、实际模板渲染及正式资源端到端冒烟，不将这些描述为用户手工验收。
+
+```powershell
+dotnet build Dictation.sln --configuration Debug --no-restore
+dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --filter-class '*ReviewLibraryPageTests' --minimum-expected-tests 10
+dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --filter-class '*ReviewLibraryThemeTests' --minimum-expected-tests 1
+dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 1560
+```
+
 ## 待接通的下一步
 
-接通风险复习词库页面，并完成本计划独立最终审查。复习答题、错题、五十音、MCP、统计、完整 ZIP 更新发布和 OCR 仍属于未完成 GOAL，不在本计划现有证据中声称完成。最终完成原 `Dictation` 目录整合后，只清理本次创建的临时工作区和备份，不影响其它项目或用户数据。
+完成本计划独立最终审查后继续复习答题。复习答题、错题、五十音、MCP、统计、完整 ZIP 更新发布和 OCR 仍属于未完成 GOAL，不在本计划现有证据中声称完成。最终完成原 `Dictation` 目录整合后，只清理本次创建的临时工作区和备份，不影响其它项目或用户数据。

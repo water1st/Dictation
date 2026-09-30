@@ -190,6 +190,23 @@
                     </Grid>
                 </Button>
 
+                <Button Command="{Binding OpenReviewLibraryCommand}" HorizontalContentAlignment="Stretch">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource LanguageCardButtonStyle}">
+                            <Setter Property="Margin" Value="0,12,0,0" />
+                            <Setter Property="Padding" Value="18,14" />
+                        </Style>
+                    </Button.Style>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock FontSize="25" Foreground="{DynamicResource AccentBrush}" Text="↻" />
+                        <StackPanel Margin="14,0,0,0">
+                            <TextBlock FontSize="17" FontWeight="SemiBold" Text="复习词库" />
+                            <TextBlock Margin="0,3,0,0" Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                       Text="查看待测词组、薄弱词形与下次复习时间" />
+                        </StackPanel>
+                    </StackPanel>
+                </Button>
+
                 <Button Command="{Binding OpenLearningPlanCommand}"
                         HorizontalContentAlignment="Stretch">
                     <Button.Style>

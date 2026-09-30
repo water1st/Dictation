@@ -26,5 +26,8 @@
         <DataTemplate DataType="{x:Type viewModels:LearningSessionViewModel}">
             <views:LearningSessionPage />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:ReviewLibraryViewModel}">
+            <views:ReviewLibraryPage />
+        </DataTemplate>
     </Application.Resources>
 </Application>

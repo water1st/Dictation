@@ -76,6 +76,35 @@ namespace Dictation.Presentation.Navigation
         }
 
         /// <inheritdoc />
+        public async Task OpenReviewLibraryAsync(LearningLanguage language, CancellationToken cancellationToken = default)
+        {
+            ValidateLanguage(language);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!TryPrepareForwardNavigation())
+            {
+                return;
+            }
+
+            var scope = scopeFactory.CreateScope();
+            try
+            {
+                var viewModel = scope.ServiceProvider.GetRequiredService<ReviewLibraryViewModel>();
+                viewModel.Initialize(language);
+                NavigateForward(new NavigationEntry(viewModel, viewModel.WindowTitle, language, scope, null));
+                // 先展示页面，读取期间仍允许取消和返回；加载不能锁住导航栈。
+                await viewModel.RefreshAsync(cancellationToken);
+            }
+            catch
+            {
+                if (!ReferenceEquals(currentEntry?.Scope, scope))
+                {
+                    scope.Dispose();
+                }
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
         public async Task OpenTextImportAsync(
             LearningLanguage language,
             string? initialFilePath = null,
@@ -347,6 +376,10 @@ namespace Dictation.Presentation.Navigation
             if (currentEntry?.ViewModel is TextImportViewModel textImport)
             {
                 textImport.CancelOperation();
+            }
+            if (currentEntry?.ViewModel is ReviewLibraryViewModel reviewLibrary)
+            {
+                reviewLibrary.CancelOperation();
             }
             navigationOperationPending = true;
             OnPropertyChanged(nameof(CanGoBack));

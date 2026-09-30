@@ -394,6 +394,8 @@ namespace Dictation.Tests.Presentation
 
         private sealed class RecordingHomeNavigation : IHomeNavigation
         {
+            public Task OpenReviewLibraryAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
             public Task OpenTextImportAsync(LearningLanguage language, string? initialFilePath = null,
                 CancellationToken cancellationToken = default) => Task.CompletedTask;
 
