@@ -49,6 +49,7 @@ namespace Dictation.Presentation
             services.AddScoped<LexiconLookupViewModel>();
             services.AddScoped<TextImportViewModel>();
             services.AddScoped<ReviewLibraryViewModel>();
+            services.AddScoped<ReviewPlanViewModel>();
             services.AddSingleton<Utf8TextFileReader>();
             services.AddSingleton<StartupTextImport>();
             services.AddScoped<ImportInboxListViewModel>();

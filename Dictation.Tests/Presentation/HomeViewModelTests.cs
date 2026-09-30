@@ -368,6 +368,7 @@ namespace Dictation.Tests.Presentation
 
         private sealed class RejectingHomeNavigation : IHomeNavigation
         {
+            public Task OpenReviewPlanAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.CompletedTask;
             public Task OpenReviewLibraryAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
             public Task OpenTextImportAsync(LearningLanguage language, string? initialFilePath = null,

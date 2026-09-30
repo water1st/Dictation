@@ -76,6 +76,33 @@ namespace Dictation.Presentation.Navigation
         }
 
         /// <inheritdoc />
+        public async Task OpenReviewPlanAsync(LearningLanguage language, CancellationToken cancellationToken = default)
+        {
+            ValidateLanguage(language);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!TryPrepareForwardNavigation())
+            {
+                return;
+            }
+            var scope = scopeFactory.CreateScope();
+            try
+            {
+                var viewModel = scope.ServiceProvider.GetRequiredService<ReviewPlanViewModel>();
+                viewModel.Initialize(language);
+                NavigateForward(new NavigationEntry(viewModel, viewModel.WindowTitle, language, scope, null));
+                await viewModel.RefreshAsync(cancellationToken);
+            }
+            catch
+            {
+                if (!ReferenceEquals(currentEntry?.Scope, scope))
+                {
+                    scope.Dispose();
+                }
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
         public async Task OpenReviewLibraryAsync(LearningLanguage language, CancellationToken cancellationToken = default)
         {
             ValidateLanguage(language);
@@ -380,6 +407,10 @@ namespace Dictation.Presentation.Navigation
             if (currentEntry?.ViewModel is ReviewLibraryViewModel reviewLibrary)
             {
                 reviewLibrary.CancelOperation();
+            }
+            if (currentEntry?.ViewModel is ReviewPlanViewModel reviewPlan)
+            {
+                reviewPlan.CancelOperation();
             }
             navigationOperationPending = true;
             OnPropertyChanged(nameof(CanGoBack));

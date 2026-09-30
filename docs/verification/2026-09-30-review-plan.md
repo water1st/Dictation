@@ -38,4 +38,46 @@ dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-bu
 git diff --check
 ```
 
-最终 solution 构建 **0 警告／0 错误**，全量 **1616/1616**、失败／跳过均为 0，静态 diff 检查通过。源码无新增数据库；用户下载资源及现有预览进度未被使用或覆盖。Task 2 页面仍待接通，不能把本阶段服务验证描述为 UI 已交付或整个 GOAL 完成。
+最终 solution 构建 **0 警告／0 错误**，全量 **1616/1616**、失败／跳过均为 0，静态 diff 检查通过。源码无新增数据库；用户下载资源及现有预览进度未被使用或覆盖。这是业务阶段验证，不是 UI 交付或整个 GOAL 完成。
+
+## Task 2：单窗口复习计划页面
+
+首页按当前语言进入 scoped ViewModel 与 UserControl，复用唯一导航栈、确认弹层。后台读写可取消；返回或释放取消操作，晚完成不回写旧页面。学习与复习共享纯选项工厂，但各自创建选项实例，不共享选择。
+
+### RED → GREEN 及冻结
+
+首次页面 RED 有空集合索引越界，**该页面批次证据作废**。GREEN 前补“应加载两组”的前置断言，重新冻结、构建成功，实际页面 **7/7 行为断言失败**；生命周期 **6/6 行为断言失败**。GREEN 首轮名词标签缺词性，由生产展示组件修正，不修改冻结测试。
+
+正式深色截图发现选项仍是黑色，另补主题 **2/2 RED**（前景色断言）和例词选择 **1/1 RED**（没有可辨义项的主题列表），均编译成功后真实执行。随后只修 XAML，聚焦 **2/2、1/1**；原页面 **7/7**、生命周期 **6/6**。
+
+| `Dictation.Tests/` 文件 | RED 前与 GREEN 后相同 SHA-256 |
+| --- | --- |
+| `Presentation/ReviewPlanPageTests.cs` | `990AF8ABC587808E8D5286754303D5377146677FACDF8181431C2AB42D419629` |
+| `Presentation/ReviewPlanLifecycleTests.cs` | `F1FA2D6412DC77A6EA1D143C54A4B4C20CE612597E6CF13F0BC42377C1479F89` |
+| `Infrastructure/ReviewPlanPresentationTestHost.cs` | `5A93B6B9C11BA22E65AF5FCE84EEA984106B0933DC81159D8C6F548AF29E4566` |
+| `Presentation/HomeViewModelTests.cs` | `A11AB09FA74195A7D8926BB190465665A10299C59623F7A15F4936DFD402BD42` |
+| `Presentation/LearningSessionNavigationAndRenderingTests.cs` | `8EC592CD25BCDAEE02757C1BEC6932C6589B3FC205A7255CD437FD962B1EC79A` |
+| `Architecture/CoreLayerArchitectureTests.cs` | `D139D43D2C63AE3EF6511A680FFECF3A6AAB8E086AF34A3C0DE8F19360FAE10A` |
+| `Presentation/ReviewPlanThemeTests.cs` | `E9B0311606D950861EBC25648A2AF9043E76F863538937B6077D39A80438E340` |
+| `Presentation/ReviewPlanExampleSelectionTests.cs` | `E1D0A9AF38A630AAC376122FFFD53DEDB5E86F70F6D8F19813D605FA811BF043` |
+
+最终 `dotnet build Dictation.sln --configuration Debug --no-restore`：**零警告／错误**。`dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 1632`：**1632/1632**，失败／跳过均为零。一次错误中间通配符过滤运行零项，明确不计通过，后改用各类精确后缀过滤。
+
+### 正式词库隔离冒烟
+
+临时 STA 工具在本计划隔离运行目录，通过真实 DI、导航、Core 与 SQLite 只读使用现有正式词库，不重新生成或读取预览用户数据库。`食べる` 显示“吃；食用”，`go` 显示“离开；移动；行动；行进；运行”；日英分别保存每日 11／7 组、每轮 2 组、指定范围。重开与重启一致；确认删除日语组，英语组保留，日语范围级联清除。
+
+实际输出 `Passed=true, Restart=true, ConfirmedDelete=true`；应用 DataTemplate 创建 UserControl，未新增 Window。浅深截图实际查看；这是无窗口 STA 渲染和真实业务冒烟，不是人工整机点击验收。
+
+初次 NuGet 使用沙箱空缓存且网络拒绝，未运行冒烟；随后仅指向现有用户缓存离线还原成功，未安装工具或新增依赖，最终冒烟使用 `--no-restore`。
+
+原预览用户数据库仍为 **196608 字节，修改时间 2026-09-29 17:41:03**。词库 SHA-256：日语 `EE4411EA2766AFCD3261BFAEC7599DFD6F42AB184C3391C23496D1504999C734`，英语 `151F960A23FFE0008E445F893892321131466921E4A8FBB68A32972135A8302B`。
+
+### 执行裁决
+
+1. 只落实已批准规格，自主继续非 OCR，不另开 GOAL 或新增产品选项；判断错误时修正执行安排，不能把安排当新增需求授权。
+2. 勾选是范围，删除作用于点击选中的详情词组且需确认；全部包含后续加入词。若需批量删除，另加明确命令，不能让复选框隐式删除。
+3. 数量使用 1–500 整数滑块以避免文本解析失败后保存旧值；若数字输入更顺手，后续替换正确验证的输入控件，不改 API。
+4. 英语例词用固定高度主题列表展示中文义项，避免默认下拉白底白字与同词头难辨义；若需紧凑显示，只换呈现，不改业务规则。
+
+复习答题、五十音、MCP、统计、更新发布及 OCR 仍为完整 GOAL 后续工作，不据本切片结束整个目标。

@@ -207,6 +207,23 @@
                     </StackPanel>
                 </Button>
 
+                <Button Command="{Binding OpenReviewPlanCommand}" HorizontalContentAlignment="Stretch">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource LanguageCardButtonStyle}">
+                            <Setter Property="Margin" Value="0,12,0,0" />
+                            <Setter Property="Padding" Value="18,14" />
+                        </Style>
+                    </Button.Style>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock FontSize="25" Foreground="{DynamicResource AccentBrush}" Text="⚙" />
+                        <StackPanel Margin="14,0,0,0">
+                            <TextBlock FontSize="17" FontWeight="SemiBold" Text="复习计划" />
+                            <TextBlock Margin="0,3,0,0" Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                       Text="设置每日目标、练习形式与整组范围" />
+                        </StackPanel>
+                    </StackPanel>
+                </Button>
+
                 <Button Command="{Binding OpenLearningPlanCommand}"
                         HorizontalContentAlignment="Stretch">
                     <Button.Style>

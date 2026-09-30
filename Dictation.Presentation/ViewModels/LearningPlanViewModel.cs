@@ -581,35 +581,19 @@ namespace Dictation.Presentation.ViewModels
         private void BuildOptions(LearningLanguage language)
         {
             FormOptions.Clear();
-            var forms = language == LearningLanguage.Japanese
-                ? new[]
-                {
-                    ("Dictionary", "普通形"), ("Polite", "礼貌形"), ("Te", "て形"), ("Ta", "た形")
-                }
-                : new[]
-                {
-                    ("Base", "原形"), ("PresentFirstPersonSingular", "第一人称单数"),
-                    ("PresentNonThirdPerson", "非第三人称现在式"), ("ThirdPersonSingular", "第三人称单数"),
-                    ("Past", "过去式"), ("PastParticiple", "过去分词"), ("PresentParticiple", "现在分词"),
-                    ("Plural", "复数"), ("Comparative", "比较级"), ("Superlative", "最高级")
-                };
-            foreach (var (code, label) in forms)
+            foreach (var option in PracticePlanOptionFactory.CreateForms(language))
             {
-                FormOptions.Add(new LearningPlanOptionViewModel(code, label));
+                FormOptions.Add(option);
             }
-
             ChannelOptions.Clear();
-            ChannelOptions.Add(new LearningPlanOptionViewModel("MeaningWriting", "看义默写"));
-            ChannelOptions.Add(new LearningPlanOptionViewModel("Dictation", "听写"));
-            OutputOptions.Clear();
-            if (language == LearningLanguage.Japanese)
+            foreach (var option in PracticePlanOptionFactory.CreateChannels())
             {
-                OutputOptions.Add(new LearningPlanOptionViewModel("Kana", "假名"));
-                OutputOptions.Add(new LearningPlanOptionViewModel("Kanji", "汉字"));
+                ChannelOptions.Add(option);
             }
-            else
+            OutputOptions.Clear();
+            foreach (var option in PracticePlanOptionFactory.CreateOutputs(language))
             {
-                OutputOptions.Add(new LearningPlanOptionViewModel("Latin", "英文字母"));
+                OutputOptions.Add(option);
             }
         }
 

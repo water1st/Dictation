@@ -18,7 +18,7 @@ namespace Dictation.Presentation.ViewModels
         public string WordGroupId => Value.WordGroup.WordGroupId;
         public string HeadwordLabel => string.Join(" / ", Value.WordGroup.Members.Select(member => member.Headword));
         public string MeaningLabel => string.Join("；", Value.WordGroup.Members.SelectMany(member => member.Meanings).Distinct());
-        public string AttributeLabel => string.Join(" / ", Value.WordGroup.Members.Select(member => member.AttributeLabel).Distinct());
+        public string AttributeLabel => string.Join(" / ", Value.WordGroup.Members.Select(member => $"{member.PartOfSpeechLabel} · {member.AttributeLabel}").Distinct());
         public string StateLabel => Value.NeedsInitialTest ? "待测" : Value.IsDue ? "已到期" : "未到期";
         public string NextReviewLabel => Value.NextReviewAtUtc?.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.CurrentCulture) ?? "尚未测试";
         public string RetentionLabel => Value.EstimatedRetention?.ToString("P0", CultureInfo.CurrentCulture) ?? "暂无预测";
