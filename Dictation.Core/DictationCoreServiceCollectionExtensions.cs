@@ -62,6 +62,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<AnswerEvaluationService>();
             services.AddSingleton<FsrsScheduler>();
             services.AddSingleton<LearningMemorySeedPlanner>();
+            services.AddSingleton<IReviewLibraryQuery, ReviewLibraryService>();
             return services;
         }
     }

@@ -45,6 +45,19 @@ dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-bu
 dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 1537
 ```
 
+## 风险队列查询能力（页面尚未接入）
+
+通过 `IReviewLibraryQuery` 复用实际 Core→DataAccess→SQLite 链路；延迟只读事务读取词组、共享成员快照与记忆，保持一次查询的快照一致性。中文释义映射复用已有词组 Mapper；FSRS 保持率只由 Core 计算。未测试旧词在最前，其后按最低预计保持率排序，同级依到期时间、创建时间及标识稳定排列。
+
+组内日语汉字／假名变体共享成员词形记忆，英语 `go` 和 `convert` 保留各自范式但整个导入组仍计 1 词。查看全部词形不代表启用全部词形：有已有记忆的学习完成组，未学习的其它形式显示未评价，但不因此将该组提前到期；后续复习会话必须按真正启用的复习范围处理它们。整组从未评价才显示待测，没有伪造 Good 或学习历史。
+
+`ReviewLibraryServiceTests.cs` 冻结 SHA-256：`1E8812405364CCE8A84659427C25FCE5C45354A7ECEDCE86B2377531BD16D0DA`。可编译空查询骨架执行 **12 项，10 项行为失败、2 项通过**；失败包括遗漏旧词、错误计数、语言／取消校验缺失、风险队列为空。冻结后只改生产实现，相同哈希 **12/12**，全量 **1549/1549**，0 跳过，solution 构建 **0 警告、0 错误**，`git diff --check` 通过。测试还验证查看不改变稳定度、评价次数、到期日或答题历史，以及删除组后队列与记忆同时移除。
+
+```powershell
+dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --filter-class '*ReviewLibraryServiceTests' --minimum-expected-tests 12
+dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 1549
+```
+
 ## 待接通的下一步
 
 接通风险复习词库页面，并完成本计划独立最终审查。复习答题、错题、五十音、MCP、统计、完整 ZIP 更新发布和 OCR 仍属于未完成 GOAL，不在本计划现有证据中声称完成。最终完成原 `Dictation` 目录整合后，只清理本次创建的临时工作区和备份，不影响其它项目或用户数据。
