@@ -31,7 +31,7 @@
 
 ### Task 1: Core 文本准备与精确候选
 
-**Files:** 新增 `Dictation.Core/Importing/TextImportLineDto.cs`、`TextImportCandidateDto.cs`、`TextImportPreparationDto.cs`、`TextImportPreparationService.cs`、`ITextImportPreparation.cs`；修改 `Dictation.Core/DictationCoreServiceCollectionExtensions.cs`；新增 `Dictation.Tests/Importing/TextImportPreparationServiceTests.cs`。
+**Files:** 新增 `Dictation.Core/Importing/TextImportLineDto.cs`、`TextImportPreparationDto.cs`、`TextImportPreparationService.cs`、`ITextImportPreparation.cs`；修改 `Dictation.Core/DictationCoreServiceCollectionExtensions.cs`；新增 `Dictation.Tests/Core/TextImportPreparationServiceTests.cs`。候选直接复用现有 `LexiconLookupResultDto`，不复制一套相同字段和 Mapper。
 
 **Interfaces:** Produces `ITextImportPreparation.PrepareAsync(LearningLanguage language, string text, CancellationToken cancellationToken)` → `TextImportPreparationDto`。每个非重复来源行返回原文、行号、精确候选列表及默认选择（仅单候选）；Service 只读词库，不暂存。
 

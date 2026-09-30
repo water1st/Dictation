@@ -37,6 +37,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 serviceProvider.GetRequiredService<ImportInboxService>());
             services.AddSingleton<IImportInboxActions>(serviceProvider =>
                 serviceProvider.GetRequiredService<ImportInboxService>());
+            services.AddSingleton<ITextImportPreparation, TextImportPreparationService>();
             services.AddSingleton(TimeProvider.System);
             services.AddSingleton(Random.Shared);
             services.AddSingleton<LearningPlanService>();
