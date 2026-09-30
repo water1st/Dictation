@@ -607,6 +607,61 @@ namespace Dictation.DataAccess.Runtime
                         FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE
                     );
                     CREATE INDEX IX_ReviewFormMemories_WordGroupId ON ReviewFormMemories (WordGroupId);
+                    """),
+                new SchemaMigration(
+                    8,
+                    "创建独立复习计划与整组范围",
+                    """
+                    CREATE TABLE ReviewPlans (
+                        Language TEXT NOT NULL PRIMARY KEY CHECK (Language IN ('Japanese', 'English')),
+                        DailyReviewTarget INTEGER NOT NULL CHECK (DailyReviewTarget BETWEEN 1 AND 500),
+                        SessionWordLimit INTEGER NOT NULL CHECK (SessionWordLimit BETWEEN 1 AND 500),
+                        RangeMode TEXT NOT NULL CHECK (RangeMode IN ('All', 'Selected')),
+                        EnglishFormLabelMode TEXT NOT NULL CHECK (EnglishFormLabelMode IN ('GrammarName', 'ExampleParadigm')),
+                        EnglishExampleSourceSenseId TEXT,
+                        UpdatedAtUtc TEXT NOT NULL,
+                        CHECK (Language = 'English' OR (EnglishFormLabelMode = 'GrammarName' AND EnglishExampleSourceSenseId IS NULL)),
+                        CHECK ((EnglishFormLabelMode = 'GrammarName' AND EnglishExampleSourceSenseId IS NULL)
+                            OR (EnglishFormLabelMode = 'ExampleParadigm' AND EnglishExampleSourceSenseId IS NOT NULL AND LENGTH(TRIM(EnglishExampleSourceSenseId)) > 0))
+                    );
+                    CREATE TABLE ReviewPlanForms (
+                        Language TEXT NOT NULL,
+                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
+                        FormCode TEXT NOT NULL,
+                        PRIMARY KEY (Language, FormCode),
+                        UNIQUE (Language, SortOrder),
+                        CHECK ((Language = 'Japanese' AND FormCode IN ('Dictionary', 'Polite', 'Te', 'Ta'))
+                            OR (Language = 'English' AND FormCode IN ('Base', 'PresentFirstPersonSingular', 'PresentNonThirdPerson',
+                                'ThirdPersonSingular', 'Past', 'PastParticiple', 'PresentParticiple', 'Plural', 'Comparative', 'Superlative'))),
+                        FOREIGN KEY (Language) REFERENCES ReviewPlans (Language) ON DELETE CASCADE
+                    );
+                    CREATE TABLE ReviewPlanChannels (
+                        Language TEXT NOT NULL,
+                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
+                        Channel TEXT NOT NULL CHECK (Channel IN ('MeaningWriting', 'Dictation')),
+                        PRIMARY KEY (Language, Channel),
+                        UNIQUE (Language, SortOrder),
+                        FOREIGN KEY (Language) REFERENCES ReviewPlans (Language) ON DELETE CASCADE
+                    );
+                    CREATE TABLE ReviewPlanOutputs (
+                        Language TEXT NOT NULL,
+                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
+                        OutputMode TEXT NOT NULL,
+                        PRIMARY KEY (Language, OutputMode),
+                        UNIQUE (Language, SortOrder),
+                        CHECK ((Language = 'Japanese' AND OutputMode IN ('Kana', 'Kanji')) OR (Language = 'English' AND OutputMode = 'Latin')),
+                        FOREIGN KEY (Language) REFERENCES ReviewPlans (Language) ON DELETE CASCADE
+                    );
+                    CREATE TABLE ReviewPlanGroups (
+                        Language TEXT NOT NULL,
+                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
+                        WordGroupId TEXT NOT NULL,
+                        PRIMARY KEY (Language, WordGroupId),
+                        UNIQUE (Language, SortOrder),
+                        FOREIGN KEY (Language) REFERENCES ReviewPlans (Language) ON DELETE CASCADE,
+                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE
+                    );
+                    CREATE INDEX IX_ReviewPlanGroups_WordGroupId ON ReviewPlanGroups (WordGroupId);
                     """)
             };
         }

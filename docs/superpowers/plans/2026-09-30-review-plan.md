@@ -48,10 +48,10 @@
 - 共享具体组件 `PracticePlanOptionValidator.NormalizeForms(LearningLanguage, IReadOnlyList<string>) → IReadOnlyList<string>`、`NormalizeChannels(IReadOnlyList<LearningChannel>) → IReadOnlyList<LearningChannel>`、`NormalizeOutputs(LearningLanguage, IReadOnlyList<LearningOutputMode>) → IReadOnlyList<LearningOutputMode>`、`ValidateLanguageLabels(LearningLanguage, EnglishFormLabelMode, string?) → void`；不依赖某一个计划 DTO。
 - `EnglishExampleParadigmResolver.ResolveAsync(string? sourceSenseId, IReadOnlyList<string> enabledForms, CancellationToken) → EnglishExampleParadigmDto`。学习与复习服务直接组合该具体类，保留现有词库能力接口与动词校验；不新增无消费者的接口。
 
-- [ ] **Step 1：测试与编译适配。** 默认只读不写数据；日英保存独立；学习设置不变；重复选项规范化；空值、越界、跨语言形式／字形、空指定范围、外语／Learning／不存在组、未知枚举、取消均拒绝。保存过程触发器失败后旧计划与范围完整保留；删除整组时记忆与历史同时级联，不触碰其它组；取消范围只改关系。
-- [ ] **Step 2：行为 RED。** 先构建最小可编译骨架；冻结 SHA-256。禁止保存或取消参数校验产生实际状态／异常断言失败，记录失败数量；不以构造错误或编译失败充数。
-- [ ] **Step 3：最小 GREEN。** 沿用现有计划的按语言主表与选项子表模式，新增一次迁移；范围关系使用组外键。事务内验证选择并更新计划、选项和范围；Core 校验业务与组归属，Mapper 只转换，DAL 不执行风险算法。没有已存计划时按语言产生默认词形及输出，与学习默认值一致但对象和存储独立。
-- [ ] **Step 4：验证和提交。**
+- [x] **Step 1：测试与编译适配。** 默认只读不写数据；日英保存独立；学习设置不变；重复选项规范化；空值、越界、跨语言形式／字形、空指定范围、外语／Learning／不存在组、未知枚举、取消均拒绝。保存过程触发器失败后旧计划与范围完整保留；删除整组时记忆与历史同时级联，不触碰其它组；取消范围只改关系。
+- [x] **Step 2：行为 RED。** 先构建最小可编译骨架；冻结 SHA-256。禁止保存或取消参数校验产生实际状态／异常断言失败，记录失败数量；不以构造错误或编译失败充数。
+- [x] **Step 3：最小 GREEN。** 沿用现有计划的按语言主表与选项子表模式，新增一次迁移；范围关系使用组外键。事务内验证选择并更新计划、选项和范围；Core 校验业务与组归属，Mapper 只转换，DAL 不执行风险算法。没有已存计划时按语言产生默认词形及输出，与学习默认值一致但对象和存储独立。
+- [x] **Step 4：验证和提交。**
   - `dotnet build Dictation.sln --configuration Debug --no-restore` → 0 错误。
   - 聚焦 `--filter-class '*ReviewPlanServiceTests'`／`'*ReviewPlanDataAccessorTests'`，最低项数采用实际冻结批次 → 全绿且非零。
   - 全量 `dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 1560`（新增后提高实际门槛）→ 无失败／跳过。

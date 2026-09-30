@@ -243,7 +243,8 @@ namespace Dictation.Tests.Presentation
                     DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths)));
                 var planService = new LearningPlanService(
                     DataAccessorTestFactory.CreateLearningPlan(new SqliteConnectionFactory(paths)),
-                    lexiconService,
+                    new PracticePlanOptionValidator(),
+                    new EnglishExampleParadigmResolver(lexiconService),
                     TimeProvider.System);
                 return new TestEnvironment(temporaryDirectory, planService, lexiconService, importService);
             }

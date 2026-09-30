@@ -1,6 +1,5 @@
 using Dictation.DataAccess.Learning;
 using Dictation.Core.Configuration;
-using Dictation.Core.Lexicon;
 
 namespace Dictation.Core.Learning
 {
@@ -12,34 +11,27 @@ namespace Dictation.Core.Learning
         ILearningLibraryManager,
         ILearningSessionStartPreparer
     {
-        private static readonly HashSet<string> JapaneseFormCodes = new(StringComparer.Ordinal)
-        {
-            "Dictionary", "Polite", "Te", "Ta"
-        };
-
-        private static readonly HashSet<string> EnglishFormCodes = new(StringComparer.Ordinal)
-        {
-            "Base", "PresentFirstPersonSingular", "PresentNonThirdPerson", "ThirdPersonSingular",
-            "Past", "PastParticiple", "PresentParticiple", "Plural", "Comparative", "Superlative"
-        };
-
         private readonly LearningPlanDataAccessor dataAccessor;
-        private readonly ILexiconImportGroupResolver lexiconImportGroupResolver;
+        private readonly PracticePlanOptionValidator optionValidator;
+        private readonly EnglishExampleParadigmResolver exampleResolver;
         private readonly TimeProvider timeProvider;
 
         /// <summary>
         /// 初始化学习计划服务。
         /// </summary>
         /// <param name="dataAccessor">用于读写学习计划和学习库的数据访问器。</param>
-        /// <param name="lexiconImportGroupResolver">用于校验英语示例词及解析完整词组的词库能力。</param>
+        /// <param name="optionValidator">学习与复习共用的纯选项校验。</param>
+        /// <param name="exampleResolver">共用的英语示例动词范式解析能力。</param>
         /// <param name="timeProvider">用于记录计划更新时间和生成默认计划时间的时钟。</param>
         public LearningPlanService(
             LearningPlanDataAccessor dataAccessor,
-            ILexiconImportGroupResolver lexiconImportGroupResolver,
+            PracticePlanOptionValidator optionValidator,
+            EnglishExampleParadigmResolver exampleResolver,
             TimeProvider timeProvider)
         {
             this.dataAccessor = dataAccessor ?? throw new ArgumentNullException(nameof(dataAccessor));
-            this.lexiconImportGroupResolver = lexiconImportGroupResolver ?? throw new ArgumentNullException(nameof(lexiconImportGroupResolver));
+            this.optionValidator = optionValidator ?? throw new ArgumentNullException(nameof(optionValidator));
+            this.exampleResolver = exampleResolver ?? throw new ArgumentNullException(nameof(exampleResolver));
             this.timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         }
 
@@ -76,7 +68,7 @@ namespace Dictation.Core.Learning
             var normalized = ValidateAndNormalize(request);
             var example = normalized.Language == LearningLanguage.English
                 && normalized.EnglishFormLabelMode == EnglishFormLabelMode.ExampleParadigm
-                    ? await ResolveExampleParadigmAsync(
+                    ? await exampleResolver.ResolveAsync(
                         normalized.EnglishExampleSourceSenseId,
                         normalized.FormCodes,
                         cancellationToken)
@@ -197,10 +189,10 @@ namespace Dictation.Core.Learning
             ArgumentOutOfRangeException.ThrowIfGreaterThan(request.SessionWordLimit, 500);
             ValidateEnum(request.SelectionMode, nameof(request.SelectionMode));
             ValidateEnum(request.EnglishFormLabelMode, nameof(request.EnglishFormLabelMode));
-            var forms = NormalizeForms(request.FormCodes, request.Language);
-            var channels = NormalizeEnums(request.Channels, nameof(request.Channels));
-            var outputs = NormalizeEnums(request.OutputModes, nameof(request.OutputModes));
-            ValidateLanguageOptions(request, outputs);
+            var forms = optionValidator.NormalizeForms(request.Language, request.FormCodes);
+            var channels = optionValidator.NormalizeChannels(request.Channels);
+            var outputs = optionValidator.NormalizeOutputs(request.Language, request.OutputModes);
+            optionValidator.ValidateLanguageLabels(request.Language, request.EnglishFormLabelMode, request.EnglishExampleSourceSenseId);
             var exampleSourceSenseId = request.EnglishFormLabelMode == EnglishFormLabelMode.ExampleParadigm
                 ? NormalizeText(request.EnglishExampleSourceSenseId, "英语示例词义项")
                 : null;
@@ -211,69 +203,6 @@ namespace Dictation.Core.Learning
                 Channels = channels,
                 OutputModes = outputs
             };
-        }
-
-        /// <summary>
-        /// 按语言允许的词形集合校验并去重所选代码，拒绝空集合与不受支持的形式。
-        /// </summary>
-        private static IReadOnlyList<string> NormalizeForms(IReadOnlyList<string> forms, LearningLanguage language)
-        {
-            if (forms is null || forms.Count == 0)
-            {
-                throw new ArgumentException("至少需要启用一个词形。", nameof(forms));
-            }
-
-            var allowed = language == LearningLanguage.Japanese ? JapaneseFormCodes : EnglishFormCodes;
-            var normalized = forms.Select(form => NormalizeText(form, "词形标识")).Distinct(StringComparer.Ordinal).ToArray();
-            if (normalized.Any(form => !allowed.Contains(form)))
-            {
-                throw new ArgumentException("所选词形不适用于当前语言。", nameof(forms));
-            }
-
-            return normalized;
-        }
-
-        private static IReadOnlyList<T> NormalizeEnums<T>(IReadOnlyList<T> values, string parameterName)
-            where T : struct, Enum
-        {
-            if (values is null || values.Count == 0)
-            {
-                throw new ArgumentException("至少需要启用一项。", parameterName);
-            }
-
-            if (values.Any(value => !Enum.IsDefined(value)))
-            {
-                throw new ArgumentOutOfRangeException(parameterName, "包含不受支持的选项。");
-            }
-
-            return values.Distinct().ToArray();
-        }
-
-        /// <summary>
-        /// 校验英语标签选项及输出方式与学习语言的兼容性，避免保存无法执行的语言组合。
-        /// </summary>
-        private static void ValidateLanguageOptions(
-            SaveLearningPlanRequestDto request,
-            IReadOnlyList<LearningOutputMode> outputs)
-        {
-            if (request.Language == LearningLanguage.Japanese)
-            {
-                if (request.EnglishFormLabelMode != EnglishFormLabelMode.GrammarName
-                    || !string.IsNullOrWhiteSpace(request.EnglishExampleSourceSenseId))
-                {
-                    throw new ArgumentException("日语计划不能设置英语词形标签选项。", nameof(request));
-                }
-
-                if (outputs.Any(output => output == LearningOutputMode.Latin)
-                    || !outputs.Any(output => output is LearningOutputMode.Kana or LearningOutputMode.Kanji))
-                {
-                    throw new ArgumentException("日语至少需要启用假名或汉字，且不能使用拉丁字母输出。", nameof(request.OutputModes));
-                }
-            }
-            else if (outputs.Count != 1 || outputs[0] != LearningOutputMode.Latin)
-            {
-                throw new ArgumentException("英语只支持拉丁字母输出。", nameof(request.OutputModes));
-            }
         }
 
         /// <summary>
@@ -289,51 +218,12 @@ namespace Dictation.Core.Learning
             var mapped = LearningPlanMapper.ToDto(plan, null);
             var example = mapped.Language == LearningLanguage.English
                 && mapped.EnglishFormLabelMode == EnglishFormLabelMode.ExampleParadigm
-                ? await ResolveExampleParadigmAsync(
+                ? await exampleResolver.ResolveAsync(
                     mapped.EnglishExampleSourceSenseId,
                     mapped.FormCodes,
                     cancellationToken)
                 : null;
             return mapped with { EnglishExampleParadigm = example };
-        }
-
-        /// <summary>
-        /// 从英语完整词组中定位指定单词动词，并为每个启用词形选择优先、常用的展示形式。
-        /// </summary>
-        /// <param name="sourceSenseId">示例词的来源义项稳定标识。</param>
-        /// <param name="enabledForms">计划中启用的英语词形代码。</param>
-        /// <param name="cancellationToken">取消词库解析的令牌。</param>
-        /// <returns>与已启用词形一一对应的英语示例范式。</returns>
-        private async Task<EnglishExampleParadigmDto> ResolveExampleParadigmAsync(
-            string? sourceSenseId,
-            IReadOnlyList<string> enabledForms,
-            CancellationToken cancellationToken)
-        {
-            var normalizedId = NormalizeText(sourceSenseId, "英语示例词义项");
-            var group = await lexiconImportGroupResolver.GetImportGroupAsync(LearningLanguage.English, normalizedId, cancellationToken);
-            var member = group.SingleOrDefault(item => string.Equals(item.SourceSenseId, normalizedId, StringComparison.Ordinal));
-            if (member is null || member.PartOfSpeechLabel != "动词" || member.IsPhrase)
-            {
-                throw new ArgumentException("英语示例词必须是词库中存在的单词动词。", nameof(sourceSenseId));
-            }
-
-            var forms = new List<EnglishExampleFormDto>(enabledForms.Count);
-            foreach (var formCode in enabledForms)
-            {
-                var form = member.Forms
-                    .Where(item => string.Equals(item.FormCode, formCode, StringComparison.Ordinal))
-                    .OrderByDescending(item => item.IsPrimary)
-                    .ThenByDescending(item => item.IsCommon)
-                    .FirstOrDefault();
-                if (form is null)
-                {
-                    throw new ArgumentException("英语示例词缺少已启用的词形。", nameof(sourceSenseId));
-                }
-
-                forms.Add(new EnglishExampleFormDto(formCode, form.Surface));
-            }
-
-            return new EnglishExampleParadigmDto(normalizedId, member.Headword, forms);
         }
 
         /// <summary>

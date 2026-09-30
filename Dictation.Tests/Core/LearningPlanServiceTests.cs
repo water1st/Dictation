@@ -427,7 +427,8 @@ namespace Dictation.Tests.Core
             var importService = new ImportInboxService(lexiconService, inboxAccessor);
             var service = new LearningPlanService(
                 DataAccessorTestFactory.CreateLearningPlan(new SqliteConnectionFactory(paths)),
-                lexiconService,
+                new PracticePlanOptionValidator(),
+                new EnglishExampleParadigmResolver(lexiconService),
                 new FixedTimeProvider(FixedNow));
             return new TestEnvironment(service, importService);
         }

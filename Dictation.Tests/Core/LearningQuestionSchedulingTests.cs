@@ -698,7 +698,8 @@ namespace Dictation.Tests.Core
                     new DateTimeOffset(2026, 9, 6, 9, 0, 0, TimeSpan.FromHours(8)));
                 var planService = new LearningPlanService(
                     DataAccessorTestFactory.CreateLearningPlan(connectionFactory),
-                    lexiconService,
+                    new PracticePlanOptionValidator(),
+                    new EnglishExampleParadigmResolver(lexiconService),
                     timeProvider);
                 var importService = new ImportInboxService(lexiconService, DataAccessorTestFactory.CreateImportInbox(connectionFactory));
                 var evaluationService = new AnswerEvaluationService();

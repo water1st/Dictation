@@ -364,7 +364,8 @@ namespace Dictation.Tests.Core
                 var timeProvider = new MutableTimeProvider(new DateTimeOffset(2026, 9, 5, 6, 0, 0, TimeSpan.FromHours(8)));
                 var planService = new LearningPlanService(
                     DataAccessorTestFactory.CreateLearningPlan(connectionFactory),
-                    lexiconService,
+                    new PracticePlanOptionValidator(),
+                    new EnglishExampleParadigmResolver(lexiconService),
                     timeProvider);
                 var importService = new ImportInboxService(lexiconService, DataAccessorTestFactory.CreateImportInbox(connectionFactory));
                 var random = new Random(randomSeed);

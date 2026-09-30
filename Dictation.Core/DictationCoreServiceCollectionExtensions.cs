@@ -41,6 +41,8 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<ITextImportPreparation, TextImportPreparationService>();
             services.AddSingleton(TimeProvider.System);
             services.AddSingleton(Random.Shared);
+            services.AddSingleton<PracticePlanOptionValidator>();
+            services.AddSingleton<EnglishExampleParadigmResolver>();
             services.AddSingleton<LearningPlanService>();
             services.AddSingleton<ILearningPlanReader>(serviceProvider =>
                 serviceProvider.GetRequiredService<LearningPlanService>());
@@ -63,6 +65,10 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<FsrsScheduler>();
             services.AddSingleton<LearningMemorySeedPlanner>();
             services.AddSingleton<IReviewLibraryQuery, ReviewLibraryService>();
+            services.AddSingleton<ReviewPlanService>();
+            services.AddSingleton<IReviewPlanReader>(provider => provider.GetRequiredService<ReviewPlanService>());
+            services.AddSingleton<IReviewPlanEditor>(provider => provider.GetRequiredService<ReviewPlanService>());
+            services.AddSingleton<IReviewLibraryManager>(provider => provider.GetRequiredService<ReviewPlanService>());
             return services;
         }
     }
