@@ -1,0 +1,116 @@
+<UserControl x:Class="Dictation.Presentation.Views.TextImportPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource WindowBackgroundBrush}"
+             Foreground="{DynamicResource ForegroundBrush}"
+             AllowDrop="True" PreviewDragOver="PreviewFileDragOver" Drop="FileDrop">
+    <UserControl.Resources>
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Padding" Value="16,9" />
+            <Setter Property="Margin" Value="0,0,12,0" />
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="14" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <DataTemplate x:Key="SenseTemplate">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock FontWeight="SemiBold" Text="{Binding Headword}" />
+                    <TextBlock Margin="10,0,0,0" Text="{Binding Reading}" />
+                    <TextBlock Margin="10,0,0,0" Text="{Binding PartOfSpeechLabel}" />
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding Meanings}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" /></DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="{Binding AttributeLabel}" FontSize="12" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding SourceSenseId}" FontSize="10" Opacity="0.6" />
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+    <Grid Margin="30,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock Text="{Binding WindowTitle}" FontSize="25" FontWeight="SemiBold" />
+            <TextBlock Margin="0,6,0,12" Text="粘贴或拖入 UTF-8 TXT，每行一个日文或英文词形；空行和 # 注释会忽略。多义词需选中文义项。"
+                       TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}" />
+        </StackPanel>
+        <TextBox Grid.Row="1" Height="120" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                 Text="{Binding SourceText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEdit}"
+                 Background="{DynamicResource CardBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
+                 BorderBrush="{DynamicResource BorderBrush}" Padding="12" FontSize="16" />
+        <StackPanel Grid.Row="2" Margin="0,12,0,12">
+            <StackPanel Orientation="Horizontal">
+                <Button Style="{StaticResource ActionButton}" Content="匹配词表" Command="{Binding PrepareCommand}" />
+                <Button Style="{StaticResource ActionButton}" Content="选择 TXT" IsEnabled="{Binding CanEdit}" Click="SelectFileClick" />
+                <CheckBox Content="全选已确认义项" VerticalAlignment="Center"
+                          IsChecked="{Binding AreAllSelected}" IsEnabled="{Binding CanEdit}" />
+                <TextBlock Margin="14,0,0,0" VerticalAlignment="Center" Text="{Binding SelectedCount, StringFormat=已选 {0} 项}" />
+            </StackPanel>
+            <TextBlock Margin="0,8,0,0" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
+        </StackPanel>
+        <ListBox Grid.Row="3" ItemsSource="{Binding Lines}" IsEnabled="{Binding CanEdit}"
+                 Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Border Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1" CornerRadius="16" Padding="16" Margin="0,0,0,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <CheckBox IsChecked="{Binding IsSelected}" IsEnabled="{Binding CanSelect}" Margin="0,4,14,0" />
+                            <StackPanel Grid.Column="1">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding LineNumber, StringFormat=第 {0} 行}" Opacity="0.6" Margin="0,0,10,0" />
+                                    <TextBlock Text="{Binding SourceText}" FontSize="17" FontWeight="SemiBold" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding MatchLabel}" Margin="0,5,0,5" TextWrapping="Wrap" />
+                                <ComboBox ItemsSource="{Binding Candidates}" SelectedItem="{Binding SelectedCandidate}"
+                                          ItemTemplate="{StaticResource SenseTemplate}" HorizontalContentAlignment="Stretch"
+                                          Background="{DynamicResource CardBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}" />
+                                <ItemsControl ItemsSource="{Binding SelectedCandidate.Forms}" Margin="0,6,0,0">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,12,4">
+                                                <TextBlock Text="{Binding FormLabel}" Opacity="0.7" Margin="0,0,4,0" />
+                                                <TextBlock Text="{Binding Surface}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,16,0,0">
+            <Button Style="{StaticResource ActionButton}" Content="加入收件箱" Command="{Binding StageSelectedCommand}" />
+            <Button Style="{StaticResource ActionButton}" Content="打开收件箱" Command="{Binding OpenInboxCommand}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

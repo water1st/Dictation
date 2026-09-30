@@ -368,6 +368,12 @@ namespace Dictation.Tests.Presentation
 
         private sealed class RejectingHomeNavigation : IHomeNavigation
         {
+            public Task OpenTextImportAsync(LearningLanguage language, string? initialFilePath = null,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromException(new InvalidOperationException("该设置测试不执行页面导航。"));
+            }
+
             public Task OpenLexiconLookupAsync(
                 LearningLanguage language,
                 CancellationToken cancellationToken = default)

@@ -55,6 +55,7 @@ namespace Dictation.Presentation.ViewModels
             SelectLightThemeCommand = new AsyncCommand(() => SelectThemeAsync(ThemeMode.Light));
             SelectDarkThemeCommand = new AsyncCommand(() => SelectThemeAsync(ThemeMode.Dark));
             OpenLexiconLookupCommand = new AsyncCommand(() => OpenLexiconLookupAsync());
+            OpenTextImportCommand = new AsyncCommand(() => OpenTextImportAsync());
             OpenImportInboxCommand = new AsyncCommand(() => OpenImportInboxAsync());
             OpenLearningPlanCommand = new AsyncCommand(() => OpenLearningPlanAsync());
             OpenLearningCommand = new AsyncCommand(() => OpenLearningAsync());
@@ -121,6 +122,8 @@ namespace Dictation.Presentation.ViewModels
         public ICommand SelectDarkThemeCommand { get; }
 
         public ICommand OpenLexiconLookupCommand { get; }
+
+        public ICommand OpenTextImportCommand { get; }
 
         public ICommand OpenImportInboxCommand { get; }
 
@@ -263,6 +266,13 @@ namespace Dictation.Presentation.ViewModels
             return homeNavigation.OpenImportInboxAsync(
                 selectedLanguage,
                 cancellationToken);
+        }
+
+        /// <summary>按首页当前语言打开文本词表导入页面。</summary>
+        /// <param name="cancellationToken">取消导航的令牌。</param>
+        public Task OpenTextImportAsync(CancellationToken cancellationToken = default)
+        {
+            return homeNavigation.OpenTextImportAsync(selectedLanguage, cancellationToken: cancellationToken);
         }
 
         /// <summary>

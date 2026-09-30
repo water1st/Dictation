@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Content Include="pen.ico" />
+    <Content Include="Samples\*.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

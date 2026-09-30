@@ -11,6 +11,9 @@
         <DataTemplate DataType="{x:Type viewModels:LexiconLookupViewModel}">
             <views:LexiconLookupPage />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:TextImportViewModel}">
+            <views:TextImportPage />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type viewModels:ImportInboxListViewModel}">
             <views:ImportInboxListPage />
         </DataTemplate>

@@ -3,6 +3,7 @@ using Dictation.Presentation.ViewModels;
 using Dictation.Presentation.Navigation;
 using Dictation.Presentation.Shell;
 using Dictation.Presentation.Audio;
+using Dictation.Presentation.Importing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Presentation
@@ -46,6 +47,9 @@ namespace Dictation.Presentation
             services.AddSingleton<IAudioPlayer, MemoryWavAudioPlayer>();
 
             services.AddScoped<LexiconLookupViewModel>();
+            services.AddScoped<TextImportViewModel>();
+            services.AddSingleton<Utf8TextFileReader>();
+            services.AddSingleton<StartupTextImport>();
             services.AddScoped<ImportInboxListViewModel>();
             services.AddScoped<ImportInboxDetailViewModel>();
             services.AddScoped<LearningPlanViewModel>();

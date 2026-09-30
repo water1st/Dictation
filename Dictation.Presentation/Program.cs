@@ -2,6 +2,7 @@ using Dictation.DataAccess;
 using Dictation.Core;
 using Dictation.Core.SingleInstance;
 using Dictation.Core.Startup;
+using Dictation.Presentation.Importing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,7 +19,7 @@ namespace Dictation.Presentation
         [STAThread]
         private static void Main(string[] args)
         {
-            using var host = CreateHostBuilder(args).Build();
+            using var host = CreateHostBuilder().Build();
             var instanceCoordinator = host.Services.GetRequiredService<SingleInstanceCoordinator>();
             if (!instanceCoordinator.TryAcquirePrimaryInstance())
             {
@@ -50,6 +51,18 @@ namespace Dictation.Presentation
                 instanceCoordinator.ActivationRequested += activationHandler;
                 _ = instanceCoordinator.StartListeningAsync();
 
+                // 参数只在主实例处理；次实例在上面的身份判定后已退出，不转交文件。
+                if (args.Length > 0)
+                {
+                    System.Windows.RoutedEventHandler? startupImportHandler = null;
+                    startupImportHandler = async (sender, _) =>
+                    {
+                        ((HomeWindow)sender).Loaded -= startupImportHandler;
+                        await host.Services.GetRequiredService<StartupTextImport>().OpenAsync(args, viewModel.SelectedLanguage);
+                    };
+                    homeWindow.Loaded += startupImportHandler;
+                }
+
                 application.Run(homeWindow);
             }
             finally
@@ -65,9 +78,10 @@ namespace Dictation.Presentation
             }
         }
 
-        private static IHostBuilder CreateHostBuilder(string[] args)
+        private static IHostBuilder CreateHostBuilder()
         {
-            return Host.CreateDefaultBuilder(args)
+            // 文件参数不是配置键值，不能交给默认命令行配置解析器。
+            return Host.CreateDefaultBuilder()
                 .ConfigureAppConfiguration((_, configuration) =>
                 {
                     configuration.SetBasePath(AppContext.BaseDirectory);

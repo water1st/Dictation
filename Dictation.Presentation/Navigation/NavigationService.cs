@@ -76,6 +76,46 @@ namespace Dictation.Presentation.Navigation
         }
 
         /// <inheritdoc />
+        public async Task OpenTextImportAsync(
+            LearningLanguage language,
+            string? initialFilePath = null,
+            CancellationToken cancellationToken = default)
+        {
+            ValidateLanguage(language);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!TryPrepareForwardNavigation())
+            {
+                return;
+            }
+            navigationOperationPending = true;
+            OnPropertyChanged(nameof(CanGoBack));
+            var scope = scopeFactory.CreateScope();
+            try
+            {
+                var viewModel = scope.ServiceProvider.GetRequiredService<TextImportViewModel>();
+                viewModel.Initialize(language);
+                NavigateForward(new NavigationEntry(viewModel, viewModel.WindowTitle, language, scope, null));
+                if (initialFilePath is not null)
+                {
+                    await viewModel.LoadFileAsync(initialFilePath, cancellationToken);
+                }
+            }
+            catch
+            {
+                if (!ReferenceEquals(currentEntry?.Scope, scope))
+                {
+                    scope.Dispose();
+                }
+                throw;
+            }
+            finally
+            {
+                navigationOperationPending = false;
+                OnPropertyChanged(nameof(CanGoBack));
+            }
+        }
+
+        /// <inheritdoc />
         public Task OpenLexiconLookupAsync(
             LearningLanguage language,
             CancellationToken cancellationToken = default)
