@@ -587,6 +587,26 @@ namespace Dictation.DataAccess.Runtime
                         AnsweredAtUtc TEXT NOT NULL,
                         FOREIGN KEY (QuestionId) REFERENCES LearningQuestions (QuestionId) ON DELETE CASCADE
                     );
+                    """),
+                new SchemaMigration(
+                    7,
+                    "创建成员词形的客观记忆状态",
+                    """
+                    CREATE TABLE ReviewFormMemories (
+                        WordGroupId TEXT NOT NULL,
+                        MemberId INTEGER NOT NULL,
+                        FormCode TEXT NOT NULL,
+                        Stability REAL NOT NULL CHECK (Stability > 0),
+                        Difficulty REAL NOT NULL CHECK (Difficulty BETWEEN 1 AND 10),
+                        LastReviewedAtUtc TEXT NOT NULL,
+                        DueAtUtc TEXT NOT NULL CHECK (DueAtUtc > LastReviewedAtUtc),
+                        ReviewCount INTEGER NOT NULL CHECK (ReviewCount >= 1),
+                        LapseCount INTEGER NOT NULL CHECK (LapseCount >= 0 AND LapseCount <= ReviewCount),
+                        PRIMARY KEY (MemberId, FormCode),
+                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE,
+                        FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE
+                    );
+                    CREATE INDEX IX_ReviewFormMemories_WordGroupId ON ReviewFormMemories (WordGroupId);
                     """)
             };
         }

@@ -35,10 +35,10 @@
 
 **Interfaces:** `internal FsrsScheduler.Schedule(FsrsMemoryState? previous, bool wasCorrect, DateTimeOffset reviewedAtUtc) → FsrsMemoryState`；`GetRetrievability(FsrsMemoryState? state, DateTimeOffset now) → double`。状态字段为稳定度、难度、UTC 上次评价／到期时间、评价次数及遗忘次数；无状态以 `null` 表示。
 
-- [ ] **Step 1：测试及参考记录。** 官方固定 commit `9446cb06605c597a063aeee49f7d188d42e34dc2` 未改 Scheduler 生成黄金向量：首次 Good `S=2.3065`、2 天；首次 Again `S=0.212`、1 天；第二天 Good `S=10.964332335820698`、11 天；第七天 Again `S=0.7178527669042931`、1 天；同日 Again／Good、长序列、风险随天数下降。补非法非有限值、范围、计数、时钟倒退、UTC 归一化及不修改输入断言。
-- [ ] **Step 2：有效 RED。** 最小可编译骨架只返回错误初始状态，冻结测试；构建成功后 `--filter-class '*FsrsSchedulerTests' --minimum-expected-tests 12`，记录真实数值／边界失败。
-- [ ] **Step 3：GREEN。** 仅移植固定参考公式，采用与 Python 一致的整天取整及银行家舍入；保留 1–36500 天范围。无 optimizer、Python 运行时、Hard/Easy UI、自创记忆算法或为未来参数建配置系统。
-- [ ] **Step 4：验证并中文提交。** 聚焦与全量测试、solution 构建、冻结哈希及许可证输出检查。此提交交付算法能力，不声称完整复习已经可用。
+- [x] **Step 1：测试及参考记录。** 官方固定 commit `9446cb06605c597a063aeee49f7d188d42e34dc2` 未改 Scheduler 生成黄金向量：首次 Good `S=2.3065`、2 天；首次 Again `S=0.212`、1 天；第二天 Good `S=10.964332335820698`、11 天；第七天 Again `S=0.7178527669042931`、1 天；同日 Again／Good、长序列、风险随天数下降。补非法非有限值、范围、计数、时钟倒退、UTC 归一化及不修改输入断言。
+- [x] **Step 2：有效 RED。** 最小可编译骨架只返回错误初始状态，冻结测试；构建成功后 `--filter-class '*FsrsSchedulerTests' --minimum-expected-tests 12`，记录真实数值／边界失败。
+- [x] **Step 3：GREEN。** 仅移植固定参考公式，采用与 Python 一致的整天取整及银行家舍入；保留 1–36500 天范围。无 optimizer、Python 运行时、Hard/Easy UI、自创记忆算法或为未来参数建配置系统。
+- [x] **Step 4：验证并中文提交。** 聚焦与全量测试、solution 构建、冻结哈希及许可证输出检查。此提交交付算法能力，不声称完整复习已经可用。
 
 ### Task 2: 学习完成的原子记忆初始化
 
@@ -46,10 +46,10 @@
 
 **Interfaces:** `LearningMemorySeedPlanner.CreateSeeds(IReadOnlyList<LearningFormUnitPo> completedForms, IReadOnlyList<LearningQuestionHistoryPo> history, DateTimeOffset now) → IReadOnlyList<ReviewFormMemoryPo>`；调用方只提供本次完成组的启用形式，复用 Task 1 内核，按本会话该成员词形是否有错作首次评价。没有本会话作答的形式不伪造评价。`ApplyLearningAnswerPo` 增加可选记忆种子列表；`ReviewMemoryWriter.InsertMissingAsync(SqliteConnection connection, DbTransaction transaction, IReadOnlyList<ReviewFormMemoryPo> seeds, CancellationToken token)` 使用调用方事务，不另开连接。
 
-- [ ] **Step 1：正常和失败测试。** 双形式一错一对分别 Again／Good；只初始化本次完成组的启用形式；再次完成保留旧状态；直接入复习不创建伪造状态；取消／事务失败没有半保存；删除组和成员级联清理。字段严格校验所属词组／成员／词形，非法关系拒绝并回滚。
-- [ ] **Step 2：有效 RED。** 编译适配及迁移测试期望更新完成后冻结；临时禁止种子保存，运行目标测试获得行为 RED，再仅改实现。
-- [ ] **Step 3：打通 GREEN。** 新增迁移 `ReviewFormMemories`，按成员词形唯一，稳定度正数、难度 1–10、计数合法、组与成员外键级联；在原学习答题事务提交前插入未有状态的种子。初始计划完成、进度、Placement 与记忆必须共同提交；不在 Core 完成事务之后补写。
-- [ ] **Step 4：验证并中文提交。** 聚焦、全量、构建和真实 SQLite 学习完成到复习记忆冒烟；保留已有预览用户数据。
+- [x] **Step 1：正常和失败测试。** 双形式一错一对分别 Again／Good；只初始化本次完成组的启用形式；再次完成保留旧状态；直接入复习不创建伪造状态；取消／事务失败没有半保存；删除组和成员级联清理。字段严格校验所属词组／成员／词形，非法关系拒绝并回滚。
+- [x] **Step 2：有效 RED。** 编译适配及迁移测试期望更新完成后冻结；临时禁止种子保存，运行目标测试获得行为 RED，再仅改实现。
+- [x] **Step 3：打通 GREEN。** 新增迁移 `ReviewFormMemories`，按成员词形唯一，稳定度正数、难度 1–10、计数合法、组与成员外键级联；在原学习答题事务提交前插入未有状态的种子。初始计划完成、进度、Placement 与记忆必须共同提交；不在 Core 完成事务之后补写。
+- [x] **Step 4：验证并中文提交。** 聚焦、全量、构建和真实 SQLite 学习完成到复习记忆冒烟；保留已有预览用户数据。
 
 ### Task 3: 单窗口复习词库与风险队列
 

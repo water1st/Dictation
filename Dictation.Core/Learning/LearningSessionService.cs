@@ -1,6 +1,7 @@
 using System.Globalization;
 using Dictation.DataAccess.Learning;
 using Dictation.Core.Configuration;
+using Dictation.Core.Review;
 
 namespace Dictation.Core.Learning
 {
@@ -16,6 +17,7 @@ namespace Dictation.Core.Learning
         private readonly AnswerEvaluationService answerEvaluationService;
         private readonly TimeProvider timeProvider;
         private readonly Random random;
+        private readonly LearningMemorySeedPlanner memorySeedPlanner;
 
         /// <summary>
         /// 初始化学习会话编排服务。
@@ -27,6 +29,7 @@ namespace Dictation.Core.Learning
         /// <param name="answerEvaluationService">用于依据语言规则判断提交答案。</param>
         /// <param name="timeProvider">用于记录会话、题目和答案的时间。</param>
         /// <param name="random">用于保留选词与出题的随机顺序。</param>
+        /// <param name="memorySeedPlanner">为完成的启用形式计算首次客观记忆评价。</param>
         public LearningSessionService(
             LearningSessionDataAccessor dataAccessor,
             ILearningPlanReader learningPlanReader,
@@ -34,7 +37,8 @@ namespace Dictation.Core.Learning
             LearningQuestionScheduler questionScheduler,
             AnswerEvaluationService answerEvaluationService,
             TimeProvider timeProvider,
-            Random random)
+            Random random,
+            LearningMemorySeedPlanner memorySeedPlanner)
         {
             ArgumentNullException.ThrowIfNull(dataAccessor);
             ArgumentNullException.ThrowIfNull(learningPlanReader);
@@ -43,6 +47,7 @@ namespace Dictation.Core.Learning
             ArgumentNullException.ThrowIfNull(answerEvaluationService);
             ArgumentNullException.ThrowIfNull(timeProvider);
             ArgumentNullException.ThrowIfNull(random);
+            ArgumentNullException.ThrowIfNull(memorySeedPlanner);
             this.dataAccessor = dataAccessor;
             this.learningPlanReader = learningPlanReader;
             this.sessionStartPreparer = sessionStartPreparer;
@@ -50,6 +55,7 @@ namespace Dictation.Core.Learning
             this.answerEvaluationService = answerEvaluationService;
             this.timeProvider = timeProvider;
             this.random = random;
+            this.memorySeedPlanner = memorySeedPlanner;
         }
 
         /// <inheritdoc />
@@ -231,6 +237,10 @@ namespace Dictation.Core.Learning
 
             var now = timeProvider.GetUtcNow();
             var localDate = timeProvider.GetLocalNow().Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var memorySeeds = memorySeedPlanner.CreateSeeds(
+                activeUnits.Where(unit => completedWordGroupIds.Contains(unit.WordGroupId, StringComparer.Ordinal)).ToArray(),
+                updatedHistory,
+                now);
             var persistedNext = await dataAccessor.ApplyAnswerAsync(
                 new ApplyLearningAnswerPo(
                     sessionId,
@@ -244,7 +254,8 @@ namespace Dictation.Core.Learning
                     localDate,
                     nextScheduled,
                     completedWordGroupIds,
-                    completeSession),
+                    completeSession,
+                    memorySeeds),
                 cancellationToken);
             var hadError = updatedHistory.Any(history => history.WasCorrect == false);
             var nextQuestion = persistedNext is null ? null : MapQuestion(transitionedSnapshot, persistedNext, plan);

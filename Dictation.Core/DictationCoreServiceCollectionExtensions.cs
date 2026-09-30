@@ -61,6 +61,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 serviceProvider.GetRequiredService<LearningProgressService>());
             services.AddSingleton<AnswerEvaluationService>();
             services.AddSingleton<FsrsScheduler>();
+            services.AddSingleton<LearningMemorySeedPlanner>();
             return services;
         }
     }

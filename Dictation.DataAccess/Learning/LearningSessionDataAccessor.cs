@@ -2,6 +2,7 @@ using System.Globalization;
 using Dapper;
 using Dictation.DataAccess.Importing;
 using Dictation.DataAccess.Runtime;
+using Dictation.DataAccess.Review;
 using Microsoft.Data.Sqlite;
 
 namespace Dictation.DataAccess.Learning
@@ -15,19 +16,23 @@ namespace Dictation.DataAccess.Learning
         private static readonly HashSet<string> Statuses = new(StringComparer.Ordinal) { "InProgress", "Completed" };
         private readonly SqliteConnectionFactory connectionFactory;
         private readonly WordGroupMemberSnapshotReader wordGroupMemberSnapshotReader;
+        private readonly ReviewMemoryWriter reviewMemoryWriter;
 
         /// <summary>
         /// 使用指定连接工厂和词组成员快照读取组件初始化数据访问器。
         /// </summary>
         /// <param name="connectionFactory">运行数据库连接工厂。</param>
         /// <param name="wordGroupMemberSnapshotReader">复用调用方连接读取词组成员快照的组件。</param>
+        /// <param name="reviewMemoryWriter">在当前答题事务中保存首次记忆的组件。</param>
         internal LearningSessionDataAccessor(
             SqliteConnectionFactory connectionFactory,
-            WordGroupMemberSnapshotReader wordGroupMemberSnapshotReader)
+            WordGroupMemberSnapshotReader wordGroupMemberSnapshotReader,
+            ReviewMemoryWriter reviewMemoryWriter)
         {
             this.connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
             this.wordGroupMemberSnapshotReader = wordGroupMemberSnapshotReader
                 ?? throw new ArgumentNullException(nameof(wordGroupMemberSnapshotReader));
+            this.reviewMemoryWriter = reviewMemoryWriter ?? throw new ArgumentNullException(nameof(reviewMemoryWriter));
         }
 
         /// <summary>
@@ -770,6 +775,11 @@ namespace Dictation.DataAccess.Learning
                             cancellationToken: cancellationToken));
                     }
 
+                    if (answer.MemorySeeds is { Count: > 0 })
+                    {
+                        await reviewMemoryWriter.InsertMissingAsync(connection, transaction, answer.MemorySeeds, cancellationToken);
+                    }
+
                     LearningQuestionStatePo? next = null;
                     if (answer.CompleteSession)
                     {
@@ -988,6 +998,12 @@ namespace Dictation.DataAccess.Learning
             if (answer.CompletedWordGroupIds.Distinct(StringComparer.Ordinal).Count() != answer.CompletedWordGroupIds.Count)
             {
                 throw new ArgumentException("完成词组不能重复。", nameof(answer.CompletedWordGroupIds));
+            }
+
+            if (answer.MemorySeeds is not null && answer.MemorySeeds.Any(seed =>
+                !answer.CompletedWordGroupIds.Contains(seed.WordGroupId, StringComparer.Ordinal)))
+            {
+                throw new ArgumentException("初次记忆只能属于本次完成的词组。", nameof(answer.MemorySeeds));
             }
 
             if (answer.CompleteSession && answer.NextQuestion is not null)

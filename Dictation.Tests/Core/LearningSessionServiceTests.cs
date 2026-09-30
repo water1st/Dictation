@@ -7,6 +7,7 @@ using Dictation.Core.Configuration;
 using Dictation.Core.Importing;
 using Dictation.Core.Learning;
 using Dictation.Core.Lexicon;
+using Dictation.Core.Review;
 using Dictation.Tests.Infrastructure;
 
 namespace Dictation.Tests.Core
@@ -374,7 +375,8 @@ namespace Dictation.Tests.Core
                     new LearningQuestionScheduler(timeProvider, random),
                     new AnswerEvaluationService(),
                     timeProvider,
-                    random);
+                    random,
+                    new LearningMemorySeedPlanner(new FsrsScheduler()));
                 return new TestEnvironment(temporaryDirectory, paths, timeProvider, planService, importService, sessionService);
             }
 

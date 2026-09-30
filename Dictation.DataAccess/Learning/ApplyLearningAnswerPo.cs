@@ -1,3 +1,5 @@
+using Dictation.DataAccess.Review;
+
 namespace Dictation.DataAccess.Learning
 {
     /// <summary>
@@ -15,5 +17,6 @@ namespace Dictation.DataAccess.Learning
         string AnsweredLocalDate,
         CreateLearningQuestionPo? NextQuestion,
         IReadOnlyList<string> CompletedWordGroupIds,
-        bool CompleteSession);
+        bool CompleteSession,
+        IReadOnlyList<ReviewFormMemoryPo>? MemorySeeds = null);
 }

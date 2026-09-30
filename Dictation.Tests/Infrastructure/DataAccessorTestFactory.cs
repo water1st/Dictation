@@ -1,6 +1,7 @@
 using Dictation.DataAccess.Importing;
 using Dictation.DataAccess.Learning;
 using Dictation.DataAccess.Runtime;
+using Dictation.DataAccess.Review;
 
 namespace Dictation.Tests.Infrastructure
 {
@@ -27,7 +28,7 @@ namespace Dictation.Tests.Infrastructure
         /// <param name="connectionFactory">测试隔离数据库的连接工厂。</param>
         internal static LearningSessionDataAccessor CreateLearningSession(SqliteConnectionFactory connectionFactory)
         {
-            return new LearningSessionDataAccessor(connectionFactory, new WordGroupMemberSnapshotReader());
+            return new LearningSessionDataAccessor(connectionFactory, new WordGroupMemberSnapshotReader(), new ReviewMemoryWriter());
         }
     }
 }

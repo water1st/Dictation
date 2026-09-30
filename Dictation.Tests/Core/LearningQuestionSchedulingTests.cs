@@ -711,7 +711,8 @@ namespace Dictation.Tests.Core
                     new LearningQuestionScheduler(timeProvider, random),
                     evaluationService,
                     timeProvider,
-                    random);
+                    random,
+                    new Dictation.Core.Review.LearningMemorySeedPlanner(new Dictation.Core.Review.FsrsScheduler()));
                 var environment = new TestEnvironment(
                     temporaryDirectory,
                     paths,
@@ -736,7 +737,8 @@ namespace Dictation.Tests.Core
                     new LearningQuestionScheduler(TimeProvider, random),
                     evaluationService,
                     TimeProvider,
-                    random);
+                    random,
+                    new Dictation.Core.Review.LearningMemorySeedPlanner(new Dictation.Core.Review.FsrsScheduler()));
             }
 
             public async Task<string> StageLearningAsync(
