@@ -53,9 +53,13 @@
 
 ### Task 2：客观答题与原子 FSRS
 
-**Files:** Core/Review `IReviewSessionAnswerer.cs`、`SubmitReviewAnswerRequestDto.cs`、`ReviewAnswerResultDto.cs`、`ReviewSessionSummaryDto.cs`、`ReviewQuestionDto.cs`、`ReviewQuestionScheduler.cs`；DataAccess/Review 会话快照／待答题／提交 PO、迁移 10、SessionDataAccessor。
+**Files:** Core/Review `IReviewQuestionReader.cs`、`ReviewQuestionService.cs`、`IReviewSessionAnswerer.cs`、`SubmitReviewAnswerRequestDto.cs`、`ReviewAnswerResultDto.cs`、`ReviewSessionSummaryDto.cs`；Core/Practice 复用 `PracticeQuestionDto`、`PracticeQuestionScheduler`、`PracticeQuestionPresenter` 和小能力合同 `IPracticeQuestionPlan`；DataAccess/Review 会话快照／待答题／提交 PO、迁移 10，DataAccess/Practice 共享纯调度状态类型。不得另建同构题面或复制已有算法。
 
-**Interfaces:** `GetCurrentQuestionAsync(string sessionId, CT) → ReviewQuestionDto?`；`SubmitAnswerAsync(SubmitReviewAnswerRequestDto, CT) → ReviewAnswerResultDto`。请求字段 SessionId、QuestionId、SubmittedText；结果 WasCorrect、ExpectedAnswer、ExpectedSpokenText、NextQuestion、Summary。题面保留现有学习题面字段但不含答案键，看义写词 SpokenText=null。
+**Interfaces:** `GetCurrentQuestionAsync(string sessionId, CT) → PracticeQuestionDto?`；`SubmitAnswerAsync(SubmitReviewAnswerRequestDto, CT) → ReviewAnswerResultDto`。请求字段 SessionId、QuestionId、SubmittedText；结果 WasCorrect、ExpectedAnswer、ExpectedSpokenText、NextQuestion、Summary。题面保留现有学习题面字段但不含答案键，看义写词 SpokenText=null。
+
+**接口落实：** 当前题目读取单独使用 `IReviewQuestionReader.GetCurrentQuestionAsync → PracticeQuestionDto?`，答案提交能力随后独立实现；两模式共用同构题面，而非复制 `ReviewQuestionDto`。这不共享学习与复习进度。
+
+- [x] 读题部分：17 项真实三层测试 RED→GREEN；当前题目持久化、并发唯一、计划快照、重启、回滚、中文／礼貌形读音及无成绩副作用；全量 1698/1698。见 `docs/verification/2026-10-01-review-question.md`。以下提交／重练／FSRS 工作仍未完成，不能把 Task 2 标为完成。
 
 - [ ] 正常、边界、非法／过期／重复题、取消、初次错误后重对仍 Again、独立词形、语言、动态覆盖、相同听写去重、间隔重练、重启、事务回滚测试；编译适配后冻结，实际行为 RED。
 - [ ] 复用 AnswerEvaluationService 和 FSRS；提取已有学习纯题面／适用答案与动态调度中真正共用的规则，两个模式组合使用，不复制已有内核或继承 Service。复习状态按 session+member+form 保存，正确两次及渠道字形覆盖完成；首次错保存在历史。完成形式只评价一次，持久化事务同时提交题目、次数、FSRS、组完成日和会话状态。

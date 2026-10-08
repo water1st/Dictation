@@ -1,3 +1,4 @@
+using Dictation.Core.Practice;
 using Dapper;
 using Dictation.DataAccess.Importing;
 using Dictation.DataAccess.Learning;
@@ -373,7 +374,7 @@ namespace Dictation.Tests.Core
                     DataAccessorTestFactory.CreateLearningSession(connectionFactory),
                     planService,
                     planService,
-                    new LearningQuestionScheduler(timeProvider, random),
+                    new PracticeQuestionScheduler(timeProvider, random),
                     new AnswerEvaluationService(),
                     timeProvider,
                     random,

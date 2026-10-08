@@ -1,9 +1,9 @@
-namespace Dictation.DataAccess.Learning
+namespace Dictation.DataAccess.Practice
 {
     /// <summary>
     /// 表示出题快照中的持久化词形成绩与可用答案。
     /// </summary>
-    public sealed record LearningFormUnitPo(
+    public sealed record PracticeFormUnitPo(
         string WordGroupId,
         long MemberId,
         string FormCode,
@@ -11,7 +11,7 @@ namespace Dictation.DataAccess.Learning
         bool IsPhrase,
         string? KanjiUsageCode,
         IReadOnlyList<string> Meanings,
-        IReadOnlyList<LearningAnswerVariantPo> Variants,
+        IReadOnlyList<PracticeAnswerVariantPo> Variants,
         int CorrectStreak,
         bool IsMastered,
         int NextEligibleOrdinal,

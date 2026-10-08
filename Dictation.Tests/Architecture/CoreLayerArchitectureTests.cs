@@ -1,3 +1,4 @@
+using Dictation.Core.Practice;
 using System.Reflection;
 using System.Runtime.Versioning;
 using Dictation.DataAccess;
@@ -45,7 +46,7 @@ namespace Dictation.Tests.Architecture
                 "Configuration.ApplicationSettingsDto", "Configuration.LearningLanguage",
                 "Importing.ImportBatchDto", "Learning.LearningSessionDto",
                 "Learning.ILearningProgressReader", "Learning.LearningDailyProgressDto",
-                "Learning.LearningQuestionDto", "Lexicon.LexiconLookupResultDto",
+                "Practice.PracticeQuestionDto", "Lexicon.LexiconLookupResultDto",
                 "Tts.ITtsProvider", "Tts.TtsSynthesisRequestDto", "Tts.TtsAudioDto"
             };
 

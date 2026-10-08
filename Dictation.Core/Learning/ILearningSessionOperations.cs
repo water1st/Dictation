@@ -1,3 +1,4 @@
+using Dictation.Core.Practice;
 using Dictation.Core.Configuration;
 
 namespace Dictation.Core.Learning
@@ -33,7 +34,7 @@ namespace Dictation.Core.Learning
         /// <param name="sessionId">要继续答题的学习会话标识。</param>
         /// <param name="cancellationToken">取消操作的令牌。</param>
         /// <returns>当前待答题目；会话已完成时返回 <see langword="null"/>。</returns>
-        Task<LearningQuestionDto?> GetCurrentQuestionAsync(
+        Task<PracticeQuestionDto?> GetCurrentQuestionAsync(
             string sessionId,
             CancellationToken cancellationToken = default);
 

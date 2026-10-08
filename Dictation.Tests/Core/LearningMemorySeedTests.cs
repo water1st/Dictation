@@ -1,3 +1,5 @@
+using Dictation.DataAccess.Practice;
+using Dictation.Core.Practice;
 using Dapper;
 using Dictation.Core.Importing;
 using Dictation.Core.Learning;
@@ -50,9 +52,9 @@ namespace Dictation.Tests.Core
         public void Seeds_RejectsNullInputButEmptyScopeIsValid()
         {
             var planner = new LearningMemorySeedPlanner(new FsrsScheduler());
-            Assert.Throws<ArgumentNullException>(() => planner.CreateSeeds(null!, Array.Empty<LearningQuestionHistoryPo>(), MemorySeedTestEnvironment.Now));
-            Assert.Throws<ArgumentNullException>(() => planner.CreateSeeds(Array.Empty<LearningFormUnitPo>(), null!, MemorySeedTestEnvironment.Now));
-            Assert.Empty(planner.CreateSeeds(Array.Empty<LearningFormUnitPo>(), Array.Empty<LearningQuestionHistoryPo>(), MemorySeedTestEnvironment.Now));
+            Assert.Throws<ArgumentNullException>(() => planner.CreateSeeds(null!, Array.Empty<PracticeQuestionHistoryPo>(), MemorySeedTestEnvironment.Now));
+            Assert.Throws<ArgumentNullException>(() => planner.CreateSeeds(Array.Empty<PracticeFormUnitPo>(), null!, MemorySeedTestEnvironment.Now));
+            Assert.Empty(planner.CreateSeeds(Array.Empty<PracticeFormUnitPo>(), Array.Empty<PracticeQuestionHistoryPo>(), MemorySeedTestEnvironment.Now));
         }
 
         [Fact]
@@ -103,8 +105,8 @@ namespace Dictation.Tests.Core
             var group = await environment.ImportAsync();
             await environment.SavePlanAsync("Dictionary");
             var session = await environment.Sessions.StartOrResumeAsync(new StartLearningSessionRequestDto(LearningLanguage.Japanese), TestContext.Current.CancellationToken);
-            var first = Assert.IsType<LearningQuestionDto>(await environment.Sessions.GetCurrentQuestionAsync(session.SessionId, TestContext.Current.CancellationToken));
-            var next = Assert.IsType<LearningQuestionDto>((await environment.Sessions.SubmitAnswerAsync(
+            var first = Assert.IsType<PracticeQuestionDto>(await environment.Sessions.GetCurrentQuestionAsync(session.SessionId, TestContext.Current.CancellationToken));
+            var next = Assert.IsType<PracticeQuestionDto>((await environment.Sessions.SubmitAnswerAsync(
                 new SubmitLearningAnswerRequestDto(session.SessionId, first.QuestionId, await environment.CorrectAnswerAsync(first)), TestContext.Current.CancellationToken)).NextQuestion);
             await using (var connection = environment.Connections.CreateConnection())
             {
@@ -137,8 +139,8 @@ namespace Dictation.Tests.Core
             Assert.Empty(await environment.MemoriesAsync(group));
         }
 
-        private static LearningFormUnitPo Unit(string form) => new("group", 11, form, form, false,
-            "None", new[] { "吃" }, Array.Empty<LearningAnswerVariantPo>(), 2, true, 0, 2, 0, 0, 2, 0, 2, 0);
-        private static LearningQuestionHistoryPo History(string form, bool? correct) => new(1, "group", 11, form, "MeaningWriting", "Kana", 0, correct);
+        private static PracticeFormUnitPo Unit(string form) => new("group", 11, form, form, false,
+            "None", new[] { "吃" }, Array.Empty<PracticeAnswerVariantPo>(), 2, true, 0, 2, 0, 0, 2, 0, 2, 0);
+        private static PracticeQuestionHistoryPo History(string form, bool? correct) => new(1, "group", 11, form, "MeaningWriting", "Kana", 0, correct);
     }
 }

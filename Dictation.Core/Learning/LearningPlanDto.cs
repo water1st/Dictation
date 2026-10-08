@@ -1,4 +1,5 @@
 using Dictation.Core.Configuration;
+using Dictation.Core.Practice;
 
 namespace Dictation.Core.Learning
 {
@@ -16,5 +17,5 @@ namespace Dictation.Core.Learning
         IReadOnlyList<LearningChannel> Channels,
         IReadOnlyList<LearningOutputMode> OutputModes,
         DateTimeOffset UpdatedAtUtc,
-        EnglishExampleParadigmDto? EnglishExampleParadigm);
+        EnglishExampleParadigmDto? EnglishExampleParadigm) : IPracticeQuestionPlan;
 }

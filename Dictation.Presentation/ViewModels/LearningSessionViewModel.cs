@@ -1,3 +1,4 @@
+using Dictation.Core.Practice;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
@@ -24,7 +25,7 @@ namespace Dictation.Presentation.ViewModels
         private CancellationTokenSource? currentOperation;
         private LearningLanguage selectedLanguage;
         private LearningSessionDto? session;
-        private LearningQuestionDto? question;
+        private PracticeQuestionDto? question;
         private LearningAnswerResultDto? feedback;
         private LearningSessionSummaryDto? summary;
         private ImportWordGroupMemberDto? selectedBrowseMember;
@@ -79,7 +80,7 @@ namespace Dictation.Presentation.ViewModels
         public LearningLanguage SelectedLanguage => selectedLanguage;
         public string WindowTitle => selectedLanguage == LearningLanguage.Japanese ? "日语学习" : "英语学习";
         public LearningSessionDto? Session => session;
-        public LearningQuestionDto? Question => question;
+        public PracticeQuestionDto? Question => question;
         public LearningAnswerResultDto? Feedback => feedback;
         public LearningSessionSummaryDto? Summary => summary;
         public bool IsBusy => isBusy;

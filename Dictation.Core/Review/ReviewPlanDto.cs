@@ -1,5 +1,6 @@
 using Dictation.Core.Configuration;
 using Dictation.Core.Learning;
+using Dictation.Core.Practice;
 
 namespace Dictation.Core.Review
 {
@@ -16,5 +17,5 @@ namespace Dictation.Core.Review
         EnglishFormLabelMode EnglishFormLabelMode,
         string? EnglishExampleSourceSenseId,
         DateTimeOffset UpdatedAtUtc,
-        EnglishExampleParadigmDto? EnglishExampleParadigm);
+        EnglishExampleParadigmDto? EnglishExampleParadigm) : IPracticeQuestionPlan;
 }

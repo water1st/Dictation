@@ -1,3 +1,4 @@
+using Dictation.DataAccess.Practice;
 using System.Globalization;
 using Dapper;
 using Dictation.DataAccess.Importing;
@@ -517,13 +518,13 @@ namespace Dictation.DataAccess.Learning
                 var variantsByUnit = variants.GroupBy(row => (row.MemberId, row.FormCode))
                     .ToDictionary(
                         group => group.Key,
-                        group => (IReadOnlyList<LearningAnswerVariantPo>)group.Select(row => new LearningAnswerVariantPo(
+                        group => (IReadOnlyList<PracticeAnswerVariantPo>)group.Select(row => new PracticeAnswerVariantPo(
                             row.Surface,
                             row.Reading,
                             row.ScriptCode,
                             row.IsCommon != 0,
                             row.IsPrimary != 0)).ToArray());
-                var units = unitRows.Select(row => new LearningFormUnitPo(
+                var units = unitRows.Select(row => new PracticeFormUnitPo(
                     row.WordGroupId,
                     row.MemberId,
                     row.FormCode,
@@ -536,7 +537,7 @@ namespace Dictation.DataAccess.Learning
                             : Array.Empty<string>(),
                     variantsByUnit.TryGetValue((row.MemberId, row.FormCode), out var unitVariants)
                         ? unitVariants
-                        : Array.Empty<LearningAnswerVariantPo>(),
+                        : Array.Empty<PracticeAnswerVariantPo>(),
                     row.CorrectStreak,
                     row.IsMastered != 0,
                     row.NextEligibleOrdinal,
@@ -551,7 +552,7 @@ namespace Dictation.DataAccess.Learning
                     session,
                     pendingRow is null ? null : MapQuestion(pendingRow),
                     units,
-                    historyRows.Select(row => new LearningQuestionHistoryPo(
+                    historyRows.Select(row => new PracticeQuestionHistoryPo(
                         row.QuestionId,
                         row.WordGroupId,
                         row.MemberId,
@@ -580,8 +581,8 @@ namespace Dictation.DataAccess.Learning
         /// </summary>
         /// <param name="question">待持久化的题目和调度状态。</param>
         /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
-        public async Task<LearningQuestionStatePo> CreatePendingQuestionAsync(
-            CreateLearningQuestionPo question,
+        public async Task<PracticeQuestionStatePo> CreatePendingQuestionAsync(
+            CreatePracticeQuestionPo question,
             CancellationToken cancellationToken = default)
         {
             ValidateQuestion(question);
@@ -596,7 +597,7 @@ namespace Dictation.DataAccess.Learning
                     await ValidateQuestionTargetAsync(connection, transaction, question, cancellationToken);
                     var questionId = await InsertQuestionAsync(connection, transaction, question, cancellationToken);
                     await transaction.CommitAsync(cancellationToken);
-                    return new LearningQuestionStatePo(
+                    return new PracticeQuestionStatePo(
                         questionId,
                         question.SessionId,
                         question.WordGroupId,
@@ -632,7 +633,7 @@ namespace Dictation.DataAccess.Learning
         /// <param name="answer">待持久化的答案与状态变化。</param>
         /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
         /// <returns>本次写入的下一道题；没有下一题时为空。</returns>
-        public async Task<LearningQuestionStatePo?> ApplyAnswerAsync(
+        public async Task<PracticeQuestionStatePo?> ApplyAnswerAsync(
             ApplyLearningAnswerPo answer,
             CancellationToken cancellationToken = default)
         {
@@ -780,7 +781,7 @@ namespace Dictation.DataAccess.Learning
                         await reviewMemoryWriter.InsertMissingAsync(connection, transaction, answer.MemorySeeds, cancellationToken);
                     }
 
-                    LearningQuestionStatePo? next = null;
+                    PracticeQuestionStatePo? next = null;
                     if (answer.CompleteSession)
                     {
                         await connection.ExecuteAsync(new CommandDefinition(
@@ -806,7 +807,7 @@ namespace Dictation.DataAccess.Learning
                         ValidateQuestion(nextQuestion);
                         await ValidateQuestionTargetAsync(connection, transaction, nextQuestion, cancellationToken);
                         var nextQuestionId = await InsertQuestionAsync(connection, transaction, nextQuestion, cancellationToken);
-                        next = new LearningQuestionStatePo(
+                        next = new PracticeQuestionStatePo(
                             nextQuestionId,
                             nextQuestion.SessionId,
                             nextQuestion.WordGroupId,
@@ -939,9 +940,9 @@ namespace Dictation.DataAccess.Learning
             }
         }
 
-        private static LearningQuestionStatePo MapQuestion(QuestionRow row)
+        private static PracticeQuestionStatePo MapQuestion(QuestionRow row)
         {
-            return new LearningQuestionStatePo(
+            return new PracticeQuestionStatePo(
                 row.QuestionId,
                 row.SessionId,
                 row.WordGroupId,
@@ -952,7 +953,7 @@ namespace Dictation.DataAccess.Learning
                 row.QuestionOrdinal);
         }
 
-        private static void ValidateQuestion(CreateLearningQuestionPo question)
+        private static void ValidateQuestion(CreatePracticeQuestionPo question)
         {
             ArgumentNullException.ThrowIfNull(question);
             RequireText(question.SessionId, nameof(question.SessionId));
@@ -1015,7 +1016,7 @@ namespace Dictation.DataAccess.Learning
         private static async Task ValidateQuestionTargetAsync(
             SqliteConnection connection,
             System.Data.Common.DbTransaction transaction,
-            CreateLearningQuestionPo question,
+            CreatePracticeQuestionPo question,
             CancellationToken cancellationToken)
         {
             var session = await connection.QuerySingleOrDefaultAsync<SessionStateRow>(new CommandDefinition(
@@ -1065,7 +1066,7 @@ namespace Dictation.DataAccess.Learning
         private static Task<long> InsertQuestionAsync(
             SqliteConnection connection,
             System.Data.Common.DbTransaction transaction,
-            CreateLearningQuestionPo question,
+            CreatePracticeQuestionPo question,
             CancellationToken cancellationToken)
         {
             return connection.ExecuteScalarAsync<long>(new CommandDefinition(

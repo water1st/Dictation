@@ -1,12 +1,13 @@
+using Dictation.Core.Learning;
+using Dictation.DataAccess.Practice;
 using Dictation.Core.Configuration;
-using Dictation.DataAccess.Learning;
 
-namespace Dictation.Core.Learning
+namespace Dictation.Core.Practice
 {
     /// <summary>
-    /// 依据学习计划、词形状态与答题历史执行纯出题调度决策。
+    /// 依据练习计划、词形状态与答题历史执行纯出题调度决策。
     /// </summary>
-    internal sealed class LearningQuestionScheduler
+    internal sealed class PracticeQuestionScheduler
     {
         private readonly TimeProvider timeProvider;
         private readonly Random random;
@@ -16,7 +17,7 @@ namespace Dictation.Core.Learning
         /// </summary>
         /// <param name="timeProvider">用于记录新题创建时间的时钟。</param>
         /// <param name="random">用于候选选择与重练间隔的随机源。</param>
-        public LearningQuestionScheduler(TimeProvider timeProvider, Random random)
+        public PracticeQuestionScheduler(TimeProvider timeProvider, Random random)
         {
             this.timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
             this.random = random ?? throw new ArgumentNullException(nameof(random));
@@ -35,19 +36,24 @@ namespace Dictation.Core.Learning
         /// <summary>
         /// 从当前会话快照中选择下一题；没有可调度词形时返回空。
         /// </summary>
-        /// <param name="snapshot">包含词形状态、历史和会话语言的持久化快照。</param>
-        /// <param name="plan">当前语言生效的学习计划。</param>
+        /// <param name="sessionId">所属学习或复习会话的标识。</param>
+        /// <param name="language">该会话固定的语言。</param>
+        /// <param name="units">该会话独立存储的词形状态。</param>
+        /// <param name="history">该会话独立存储的题目历史。</param>
+        /// <param name="plan">该模式生效的出题范围与提示能力。</param>
         /// <param name="questionOrdinal">待创建题目的序号。</param>
         /// <returns>下一题持久化输入；无候选时为 <see langword="null"/>。</returns>
-        internal CreateLearningQuestionPo? CreateNextQuestion(
-            LearningSchedulingSnapshotPo snapshot,
-            LearningPlanDto plan,
+        internal CreatePracticeQuestionPo? CreateNextQuestion(
+            string sessionId,
+            LearningLanguage language,
+            IReadOnlyList<PracticeFormUnitPo> units,
+            IReadOnlyList<PracticeQuestionHistoryPo> history,
+            IPracticeQuestionPlan plan,
             int questionOrdinal)
         {
-            var language = ParseEnum<LearningLanguage>(snapshot.Session.Language, "学习语言");
-            var candidates = snapshot.Units
+            var candidates = units
                 .Where(unit => !unit.IsMastered && IsEnabledUnit(unit, plan, language))
-                .Select(unit => CreateQuestionCandidate(unit, plan, language, snapshot.History))
+                .Select(unit => CreateQuestionCandidate(unit, plan, language, history))
                 .Where(candidate => candidate is not null)
                 .Cast<QuestionCandidate>()
                 .ToArray();
@@ -57,7 +63,7 @@ namespace Dictation.Core.Learning
             if (eligible.Length == 0)
             {
                 eligible = candidates
-                    .Where(candidate => MayReleaseEarly(candidate, candidates, snapshot.History))
+                    .Where(candidate => MayReleaseEarly(candidate, candidates, history))
                     .ToArray();
             }
 
@@ -76,8 +82,8 @@ namespace Dictation.Core.Learning
                 .Where(candidate => Math.Abs(candidate.ErrorRate - maxErrorRate) < double.Epsilon)
                 .ToArray();
             var selected = priorityPool[random.Next(priorityPool.Length)];
-            return new CreateLearningQuestionPo(
-                snapshot.Session.SessionId,
+            return new CreatePracticeQuestionPo(
+                sessionId,
                 selected.Unit.WordGroupId,
                 selected.Unit.MemberId,
                 selected.Unit.FormCode,
@@ -91,12 +97,12 @@ namespace Dictation.Core.Learning
         /// 判断一个词形是否仍在当前计划和语言字形范围内可练习。
         /// </summary>
         /// <param name="unit">待判断的词形状态。</param>
-        /// <param name="plan">当前语言生效的学习计划。</param>
+        /// <param name="plan">当前语言生效的练习选项。</param>
         /// <param name="language">当前会话语言。</param>
         /// <returns>词形在当前计划中可练习时返回 <see langword="true"/>。</returns>
         internal bool IsEnabledUnit(
-            LearningFormUnitPo unit,
-            LearningPlanDto plan,
+            PracticeFormUnitPo unit,
+            IPracticeQuestionPlan plan,
             LearningLanguage language)
         {
             return plan.FormCodes.Contains(unit.FormCode, StringComparer.Ordinal)
@@ -108,15 +114,15 @@ namespace Dictation.Core.Learning
         /// 判断当前计划中是否仍有答错且尚未按同一题型和字形答对的题目。
         /// </summary>
         /// <param name="unit">待检查的成员词形。</param>
-        /// <param name="plan">当前学习计划。</param>
+        /// <param name="plan">当前模式生效的练习选项。</param>
         /// <param name="language">会话语言。</param>
         /// <param name="history">包含本次答题结果的会话历史。</param>
         /// <returns>仍需重练时为 <see langword="true"/>。</returns>
         internal bool HasUnresolvedRetry(
-            LearningFormUnitPo unit,
-            LearningPlanDto plan,
+            PracticeFormUnitPo unit,
+            IPracticeQuestionPlan plan,
             LearningLanguage language,
-            IReadOnlyList<LearningQuestionHistoryPo> history)
+            IReadOnlyList<PracticeQuestionHistoryPo> history)
         {
             return FindUnresolvedRetry(unit, plan, language, history) is not null;
         }
@@ -126,15 +132,15 @@ namespace Dictation.Core.Learning
         /// 供外层先按覆盖缺口、再按错误率确定调度优先级。
         /// </summary>
         /// <param name="unit">待评估的词形状态。</param>
-        /// <param name="plan">当前语言生效的学习计划。</param>
+        /// <param name="plan">当前语言生效的练习选项。</param>
         /// <param name="language">当前会话语言。</param>
         /// <param name="history">本轮已创建题目的历史。</param>
         /// <returns>可参与优先级比较的候选；没有适用字形时返回 <see langword="null"/>。</returns>
         private QuestionCandidate? CreateQuestionCandidate(
-            LearningFormUnitPo unit,
-            LearningPlanDto plan,
+            PracticeFormUnitPo unit,
+            IPracticeQuestionPlan plan,
             LearningLanguage language,
-            IReadOnlyList<LearningQuestionHistoryPo> history)
+            IReadOnlyList<PracticeQuestionHistoryPo> history)
         {
             var outputs = GetApplicableOutputs(unit, plan, language);
             if (outputs.Count == 0)
@@ -166,11 +172,11 @@ namespace Dictation.Core.Learning
             return new QuestionCandidate(unit, channel, output, uncovered, errorRate, lastOrdinal);
         }
 
-        private static LearningQuestionHistoryPo? FindUnresolvedRetry(
-            LearningFormUnitPo unit,
-            LearningPlanDto plan,
+        private static PracticeQuestionHistoryPo? FindUnresolvedRetry(
+            PracticeFormUnitPo unit,
+            IPracticeQuestionPlan plan,
             LearningLanguage language,
-            IReadOnlyList<LearningQuestionHistoryPo> history)
+            IReadOnlyList<PracticeQuestionHistoryPo> history)
         {
             var outputs = GetApplicableOutputs(unit, plan, language)
                 .Select(value => value.ToString())
@@ -221,7 +227,7 @@ namespace Dictation.Core.Learning
         private static bool MayReleaseEarly(
             QuestionCandidate candidate,
             IReadOnlyList<QuestionCandidate> candidates,
-            IReadOnlyList<LearningQuestionHistoryPo> history)
+            IReadOnlyList<PracticeQuestionHistoryPo> history)
         {
             return candidates
                 .Where(other => !IsSameUnit(candidate.Unit, other.Unit))
@@ -236,24 +242,24 @@ namespace Dictation.Core.Learning
         /// 日语假名必须有假名变体，汉字还必须标记为常用且存在汉字变体，从而排除罕见或无汉字词形。
         /// </summary>
         /// <param name="unit">待筛选字形的词形状态。</param>
-        /// <param name="plan">声明启用字形的学习计划。</param>
+        /// <param name="plan">当前模式声明的启用字形。</param>
         /// <param name="language">当前会话语言。</param>
         /// <returns>同时满足计划选择和词形实际表示能力的字形。</returns>
         private static IReadOnlyList<LearningOutputMode> GetApplicableOutputs(
-            LearningFormUnitPo unit,
-            LearningPlanDto plan,
+            PracticeFormUnitPo unit,
+            IPracticeQuestionPlan plan,
             LearningLanguage language)
         {
             return plan.OutputModes.Where(output => PracticeFormApplicability.HasOutput(
                 language, unit.KanjiUsageCode, unit.Variants.Select(variant => variant.ScriptCode), output)).ToArray();
         }
 
-        private static bool IsApplicableForm(LearningFormUnitPo unit, LearningLanguage language)
+        private static bool IsApplicableForm(PracticeFormUnitPo unit, LearningLanguage language)
         {
             return PracticeFormApplicability.IsFormApplicable(language, unit.IsPhrase, unit.FormCode);
         }
 
-        private static int GetChannelCount(LearningFormUnitPo unit, LearningChannel channel)
+        private static int GetChannelCount(PracticeFormUnitPo unit, LearningChannel channel)
         {
             return channel switch
             {
@@ -263,7 +269,7 @@ namespace Dictation.Core.Learning
             };
         }
 
-        private static int GetOutputCount(LearningFormUnitPo unit, LearningOutputMode output)
+        private static int GetOutputCount(PracticeFormUnitPo unit, LearningOutputMode output)
         {
             return output switch
             {
@@ -274,13 +280,13 @@ namespace Dictation.Core.Learning
             };
         }
 
-        private static bool IsSameUnit(LearningFormUnitPo left, LearningFormUnitPo right)
+        private static bool IsSameUnit(PracticeFormUnitPo left, PracticeFormUnitPo right)
         {
             return left.MemberId == right.MemberId
                 && string.Equals(left.FormCode, right.FormCode, StringComparison.Ordinal);
         }
 
-        private static bool IsSameUnit(LearningFormUnitPo unit, LearningQuestionHistoryPo question)
+        private static bool IsSameUnit(PracticeFormUnitPo unit, PracticeQuestionHistoryPo question)
         {
             return unit.MemberId == question.MemberId
                 && string.Equals(unit.FormCode, question.FormCode, StringComparison.Ordinal);
@@ -294,7 +300,7 @@ namespace Dictation.Core.Learning
         }
 
         private sealed record QuestionCandidate(
-            LearningFormUnitPo Unit,
+            PracticeFormUnitPo Unit,
             LearningChannel Channel,
             LearningOutputMode Output,
             int UncoveredDimensions,

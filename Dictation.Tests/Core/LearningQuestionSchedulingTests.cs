@@ -1,3 +1,5 @@
+using Dictation.DataAccess.Practice;
+using Dictation.Core.Practice;
 using Dapper;
 using Dictation.DataAccess.Importing;
 using Dictation.DataAccess.Learning;
@@ -28,10 +30,10 @@ namespace Dictation.Tests.Core
                 new[] { LearningOutputMode.Kana });
             var session = await environment.StartAsync(LearningLanguage.Japanese);
 
-            var first = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var first = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 session.SessionId,
                 TestContext.Current.CancellationToken));
-            var resumed = Assert.IsType<LearningQuestionDto>(await environment.CreateSecondService().GetCurrentQuestionAsync(
+            var resumed = Assert.IsType<PracticeQuestionDto>(await environment.CreateSecondService().GetCurrentQuestionAsync(
                 session.SessionId,
                 TestContext.Current.CancellationToken));
 
@@ -39,7 +41,7 @@ namespace Dictation.Tests.Core
             Assert.Null(first.SpokenText);
             Assert.Contains("吃", first.Meanings);
             Assert.DoesNotContain(
-                typeof(LearningQuestionDto).GetProperties(),
+                typeof(PracticeQuestionDto).GetProperties(),
                 property => property.Name.Contains("Answer", StringComparison.OrdinalIgnoreCase));
             Assert.Equal(1L, await environment.ExecuteScalarAsync<long>(
                 "SELECT COUNT(*) FROM LearningQuestions WHERE SessionId = @SessionId AND Status = 'Pending';",
@@ -57,12 +59,12 @@ namespace Dictation.Tests.Core
                 new[] { LearningChannel.MeaningWriting, LearningChannel.Dictation },
                 new[] { LearningOutputMode.Kana, LearningOutputMode.Kanji });
             var session = await environment.StartAsync(LearningLanguage.Japanese);
-            var first = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var first = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 session.SessionId,
                 TestContext.Current.CancellationToken));
 
             var firstResult = await environment.SubmitCorrectAsync(first);
-            var second = Assert.IsType<LearningQuestionDto>(firstResult.NextQuestion);
+            var second = Assert.IsType<PracticeQuestionDto>(firstResult.NextQuestion);
             var finalResult = await environment.SubmitCorrectAsync(second);
 
             Assert.NotEqual(first.Channel, second.Channel);
@@ -89,7 +91,7 @@ namespace Dictation.Tests.Core
                 new[] { LearningOutputMode.Kana, LearningOutputMode.Kanji });
             var session = await environment.StartAsync(LearningLanguage.Japanese);
 
-            var question = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var question = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 session.SessionId,
                 TestContext.Current.CancellationToken));
 
@@ -109,7 +111,7 @@ namespace Dictation.Tests.Core
                 new[] { LearningOutputMode.Latin });
             var session = await environment.StartAsync(LearningLanguage.English);
 
-            var question = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var question = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 session.SessionId,
                 TestContext.Current.CancellationToken));
 
@@ -132,18 +134,18 @@ namespace Dictation.Tests.Core
                 new[] { LearningChannel.MeaningWriting },
                 new[] { LearningOutputMode.Kana });
             var session = await environment.StartAsync(LearningLanguage.Japanese);
-            var first = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var first = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 session.SessionId,
                 TestContext.Current.CancellationToken));
 
             var wrong = await environment.Service.SubmitAnswerAsync(
                 new SubmitLearningAnswerRequestDto(session.SessionId, first.QuestionId, "错误"),
                 TestContext.Current.CancellationToken);
-            var second = Assert.IsType<LearningQuestionDto>(wrong.NextQuestion);
+            var second = Assert.IsType<PracticeQuestionDto>(wrong.NextQuestion);
             var secondResult = await environment.SubmitCorrectAsync(second);
-            var third = Assert.IsType<LearningQuestionDto>(secondResult.NextQuestion);
+            var third = Assert.IsType<PracticeQuestionDto>(secondResult.NextQuestion);
             var thirdResult = await environment.SubmitCorrectAsync(third);
-            var retry = Assert.IsType<LearningQuestionDto>(thirdResult.NextQuestion);
+            var retry = Assert.IsType<PracticeQuestionDto>(thirdResult.NextQuestion);
 
             Assert.False(wrong.WasCorrect);
             Assert.True(wrong.HadErrorInSession);
@@ -163,7 +165,7 @@ namespace Dictation.Tests.Core
             var result = await environment.SubmitCorrectAsync(retry);
             for (var count = 0; result.Summary is null && count < 20; count++)
             {
-                result = await environment.SubmitCorrectAsync(Assert.IsType<LearningQuestionDto>(result.NextQuestion));
+                result = await environment.SubmitCorrectAsync(Assert.IsType<PracticeQuestionDto>(result.NextQuestion));
             }
 
             var summary = Assert.IsType<LearningSessionSummaryDto>(result.Summary);
@@ -182,13 +184,13 @@ namespace Dictation.Tests.Core
                 new[] { LearningChannel.MeaningWriting },
                 new[] { LearningOutputMode.Kana, LearningOutputMode.Kanji });
             var session = await environment.StartAsync(LearningLanguage.Japanese);
-            var first = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var first = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 session.SessionId,
                 TestContext.Current.CancellationToken));
             var wrong = await environment.Service.SubmitAnswerAsync(
                 new SubmitLearningAnswerRequestDto(session.SessionId, first.QuestionId, "错误"),
                 TestContext.Current.CancellationToken);
-            var next = Assert.IsType<LearningQuestionDto>(wrong.NextQuestion);
+            var next = Assert.IsType<PracticeQuestionDto>(wrong.NextQuestion);
             var retried = false;
 
             for (var count = 0; count < 5; count++)
@@ -201,7 +203,7 @@ namespace Dictation.Tests.Core
 
                 var result = await environment.SubmitCorrectAsync(next);
                 Assert.Null(result.Summary);
-                next = Assert.IsType<LearningQuestionDto>(result.NextQuestion);
+                next = Assert.IsType<PracticeQuestionDto>(result.NextQuestion);
             }
 
             Assert.True(retried);
@@ -223,7 +225,7 @@ namespace Dictation.Tests.Core
             var session = await environment.StartAsync(LearningLanguage.Japanese);
             await environment.ExecuteAsync(
                 "UPDATE LearningFormStates SET CorrectStreak = 1, MeaningWritingCount = 1, KanaCount = 1, CorrectCount = 1;");
-            var question = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var question = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 session.SessionId,
                 TestContext.Current.CancellationToken));
 
@@ -248,7 +250,7 @@ namespace Dictation.Tests.Core
                 new[] { LearningChannel.MeaningWriting },
                 new[] { LearningOutputMode.Kana });
             var session = await environment.StartAsync(LearningLanguage.Japanese);
-            var question = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var question = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 session.SessionId,
                 TestContext.Current.CancellationToken));
 
@@ -263,7 +265,7 @@ namespace Dictation.Tests.Core
                 TestContext.Current.CancellationToken));
             Assert.Equal(1L, await environment.ExecuteScalarAsync<long>("SELECT COUNT(*) FROM LearningQuestionAttempts;"));
 
-            var next = Assert.IsType<LearningQuestionDto>(accepted.NextQuestion);
+            var next = Assert.IsType<PracticeQuestionDto>(accepted.NextQuestion);
             await environment.ExecuteAsync(
                 "UPDATE LearningSessions SET Status = 'Completed', CompletedAtUtc = @CompletedAtUtc WHERE SessionId = @SessionId;",
                 new { CompletedAtUtc = environment.TimeProvider.GetUtcNow().ToString("O"), session.SessionId });
@@ -308,7 +310,7 @@ namespace Dictation.Tests.Core
                     ErrorCount = CASE WHEN FormCode = 'Dictionary' THEN 4 ELSE 0 END;
                 """);
 
-            var question = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var question = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 session.SessionId,
                 TestContext.Current.CancellationToken));
 
@@ -326,7 +328,7 @@ namespace Dictation.Tests.Core
                 new[] { LearningChannel.MeaningWriting },
                 new[] { LearningOutputMode.Kana });
             var session = await environment.StartAsync(LearningLanguage.Japanese);
-            var first = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var first = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 session.SessionId,
                 TestContext.Current.CancellationToken));
 
@@ -344,17 +346,17 @@ namespace Dictation.Tests.Core
                 new { first.QuestionId });
             Assert.InRange(interval - first.QuestionOrdinal, 4L, 8L);
 
-            var intervening = new List<LearningQuestionDto>();
+            var intervening = new List<PracticeQuestionDto>();
             for (var count = 0; count < 3; count++)
             {
-                var question = Assert.IsType<LearningQuestionDto>(result.NextQuestion);
+                var question = Assert.IsType<PracticeQuestionDto>(result.NextQuestion);
                 Assert.NotEqual(first.FormCode, question.FormCode);
                 intervening.Add(question);
                 result = await environment.SubmitCorrectAsync(question);
             }
 
             Assert.Equal(3, intervening.Select(question => question.FormCode).Distinct(StringComparer.Ordinal).Count());
-            var retry = Assert.IsType<LearningQuestionDto>(result.NextQuestion);
+            var retry = Assert.IsType<PracticeQuestionDto>(result.NextQuestion);
             Assert.Equal(first.FormCode, retry.FormCode);
             Assert.Equal(4, retry.QuestionOrdinal);
         }
@@ -392,7 +394,7 @@ namespace Dictation.Tests.Core
                 new[] { LearningChannel.MeaningWriting },
                 new[] { LearningOutputMode.Kana });
             var session = await environment.StartAsync(LearningLanguage.Japanese);
-            var question = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var question = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 session.SessionId,
                 TestContext.Current.CancellationToken));
             var target = await environment.ReadQuestionTargetAsync(question.QuestionId);
@@ -408,7 +410,7 @@ namespace Dictation.Tests.Core
                     4,
                     environment.TimeProvider.GetUtcNow(),
                     "2026-09-06",
-                    new CreateLearningQuestionPo(
+                    new CreatePracticeQuestionPo(
                         session.SessionId,
                         "missing-group",
                         target.MemberId,
@@ -452,7 +454,7 @@ namespace Dictation.Tests.Core
             using var environment = await TestEnvironment.CreateAsync();
             await environment.StageLearningAsync(LearningLanguage.Japanese, "食前", "jmdict:2:1");
             var session = await environment.StartAsync(LearningLanguage.Japanese);
-            var question = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var question = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 session.SessionId,
                 TestContext.Current.CancellationToken));
             using var cancellation = new CancellationTokenSource();
@@ -481,11 +483,11 @@ namespace Dictation.Tests.Core
                 new[] { LearningChannel.MeaningWriting },
                 new[] { LearningOutputMode.Kana });
             var firstSession = await environment.StartAsync(LearningLanguage.Japanese);
-            var question = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var question = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 firstSession.SessionId,
                 TestContext.Current.CancellationToken));
             var result = await environment.SubmitCorrectAsync(question);
-            result = await environment.SubmitCorrectAsync(Assert.IsType<LearningQuestionDto>(result.NextQuestion));
+            result = await environment.SubmitCorrectAsync(Assert.IsType<PracticeQuestionDto>(result.NextQuestion));
             Assert.NotNull(result.Summary);
             Assert.Equal("Review", await environment.ExecuteScalarAsync<string>(
                 "SELECT Placement FROM WordGroups WHERE WordGroupId = @WordGroupId;",
@@ -497,7 +499,7 @@ namespace Dictation.Tests.Core
                 new[] { LearningChannel.MeaningWriting },
                 new[] { LearningOutputMode.Kana });
             var supplemental = await environment.StartAsync(LearningLanguage.Japanese);
-            var supplementalQuestion = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var supplementalQuestion = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 supplemental.SessionId,
                 TestContext.Current.CancellationToken));
 
@@ -525,7 +527,7 @@ namespace Dictation.Tests.Core
                 WHERE MemberId IN (SELECT MemberId FROM WordGroupMembers WHERE Headword <> 'convert');
                 """);
 
-            var question = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var question = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 session.SessionId,
                 TestContext.Current.CancellationToken));
             var correctAnswer = await environment.ReadPreferredAnswerAsync(question.QuestionId);
@@ -561,11 +563,11 @@ namespace Dictation.Tests.Core
                 new[] { LearningChannel.MeaningWriting },
                 new[] { LearningOutputMode.Kana });
             var dictionarySession = await environment.StartAsync(LearningLanguage.Japanese);
-            var question = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var question = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 dictionarySession.SessionId,
                 TestContext.Current.CancellationToken));
             var result = await environment.SubmitCorrectAsync(question);
-            result = await environment.SubmitCorrectAsync(Assert.IsType<LearningQuestionDto>(result.NextQuestion));
+            result = await environment.SubmitCorrectAsync(Assert.IsType<PracticeQuestionDto>(result.NextQuestion));
 
             Assert.NotNull(result.Summary);
             Assert.Equal(0L, await environment.ExecuteScalarAsync<long>(
@@ -578,7 +580,7 @@ namespace Dictation.Tests.Core
                 new[] { LearningChannel.MeaningWriting },
                 new[] { LearningOutputMode.Kana });
             var supplemental = await environment.StartAsync(LearningLanguage.Japanese);
-            var supplementalQuestion = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var supplementalQuestion = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 supplemental.SessionId,
                 TestContext.Current.CancellationToken));
             Assert.Equal("Polite", supplementalQuestion.FormCode);
@@ -621,7 +623,7 @@ namespace Dictation.Tests.Core
             Assert.Equal(2, session.WordGroupIds.Count);
             Assert.Contains(firstId, session.WordGroupIds);
             Assert.Contains(secondId, session.WordGroupIds);
-            var question = Assert.IsType<LearningQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
+            var question = Assert.IsType<PracticeQuestionDto>(await environment.Service.GetCurrentQuestionAsync(
                 session.SessionId, TestContext.Current.CancellationToken));
             string? completedId = null;
             for (var attempt = 0; attempt < 20 && completedId is null; attempt++)
@@ -629,7 +631,7 @@ namespace Dictation.Tests.Core
                 var result = await environment.SubmitCorrectAsync(question);
                 completedId = await environment.ExecuteScalarAsync<string?>(
                     "SELECT WordGroupId FROM LearningGroupProgress WHERE CompletedLocalDate IS NOT NULL LIMIT 1;");
-                question = Assert.IsType<LearningQuestionDto>(result.NextQuestion);
+                question = Assert.IsType<PracticeQuestionDto>(result.NextQuestion);
             }
 
             Assert.NotNull(completedId);
@@ -709,7 +711,7 @@ namespace Dictation.Tests.Core
                     dataAccessor,
                     planService,
                     planService,
-                    new LearningQuestionScheduler(timeProvider, random),
+                    new PracticeQuestionScheduler(timeProvider, random),
                     evaluationService,
                     timeProvider,
                     random,
@@ -735,7 +737,7 @@ namespace Dictation.Tests.Core
                     DataAccessorTestFactory.CreateLearningSession(connectionFactory),
                     planService,
                     planService,
-                    new LearningQuestionScheduler(TimeProvider, random),
+                    new PracticeQuestionScheduler(TimeProvider, random),
                     evaluationService,
                     TimeProvider,
                     random,
@@ -789,7 +791,7 @@ namespace Dictation.Tests.Core
                 new StartLearningSessionRequestDto(language),
                 TestContext.Current.CancellationToken);
 
-            public async Task<LearningAnswerResultDto> SubmitCorrectAsync(LearningQuestionDto question)
+            public async Task<LearningAnswerResultDto> SubmitCorrectAsync(PracticeQuestionDto question)
             {
                 return await Service.SubmitAnswerAsync(
                     new SubmitLearningAnswerRequestDto(

@@ -1,9 +1,9 @@
-namespace Dictation.DataAccess.Learning
+namespace Dictation.DataAccess.Practice
 {
     /// <summary>
     /// 表示当前持久化待答题的定位字段。
     /// </summary>
-    public sealed record LearningQuestionStatePo(
+    public sealed record PracticeQuestionStatePo(
         long QuestionId,
         string SessionId,
         string WordGroupId,

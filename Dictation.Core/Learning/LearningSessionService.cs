@@ -1,3 +1,6 @@
+using static Dictation.Core.Practice.PracticeQuestionPresenter;
+using Dictation.DataAccess.Practice;
+using Dictation.Core.Practice;
 using System.Globalization;
 using Dictation.DataAccess.Learning;
 using Dictation.Core.Configuration;
@@ -13,7 +16,7 @@ namespace Dictation.Core.Learning
         private readonly LearningSessionDataAccessor dataAccessor;
         private readonly ILearningPlanReader learningPlanReader;
         private readonly ILearningSessionStartPreparer sessionStartPreparer;
-        private readonly LearningQuestionScheduler questionScheduler;
+        private readonly PracticeQuestionScheduler questionScheduler;
         private readonly AnswerEvaluationService answerEvaluationService;
         private readonly TimeProvider timeProvider;
         private readonly Random random;
@@ -34,7 +37,7 @@ namespace Dictation.Core.Learning
             LearningSessionDataAccessor dataAccessor,
             ILearningPlanReader learningPlanReader,
             ILearningSessionStartPreparer sessionStartPreparer,
-            LearningQuestionScheduler questionScheduler,
+            PracticeQuestionScheduler questionScheduler,
             AnswerEvaluationService answerEvaluationService,
             TimeProvider timeProvider,
             Random random,
@@ -139,7 +142,7 @@ namespace Dictation.Core.Learning
         }
 
         /// <inheritdoc />
-        public async Task<LearningQuestionDto?> GetCurrentQuestionAsync(
+        public async Task<PracticeQuestionDto?> GetCurrentQuestionAsync(
             string sessionId,
             CancellationToken cancellationToken = default)
         {
@@ -155,13 +158,13 @@ namespace Dictation.Core.Learning
             var plan = await learningPlanReader.LoadAsync(language, cancellationToken);
             if (snapshot.PendingQuestion is not null)
             {
-                return MapQuestion(snapshot, snapshot.PendingQuestion, plan);
+                return PracticeQuestionPresenter.Create(language, snapshot.Units, snapshot.PendingQuestion, plan);
             }
 
-            var scheduled = questionScheduler.CreateNextQuestion(snapshot, plan, snapshot.Session.CurrentOrdinal)
+            var scheduled = questionScheduler.CreateNextQuestion(snapshot.Session.SessionId, language, snapshot.Units, snapshot.History, plan, snapshot.Session.CurrentOrdinal)
                 ?? throw new InvalidOperationException("当前学习会话没有可调度的题目。");
             var persisted = await dataAccessor.CreatePendingQuestionAsync(scheduled, cancellationToken);
-            return MapQuestion(snapshot, persisted, plan);
+            return PracticeQuestionPresenter.Create(language, snapshot.Units, persisted, plan);
         }
 
         /// <inheritdoc />
@@ -229,7 +232,7 @@ namespace Dictation.Core.Learning
             var completeSession = activeUnits.Length == 0 || activeUnits.All(unit => unit.IsMastered);
             var nextScheduled = completeSession
                 ? null
-                : questionScheduler.CreateNextQuestion(transitionedSnapshot, plan, nextOrdinal);
+                : questionScheduler.CreateNextQuestion(sessionId, language, transitionedSnapshot.Units, transitionedSnapshot.History, plan, nextOrdinal);
             if (!completeSession && nextScheduled is null)
             {
                 throw new InvalidOperationException("学习会话尚未完成，但没有可调度的下一题。");
@@ -258,7 +261,7 @@ namespace Dictation.Core.Learning
                     memorySeeds),
                 cancellationToken);
             var hadError = updatedHistory.Any(history => history.WasCorrect == false);
-            var nextQuestion = persistedNext is null ? null : MapQuestion(transitionedSnapshot, persistedNext, plan);
+            var nextQuestion = persistedNext is null ? null : PracticeQuestionPresenter.Create(language, transitionedSnapshot.Units, persistedNext, plan);
             var summary = completeSession
                 ? CreateSummary(sessionId, transitionedSnapshot, language)
                 : null;
@@ -274,9 +277,9 @@ namespace Dictation.Core.Learning
         /// <summary>
         /// 根据当前题型、输出方式与判题结果生成新的词形状态；不就地修改输入快照。
         /// </summary>
-        private static LearningFormUnitPo ApplyOutcome(
-            LearningFormUnitPo unit,
-            LearningQuestionStatePo question,
+        private static PracticeFormUnitPo ApplyOutcome(
+            PracticeFormUnitPo unit,
+            PracticeQuestionStatePo question,
             bool wasCorrect,
             int correctStreak,
             int nextEligibleOrdinal,
@@ -297,120 +300,18 @@ namespace Dictation.Core.Learning
             };
         }
 
-        /// <summary>
-        /// 按计划选择提示标签与发音字段并组装题目；看义写词在提交前不携带发音答案，因此不是无条件字段复制。
-        /// </summary>
-        private static LearningQuestionDto MapQuestion(
-            LearningSchedulingSnapshotPo snapshot,
-            LearningQuestionStatePo question,
-            LearningPlanDto plan)
-        {
-            var language = ParseEnum<LearningLanguage>(snapshot.Session.Language, "学习语言");
-            var channel = ParseEnum<LearningChannel>(question.Channel, "题型");
-            var output = ParseEnum<LearningOutputMode>(question.OutputMode, "输出方式");
-            var unit = FindUnit(snapshot.Units, question);
-            return new LearningQuestionDto(
-                question.QuestionId,
-                question.SessionId,
-                question.QuestionOrdinal,
-                question.WordGroupId,
-                language,
-                channel,
-                output,
-                question.FormCode,
-                GetFormLabel(unit, plan, language),
-                GetOutputLabel(output),
-                unit.Meanings,
-                channel == LearningChannel.Dictation ? SelectPreferredSpokenText(unit, output, language) : null);
-        }
-
-        /// <summary>
-        /// 按计划选择英语示例词形标签；没有对应示例时使用原语法标签。
-        /// </summary>
-        private static string GetFormLabel(
-            LearningFormUnitPo unit,
-            LearningPlanDto plan,
-            LearningLanguage language)
-        {
-            if (language == LearningLanguage.English
-                && plan.EnglishFormLabelMode == EnglishFormLabelMode.ExampleParadigm
-                && plan.EnglishExampleParadigm is not null)
-            {
-                var example = plan.EnglishExampleParadigm.Forms.FirstOrDefault(form =>
-                    string.Equals(form.FormCode, unit.FormCode, StringComparison.Ordinal));
-                if (example is not null)
-                {
-                    return example.Surface;
-                }
-            }
-
-            return unit.FormLabel;
-        }
-
-        private static string GetOutputLabel(LearningOutputMode output) => output switch
-        {
-            LearningOutputMode.Latin => "英文",
-            LearningOutputMode.Kana => "假名",
-            LearningOutputMode.Kanji => "汉字",
-            _ => throw new ArgumentOutOfRangeException(nameof(output))
-        };
-
-        /// <summary>
-        /// 按语言与输出字形筛选可接受答案并去重；候选为空表示持久化状态不完整。
-        /// </summary>
-        private static IReadOnlyList<string> GetAnswers(
-            LearningFormUnitPo unit,
-            LearningOutputMode output,
-            LearningLanguage language)
-        {
-            var answers = unit.Variants
-                .Where(variant => language == LearningLanguage.English
-                    ? output == LearningOutputMode.Latin
-                    : string.Equals(variant.ScriptCode, output.ToString(), StringComparison.Ordinal))
-                .Select(variant => variant.Surface)
-                .Distinct(language == LearningLanguage.English ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal)
-                .ToArray();
-            return answers.Length > 0
-                ? answers
-                : throw new InvalidDataException("学习题目没有可接受答案。");
-        }
-
-        private static string SelectPreferredAnswer(
-            LearningFormUnitPo unit,
-            LearningOutputMode output,
-            LearningLanguage language) => GetAnswers(unit, output, language)[0];
-
-        /// <summary>
-        /// 先选当前输出方式的首个答案；日语优先读音，英语直接使用表面形式。
-        /// </summary>
-        private static string SelectPreferredSpokenText(
-            LearningFormUnitPo unit,
-            LearningOutputMode output,
-            LearningLanguage language)
-        {
-            var answer = SelectPreferredAnswer(unit, output, language);
-            if (language == LearningLanguage.English)
-            {
-                return answer;
-            }
-
-            var variant = unit.Variants.First(value => value.Surface == answer
-                && string.Equals(value.ScriptCode, output.ToString(), StringComparison.Ordinal));
-            return string.IsNullOrWhiteSpace(variant.Reading) ? answer : variant.Reading;
-        }
-
-        private static LearningFormUnitPo FindUnit(
-            IReadOnlyList<LearningFormUnitPo> units,
-            LearningQuestionStatePo question)
+        private static PracticeFormUnitPo FindUnit(
+            IReadOnlyList<PracticeFormUnitPo> units,
+            PracticeQuestionStatePo question)
         {
             return units.SingleOrDefault(unit => IsSameUnit(unit, question))
                 ?? throw new InvalidDataException("学习题目对应的词形状态不存在。");
         }
 
-        private static bool IsSameUnit(LearningFormUnitPo unit, LearningQuestionStatePo question) =>
+        private static bool IsSameUnit(PracticeFormUnitPo unit, PracticeQuestionStatePo question) =>
             unit.MemberId == question.MemberId && string.Equals(unit.FormCode, question.FormCode, StringComparison.Ordinal);
 
-        private static bool IsSameUnit(LearningFormUnitPo unit, LearningQuestionHistoryPo question) =>
+        private static bool IsSameUnit(PracticeFormUnitPo unit, PracticeQuestionHistoryPo question) =>
             unit.MemberId == question.MemberId && string.Equals(unit.FormCode, question.FormCode, StringComparison.Ordinal);
 
         /// <summary>

@@ -1,3 +1,4 @@
+using Dictation.DataAccess.Practice;
 namespace Dictation.DataAccess.Learning
 {
     /// <summary>
@@ -5,7 +6,7 @@ namespace Dictation.DataAccess.Learning
     /// </summary>
     public sealed record LearningSchedulingSnapshotPo(
         LearningSessionPo Session,
-        LearningQuestionStatePo? PendingQuestion,
-        IReadOnlyList<LearningFormUnitPo> Units,
-        IReadOnlyList<LearningQuestionHistoryPo> History);
+        PracticeQuestionStatePo? PendingQuestion,
+        IReadOnlyList<PracticeFormUnitPo> Units,
+        IReadOnlyList<PracticeQuestionHistoryPo> History);
 }

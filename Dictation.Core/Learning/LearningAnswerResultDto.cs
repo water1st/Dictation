@@ -1,3 +1,4 @@
+using Dictation.Core.Practice;
 namespace Dictation.Core.Learning
 {
     /// <summary>
@@ -7,7 +8,7 @@ namespace Dictation.Core.Learning
         bool WasCorrect,
         string CorrectAnswer,
         bool HadErrorInSession,
-        LearningQuestionDto? NextQuestion,
+        PracticeQuestionDto? NextQuestion,
         LearningSessionSummaryDto? Summary,
         string SpokenText);
 }

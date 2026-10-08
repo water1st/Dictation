@@ -1,11 +1,12 @@
+using Dictation.Core.Learning;
 using Dictation.Core.Configuration;
 
-namespace Dictation.Core.Learning
+namespace Dictation.Core.Practice
 {
     /// <summary>
-    /// 表示呈现给学习页面的当前题目，不包含答案键。
+    /// 表示学习或复习页面共用的客观题面，不包含答案键。
     /// </summary>
-    public sealed record LearningQuestionDto(
+    public sealed record PracticeQuestionDto(
         long QuestionId,
         string SessionId,
         int QuestionOrdinal,

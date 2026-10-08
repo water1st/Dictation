@@ -1,3 +1,4 @@
+using Dictation.Core.Practice;
 using Dapper;
 using Dictation.Core.Configuration;
 using Dictation.Core.Importing;
@@ -60,7 +61,7 @@ namespace Dictation.Tests.Infrastructure
                 EnglishFormLabelMode.GrammarName, null, forms,
                 new[] { LearningChannel.MeaningWriting }, new[] { LearningOutputMode.Kana }), TestContext.Current.CancellationToken);
 
-        internal async Task<string> CorrectAnswerAsync(LearningQuestionDto question)
+        internal async Task<string> CorrectAnswerAsync(PracticeQuestionDto question)
         {
             await using var connection = Connections.CreateConnection();
             await connection.OpenAsync(TestContext.Current.CancellationToken);

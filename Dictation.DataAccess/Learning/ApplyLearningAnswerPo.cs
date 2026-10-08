@@ -1,3 +1,4 @@
+using Dictation.DataAccess.Practice;
 using Dictation.DataAccess.Review;
 
 namespace Dictation.DataAccess.Learning
@@ -15,7 +16,7 @@ namespace Dictation.DataAccess.Learning
         int NextEligibleOrdinal,
         DateTimeOffset AnsweredAtUtc,
         string AnsweredLocalDate,
-        CreateLearningQuestionPo? NextQuestion,
+        CreatePracticeQuestionPo? NextQuestion,
         IReadOnlyList<string> CompletedWordGroupIds,
         bool CompleteSession,
         IReadOnlyList<ReviewFormMemoryPo>? MemorySeeds = null);

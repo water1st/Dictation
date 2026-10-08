@@ -130,8 +130,8 @@ namespace Dictation.Tests.DataAccess
             await using (var connection = environment.Connections.CreateConnection())
             {
                 await connection.ExecuteAsync("""
-                    INSERT INTO ReviewSessions VALUES ('a','Japanese','Completed','{}',@Now,'2026-09-30',@Now);
-                    INSERT INTO ReviewSessions VALUES ('b','Japanese','Completed','{}',@Now,'2026-09-30',@Now);
+                    INSERT INTO ReviewSessions (SessionId, Language, Status, PlanJson, CreatedAtUtc, StartedLocalDate, CompletedAtUtc) VALUES ('a','Japanese','Completed','{}',@Now,'2026-09-30',@Now);
+                    INSERT INTO ReviewSessions (SessionId, Language, Status, PlanJson, CreatedAtUtc, StartedLocalDate, CompletedAtUtc) VALUES ('b','Japanese','Completed','{}',@Now,'2026-09-30',@Now);
                     INSERT INTO ReviewSessionGroups VALUES ('a',@Id,0,'2026-09-30');
                     INSERT INTO ReviewSessionGroups VALUES ('b',@Id,0,'2026-09-30');
                     """, new { Now = MemorySeedTestEnvironment.Now.ToString("O"), Id = group });

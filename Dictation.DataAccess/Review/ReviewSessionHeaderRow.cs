@@ -7,5 +7,7 @@ namespace Dictation.DataAccess.Review
         public string Language { get; set; } = string.Empty;
         public string PlanJson { get; set; } = string.Empty;
         public string CreatedAtUtc { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public int CurrentOrdinal { get; set; }
     }
 }

@@ -1,3 +1,4 @@
+using Dictation.DataAccess.Practice;
 using Dictation.DataAccess.Learning;
 using Dictation.DataAccess.Review;
 
@@ -20,8 +21,8 @@ namespace Dictation.Core.Review
         /// <param name="history">本会话题目及客观判定。</param>
         /// <param name="now">本次完成学习的时间。</param>
         /// <returns>供同一答题事务首次写入的记忆种子。</returns>
-        internal IReadOnlyList<ReviewFormMemoryPo> CreateSeeds(IReadOnlyList<LearningFormUnitPo> completedForms,
-            IReadOnlyList<LearningQuestionHistoryPo> history, DateTimeOffset now)
+        internal IReadOnlyList<ReviewFormMemoryPo> CreateSeeds(IReadOnlyList<PracticeFormUnitPo> completedForms,
+            IReadOnlyList<PracticeQuestionHistoryPo> history, DateTimeOffset now)
         {
             ArgumentNullException.ThrowIfNull(completedForms);
             ArgumentNullException.ThrowIfNull(history);

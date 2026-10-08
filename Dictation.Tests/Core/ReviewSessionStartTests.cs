@@ -70,7 +70,7 @@ namespace Dictation.Tests.Core
             await using (var connection = environment.Connections.CreateConnection())
             {
                 await connection.ExecuteAsync("""
-                    INSERT INTO ReviewSessions VALUES ('past', 'Japanese', 'Completed', '{}', @Now, '2026-09-29', @Now);
+                    INSERT INTO ReviewSessions (SessionId, Language, Status, PlanJson, CreatedAtUtc, StartedLocalDate, CompletedAtUtc) VALUES ('past', 'Japanese', 'Completed', '{}', @Now, '2026-09-29', @Now);
                     INSERT INTO ReviewSessionGroups VALUES ('past', @Group, 0, '2026-09-30');
                     """, new { Now = MemorySeedTestEnvironment.Now.ToString("O"), Group = completed });
             }

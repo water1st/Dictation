@@ -1,3 +1,4 @@
+using Dictation.Core.Practice;
 using Dictation.Core.Configuration;
 using Dictation.Core.Importing;
 using Dictation.Core.Learning;
@@ -52,7 +53,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 serviceProvider.GetRequiredService<LearningPlanService>());
             services.AddSingleton<ILearningSessionStartPreparer>(serviceProvider =>
                 serviceProvider.GetRequiredService<LearningPlanService>());
-            services.AddSingleton<LearningQuestionScheduler>();
+            services.AddSingleton<PracticeQuestionScheduler>();
             services.AddSingleton<LearningSessionService>();
             services.AddSingleton<ILearningSessionOperations>(serviceProvider =>
                 serviceProvider.GetRequiredService<LearningSessionService>());
@@ -70,6 +71,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IReviewPlanEditor>(provider => provider.GetRequiredService<ReviewPlanService>());
             services.AddSingleton<IReviewLibraryManager>(provider => provider.GetRequiredService<ReviewPlanService>());
             services.AddSingleton<ReviewSessionSelectionPlanner>();
+            services.AddSingleton<IReviewQuestionReader, ReviewQuestionService>();
             services.AddSingleton<ReviewSessionService>();
             services.AddSingleton<IReviewSessionStarter>(provider => provider.GetRequiredService<ReviewSessionService>());
             services.AddSingleton<IReviewSessionReader>(provider => provider.GetRequiredService<ReviewSessionService>());

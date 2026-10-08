@@ -698,6 +698,41 @@ namespace Dictation.DataAccess.Runtime
                         FOREIGN KEY (SessionId, WordGroupId) REFERENCES ReviewSessionGroups (SessionId, WordGroupId) ON DELETE CASCADE,
                         FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE
                     );
+                    """),
+                new SchemaMigration(
+                    10,
+                    "保存独立复习题目与本轮词形成绩",
+                    """
+                    ALTER TABLE ReviewSessions ADD COLUMN CurrentOrdinal INTEGER NOT NULL DEFAULT 0 CHECK (CurrentOrdinal >= 0);
+                    ALTER TABLE ReviewSessionForms ADD COLUMN CorrectStreak INTEGER NOT NULL DEFAULT 0 CHECK (CorrectStreak BETWEEN 0 AND 2);
+                    ALTER TABLE ReviewSessionForms ADD COLUMN IsMastered INTEGER NOT NULL DEFAULT 0 CHECK (IsMastered IN (0, 1));
+                    ALTER TABLE ReviewSessionForms ADD COLUMN NextEligibleOrdinal INTEGER NOT NULL DEFAULT 0 CHECK (NextEligibleOrdinal >= 0);
+                    ALTER TABLE ReviewSessionForms ADD COLUMN MeaningWritingCount INTEGER NOT NULL DEFAULT 0 CHECK (MeaningWritingCount >= 0);
+                    ALTER TABLE ReviewSessionForms ADD COLUMN DictationCount INTEGER NOT NULL DEFAULT 0 CHECK (DictationCount >= 0);
+                    ALTER TABLE ReviewSessionForms ADD COLUMN LatinCount INTEGER NOT NULL DEFAULT 0 CHECK (LatinCount >= 0);
+                    ALTER TABLE ReviewSessionForms ADD COLUMN KanaCount INTEGER NOT NULL DEFAULT 0 CHECK (KanaCount >= 0);
+                    ALTER TABLE ReviewSessionForms ADD COLUMN KanjiCount INTEGER NOT NULL DEFAULT 0 CHECK (KanjiCount >= 0);
+                    ALTER TABLE ReviewSessionForms ADD COLUMN CorrectCount INTEGER NOT NULL DEFAULT 0 CHECK (CorrectCount >= 0);
+                    ALTER TABLE ReviewSessionForms ADD COLUMN ErrorCount INTEGER NOT NULL DEFAULT 0 CHECK (ErrorCount >= 0);
+                    CREATE TABLE ReviewQuestions (
+                        QuestionId INTEGER PRIMARY KEY AUTOINCREMENT,
+                        SessionId TEXT NOT NULL,
+                        WordGroupId TEXT NOT NULL,
+                        MemberId INTEGER NOT NULL,
+                        FormCode TEXT NOT NULL,
+                        Channel TEXT NOT NULL CHECK (Channel IN ('MeaningWriting', 'Dictation')),
+                        OutputMode TEXT NOT NULL CHECK (OutputMode IN ('Latin', 'Kana', 'Kanji')),
+                        QuestionOrdinal INTEGER NOT NULL CHECK (QuestionOrdinal >= 0),
+                        Status TEXT NOT NULL CHECK (Status IN ('Pending', 'Answered')),
+                        CreatedAtUtc TEXT NOT NULL,
+                        SubmittedText TEXT NULL,
+                        WasCorrect INTEGER NULL CHECK (WasCorrect IN (0, 1)),
+                        AnsweredAtUtc TEXT NULL,
+                        UNIQUE (SessionId, QuestionOrdinal),
+                        FOREIGN KEY (SessionId, WordGroupId) REFERENCES ReviewSessionGroups (SessionId, WordGroupId) ON DELETE CASCADE,
+                        FOREIGN KEY (SessionId, MemberId, FormCode) REFERENCES ReviewSessionForms (SessionId, MemberId, FormCode) ON DELETE CASCADE
+                    );
+                    CREATE UNIQUE INDEX UX_ReviewQuestions_Pending ON ReviewQuestions (SessionId) WHERE Status='Pending';
                     """)
             };
         }

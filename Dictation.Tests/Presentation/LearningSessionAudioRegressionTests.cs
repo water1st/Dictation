@@ -1,3 +1,4 @@
+using Dictation.Core.Practice;
 using Dictation.Core.Configuration;
 using Dictation.Core.Learning;
 using Dictation.Core.Tts;
@@ -90,7 +91,7 @@ namespace Dictation.Tests.Presentation
 
             for (var index = 0; index < 2; index++)
             {
-                var question = Assert.IsType<LearningQuestionDto>(viewModel.Question);
+                var question = Assert.IsType<PracticeQuestionDto>(viewModel.Question);
                 var expected = Assert.Single(question.Meanings) == "擅长" ? "じょうず" : "うわて";
                 seenReadings.Add(expected);
                 if (!dictation)
