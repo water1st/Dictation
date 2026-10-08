@@ -7,16 +7,16 @@ using Dictation.Core.Importing;
 using Dictation.Core.Learning;
 using Dictation.Core.Tts;
 using Dictation.Presentation.Audio;
+using Dictation.Presentation.Practice;
 
 namespace Dictation.Presentation.ViewModels
 {
     /// <summary>
-    /// 协调学习页面状态、业务调用与内存音频播放，不执行判题或持久化规则。
+    /// 协调共用练习页面状态，通过模式适配调用独立业务，不执行判题或持久化规则。
     /// </summary>
-    public sealed class LearningSessionViewModel : INotifyPropertyChanged, IDisposable
+    public sealed class PracticeSessionViewModel : INotifyPropertyChanged, IDisposable
     {
-        private readonly ILearningSessionOperations sessionOperations;
-        private readonly ILearningPlanReader planReader;
+        private readonly IPracticeSessionWorkflow workflow;
         private readonly TtsService ttsService;
         private readonly IAudioPlayer audioPlayer;
         private readonly SemaphoreSlim operationGate = new(1, 1);
@@ -24,10 +24,11 @@ namespace Dictation.Presentation.ViewModels
         private readonly List<AsyncCommand> commands = new();
         private CancellationTokenSource? currentOperation;
         private LearningLanguage selectedLanguage;
-        private LearningSessionDto? session;
+        private PracticeSessionSnapshot? session;
         private PracticeQuestionDto? question;
-        private LearningAnswerResultDto? feedback;
-        private LearningSessionSummaryDto? summary;
+        private PracticeAnswerFeedback? feedback;
+        private PracticeSessionSummary? summary;
+        private bool isEmpty;
         private ImportWordGroupMemberDto? selectedBrowseMember;
         private ImportWordGroupFormDto? selectedBrowseForm;
         private IReadOnlyList<ImportWordGroupFormDto> browseForms = Array.Empty<ImportWordGroupFormDto>();
@@ -42,20 +43,17 @@ namespace Dictation.Presentation.ViewModels
         private bool isDisposed;
 
         /// <summary>
-        /// 协调学习页面状态、业务调用与内存音频播放，不执行判题或持久化规则。
+        /// 组合当前模式适配与共用的内存音频输出。
         /// </summary>
-        /// <param name="sessionOperations">启动、读取和提交学习会话的业务能力。</param>
-        /// <param name="planReader">读取当前语言计划的能力。</param>
+        /// <param name="workflow">仅适配本页需要的学习或复习业务能力。</param>
         /// <param name="ttsService">生成题目或浏览词形音频的业务服务。</param>
         /// <param name="audioPlayer">播放内存 WAV 数据的可替换输出适配器。</param>
-        public LearningSessionViewModel(
-            ILearningSessionOperations sessionOperations,
-            ILearningPlanReader planReader,
+        internal PracticeSessionViewModel(
+            IPracticeSessionWorkflow workflow,
             TtsService ttsService,
             IAudioPlayer audioPlayer)
         {
-            this.sessionOperations = sessionOperations ?? throw new ArgumentNullException(nameof(sessionOperations));
-            this.planReader = planReader ?? throw new ArgumentNullException(nameof(planReader));
+            this.workflow = workflow ?? throw new ArgumentNullException(nameof(workflow));
             this.ttsService = ttsService ?? throw new ArgumentNullException(nameof(ttsService));
             this.audioPlayer = audioPlayer ?? throw new ArgumentNullException(nameof(audioPlayer));
             SubmitCommand = CreateCommand(() => SubmitAsync(), () => CanSubmit);
@@ -78,11 +76,13 @@ namespace Dictation.Presentation.ViewModels
         public event PropertyChangedEventHandler? PropertyChanged;
         public ObservableCollection<ImportWordGroupMemberDto> BrowseMembers { get; } = new();
         public LearningLanguage SelectedLanguage => selectedLanguage;
-        public string WindowTitle => selectedLanguage == LearningLanguage.Japanese ? "日语学习" : "英语学习";
-        public LearningSessionDto? Session => session;
+        public string WindowTitle => (selectedLanguage == LearningLanguage.Japanese ? "日语" : "英语") + workflow.ModeLabel;
+        public PracticeSessionSnapshot? Session => session;
         public PracticeQuestionDto? Question => question;
-        public LearningAnswerResultDto? Feedback => feedback;
-        public LearningSessionSummaryDto? Summary => summary;
+        public PracticeAnswerFeedback? Feedback => feedback;
+        public PracticeSessionSummary? Summary => summary;
+        public bool IsEmptyVisible => isEmpty && !isBusy && !isBrowsing;
+        public string EmptyMessage => "当前没有待测或到期词组，或今天的复习目标已完成。";
         public bool IsBusy => isBusy;
         public bool IsBrowsing => isBrowsing;
         public bool IsCompleted => summary is not null && feedback is null;
@@ -161,9 +161,9 @@ namespace Dictation.Presentation.ViewModels
         {
             ObjectDisposedException.ThrowIf(isDisposed, this);
             if (language is not (LearningLanguage.Japanese or LearningLanguage.English))
-                throw new ArgumentOutOfRangeException(nameof(language), language, "学习语言无效。");
+                throw new ArgumentOutOfRangeException(nameof(language), language, "练习语言无效。");
             if (isInitialized && language != selectedLanguage)
-                throw new InvalidOperationException("学习会话开始后不能切换语言。");
+                throw new InvalidOperationException("练习会话开始后不能切换语言。");
             selectedLanguage = language;
             isInitialized = true;
             NotifyState();
@@ -182,26 +182,44 @@ namespace Dictation.Presentation.ViewModels
             startSelection = selectedWordGroupIds;
             return RunOperationAsync(async token =>
             {
-                var plan = await planReader.LoadAsync(selectedLanguage, token);
-                enabledFormCodes = plan.FormCodes.ToHashSet(StringComparer.Ordinal);
-                session = await sessionOperations.StartOrResumeAsync(
-                    new StartLearningSessionRequestDto(selectedLanguage, selectedWordGroupIds), token);
-                var members = await sessionOperations.GetBrowseItemsAsync(session.SessionId, token);
+                var prepared = await workflow.StartOrResumeAsync(selectedLanguage, selectedWordGroupIds, token);
                 token.ThrowIfCancellationRequested();
+                if (prepared is null)
+                {
+                    session = null;
+                    question = null;
+                    feedback = null;
+                    summary = null;
+                    BrowseMembers.Clear();
+                    SelectedBrowseMember = null;
+                    answerText = string.Empty;
+                    isBrowsing = false;
+                    isEmpty = true;
+                    hasHeardQuestion = false;
+                    NotifyState();
+                    return;
+                }
+                var members = await workflow.GetBrowseItemsAsync(prepared.SessionId, token);
+                var preparedQuestion = await workflow.GetCurrentQuestionAsync(prepared.SessionId, token);
+                // 返回或释放页面后的晚结果不能发布到旧页面，即使依赖忽略了取消。
+                token.ThrowIfCancellationRequested();
+                session = prepared;
+                enabledFormCodes = prepared.FormCodes.ToHashSet(StringComparer.Ordinal);
                 BrowseMembers.Clear();
-                foreach (var member in members.SelectMany(group => group.Members)) BrowseMembers.Add(member);
+                foreach (var member in members) BrowseMembers.Add(member);
                 SelectedBrowseMember = BrowseMembers.FirstOrDefault();
-                question = await sessionOperations.GetCurrentQuestionAsync(session.SessionId, token);
+                question = preparedQuestion;
                 feedback = null;
-                summary = session.Status == LearningSessionStatus.Completed
-                    ? new LearningSessionSummaryDto(session.SessionId, 0, Array.Empty<LearningErrorSummaryDto>())
+                summary = session.IsCompleted
+                    ? new PracticeSessionSummary(session.SessionId, 0, Array.Empty<PracticeErrorSummary>(), session.WordGroupIds.Count)
                     : null;
                 answerText = string.Empty;
                 isBrowsing = false;
+                isEmpty = false;
                 hasHeardQuestion = false;
                 NotifyState();
                 if (question?.Channel == LearningChannel.Dictation) await PlayQuestionCoreAsync(token);
-            }, cancellationToken, "准备学习失败");
+            }, cancellationToken, "准备" + workflow.ModeLabel + "失败");
         }
 
         /// <summary>
@@ -214,8 +232,9 @@ namespace Dictation.Presentation.ViewModels
             if (!CanSubmit) return Task.CompletedTask;
             return RunOperationAsync(async token =>
             {
-                feedback = await sessionOperations.SubmitAnswerAsync(
-                    new SubmitLearningAnswerRequestDto(question!.SessionId, question.QuestionId, answerText), token);
+                var result = await workflow.SubmitAnswerAsync(question!.SessionId, question.QuestionId, answerText, token);
+                token.ThrowIfCancellationRequested();
+                feedback = result;
                 NotifyState();
             }, cancellationToken, "提交答案失败");
         }
@@ -282,6 +301,7 @@ namespace Dictation.Presentation.ViewModels
             }
 
             await PlayTextAsync(text ?? throw new InvalidOperationException("听写题缺少发音内容。"), cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             hasHeardQuestion = true;
             NotifyState();
         }
@@ -290,6 +310,7 @@ namespace Dictation.Presentation.ViewModels
         {
             var language = selectedLanguage == LearningLanguage.Japanese ? TtsLanguage.Japanese : TtsLanguage.English;
             var audio = await ttsService.SynthesizeAsync(new TtsSynthesisRequestDto(language, text), cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             await audioPlayer.PlayWavAsync(audio.WavData, cancellationToken);
         }
 
@@ -299,6 +320,9 @@ namespace Dictation.Presentation.ViewModels
             NotifyState();
             return Task.CompletedTask;
         }
+
+        /// <summary>返回上级时立即取消当前操作，旧页动画结束前也不允许晚结果回写。</summary>
+        public void CancelOperation() => currentOperation?.Cancel();
 
         /// <summary>
         /// 用非阻塞信号量防止重叠 UI 操作，关联页面寿命取消；业务错误写入提示，取消继续向上传播。
@@ -325,14 +349,22 @@ namespace Dictation.Presentation.ViewModels
             }
             catch (Exception exception)
             {
-                errorMessage = $"{errorPrefix}：{exception.Message}";
+                linkedCancellation.Token.ThrowIfCancellationRequested();
+                if (!isDisposed)
+                {
+                    var message = exception.Message;
+                    // 保留业务错误分类，同时展示可处理的语音失败原因，不能只提示包装层失败。
+                    if (exception is TtsSynthesisException { InnerException: { } synthesisCause })
+                        message += " " + synthesisCause.Message;
+                    errorMessage = $"{errorPrefix}：{message}";
+                }
             }
             finally
             {
                 currentOperation = null;
                 isBusy = false;
                 operationGate.Release();
-                NotifyState();
+                if (!isDisposed) NotifyState();
             }
         }
 
@@ -350,7 +382,7 @@ namespace Dictation.Presentation.ViewModels
         private void EnsureReady()
         {
             ObjectDisposedException.ThrowIf(isDisposed, this);
-            if (!isInitialized) throw new InvalidOperationException("学习会话尚未初始化语言。");
+            if (!isInitialized) throw new InvalidOperationException("练习会话尚未初始化语言。");
         }
 
         private void NotifyState()

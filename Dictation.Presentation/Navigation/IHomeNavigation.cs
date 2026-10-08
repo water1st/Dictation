@@ -7,6 +7,11 @@ namespace Dictation.Presentation.Navigation
     /// </summary>
     public interface IHomeNavigation
     {
+        /// <summary>在同一窗口打开固定语言的复习会话。</summary>
+        /// <param name="language">首页选定的语言。</param>
+        /// <param name="cancellationToken">取消导航和准备的令牌。</param>
+        Task OpenReviewSessionAsync(LearningLanguage language, CancellationToken cancellationToken = default);
+
         /// <summary>打开固定语言的独立复习计划与整组管理页面。</summary>
         /// <param name="language">首页选定的语言。</param>
         /// <param name="cancellationToken">取消导航和读取的令牌。</param>

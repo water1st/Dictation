@@ -250,13 +250,13 @@ namespace Dictation.Tests.Presentation
             Assert.Empty(environment.Tts.Requests);
         }
 
-        private static async Task ExecuteAndWaitAsync(LearningSessionViewModel viewModel, ICommand command)
+        private static async Task ExecuteAndWaitAsync(PracticeSessionViewModel viewModel, ICommand command)
         {
             var finished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var sawBusy = false;
             void OnChanged(object? sender, PropertyChangedEventArgs args)
             {
-                if (args.PropertyName != nameof(LearningSessionViewModel.IsBusy)) return;
+                if (args.PropertyName != nameof(PracticeSessionViewModel.IsBusy)) return;
                 if (viewModel.IsBusy) sawBusy = true;
                 else if (sawBusy) finished.TrySetResult();
             }

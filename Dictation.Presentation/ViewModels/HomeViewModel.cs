@@ -70,6 +70,7 @@ namespace Dictation.Presentation.ViewModels
             OpenLearningCommand = new AsyncCommand(() => OpenLearningAsync());
             OpenReviewLibraryCommand = new AsyncCommand(() => OpenReviewLibraryAsync());
             OpenReviewPlanCommand = new AsyncCommand(() => OpenReviewPlanAsync());
+            OpenReviewSessionCommand = new AsyncCommand(() => OpenReviewSessionAsync());
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -210,6 +211,12 @@ namespace Dictation.Presentation.ViewModels
         public ICommand OpenLearningCommand { get; }
         public ICommand OpenReviewLibraryCommand { get; }
         public ICommand OpenReviewPlanCommand { get; }
+        public ICommand OpenReviewSessionCommand { get; }
+
+        /// <summary>按首页选定语言进入或恢复独立复习会话。</summary>
+        /// <param name="cancellationToken">取消导航和准备的令牌。</param>
+        public Task OpenReviewSessionAsync(CancellationToken cancellationToken = default) =>
+            homeNavigation.OpenReviewSessionAsync(selectedLanguage, cancellationToken);
 
         /// <summary>按首页当前语言打开独立复习计划。</summary>
         /// <param name="cancellationToken">取消导航的令牌。</param>

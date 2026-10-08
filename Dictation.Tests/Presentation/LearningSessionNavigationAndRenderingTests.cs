@@ -67,7 +67,7 @@ namespace Dictation.Tests.Presentation
 
             await home.OpenLearningAsync(TestContext.Current.CancellationToken);
 
-            var first = Assert.IsType<LearningSessionViewModel>(navigation.CurrentPage);
+            var first = Assert.IsType<PracticeSessionViewModel>(navigation.CurrentPage);
             Assert.Equal(LearningLanguage.English, first.SelectedLanguage);
             var sessionId = first.Session!.SessionId;
             var questionId = first.Question!.QuestionId;
@@ -78,7 +78,7 @@ namespace Dictation.Tests.Presentation
 
             await home.OpenLearningAsync(TestContext.Current.CancellationToken);
 
-            var resumed = Assert.IsType<LearningSessionViewModel>(navigation.CurrentPage);
+            var resumed = Assert.IsType<PracticeSessionViewModel>(navigation.CurrentPage);
             Assert.NotSame(first, resumed);
             Assert.Equal(LearningLanguage.English, resumed.SelectedLanguage);
             Assert.Equal(sessionId, resumed.Session!.SessionId);
@@ -131,7 +131,7 @@ namespace Dictation.Tests.Presentation
 
             try
             {
-                var page = Assert.IsType<LearningSessionViewModel>(navigation.CurrentPage);
+                var page = Assert.IsType<PracticeSessionViewModel>(navigation.CurrentPage);
                 Assert.True(page.CancelCommand.CanExecute(null));
                 page.CancelCommand.Execute(null);
                 await opening;
@@ -179,7 +179,7 @@ namespace Dictation.Tests.Presentation
 
             cancellation.Cancel();
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => opening);
-            Assert.IsType<LearningSessionViewModel>(navigation.CurrentPage);
+            Assert.IsType<PracticeSessionViewModel>(navigation.CurrentPage);
         }
 
         [Fact]
@@ -194,7 +194,7 @@ namespace Dictation.Tests.Presentation
             Assert.Equal(typeof(MemoryWavAudioPlayer), audio.ImplementationType);
             Assert.Equal(ServiceLifetime.Singleton, audio.Lifetime);
             var session = Assert.Single(services, descriptor =>
-                descriptor.ServiceType == typeof(LearningSessionViewModel));
+                !descriptor.IsKeyedService && descriptor.ServiceType == typeof(PracticeSessionViewModel));
             Assert.Equal(ServiceLifetime.Scoped, session.Lifetime);
         }
 
@@ -208,10 +208,10 @@ namespace Dictation.Tests.Presentation
                 using var viewModel = environment.CreateViewModel();
                 viewModel.StartAsync(cancellationToken: TestContext.Current.CancellationToken)
                     .GetAwaiter().GetResult();
-                var page = new LearningSessionPage { DataContext = viewModel };
+                var page = new PracticeSessionPage { DataContext = viewModel };
                 RenderControl(page);
 
-                Assert.True(typeof(UserControl).IsAssignableFrom(typeof(LearningSessionPage)));
+                Assert.True(typeof(UserControl).IsAssignableFrom(typeof(PracticeSessionPage)));
                 var answer = Assert.IsType<TextBox>(page.FindName("AnswerTextBox"));
                 Assert.False(SpellCheck.GetIsEnabled(answer));
                 var replay = Assert.IsType<Button>(page.FindName("ReplayQuestionButton"));
@@ -282,7 +282,7 @@ namespace Dictation.Tests.Presentation
                     .GetAwaiter().GetResult();
                 Assert.NotNull(viewModel.ErrorMessage);
                 Assert.Null(viewModel.Question);
-                var page = new LearningSessionPage { DataContext = viewModel };
+                var page = new PracticeSessionPage { DataContext = viewModel };
                 RenderControl(page);
 
                 var retry = Assert.IsType<Button>(page.FindName("RetryStartButton"));
@@ -395,6 +395,7 @@ namespace Dictation.Tests.Presentation
 
         private sealed class RecordingHomeNavigation : IHomeNavigation
         {
+            public Task OpenReviewSessionAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.CompletedTask;
             public Task OpenReviewPlanAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.CompletedTask;
             public Task OpenReviewLibraryAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.CompletedTask;
 

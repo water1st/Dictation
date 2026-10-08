@@ -11,6 +11,7 @@ using Dictation.Presentation;
 using Dictation.Presentation.Navigation;
 using Dictation.Presentation.Shell;
 using Dictation.Presentation.ViewModels;
+using Dictation.Presentation.Practice;
 using Dictation.Tests.Infrastructure;
 using Dictation.TtsHost;
 using Microsoft.Extensions.Configuration;
@@ -208,10 +209,11 @@ namespace Dictation.Tests.Architecture
                 },
                 planViewModelParameters);
 
-            var sessionViewModelParameters = Assert.Single(typeof(LearningSessionViewModel).GetConstructors())
+            var sessionViewModelParameters = Assert.Single(typeof(PracticeSessionViewModel).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic))
                 .GetParameters();
-            Assert.Equal(typeof(ILearningSessionOperations), sessionViewModelParameters[0].ParameterType);
-            Assert.Equal(typeof(ILearningPlanReader), sessionViewModelParameters[1].ParameterType);
+            Assert.Equal(typeof(IPracticeSessionWorkflow), sessionViewModelParameters[0].ParameterType);
+            Assert.Equal(3, sessionViewModelParameters.Length);
+            Assert.False(typeof(IPracticeSessionWorkflow).IsPublic);
 
             var sessionServiceParameters = Assert.Single(typeof(LearningSessionService).GetConstructors())
                 .GetParameters();
@@ -283,6 +285,7 @@ namespace Dictation.Tests.Architecture
 
         private sealed class RejectingHomeNavigation : IHomeNavigation
         {
+            public Task OpenReviewSessionAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.CompletedTask;
             public Task OpenReviewPlanAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.CompletedTask;
             public Task OpenReviewLibraryAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.CompletedTask;
 

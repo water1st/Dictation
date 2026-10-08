@@ -7,6 +7,7 @@ using Dictation.DataAccess;
 using Dictation.DataAccess.Runtime;
 using Dictation.Presentation.Audio;
 using Dictation.Presentation.ViewModels;
+using Dictation.Presentation.Practice;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Tests.Infrastructure
@@ -74,11 +75,10 @@ namespace Dictation.Tests.Infrastructure
             }
         }
 
-        public LearningSessionViewModel CreateViewModel(ILearningPlanReader? planReader = null)
+        public PracticeSessionViewModel CreateViewModel(ILearningPlanReader? planReader = null)
         {
-            var viewModel = new LearningSessionViewModel(
-                provider.GetRequiredService<ILearningSessionOperations>(),
-                planReader ?? PlanReader,
+            var viewModel = new PracticeSessionViewModel(
+                new LearningPracticeWorkflow(provider.GetRequiredService<ILearningSessionOperations>(), planReader ?? PlanReader),
                 provider.GetRequiredService<TtsService>(), Audio);
             viewModel.Initialize(Language);
             return viewModel;

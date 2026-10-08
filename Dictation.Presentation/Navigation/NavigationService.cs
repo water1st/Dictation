@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Dictation.Presentation.ViewModels;
 using Dictation.Core.Configuration;
 using Dictation.Core.Importing;
+using Dictation.Presentation.Practice;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Presentation.Navigation
@@ -290,10 +291,25 @@ namespace Dictation.Presentation.Navigation
         }
 
         /// <inheritdoc />
-        public async Task OpenLearningSessionAsync(
+        public Task OpenReviewSessionAsync(LearningLanguage language, CancellationToken cancellationToken = default) =>
+            OpenPracticeSessionAsync(PracticeSessionMode.Review, language, null, cancellationToken);
+
+        /// <inheritdoc />
+        public Task OpenLearningSessionAsync(
             LearningLanguage language,
             IReadOnlyList<string>? selectedWordGroupIds,
             CancellationToken cancellationToken = default)
+        {
+            return OpenPracticeSessionAsync(PracticeSessionMode.Learning, language, selectedWordGroupIds, cancellationToken);
+        }
+
+        /// <summary>两种模式共用同一页面导航和释放流程，只在组合根选择各自业务适配。</summary>
+        /// <param name="mode">本次页面使用的业务模式。</param>
+        /// <param name="language">首页选定并在本轮固定的语言。</param>
+        /// <param name="selectedWordGroupIds">学习手选词组；复习由计划管理。</param>
+        /// <param name="cancellationToken">取消导航或首题准备的令牌。</param>
+        private async Task OpenPracticeSessionAsync(PracticeSessionMode mode, LearningLanguage language,
+            IReadOnlyList<string>? selectedWordGroupIds, CancellationToken cancellationToken)
         {
             ValidateLanguage(language);
             cancellationToken.ThrowIfCancellationRequested();
@@ -309,7 +325,9 @@ namespace Dictation.Presentation.Navigation
                 var scope = scopeFactory.CreateScope();
                 try
                 {
-                    var viewModel = scope.ServiceProvider.GetRequiredService<LearningSessionViewModel>();
+                    var viewModel = mode == PracticeSessionMode.Review
+                        ? scope.ServiceProvider.GetRequiredKeyedService<PracticeSessionViewModel>(PracticeSessionMode.Review)
+                        : scope.ServiceProvider.GetRequiredService<PracticeSessionViewModel>();
                     viewModel.Initialize(language);
                     cancellationToken.ThrowIfCancellationRequested();
                     NavigateForward(new NavigationEntry(
@@ -411,6 +429,10 @@ namespace Dictation.Presentation.Navigation
             if (currentEntry?.ViewModel is ReviewPlanViewModel reviewPlan)
             {
                 reviewPlan.CancelOperation();
+            }
+            if (currentEntry?.ViewModel is PracticeSessionViewModel practice)
+            {
+                practice.CancelOperation();
             }
             navigationOperationPending = true;
             OnPropertyChanged(nameof(CanGoBack));

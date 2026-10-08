@@ -4,6 +4,8 @@ using Dictation.Presentation.Navigation;
 using Dictation.Presentation.Shell;
 using Dictation.Presentation.Audio;
 using Dictation.Presentation.Importing;
+using Dictation.Presentation.Practice;
+using Dictation.Core.Tts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Presentation
@@ -55,7 +57,14 @@ namespace Dictation.Presentation
             services.AddScoped<ImportInboxListViewModel>();
             services.AddScoped<ImportInboxDetailViewModel>();
             services.AddScoped<LearningPlanViewModel>();
-            services.AddScoped<LearningSessionViewModel>();
+            services.AddScoped<LearningPracticeWorkflow>();
+            services.AddScoped<ReviewPracticeWorkflow>();
+            services.AddScoped<PracticeSessionViewModel>(provider => new PracticeSessionViewModel(
+                provider.GetRequiredService<LearningPracticeWorkflow>(), provider.GetRequiredService<TtsService>(),
+                provider.GetRequiredService<IAudioPlayer>()));
+            services.AddKeyedScoped<PracticeSessionViewModel>(PracticeSessionMode.Review, (provider, _) => new PracticeSessionViewModel(
+                provider.GetRequiredService<ReviewPracticeWorkflow>(), provider.GetRequiredService<TtsService>(),
+                provider.GetRequiredService<IAudioPlayer>()));
 
             return services;
         }

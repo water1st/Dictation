@@ -92,7 +92,7 @@ namespace Dictation.Tests.Presentation
             await plan.StartAsync(TestContext.Current.CancellationToken);
 
             Assert.Null(plan.ErrorMessage);
-            var session = Assert.IsType<LearningSessionViewModel>(navigation.CurrentPage);
+            var session = Assert.IsType<PracticeSessionViewModel>(navigation.CurrentPage);
             Assert.Equal(LearningLanguage.Japanese, session.SelectedLanguage);
             Assert.Equal(new[] { selectedGroupId }, session.Session!.WordGroupIds);
             Assert.NotNull(session.Question);
@@ -183,7 +183,7 @@ namespace Dictation.Tests.Presentation
 
             await home.OpenLearningAsync(TestContext.Current.CancellationToken);
 
-            var resumed = Assert.IsType<LearningSessionViewModel>(navigation.CurrentPage);
+            var resumed = Assert.IsType<PracticeSessionViewModel>(navigation.CurrentPage);
             Assert.Equal(active.SessionId, resumed.Session!.SessionId);
             Assert.NotNull(resumed.Question);
         }

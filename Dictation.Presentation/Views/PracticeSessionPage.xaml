@@ -1,4 +1,4 @@
-<UserControl x:Class="Dictation.Presentation.Views.LearningSessionPage"
+<UserControl x:Class="Dictation.Presentation.Views.PracticeSessionPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="{DynamicResource WindowBackgroundBrush}"
@@ -50,6 +50,17 @@
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
             <Grid>
+                <Border x:Name="EmptyPanel" Padding="28" CornerRadius="20"
+                        Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                        Visibility="{Binding IsEmptyVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock FontSize="24" FontWeight="SemiBold" Text="暂时没有复习任务" />
+                        <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" Text="{Binding EmptyMessage}" />
+                        <TextBlock Margin="0,10,0,0" Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                   Text="可返回首页，调整复习计划或导入待测词组。" />
+                    </StackPanel>
+                </Border>
                 <Border x:Name="QuestionPanel"
                         Padding="28"
                         Background="{DynamicResource CardBackgroundBrush}"
@@ -209,6 +220,8 @@
                         Visibility="{Binding IsSummaryVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <StackPanel>
                         <TextBlock FontSize="28" FontWeight="SemiBold" Text="本轮完成" />
+                        <TextBlock x:Name="CompletedGroupCount" Margin="0,9,0,0"
+                                   Text="{Binding Summary.CompletedWordGroupCount, StringFormat=完成 {0} 个词组}" />
                         <TextBlock Margin="0,9,0,0" Text="{Binding Summary.AnsweredCount, StringFormat=共完成 {0} 次作答}" />
                         <TextBlock Margin="0,18,0,7" FontWeight="SemiBold" Text="本轮曾错" />
                         <ItemsControl ItemsSource="{Binding Summary.Errors}">
