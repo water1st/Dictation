@@ -121,11 +121,11 @@ namespace Dictation.Tests.DataAccess
             var accessor = environment.Provider.GetRequiredService<ReviewPlanDataAccessor>();
             if (scenario == "Missing")
             {
-                await Assert.ThrowsAsync<KeyNotFoundException>(() => accessor.DeleteWordGroupAsync("Japanese", "missing", TestContext.Current.CancellationToken));
+                await Assert.ThrowsAsync<KeyNotFoundException>(() => accessor.DeleteWordGroupAsync("Japanese", "missing", MemorySeedTestEnvironment.Now, TestContext.Current.CancellationToken));
             }
             else
             {
-                await Assert.ThrowsAsync<InvalidOperationException>(() => accessor.DeleteWordGroupAsync("Japanese", group, TestContext.Current.CancellationToken));
+                await Assert.ThrowsAsync<InvalidOperationException>(() => accessor.DeleteWordGroupAsync("Japanese", group, MemorySeedTestEnvironment.Now, TestContext.Current.CancellationToken));
             }
             Assert.Equal(1L, await connection.ExecuteScalarAsync<long>("SELECT COUNT(*) FROM WordGroups;"));
         }
@@ -146,7 +146,7 @@ namespace Dictation.Tests.DataAccess
             {
                 "Read" => accessor.GetPlanAsync("Japanese", cancellation.Token),
                 "Save" => accessor.SavePlanAsync(Plan(group) with { DailyReviewTarget = 40 }, cancellation.Token),
-                _ => accessor.DeleteWordGroupAsync("Japanese", group, cancellation.Token)
+                _ => accessor.DeleteWordGroupAsync("Japanese", group, MemorySeedTestEnvironment.Now, cancellation.Token)
             });
             Assert.Equal(20, (await accessor.GetPlanAsync("Japanese", TestContext.Current.CancellationToken))!.DailyReviewTarget);
             await using var connection = environment.Connections.CreateConnection();

@@ -98,11 +98,12 @@ namespace Dictation.DataAccess.Review
             await transaction.CommitAsync(cancellationToken);
         }
 
-        /// <summary>仅删除当前语言 Review 整组，关联状态由外键级联。</summary>
+        /// <summary>删除当前语言 Review 整组及其关联状态，原子收尾仅剩已完成词组的会话。</summary>
         /// <param name="language">复习库语言代码。</param>
         /// <param name="wordGroupId">完整词组标识。</param>
+        /// <param name="deletedAtUtc">业务时钟提供的删除时间，用于结束已无待练形式的会话。</param>
         /// <param name="cancellationToken">取消删除的令牌。</param>
-        public async Task DeleteWordGroupAsync(string language, string wordGroupId, CancellationToken cancellationToken = default)
+        public async Task DeleteWordGroupAsync(string language, string wordGroupId, DateTimeOffset deletedAtUtc, CancellationToken cancellationToken = default)
         {
             ValidateLanguage(language);
             ArgumentException.ThrowIfNullOrWhiteSpace(wordGroupId);
@@ -120,8 +121,27 @@ namespace Dictation.DataAccess.Review
             {
                 throw new InvalidOperationException("只能删除当前语言复习库中的整组词条。");
             }
+            var affectedSessions = (await connection.QueryAsync<string>(new CommandDefinition(
+                "SELECT SessionId FROM ReviewSessionGroups WHERE WordGroupId=@Id;",
+                new { Id = wordGroupId }, transaction, cancellationToken: cancellationToken))).ToArray();
             await connection.ExecuteAsync(new CommandDefinition("DELETE FROM WordGroups WHERE WordGroupId = @Id;",
                 new { Id = wordGroupId }, transaction, cancellationToken: cancellationToken));
+            // 只结束被本次删除影响且已无未完成形式的会话，不重新计分或删除其他词组的记忆。
+            // 空会话继续由既有启动流程清理，保持读题返回空的行为。
+            if (affectedSessions.Length > 0)
+            {
+                await connection.ExecuteAsync(new CommandDefinition("""
+                    UPDATE ReviewSessions SET Status='Completed', CompletedAtUtc=@CompletedAtUtc
+                    WHERE SessionId IN @Ids AND Status='InProgress'
+                      AND EXISTS (SELECT 1 FROM ReviewSessionGroups Groups WHERE Groups.SessionId=ReviewSessions.SessionId)
+                      AND NOT EXISTS (SELECT 1 FROM ReviewSessionForms Forms
+                          WHERE Forms.SessionId=ReviewSessions.SessionId AND Forms.IsMastered=0);
+                    """, new
+                    {
+                        Ids = affectedSessions,
+                        CompletedAtUtc = deletedAtUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture)
+                    }, transaction, cancellationToken: cancellationToken));
+            }
             await transaction.CommitAsync(cancellationToken);
         }
 

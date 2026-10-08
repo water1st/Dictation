@@ -88,7 +88,7 @@ namespace Dictation.Core.Review
             PracticePlanOptionValidator.ValidateLanguage(language);
             var id = PracticePlanOptionValidator.NormalizeText(wordGroupId, nameof(wordGroupId));
             cancellationToken.ThrowIfCancellationRequested();
-            await dataAccessor.DeleteWordGroupAsync(language.ToString(), id, cancellationToken);
+            await dataAccessor.DeleteWordGroupAsync(language.ToString(), id, timeProvider.GetUtcNow(), cancellationToken);
         }
 
         /// <summary>仅在示例标签模式下解析范式，语法名称模式不查询词库。</summary>

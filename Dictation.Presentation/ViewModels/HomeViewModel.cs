@@ -151,6 +151,7 @@ namespace Dictation.Presentation.ViewModels
             }
             catch (Exception exception)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (!IsCurrentReviewRefresh(language, version)) return;
                 ReviewProgressLabel = "复习进度暂不可用";
                 ReviewProgressErrorMessage = $"读取复习进度失败：{exception.Message}";

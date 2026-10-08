@@ -318,46 +318,32 @@ namespace Dictation.Presentation.Navigation
                 return;
             }
 
-            navigationOperationPending = true;
-            OnPropertyChanged(nameof(CanGoBack));
+            var scope = scopeFactory.CreateScope();
             try
             {
-                var scope = scopeFactory.CreateScope();
-                try
-                {
-                    var viewModel = mode == PracticeSessionMode.Review
-                        ? scope.ServiceProvider.GetRequiredKeyedService<PracticeSessionViewModel>(PracticeSessionMode.Review)
-                        : scope.ServiceProvider.GetRequiredService<PracticeSessionViewModel>();
-                    viewModel.Initialize(language);
-                    cancellationToken.ThrowIfCancellationRequested();
-                    NavigateForward(new NavigationEntry(
-                        viewModel,
-                        viewModel.WindowTitle,
-                        language,
-                        scope,
-                        null));
-                    // 首题听写可能等待语音服务；先展示页面，用户才能使用页面内的取消命令。
-                    await viewModel.StartAsync(selectedWordGroupIds, cancellationToken);
-                }
-                catch (OperationCanceledException) when (
-                    !cancellationToken.IsCancellationRequested
-                    && ReferenceEquals(currentEntry?.Scope, scope))
-                {
-                    // 页面内取消只停止首题准备；页面仍可重试或返回。
-                }
-                catch
-                {
-                    if (!ReferenceEquals(currentEntry?.Scope, scope))
-                    {
-                        scope.Dispose();
-                    }
-                    throw;
-                }
+                var viewModel = mode == PracticeSessionMode.Review
+                    ? scope.ServiceProvider.GetRequiredKeyedService<PracticeSessionViewModel>(PracticeSessionMode.Review)
+                    : scope.ServiceProvider.GetRequiredService<PracticeSessionViewModel>();
+                viewModel.Initialize(language);
+                cancellationToken.ThrowIfCancellationRequested();
+                NavigateForward(new NavigationEntry(viewModel, viewModel.WindowTitle, language, scope, null));
+                // 转场仍保持互斥；转场完成后，首题准备不再锁住返回按钮。
+                await viewModel.StartAsync(selectedWordGroupIds, cancellationToken);
             }
-            finally
+            catch (OperationCanceledException) when (
+                !cancellationToken.IsCancellationRequested
+                && ReferenceEquals(currentEntry?.Scope, scope))
             {
-                navigationOperationPending = false;
-                OnPropertyChanged(nameof(CanGoBack));
+                // 页面内取消只停止首题准备；页面仍可重试或返回。
+            }
+            catch
+            {
+                if (!ReferenceEquals(currentEntry?.Scope, scope)
+                    && !pendingDisposals.Any(entry => ReferenceEquals(entry.Scope, scope)))
+                {
+                    scope.Dispose();
+                }
+                throw;
             }
         }
 

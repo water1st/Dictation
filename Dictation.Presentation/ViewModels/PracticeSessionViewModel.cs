@@ -2,6 +2,7 @@ using Dictation.Core.Practice;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
+using System.Windows.Threading;
 using Dictation.Core.Configuration;
 using Dictation.Core.Importing;
 using Dictation.Core.Learning;
@@ -182,7 +183,8 @@ namespace Dictation.Presentation.ViewModels
             startSelection = selectedWordGroupIds;
             return RunOperationAsync(async token =>
             {
-                var prepared = await workflow.StartOrResumeAsync(selectedLanguage, selectedWordGroupIds, token);
+                // SQLite 异步接口内部仍有同步工作，不能占住 Dispatcher 导致取消和返回无响应。
+                var prepared = await RunWorkflowAsync(() => workflow.StartOrResumeAsync(selectedLanguage, selectedWordGroupIds, token), token);
                 token.ThrowIfCancellationRequested();
                 if (prepared is null)
                 {
@@ -199,8 +201,8 @@ namespace Dictation.Presentation.ViewModels
                     NotifyState();
                     return;
                 }
-                var members = await workflow.GetBrowseItemsAsync(prepared.SessionId, token);
-                var preparedQuestion = await workflow.GetCurrentQuestionAsync(prepared.SessionId, token);
+                var members = await RunWorkflowAsync(() => workflow.GetBrowseItemsAsync(prepared.SessionId, token), token);
+                var preparedQuestion = await RunWorkflowAsync(() => workflow.GetCurrentQuestionAsync(prepared.SessionId, token), token);
                 // 返回或释放页面后的晚结果不能发布到旧页面，即使依赖忽略了取消。
                 token.ThrowIfCancellationRequested();
                 session = prepared;
@@ -232,11 +234,25 @@ namespace Dictation.Presentation.ViewModels
             if (!CanSubmit) return Task.CompletedTask;
             return RunOperationAsync(async token =>
             {
-                var result = await workflow.SubmitAnswerAsync(question!.SessionId, question.QuestionId, answerText, token);
+                var currentQuestion = question!;
+                var submittedText = answerText;
+                var result = await RunWorkflowAsync(() => workflow.SubmitAnswerAsync(currentQuestion.SessionId, currentQuestion.QuestionId, submittedText, token), token);
                 token.ThrowIfCancellationRequested();
                 feedback = result;
                 NotifyState();
             }, cancellationToken, "提交答案失败");
+        }
+
+        /// <summary>有 Dispatcher 消息循环时后台执行业务，并由 await 把展示状态更新送回原上下文。</summary>
+        /// <param name="operation">不接触 UI 的业务操作。</param>
+        /// <param name="cancellationToken">取消后台排队的令牌。</param>
+        /// <returns>原业务结果，不改变调用方的状态发布上下文。</returns>
+        private static Task<T> RunWorkflowAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken)
+        {
+            // 无消息循环的同步宿主无法接收 Dispatcher 回调，保持其原有执行方式。
+            return SynchronizationContext.Current is DispatcherSynchronizationContext
+                ? Task.Run(operation, cancellationToken)
+                : operation();
         }
 
         /// <summary>
