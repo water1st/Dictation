@@ -74,6 +74,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IReviewQuestionReader, ReviewQuestionService>();
             services.AddSingleton<IReviewSessionAnswerer, ReviewAnswerService>();
             services.AddSingleton<ReviewMemoryUpdatePlanner>();
+            services.AddSingleton<IReviewProgressReader, ReviewProgressService>();
             services.AddSingleton<ReviewSessionService>();
             services.AddSingleton<IReviewSessionStarter>(provider => provider.GetRequiredService<ReviewSessionService>());
             services.AddSingleton<IReviewSessionReader>(provider => provider.GetRequiredService<ReviewSessionService>());
