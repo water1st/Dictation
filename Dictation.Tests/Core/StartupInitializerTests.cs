@@ -32,6 +32,11 @@ namespace Dictation.Tests.Core
                 {
                     "ImportBatchItems",
                     "ImportBatches",
+                    "KanaAttempts",
+                    "KanaMemories",
+                    "KanaPlans",
+                    "KanaSessionItems",
+                    "KanaSessions",
                     "LearningFormStates",
                     "LearningGroupProgress",
                     "LearningPlanChannels",
@@ -61,7 +66,7 @@ namespace Dictation.Tests.Core
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]
@@ -80,6 +85,11 @@ namespace Dictation.Tests.Core
                 {
                     "ImportBatchItems",
                     "ImportBatches",
+                    "KanaAttempts",
+                    "KanaMemories",
+                    "KanaPlans",
+                    "KanaSessionItems",
+                    "KanaSessions",
                     "LearningFormStates",
                     "LearningGroupProgress",
                     "LearningPlanChannels",
@@ -109,7 +119,7 @@ namespace Dictation.Tests.Core
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]
@@ -131,6 +141,11 @@ namespace Dictation.Tests.Core
                 {
                     "ImportBatchItems",
                     "ImportBatches",
+                    "KanaAttempts",
+                    "KanaMemories",
+                    "KanaPlans",
+                    "KanaSessionItems",
+                    "KanaSessions",
                     "LearningFormStates",
                     "LearningGroupProgress",
                     "LearningPlanChannels",
@@ -160,7 +175,7 @@ namespace Dictation.Tests.Core
                     "WordGroups"
                 },
                 await ReadTableNamesAsync(paths));
-            Assert.Equal(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 }, await ReadAppliedVersionsAsync(paths));
+            Assert.Equal(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 }, await ReadAppliedVersionsAsync(paths));
         }
 
         [Fact]

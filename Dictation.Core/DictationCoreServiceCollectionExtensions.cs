@@ -5,6 +5,7 @@ using Dictation.Core.Learning;
 using Dictation.Core.Lexicon;
 using Dictation.Core.Review;
 using Dictation.Core.Mistakes;
+using Dictation.Core.Kana;
 using Dictation.Core.SingleInstance;
 using Dictation.Core.Startup;
 using Dictation.Core.Tts;
@@ -81,6 +82,13 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IReviewSessionReader>(provider => provider.GetRequiredService<ReviewSessionService>());
             services.AddSingleton<IWrongAnswerQuery, WrongAnswerQueryService>();
             services.AddSingleton<IWrongAnswerPractice, WrongAnswerPracticeService>();
+            services.AddSingleton<KanaPlanService>();
+            services.AddSingleton<IKanaPlanReader>(provider => provider.GetRequiredService<KanaPlanService>());
+            services.AddSingleton<IKanaPlanEditor>(provider => provider.GetRequiredService<KanaPlanService>());
+            services.AddSingleton<KanaSessionService>();
+            services.AddSingleton<KanaSessionPlanner>();
+            services.AddSingleton<IKanaSessionReader>(provider => provider.GetRequiredService<KanaSessionService>());
+            services.AddSingleton<IKanaSessionOperations>(provider => provider.GetRequiredService<KanaSessionService>());
             return services;
         }
     }

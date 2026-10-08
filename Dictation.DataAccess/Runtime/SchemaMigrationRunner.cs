@@ -1,6 +1,7 @@
 using System.Globalization;
 using Dapper;
 using Dictation.DataAccess;
+using Dictation.DataAccess.Kana;
 
 namespace Dictation.DataAccess.Runtime
 {
@@ -775,7 +776,8 @@ namespace Dictation.DataAccess.Runtime
                         FOREIGN KEY (SessionId, WordGroupId) REFERENCES LearningSessionGroups (SessionId, WordGroupId) ON DELETE CASCADE,
                         FOREIGN KEY (WordGroupId, MemberId, FormCode) REFERENCES LearningFormStates (WordGroupId, MemberId, FormCode) ON DELETE CASCADE
                     );
-                    """)
+                    """),
+                KanaSchemaMigration.Definition
             };
         }
     }

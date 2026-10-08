@@ -4,6 +4,7 @@ using Dictation.DataAccess.Learning;
 using Dictation.DataAccess.Lexicon;
 using Dictation.DataAccess.Review;
 using Dictation.DataAccess.Mistakes;
+using Dictation.DataAccess.Kana;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.DataAccess
@@ -29,6 +30,8 @@ namespace Dictation.DataAccess
             services.AddSingleton(applicationPaths);
             services.AddSingleton<SqliteConnectionFactory>();
             services.AddSingleton<WrongAnswerDataAccessor>();
+            services.AddSingleton<KanaPlanDataAccessor>();
+            services.AddSingleton<KanaSessionDataAccessor>();
             services.AddSingleton<LexiconSqliteConnectionFactory>();
             services.AddSingleton<JapaneseLexiconDataAccessor>();
             services.AddSingleton<EnglishLexiconDataAccessor>();
