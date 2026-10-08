@@ -509,7 +509,10 @@ namespace Dictation.DataAccess.Learning
                     LEFT JOIN LearningQuestionAttempts AS Attempts
                         ON Attempts.QuestionId = Questions.QuestionId
                     WHERE Questions.SessionId = @SessionId
-                    ORDER BY Questions.QuestionOrdinal;
+                    UNION ALL
+                    SELECT QuestionId, WordGroupId, MemberId, FormCode, Channel, OutputMode, QuestionOrdinal, WasCorrect
+                    FROM LearningSharedAnswerAttempts WHERE SessionId=@SessionId
+                    ORDER BY QuestionOrdinal;
                     """,
                     new { SessionId = sessionId },
                     cancellationToken: cancellationToken))).ToArray();
@@ -667,6 +670,11 @@ namespace Dictation.DataAccess.Learning
                     {
                         throw InvalidData("题目已过期、不属于当前会话或会话已完成。");
                     }
+                    if (answer.AdditionalOutcomes is { Count: > 0 } && (target.Channel != "Dictation"
+                        || answer.AdditionalOutcomes.Any(outcome => outcome.MemberId == target.MemberId && outcome.FormCode == target.FormCode)))
+                    {
+                        throw InvalidData("共享目标只能来自听写，且不能重复主目标。");
+                    }
 
                     await connection.ExecuteAsync(new CommandDefinition(
                         """
@@ -701,38 +709,61 @@ namespace Dictation.DataAccess.Learning
                         "Kanji" => "KanjiCount",
                         _ => throw InvalidData("待答题输出方式无效。")
                     };
-                    var updated = await connection.ExecuteAsync(new CommandDefinition(
-                        $"""
-                        UPDATE LearningFormStates
-                        SET CorrectStreak = @CorrectStreak,
-                            IsMastered = @IsMastered,
-                            NextEligibleOrdinal = @NextEligibleOrdinal,
-                            {channelColumn} = {channelColumn} + 1,
-                            {outputColumn} = {outputColumn} + 1,
-                            CorrectCount = CorrectCount + @CorrectIncrement,
-                            ErrorCount = ErrorCount + @ErrorIncrement,
-                            LastAnsweredAtUtc = @AnsweredAtUtc
-                        WHERE WordGroupId = @WordGroupId
-                          AND MemberId = @MemberId
-                          AND FormCode = @FormCode;
-                        """,
-                        new
-                        {
-                            target.WordGroupId,
-                            target.MemberId,
-                            target.FormCode,
-                            answer.CorrectStreak,
-                            IsMastered = answer.IsMastered ? 1 : 0,
-                            answer.NextEligibleOrdinal,
-                            CorrectIncrement = answer.WasCorrect ? 1 : 0,
-                            ErrorIncrement = answer.WasCorrect ? 0 : 1,
-                            AnsweredAtUtc = FormatDateTime(answer.AnsweredAtUtc)
-                        },
-                        transaction,
-                        cancellationToken: cancellationToken));
-                    if (updated != 1)
+                    var outcomes = new[] { new LearningFormOutcomePo(target.WordGroupId, target.MemberId, target.FormCode,
+                        answer.CorrectStreak, answer.IsMastered, answer.NextEligibleOrdinal) }
+                        .Concat(answer.AdditionalOutcomes ?? Array.Empty<LearningFormOutcomePo>());
+                    foreach (var outcome in outcomes)
                     {
-                        throw InvalidData("待答题对应的学习词形状态不存在。");
+                        var updated = await connection.ExecuteAsync(new CommandDefinition(
+                            $"""
+                            UPDATE LearningFormStates
+                            SET CorrectStreak = @CorrectStreak,
+                                IsMastered = @IsMastered,
+                                NextEligibleOrdinal = @NextEligibleOrdinal,
+                                {channelColumn} = {channelColumn} + 1,
+                                {outputColumn} = {outputColumn} + 1,
+                                CorrectCount = CorrectCount + @CorrectIncrement,
+                                ErrorCount = ErrorCount + @ErrorIncrement,
+                                LastAnsweredAtUtc = @AnsweredAtUtc
+                            WHERE WordGroupId = @WordGroupId
+                              AND MemberId = @MemberId
+                              AND FormCode = @FormCode
+                              AND EXISTS (SELECT 1 FROM LearningSessionGroups Groups
+                                  WHERE Groups.SessionId=@SessionId AND Groups.WordGroupId=LearningFormStates.WordGroupId)
+                              AND (@IsPrimary=1 OR IsMastered=0);
+                            """,
+                            new
+                            {
+                                answer.SessionId,
+                                outcome.WordGroupId,
+                                outcome.MemberId,
+                                outcome.FormCode,
+                                outcome.CorrectStreak,
+                                IsMastered = outcome.IsMastered ? 1 : 0,
+                                outcome.NextEligibleOrdinal,
+                                IsPrimary = outcome.MemberId == target.MemberId && outcome.FormCode == target.FormCode ? 1 : 0,
+                                CorrectIncrement = answer.WasCorrect ? 1 : 0,
+                                ErrorIncrement = answer.WasCorrect ? 0 : 1,
+                                AnsweredAtUtc = FormatDateTime(answer.AnsweredAtUtc)
+                            },
+                            transaction,
+                            cancellationToken: cancellationToken));
+                        if (updated != 1)
+                        {
+                            throw InvalidData("待答题对应的学习词形状态不存在。");
+                        }
+                        if (outcome.MemberId != target.MemberId || outcome.FormCode != target.FormCode)
+                        {
+                            // 不引用主题目的外键，避免删除主出题组时级联另一义项的独立观察。
+                            await connection.ExecuteAsync(new CommandDefinition("""
+                                INSERT INTO LearningSharedAnswerAttempts (SessionId, QuestionId, QuestionOrdinal, WordGroupId,
+                                    MemberId, FormCode, Channel, OutputMode, SubmittedText, WasCorrect, AnsweredAtUtc)
+                                VALUES (@SessionId, @QuestionId, @QuestionOrdinal, @WordGroupId, @MemberId, @FormCode,
+                                    @Channel, @OutputMode, @SubmittedText, @WasCorrect, @AnsweredAtUtc);
+                                """, new { answer.SessionId, answer.QuestionId, target.QuestionOrdinal, outcome.WordGroupId, outcome.MemberId,
+                                    outcome.FormCode, target.Channel, target.OutputMode, answer.SubmittedText, WasCorrect = answer.WasCorrect ? 1 : 0,
+                                    AnsweredAtUtc = FormatDateTime(answer.AnsweredAtUtc) }, transaction, cancellationToken: cancellationToken));
+                        }
                     }
 
                     var nextOrdinal = target.QuestionOrdinal + 1;
@@ -994,6 +1025,20 @@ namespace Dictation.DataAccess.Learning
             }
 
             ArgumentOutOfRangeException.ThrowIfNegative(answer.NextEligibleOrdinal);
+            if (answer.AdditionalOutcomes is not null)
+            {
+                if (answer.AdditionalOutcomes.DistinctBy(outcome => (outcome.MemberId, outcome.FormCode)).Count() != answer.AdditionalOutcomes.Count)
+                    throw new ArgumentException("共享目标不能重复。", nameof(answer));
+                foreach (var outcome in answer.AdditionalOutcomes)
+                {
+                    RequireText(outcome.WordGroupId, nameof(outcome.WordGroupId));
+                    RequireText(outcome.FormCode, nameof(outcome.FormCode));
+                    ArgumentOutOfRangeException.ThrowIfNegativeOrZero(outcome.MemberId);
+                    ArgumentOutOfRangeException.ThrowIfNegative(outcome.NextEligibleOrdinal);
+                    if (outcome.CorrectStreak is < 0 or > 2 || outcome.IsMastered != (outcome.CorrectStreak == 2))
+                        throw new ArgumentException("共享目标的掌握状态与连续正确次数不一致。", nameof(answer));
+                }
+            }
             RequireText(answer.AnsweredLocalDate, nameof(answer.AnsweredLocalDate));
             ArgumentNullException.ThrowIfNull(answer.CompletedWordGroupIds);
             if (answer.CompletedWordGroupIds.Distinct(StringComparer.Ordinal).Count() != answer.CompletedWordGroupIds.Count)

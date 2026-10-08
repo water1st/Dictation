@@ -198,19 +198,21 @@ namespace Dictation.Core.Learning
             var submittedText = (request.SubmittedText ?? string.Empty)
                 .Trim()
                 .Normalize(System.Text.NormalizationForm.FormC);
-            var newStreak = wasCorrect ? Math.Min(2, currentUnit.CorrectStreak + 1) : 0;
             var nextEligibleOrdinal = questionScheduler.GetNextEligibleOrdinal(currentQuestion.QuestionOrdinal);
-            var updatedHistory = snapshot.History
-                .Select(history => history.QuestionId == currentQuestion.QuestionId
-                    ? history with { WasCorrect = wasCorrect }
-                    : history)
+            var targets = PracticeDictationTargets.Select(currentUnit, currentQuestion,
+                snapshot.Units.Where(unit => questionScheduler.IsEnabledUnit(unit, plan, language)).ToArray(), language, plan);
+            // 一次听写观察可以服务多个义项，但每个成员词形保留自己的错误、覆盖和连续正确状态。
+            var updatedHistory = snapshot.History.Where(history => history.QuestionId != currentQuestion.QuestionId)
+                .Concat(targets.Select(target => new PracticeQuestionHistoryPo(currentQuestion.QuestionId, target.WordGroupId,
+                    target.MemberId, target.FormCode, currentQuestion.Channel, currentQuestion.OutputMode, currentQuestion.QuestionOrdinal, wasCorrect)))
                 .ToArray();
-            var hasUnresolvedRetry = questionScheduler.HasUnresolvedRetry(
-                currentUnit, plan, language, updatedHistory);
-            var updatedUnit = PracticeAnswerTransition.Apply(
-                currentUnit, currentQuestion, wasCorrect, newStreak, nextEligibleOrdinal, hasUnresolvedRetry);
+            var changed = targets.Select(target => PracticeAnswerTransition.Apply(target, currentQuestion, wasCorrect,
+                wasCorrect ? Math.Min(2, target.CorrectStreak + 1) : 0, nextEligibleOrdinal,
+                questionScheduler.HasUnresolvedRetry(target, plan, language, updatedHistory))).ToArray();
+            var byIdentity = changed.ToDictionary(unit => (unit.MemberId, unit.FormCode));
+            var updatedUnit = byIdentity[(currentUnit.MemberId, currentUnit.FormCode)];
             var updatedUnits = snapshot.Units
-                .Select(unit => IsSameUnit(unit, currentQuestion) ? updatedUnit : unit)
+                .Select(unit => byIdentity.GetValueOrDefault((unit.MemberId, unit.FormCode)) ?? unit)
                 .ToArray();
             var nextOrdinal = currentQuestion.QuestionOrdinal + 1;
             var transitionedSnapshot = snapshot with
@@ -223,12 +225,9 @@ namespace Dictation.Core.Learning
             var activeUnits = updatedUnits
                 .Where(unit => questionScheduler.IsEnabledUnit(unit, plan, language))
                 .ToArray();
-            var currentGroupUnits = activeUnits
-                .Where(unit => string.Equals(unit.WordGroupId, currentUnit.WordGroupId, StringComparison.Ordinal))
-                .ToArray();
-            var completedWordGroupIds = currentGroupUnits.Length > 0 && currentGroupUnits.All(unit => unit.IsMastered)
-                ? new[] { currentUnit.WordGroupId }
-                : Array.Empty<string>();
+            var changedGroups = targets.Select(unit => unit.WordGroupId).ToHashSet(StringComparer.Ordinal);
+            var completedWordGroupIds = activeUnits.Where(unit => changedGroups.Contains(unit.WordGroupId))
+                .GroupBy(unit => unit.WordGroupId).Where(group => group.All(unit => unit.IsMastered)).Select(group => group.Key).ToArray();
             var completeSession = activeUnits.Length == 0 || activeUnits.All(unit => unit.IsMastered);
             var nextScheduled = completeSession
                 ? null
@@ -250,7 +249,7 @@ namespace Dictation.Core.Learning
                     currentQuestion.QuestionId,
                     submittedText,
                     wasCorrect,
-                    newStreak,
+                    updatedUnit.CorrectStreak,
                     updatedUnit.IsMastered,
                     nextEligibleOrdinal,
                     now,
@@ -258,7 +257,8 @@ namespace Dictation.Core.Learning
                     nextScheduled,
                     completedWordGroupIds,
                     completeSession,
-                    memorySeeds),
+                    memorySeeds,
+                    changed.Where(unit => !IsSameUnit(unit, currentQuestion)).Select(LearningAnswerMapper.ToOutcome).ToArray()),
                 cancellationToken);
             var hadError = updatedHistory.Any(history => history.WasCorrect == false);
             var nextQuestion = persistedNext is null ? null : PracticeQuestionPresenter.Create(language, transitionedSnapshot.Units, persistedNext, plan);
@@ -311,7 +311,7 @@ namespace Dictation.Core.Learning
                 .ToArray();
             return new LearningSessionSummaryDto(
                 sessionId,
-                snapshot.History.Count(history => history.WasCorrect.HasValue),
+                snapshot.History.Where(history => history.WasCorrect.HasValue).Select(history => history.QuestionId).Distinct().Count(),
                 errors);
         }
 

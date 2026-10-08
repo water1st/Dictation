@@ -754,6 +754,27 @@ namespace Dictation.DataAccess.Runtime
                         FOREIGN KEY (SessionId, WordGroupId) REFERENCES ReviewSessionGroups (SessionId, WordGroupId) ON DELETE CASCADE,
                         FOREIGN KEY (SessionId, MemberId, FormCode) REFERENCES ReviewSessionForms (SessionId, MemberId, FormCode) ON DELETE CASCADE
                     );
+                    """),
+                new SchemaMigration(
+                    12,
+                    "保存学习共享听写的独立目标观察",
+                    """
+                    CREATE TABLE LearningSharedAnswerAttempts (
+                        SessionId TEXT NOT NULL,
+                        QuestionId INTEGER NOT NULL,
+                        QuestionOrdinal INTEGER NOT NULL CHECK (QuestionOrdinal >= 0),
+                        WordGroupId TEXT NOT NULL,
+                        MemberId INTEGER NOT NULL,
+                        FormCode TEXT NOT NULL,
+                        Channel TEXT NOT NULL CHECK (Channel IN ('MeaningWriting','Dictation')),
+                        OutputMode TEXT NOT NULL CHECK (OutputMode IN ('Latin','Kana','Kanji')),
+                        SubmittedText TEXT NOT NULL,
+                        WasCorrect INTEGER NOT NULL CHECK (WasCorrect IN (0,1)),
+                        AnsweredAtUtc TEXT NOT NULL,
+                        PRIMARY KEY (SessionId, QuestionOrdinal, MemberId, FormCode),
+                        FOREIGN KEY (SessionId, WordGroupId) REFERENCES LearningSessionGroups (SessionId, WordGroupId) ON DELETE CASCADE,
+                        FOREIGN KEY (WordGroupId, MemberId, FormCode) REFERENCES LearningFormStates (WordGroupId, MemberId, FormCode) ON DELETE CASCADE
+                    );
                     """)
             };
         }
