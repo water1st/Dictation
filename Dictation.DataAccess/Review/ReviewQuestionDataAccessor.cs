@@ -9,12 +9,15 @@ namespace Dictation.DataAccess.Review
     public sealed class ReviewQuestionDataAccessor
     {
         private readonly SqliteConnectionFactory connectionFactory;
+        private readonly ReviewQuestionWriter questionWriter;
 
         /// <summary>组合唯一用户数据库的连接工厂。</summary>
         /// <param name="connectionFactory">创建按操作释放的 SQLite 连接。</param>
-        public ReviewQuestionDataAccessor(SqliteConnectionFactory connectionFactory)
+        /// <param name="questionWriter">使用当前事务保存题目的共享组件。</param>
+        internal ReviewQuestionDataAccessor(SqliteConnectionFactory connectionFactory, ReviewQuestionWriter questionWriter)
         {
             this.connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
+            this.questionWriter = questionWriter ?? throw new ArgumentNullException(nameof(questionWriter));
         }
 
         /// <summary>在同一读事务内读取复习主表、形式、待答题与历史。</summary>
@@ -56,10 +59,21 @@ namespace Dictation.DataAccess.Review
                 FROM WordGroupForms WHERE MemberId IN @MemberIds ORDER BY MemberId, FormCode, IsPrimary DESC, IsCommon DESC, FormIndex;
                 """, memberArguments, transaction, cancellationToken: cancellationToken))).ToArray();
             var questions = (await connection.QueryAsync<ReviewQuestionRow>(new CommandDefinition(
-                "SELECT QuestionId, SessionId, WordGroupId, MemberId, FormCode, Channel, OutputMode, QuestionOrdinal, Status, WasCorrect FROM ReviewQuestions WHERE SessionId=@SessionId ORDER BY QuestionOrdinal;",
+                """
+                SELECT QuestionId, SessionId, WordGroupId, MemberId, FormCode, Channel, OutputMode, QuestionOrdinal, Status, WasCorrect
+                FROM ReviewQuestions WHERE SessionId=@SessionId AND Status='Pending'
+                UNION ALL
+                SELECT QuestionId, SessionId, WordGroupId, MemberId, FormCode, Channel, OutputMode, QuestionOrdinal, 'Answered', WasCorrect
+                FROM ReviewAnswerAttempts WHERE SessionId=@SessionId ORDER BY QuestionOrdinal;
+                """,
                 arguments, transaction, cancellationToken: cancellationToken))).ToArray();
+            var memories = (await connection.QueryAsync<ReviewStoredMemoryPo>(new CommandDefinition("""
+                SELECT Memories.*, Members.SourceSenseId FROM ReviewFormMemories AS Memories
+                INNER JOIN WordGroupMembers AS Members ON Members.MemberId=Memories.MemberId
+                WHERE Memories.WordGroupId IN @GroupIds;
+                """, new { GroupIds = groups }, transaction, cancellationToken: cancellationToken))).ToArray();
             await transaction.CommitAsync(cancellationToken);
-            return ReviewQuestionSnapshotMapper.ToPo(header, groups, rows, meanings, variants, questions);
+            return ReviewQuestionSnapshotMapper.ToPo(header, groups, rows, meanings, variants, questions, memories);
         }
 
         /// <summary>在写事务内复查状态和归属；并发创建返回已持久化的当前待答题。</summary>
@@ -92,30 +106,9 @@ namespace Dictation.DataAccess.Review
                 await transaction.CommitAsync(cancellationToken);
                 return ReviewQuestionSnapshotMapper.ToQuestion(pending);
             }
-            var target = await connection.ExecuteScalarAsync<bool>(new CommandDefinition("""
-                SELECT EXISTS (SELECT 1 FROM ReviewSessionForms AS States
-                    INNER JOIN ReviewSessions AS Sessions ON Sessions.SessionId=States.SessionId
-                    WHERE States.SessionId=@SessionId AND States.WordGroupId=@WordGroupId AND States.MemberId=@MemberId
-                        AND States.FormCode=@FormCode AND States.IsMastered=0
-                        AND ((Sessions.Language='English' AND @OutputMode='Latin')
-                            OR (Sessions.Language='Japanese' AND @OutputMode IN ('Kana','Kanji')))
-                        AND EXISTS (SELECT 1 FROM WordGroupForms WHERE MemberId=States.MemberId AND FormCode=States.FormCode
-                            AND (@OutputMode='Latin' OR ScriptCode=@OutputMode)));
-                """, question, transaction, cancellationToken: cancellationToken));
-            if (!target)
-            {
-                throw new InvalidOperationException("复习题目不属于本轮适用形式，或对应词组已经删除。");
-            }
-            var questionId = await connection.ExecuteScalarAsync<long>(new CommandDefinition("""
-                INSERT INTO ReviewQuestions (SessionId, WordGroupId, MemberId, FormCode, Channel, OutputMode, QuestionOrdinal, Status, CreatedAtUtc)
-                VALUES (@SessionId, @WordGroupId, @MemberId, @FormCode, @Channel, @OutputMode, @QuestionOrdinal, 'Pending', @CreatedAtUtc);
-                SELECT last_insert_rowid();
-                """, new { question.SessionId, question.WordGroupId, question.MemberId, question.FormCode, question.Channel,
-                    question.OutputMode, question.QuestionOrdinal, CreatedAtUtc = question.CreatedAtUtc.ToUniversalTime().ToString("O") },
-                transaction, cancellationToken: cancellationToken));
+            var created = await questionWriter.InsertAsync(connection, transaction, question, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-            return new PracticeQuestionStatePo(questionId, question.SessionId, question.WordGroupId, question.MemberId,
-                question.FormCode, question.Channel, question.OutputMode, question.QuestionOrdinal);
+            return created;
         }
     }
 }

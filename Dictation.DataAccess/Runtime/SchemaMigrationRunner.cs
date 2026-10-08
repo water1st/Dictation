@@ -733,6 +733,27 @@ namespace Dictation.DataAccess.Runtime
                         FOREIGN KEY (SessionId, MemberId, FormCode) REFERENCES ReviewSessionForms (SessionId, MemberId, FormCode) ON DELETE CASCADE
                     );
                     CREATE UNIQUE INDEX UX_ReviewQuestions_Pending ON ReviewQuestions (SessionId) WHERE Status='Pending';
+                    """),
+                new SchemaMigration(
+                    11,
+                    "保存复习成员词形的独立作答历史",
+                    """
+                    CREATE TABLE ReviewAnswerAttempts (
+                        SessionId TEXT NOT NULL,
+                        QuestionId INTEGER NOT NULL,
+                        QuestionOrdinal INTEGER NOT NULL CHECK (QuestionOrdinal >= 0),
+                        WordGroupId TEXT NOT NULL,
+                        MemberId INTEGER NOT NULL,
+                        FormCode TEXT NOT NULL,
+                        Channel TEXT NOT NULL CHECK (Channel IN ('MeaningWriting','Dictation')),
+                        OutputMode TEXT NOT NULL CHECK (OutputMode IN ('Latin','Kana','Kanji')),
+                        SubmittedText TEXT NOT NULL,
+                        WasCorrect INTEGER NOT NULL CHECK (WasCorrect IN (0,1)),
+                        AnsweredAtUtc TEXT NOT NULL,
+                        PRIMARY KEY (SessionId, QuestionOrdinal, MemberId, FormCode),
+                        FOREIGN KEY (SessionId, WordGroupId) REFERENCES ReviewSessionGroups (SessionId, WordGroupId) ON DELETE CASCADE,
+                        FOREIGN KEY (SessionId, MemberId, FormCode) REFERENCES ReviewSessionForms (SessionId, MemberId, FormCode) ON DELETE CASCADE
+                    );
                     """)
             };
         }

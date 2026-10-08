@@ -32,7 +32,11 @@ namespace Dictation.DataAccess
             services.AddSingleton<EnglishLexiconDataAccessor>();
             services.AddSingleton<WordGroupMemberSnapshotReader>();
             services.AddSingleton<ReviewMemoryWriter>();
-            services.AddSingleton<ReviewQuestionDataAccessor>();
+            services.AddSingleton<ReviewQuestionWriter>();
+            services.AddSingleton(provider => new ReviewQuestionDataAccessor(provider.GetRequiredService<SqliteConnectionFactory>(),
+                provider.GetRequiredService<ReviewQuestionWriter>()));
+            services.AddSingleton(provider => new ReviewAnswerDataAccessor(provider.GetRequiredService<SqliteConnectionFactory>(),
+                provider.GetRequiredService<ReviewQuestionWriter>(), provider.GetRequiredService<ReviewMemoryWriter>()));
             services.AddSingleton(provider => new ReviewSessionDataAccessor(
                 provider.GetRequiredService<SqliteConnectionFactory>(),
                 provider.GetRequiredService<WordGroupMemberSnapshotReader>()));

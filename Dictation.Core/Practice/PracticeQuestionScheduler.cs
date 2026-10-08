@@ -230,11 +230,25 @@ namespace Dictation.Core.Practice
             IReadOnlyList<PracticeQuestionHistoryPo> history)
         {
             return candidates
-                .Where(other => !IsSameUnit(candidate.Unit, other.Unit))
+                .Where(other => !IsSameUnit(candidate.Unit, other.Unit)
+                    && !WereJointlyAnswered(candidate.Unit, other.Unit, candidate.LastQuestionOrdinal, history))
                 .All(other => history.Any(item =>
                     item.WasCorrect.HasValue
                     && item.QuestionOrdinal > candidate.LastQuestionOrdinal
                     && IsSameUnit(other.Unit, item)));
+        }
+
+        /// <summary>共享同一次听写观察的目标不互相充当穿插障碍，避免小池无法推进。</summary>
+        /// <param name="unit">需要重练的词形。</param>
+        /// <param name="other">待检查的另一词形。</param>
+        /// <param name="lastOrdinal">本词形最近出题序号。</param>
+        /// <param name="history">本轮真实作答历史。</param>
+        private static bool WereJointlyAnswered(PracticeFormUnitPo unit, PracticeFormUnitPo other, int lastOrdinal,
+            IReadOnlyList<PracticeQuestionHistoryPo> history)
+        {
+            var last = history.FirstOrDefault(item => item.WasCorrect.HasValue && item.QuestionOrdinal == lastOrdinal && IsSameUnit(unit, item));
+            return last is not null && history.Any(item => item.WasCorrect.HasValue
+                && item.QuestionId == last.QuestionId && item.QuestionOrdinal == lastOrdinal && IsSameUnit(other, item));
         }
 
         /// <summary>

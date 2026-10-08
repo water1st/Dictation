@@ -207,7 +207,7 @@ namespace Dictation.Core.Learning
                 .ToArray();
             var hasUnresolvedRetry = questionScheduler.HasUnresolvedRetry(
                 currentUnit, plan, language, updatedHistory);
-            var updatedUnit = ApplyOutcome(
+            var updatedUnit = PracticeAnswerTransition.Apply(
                 currentUnit, currentQuestion, wasCorrect, newStreak, nextEligibleOrdinal, hasUnresolvedRetry);
             var updatedUnits = snapshot.Units
                 .Select(unit => IsSameUnit(unit, currentQuestion) ? updatedUnit : unit)
@@ -272,32 +272,6 @@ namespace Dictation.Core.Learning
                 nextQuestion,
                 summary,
                 SelectPreferredSpokenText(currentUnit, output, language));
-        }
-
-        /// <summary>
-        /// 根据当前题型、输出方式与判题结果生成新的词形状态；不就地修改输入快照。
-        /// </summary>
-        private static PracticeFormUnitPo ApplyOutcome(
-            PracticeFormUnitPo unit,
-            PracticeQuestionStatePo question,
-            bool wasCorrect,
-            int correctStreak,
-            int nextEligibleOrdinal,
-            bool hasUnresolvedRetry)
-        {
-            return unit with
-            {
-                CorrectStreak = correctStreak,
-                IsMastered = correctStreak == 2 && !hasUnresolvedRetry,
-                NextEligibleOrdinal = nextEligibleOrdinal,
-                MeaningWritingCount = unit.MeaningWritingCount + (question.Channel == LearningChannel.MeaningWriting.ToString() ? 1 : 0),
-                DictationCount = unit.DictationCount + (question.Channel == LearningChannel.Dictation.ToString() ? 1 : 0),
-                LatinCount = unit.LatinCount + (question.OutputMode == LearningOutputMode.Latin.ToString() ? 1 : 0),
-                KanaCount = unit.KanaCount + (question.OutputMode == LearningOutputMode.Kana.ToString() ? 1 : 0),
-                KanjiCount = unit.KanjiCount + (question.OutputMode == LearningOutputMode.Kanji.ToString() ? 1 : 0),
-                CorrectCount = unit.CorrectCount + (wasCorrect ? 1 : 0),
-                ErrorCount = unit.ErrorCount + (wasCorrect ? 0 : 1)
-            };
         }
 
         private static PracticeFormUnitPo FindUnit(

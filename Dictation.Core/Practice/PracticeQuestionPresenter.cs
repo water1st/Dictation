@@ -43,7 +43,7 @@ namespace Dictation.Core.Practice
         /// <summary>
         /// 按计划选择英语示例词形标签；没有对应示例时使用原语法标签。
         /// </summary>
-        private static string GetFormLabel(
+        internal static string GetFormLabel(
             PracticeFormUnitPo unit,
             IPracticeQuestionPlan plan,
             LearningLanguage language)

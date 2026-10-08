@@ -9,5 +9,6 @@ namespace Dictation.DataAccess.Review
         int CurrentOrdinal,
         PracticeQuestionStatePo? PendingQuestion,
         IReadOnlyList<PracticeFormUnitPo> Units,
-        IReadOnlyList<PracticeQuestionHistoryPo> History);
+        IReadOnlyList<PracticeQuestionHistoryPo> History,
+        IReadOnlyList<ReviewStoredMemoryPo> Memories);
 }

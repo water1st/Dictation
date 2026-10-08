@@ -13,9 +13,11 @@ namespace Dictation.DataAccess.Review
         /// <param name="meanings">成员中文释义查询结果。</param>
         /// <param name="variants">成员词形与读音查询结果。</param>
         /// <param name="questions">该复习会话题目的完整历史。</param>
+        /// <param name="memories">本轮词组的既有客观记忆。</param>
         internal static ReviewQuestionSnapshotPo ToPo(ReviewSessionHeaderRow header, IReadOnlyList<string> groups,
             IReadOnlyList<ReviewPracticeFormRow> rows, IReadOnlyList<WordGroupMeaningRow> meanings,
-            IReadOnlyList<WordGroupFormRow> variants, IReadOnlyList<ReviewQuestionRow> questions)
+            IReadOnlyList<WordGroupFormRow> variants, IReadOnlyList<ReviewQuestionRow> questions,
+            IReadOnlyList<ReviewStoredMemoryPo> memories)
         {
             var meaningLookup = meanings.ToLookup(row => row.MemberId);
             var variantLookup = variants.ToLookup(row => (row.MemberId, row.FormCode));
@@ -30,7 +32,7 @@ namespace Dictation.DataAccess.Review
             return new ReviewQuestionSnapshotPo(ReviewSessionRowMapper.ToPo(header, groups), header.Status, header.CurrentOrdinal,
                 pending is null ? null : ToQuestion(pending), units,
                 questions.Select(row => new PracticeQuestionHistoryPo(row.QuestionId, row.WordGroupId, row.MemberId,
-                    row.FormCode, row.Channel, row.OutputMode, row.QuestionOrdinal, row.WasCorrect is null ? null : row.WasCorrect != 0)).ToArray());
+                    row.FormCode, row.Channel, row.OutputMode, row.QuestionOrdinal, row.WasCorrect is null ? null : row.WasCorrect != 0)).ToArray(), memories);
         }
 
         /// <summary>将题目定位列转为供两种模式纯规则使用的题目状态。</summary>
