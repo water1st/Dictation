@@ -67,7 +67,7 @@ namespace Dictation.Presentation.Navigation
             }
 
             currentEntry = new NavigationEntry(
-                homeViewModel, "首页", null, null, homeViewModel.RefreshLearningProgressAsync);
+                homeViewModel, "首页", null, null, homeViewModel.RefreshDailyProgressAsync);
             isInitialized = true;
             OnPropertyChanged(nameof(CurrentPage));
             OnPropertyChanged(nameof(PageTitle));

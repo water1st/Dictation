@@ -256,7 +256,8 @@ namespace Dictation.Tests.Architecture
                     typeof(IHomeNavigation),
                     typeof(ILearningProgressReader),
                     typeof(ILearningPlanReader),
-                    typeof(ILearningSessionReader)
+                    typeof(ILearningSessionReader),
+                    typeof(Dictation.Core.Review.IReviewProgressReader)
                 },
                 homeParameters);
 

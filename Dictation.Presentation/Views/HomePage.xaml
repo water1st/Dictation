@@ -197,14 +197,24 @@
                             <Setter Property="Padding" Value="18,14" />
                         </Style>
                     </Button.Style>
-                    <StackPanel Orientation="Horizontal">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <TextBlock FontSize="25" Foreground="{DynamicResource AccentBrush}" Text="↻" />
-                        <StackPanel Margin="14,0,0,0">
+                        <StackPanel Grid.Column="1" Margin="14,0,0,0">
                             <TextBlock FontSize="17" FontWeight="SemiBold" Text="复习词库" />
                             <TextBlock Margin="0,3,0,0" Foreground="{DynamicResource SecondaryForegroundBrush}"
                                        Text="查看待测词组、薄弱词形与下次复习时间" />
                         </StackPanel>
-                    </StackPanel>
+                        <Border Grid.Column="2" Margin="12,0,0,0" Padding="12,6" CornerRadius="12"
+                                VerticalAlignment="Center" Background="{DynamicResource AccentSoftBrush}">
+                            <TextBlock x:Name="ReviewDailyProgress" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AccentBrush}" Text="{Binding ReviewProgressLabel}" />
+                        </Border>
+                    </Grid>
                 </Button>
 
                 <Button Command="{Binding OpenReviewPlanCommand}" HorizontalContentAlignment="Stretch">
@@ -223,6 +233,9 @@
                         </StackPanel>
                     </StackPanel>
                 </Button>
+
+                <TextBlock x:Name="ReviewProgressError" Margin="0,6,0,0" TextWrapping="Wrap"
+                           Foreground="{DynamicResource ErrorBrush}" Text="{Binding ReviewProgressErrorMessage}" />
 
                 <Button Command="{Binding OpenLearningPlanCommand}"
                         HorizontalContentAlignment="Stretch">

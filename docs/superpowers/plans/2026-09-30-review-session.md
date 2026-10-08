@@ -71,6 +71,8 @@
 
 **Interfaces:** VM `Initialize(LearningLanguage)`、`StartAsync(CT)`、`SubmitAsync(CT)`、`ContinueAsync(CT)`、`ReplayQuestionAsync(CT)`、`ReplayBrowseAsync(CT)`；Home navigation `OpenReviewSessionAsync(LearningLanguage,CT)`；progress `GetTodayAsync(LearningLanguage,CT) → ReviewDailyProgressDto`。
 
+- [x] 每日进度能力已提交 `9c9aa36`；首页三层绑定、语言切换、返回刷新、独立行内错误、取消与晚完成隔离已完成，新增 11 项行为 RED→GREEN，最新全量 1740/1740。见 `docs/verification/2026-10-08-home-review-progress.md`。这是本任务的一部分，不代表下面的复习答题入口或会话页面已完成。
+
 - [ ] 真实三层单窗口端到端：首页语言锁定、浏览不改进度、听写失败不判错且可重播、反馈后续作答、结算、当天不同组数、返回取消/晚完成隔离、主题和禁拼写提醒输入；先冻结行为 RED，再仅修生产 GREEN。
 - [ ] 接实际入口而非占位；重用现有内存音频播放、喇叭图标、浏览属性和派生词形。只消费 Core，不执行调度或 SQL。首页分别读取语言每日进度；不可用时显示原因而非假装0完成。
 - [ ] 最新全量、solution build、正式日中英中词库隔离会话／渲染冒烟、diff与哈希；中文提交“复习：打通单窗口答题浏览与每日进度”。一次最终审查，重要发现一次 RED→GREEN 修复，保留证据后清理本计划临时目录。

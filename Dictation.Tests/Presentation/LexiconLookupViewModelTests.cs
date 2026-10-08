@@ -398,7 +398,8 @@ namespace Dictation.Tests.Presentation
                 navigation,
                 new StubLearningProgressReader(),
                 new StubLearningPlanReader(),
-                new StubLearningSessionReader());
+                new StubLearningSessionReader(),
+                new StubReviewProgressReader());
             navigation.InitializeHome(home);
             await navigation.OpenLexiconLookupAsync(
                 LearningLanguage.English,
