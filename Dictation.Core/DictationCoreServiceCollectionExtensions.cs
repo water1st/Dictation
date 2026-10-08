@@ -4,6 +4,7 @@ using Dictation.Core.Importing;
 using Dictation.Core.Learning;
 using Dictation.Core.Lexicon;
 using Dictation.Core.Review;
+using Dictation.Core.Mistakes;
 using Dictation.Core.SingleInstance;
 using Dictation.Core.Startup;
 using Dictation.Core.Tts;
@@ -78,6 +79,8 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<ReviewSessionService>();
             services.AddSingleton<IReviewSessionStarter>(provider => provider.GetRequiredService<ReviewSessionService>());
             services.AddSingleton<IReviewSessionReader>(provider => provider.GetRequiredService<ReviewSessionService>());
+            services.AddSingleton<IWrongAnswerQuery, WrongAnswerQueryService>();
+            services.AddSingleton<IWrongAnswerPractice, WrongAnswerPracticeService>();
             return services;
         }
     }
