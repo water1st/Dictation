@@ -4,6 +4,7 @@ namespace Dictation.Presentation.Practice
     internal enum PracticeSessionMode
     {
         Learning,
-        Review
+        Review,
+        WrongAnswers
     }
 }

@@ -13,6 +13,7 @@ namespace Dictation.Presentation.Navigation
     /// </summary>
     internal sealed class NavigationService :
         IHomeNavigation,
+        IWrongAnswerNavigation,
         ILearningSessionNavigation,
         IBackNavigation,
         IImportInboxDetailNavigation,
@@ -74,6 +75,37 @@ namespace Dictation.Presentation.Navigation
             OnPropertyChanged(nameof(PageTitle));
             OnPropertyChanged(nameof(CanGoBack));
             OnPropertyChanged(nameof(LastDirection));
+        }
+
+        /// <inheritdoc />
+        public async Task OpenWrongAnswersAsync(LearningLanguage language, CancellationToken cancellationToken = default)
+        {
+            ValidateLanguage(language);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!TryPrepareForwardNavigation()) return;
+            var scope = scopeFactory.CreateScope();
+            try
+            {
+                var viewModel = scope.ServiceProvider.GetRequiredService<WrongAnswerListViewModel>();
+                viewModel.Initialize(language);
+                NavigateForward(new NavigationEntry(viewModel, viewModel.WindowTitle, language, scope, viewModel.RefreshAsync));
+                await viewModel.RefreshAsync(cancellationToken);
+            }
+            catch
+            {
+                if (!ReferenceEquals(currentEntry?.Scope, scope) && !pendingDisposals.Any(entry => ReferenceEquals(entry.Scope, scope)))
+                    scope.Dispose();
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public Task OpenWrongAnswerPracticeAsync(LearningLanguage language, IReadOnlyList<string> wordGroupIds,
+            CancellationToken cancellationToken = default)
+        {
+            if (currentEntry?.ViewModel is not WrongAnswerListViewModel || currentEntry.Language != language)
+                throw new InvalidOperationException("请从相同语言错题列表进入重练。");
+            return OpenPracticeSessionAsync(PracticeSessionMode.WrongAnswers, language, wordGroupIds, cancellationToken);
         }
 
         /// <inheritdoc />
@@ -321,8 +353,8 @@ namespace Dictation.Presentation.Navigation
             var scope = scopeFactory.CreateScope();
             try
             {
-                var viewModel = mode == PracticeSessionMode.Review
-                    ? scope.ServiceProvider.GetRequiredKeyedService<PracticeSessionViewModel>(PracticeSessionMode.Review)
+                var viewModel = mode != PracticeSessionMode.Learning
+                    ? scope.ServiceProvider.GetRequiredKeyedService<PracticeSessionViewModel>(mode)
                     : scope.ServiceProvider.GetRequiredService<PracticeSessionViewModel>();
                 viewModel.Initialize(language);
                 cancellationToken.ThrowIfCancellationRequested();
@@ -419,6 +451,10 @@ namespace Dictation.Presentation.Navigation
             if (currentEntry?.ViewModel is PracticeSessionViewModel practice)
             {
                 practice.CancelOperation();
+            }
+            if (currentEntry?.ViewModel is WrongAnswerListViewModel wrongAnswers)
+            {
+                wrongAnswers.CancelOperation();
             }
             navigationOperationPending = true;
             OnPropertyChanged(nameof(CanGoBack));

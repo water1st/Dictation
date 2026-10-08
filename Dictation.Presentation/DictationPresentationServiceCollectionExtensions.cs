@@ -29,6 +29,8 @@ namespace Dictation.Presentation
             services.AddSingleton<NavigationService>();
             services.AddSingleton<IHomeNavigation>(serviceProvider =>
                 serviceProvider.GetRequiredService<NavigationService>());
+            services.AddSingleton<IWrongAnswerNavigation>(serviceProvider =>
+                serviceProvider.GetRequiredService<NavigationService>());
             services.AddSingleton<ILearningSessionNavigation>(serviceProvider =>
                 serviceProvider.GetRequiredService<NavigationService>());
             services.AddSingleton<IBackNavigation>(serviceProvider =>
@@ -51,6 +53,7 @@ namespace Dictation.Presentation
             services.AddScoped<LexiconLookupViewModel>();
             services.AddScoped<TextImportViewModel>();
             services.AddScoped<ReviewLibraryViewModel>();
+            services.AddScoped<WrongAnswerListViewModel>();
             services.AddScoped<ReviewPlanViewModel>();
             services.AddSingleton<Utf8TextFileReader>();
             services.AddSingleton<StartupTextImport>();
@@ -59,11 +62,15 @@ namespace Dictation.Presentation
             services.AddScoped<LearningPlanViewModel>();
             services.AddScoped<LearningPracticeWorkflow>();
             services.AddScoped<ReviewPracticeWorkflow>();
+            services.AddScoped<WrongAnswerPracticeWorkflow>();
             services.AddScoped<PracticeSessionViewModel>(provider => new PracticeSessionViewModel(
                 provider.GetRequiredService<LearningPracticeWorkflow>(), provider.GetRequiredService<TtsService>(),
                 provider.GetRequiredService<IAudioPlayer>()));
             services.AddKeyedScoped<PracticeSessionViewModel>(PracticeSessionMode.Review, (provider, _) => new PracticeSessionViewModel(
                 provider.GetRequiredService<ReviewPracticeWorkflow>(), provider.GetRequiredService<TtsService>(),
+                provider.GetRequiredService<IAudioPlayer>()));
+            services.AddKeyedScoped<PracticeSessionViewModel>(PracticeSessionMode.WrongAnswers, (provider, _) => new PracticeSessionViewModel(
+                provider.GetRequiredService<WrongAnswerPracticeWorkflow>(), provider.GetRequiredService<TtsService>(),
                 provider.GetRequiredService<IAudioPlayer>()));
 
             return services;

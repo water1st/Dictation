@@ -32,5 +32,8 @@
         <DataTemplate DataType="{x:Type viewModels:ReviewPlanViewModel}">
             <views:ReviewPlanPage />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:WrongAnswerListViewModel}">
+            <views:WrongAnswerListPage />
+        </DataTemplate>
     </Application.Resources>
 </Application>

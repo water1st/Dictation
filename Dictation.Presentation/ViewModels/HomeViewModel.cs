@@ -71,6 +71,7 @@ namespace Dictation.Presentation.ViewModels
             OpenReviewLibraryCommand = new AsyncCommand(() => OpenReviewLibraryAsync());
             OpenReviewPlanCommand = new AsyncCommand(() => OpenReviewPlanAsync());
             OpenReviewSessionCommand = new AsyncCommand(() => OpenReviewSessionAsync());
+            OpenWrongAnswersCommand = new AsyncCommand(() => OpenWrongAnswersAsync());
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -213,6 +214,12 @@ namespace Dictation.Presentation.ViewModels
         public ICommand OpenReviewLibraryCommand { get; }
         public ICommand OpenReviewPlanCommand { get; }
         public ICommand OpenReviewSessionCommand { get; }
+        public ICommand OpenWrongAnswersCommand { get; }
+
+        /// <summary>按首页当前语言打开单窗口错题列表。</summary>
+        /// <param name="cancellationToken">取消导航及读取的令牌。</param>
+        public Task OpenWrongAnswersAsync(CancellationToken cancellationToken = default) =>
+            homeNavigation.OpenWrongAnswersAsync(selectedLanguage, cancellationToken);
 
         /// <summary>按首页选定语言进入或恢复独立复习会话。</summary>
         /// <param name="cancellationToken">取消导航和准备的令牌。</param>

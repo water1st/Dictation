@@ -239,6 +239,18 @@
                     </Grid>
                 </Button>
 
+                <Button Command="{Binding OpenWrongAnswersCommand}" HorizontalContentAlignment="Stretch"
+                        Style="{StaticResource LanguageCardButtonStyle}" Margin="0,12,0,0" Padding="18,14">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock FontSize="25" Foreground="{DynamicResource AccentBrush}" Text="↺" />
+                        <StackPanel Margin="14,0,0,0">
+                            <TextBlock FontSize="17" FontWeight="SemiBold" Text="错题回顾" />
+                            <TextBlock Margin="0,3,0,0" Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                       Text="看看易错词形，继续学习或针对性重练" />
+                        </StackPanel>
+                    </StackPanel>
+                </Button>
+
                 <Button Command="{Binding OpenReviewPlanCommand}" HorizontalContentAlignment="Stretch">
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource LanguageCardButtonStyle}">
