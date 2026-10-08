@@ -60,7 +60,8 @@ namespace Dictation.Core.Review
             var nextEligible = scheduler.GetNextEligibleOrdinal(pending.QuestionOrdinal);
             var changed = targets.Select(target => PracticeAnswerTransition.Apply(target, pending, wasCorrect,
                 wasCorrect ? Math.Min(2, target.CorrectStreak + 1) : 0, nextEligible,
-                scheduler.HasUnresolvedRetry(target, session.PlanSnapshot, session.Language, history))).ToArray();
+                scheduler.HasUnresolvedRetry(target, session.PlanSnapshot, session.Language, history),
+                scheduler.HasRequiredCoverage(target, pending, session.PlanSnapshot, session.Language))).ToArray();
             var byIdentity = changed.ToDictionary(value => (value.MemberId, value.FormCode));
             var updatedUnits = snapshot.Units.Select(value => byIdentity.GetValueOrDefault((value.MemberId, value.FormCode)) ?? value).ToArray();
             var projected = snapshot with { CurrentOrdinal = pending.QuestionOrdinal + 1, PendingQuestion = null, Units = updatedUnits, History = history };

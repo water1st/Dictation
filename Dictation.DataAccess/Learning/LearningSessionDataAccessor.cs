@@ -1019,7 +1019,8 @@ namespace Dictation.DataAccess.Learning
                 throw new ArgumentOutOfRangeException(nameof(answer.CorrectStreak));
             }
 
-            if (answer.IsMastered != (answer.CorrectStreak == 2))
+            // 达到两次正确后可能仍欠覆盖或精确纠错；掌握只要求单向成立，不反推自动掌握。
+            if (answer.IsMastered && answer.CorrectStreak != 2)
             {
                 throw new ArgumentException("掌握状态与连续正确次数不一致。", nameof(answer));
             }
@@ -1035,7 +1036,7 @@ namespace Dictation.DataAccess.Learning
                     RequireText(outcome.FormCode, nameof(outcome.FormCode));
                     ArgumentOutOfRangeException.ThrowIfNegativeOrZero(outcome.MemberId);
                     ArgumentOutOfRangeException.ThrowIfNegative(outcome.NextEligibleOrdinal);
-                    if (outcome.CorrectStreak is < 0 or > 2 || outcome.IsMastered != (outcome.CorrectStreak == 2))
+                    if (outcome.CorrectStreak is < 0 or > 2 || (outcome.IsMastered && outcome.CorrectStreak != 2))
                         throw new ArgumentException("共享目标的掌握状态与连续正确次数不一致。", nameof(answer));
                 }
             }

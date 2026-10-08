@@ -15,18 +15,20 @@ namespace Dictation.Core.Practice
         /// <param name="correctStreak">业务层计算的连续正确次数。</param>
         /// <param name="nextEligibleOrdinal">完成穿插后的常规重练序号。</param>
         /// <param name="hasUnresolvedRetry">是否仍有未纠正的精确题型／字形错误。</param>
+        /// <param name="hasRequiredCoverage">计入本次观察后是否覆盖该目标全部启用渠道和适用字形。</param>
         internal static PracticeFormUnitPo Apply(
             PracticeFormUnitPo unit,
             PracticeQuestionStatePo question,
             bool wasCorrect,
             int correctStreak,
             int nextEligibleOrdinal,
-            bool hasUnresolvedRetry)
+            bool hasUnresolvedRetry,
+            bool hasRequiredCoverage)
         {
             return unit with
             {
                 CorrectStreak = correctStreak,
-                IsMastered = correctStreak == 2 && !hasUnresolvedRetry,
+                IsMastered = correctStreak == 2 && !hasUnresolvedRetry && hasRequiredCoverage,
                 NextEligibleOrdinal = nextEligibleOrdinal,
                 MeaningWritingCount = unit.MeaningWritingCount + (question.Channel == LearningChannel.MeaningWriting.ToString() ? 1 : 0),
                 DictationCount = unit.DictationCount + (question.Channel == LearningChannel.Dictation.ToString() ? 1 : 0),

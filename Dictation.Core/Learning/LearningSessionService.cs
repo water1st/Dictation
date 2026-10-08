@@ -208,7 +208,8 @@ namespace Dictation.Core.Learning
                 .ToArray();
             var changed = targets.Select(target => PracticeAnswerTransition.Apply(target, currentQuestion, wasCorrect,
                 wasCorrect ? Math.Min(2, target.CorrectStreak + 1) : 0, nextEligibleOrdinal,
-                questionScheduler.HasUnresolvedRetry(target, plan, language, updatedHistory))).ToArray();
+                questionScheduler.HasUnresolvedRetry(target, plan, language, updatedHistory),
+                questionScheduler.HasRequiredCoverage(target, currentQuestion, plan, language))).ToArray();
             var byIdentity = changed.ToDictionary(unit => (unit.MemberId, unit.FormCode));
             var updatedUnit = byIdentity[(currentUnit.MemberId, currentUnit.FormCode)];
             var updatedUnits = snapshot.Units

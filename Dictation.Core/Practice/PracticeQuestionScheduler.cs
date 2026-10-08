@@ -110,6 +110,21 @@ namespace Dictation.Core.Practice
                 && GetApplicableOutputs(unit, plan, language).Count > 0;
         }
 
+        /// <summary>按目标自身的计数检查本次观察后覆盖，不能以共享主题的调度代替次要目标缺口。</summary>
+        /// <param name="unit">该目标尚未计入本次观察的词形状态。</param>
+        /// <param name="question">本次真实题型及字形。</param>
+        /// <param name="plan">目标所需的启用范围。</param>
+        /// <param name="language">用于排除不适用字形的语言。</param>
+        /// <returns>全部启用渠道及适用字形已出现时返回真。</returns>
+        internal bool HasRequiredCoverage(PracticeFormUnitPo unit, PracticeQuestionStatePo question,
+            IPracticeQuestionPlan plan, LearningLanguage language)
+        {
+            return plan.Channels.All(channel => GetChannelCount(unit, channel)
+                    + (question.Channel == channel.ToString() ? 1 : 0) > 0)
+                && GetApplicableOutputs(unit, plan, language).All(output => GetOutputCount(unit, output)
+                    + (question.OutputMode == output.ToString() ? 1 : 0) > 0);
+        }
+
         /// <summary>
         /// 判断当前计划中是否仍有答错且尚未按同一题型和字形答对的题目。
         /// </summary>
