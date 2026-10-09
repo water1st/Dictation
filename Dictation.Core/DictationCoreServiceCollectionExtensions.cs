@@ -26,6 +26,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             ArgumentNullException.ThrowIfNull(services);
             services.AddSingleton<SettingsService>();
+            services.AddSingleton<McpSettingsService>();
             services.AddSingleton<StartupInitializer>();
             services.AddSingleton<SingleInstanceCoordinator>();
             services.AddSingleton<TtsService>();
@@ -40,6 +41,8 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IImportInboxQuery>(serviceProvider =>
                 serviceProvider.GetRequiredService<ImportInboxService>());
             services.AddSingleton<IImportInboxActions>(serviceProvider =>
+                serviceProvider.GetRequiredService<ImportInboxService>());
+            services.AddSingleton<IImportBatchReader>(serviceProvider =>
                 serviceProvider.GetRequiredService<ImportInboxService>());
             services.AddSingleton<ITextImportPreparation, TextImportPreparationService>();
             services.AddSingleton(TimeProvider.System);

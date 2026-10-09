@@ -7,7 +7,7 @@ namespace Dictation.Core.Importing
     /// <summary>
     /// 负责把词库义项解析为完整词组快照，并编排导入收件箱的暂存、审核与释义更新。
     /// </summary>
-    internal sealed class ImportInboxService : IImportStaging, IImportInboxQuery, IImportInboxActions
+    internal sealed class ImportInboxService : IImportStaging, IImportInboxQuery, IImportInboxActions, IImportBatchReader
     {
         private readonly ILexiconImportGroupResolver lexiconImportGroupResolver;
         private readonly ImportInboxDataAccessor importInboxAccessor;
@@ -102,6 +102,14 @@ namespace Dictation.Core.Importing
                 language.ToString(),
                 cancellationToken);
             return batches.Select(ImportInboxMapper.ToDto).ToArray();
+        }
+
+        /// <inheritdoc />
+        public async Task<ImportBatchDto> GetBatchAsync(string batchId, CancellationToken cancellationToken = default)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(batchId);
+            cancellationToken.ThrowIfCancellationRequested();
+            return ImportInboxMapper.ToDto(await importInboxAccessor.GetBatchAsync(batchId, cancellationToken));
         }
 
         /// <summary>

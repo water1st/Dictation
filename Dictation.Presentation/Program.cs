@@ -3,6 +3,7 @@ using Dictation.Core;
 using Dictation.Core.SingleInstance;
 using Dictation.Core.Startup;
 using Dictation.Presentation.Importing;
+using Dictation.Presentation.Mcp;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -35,12 +36,13 @@ namespace Dictation.Presentation
             var hostStarted = false;
             try
             {
-                host.StartAsync().GetAwaiter().GetResult();
-                hostStarted = true;
+                // 只有主实例可以启动监听；迁移完成前不允许HTTP进入业务服务。
                 host.Services.GetRequiredService<StartupInitializer>()
                     .InitializeAsync()
                     .GetAwaiter()
                     .GetResult();
+                host.StartAsync().GetAwaiter().GetResult();
+                hostStarted = true;
 
                 var viewModel = host.Services.GetRequiredService<ViewModels.HomeViewModel>();
                 viewModel.InitializeAsync().GetAwaiter().GetResult();
@@ -92,6 +94,7 @@ namespace Dictation.Presentation
                         source.ReloadOnChange = false;
                         source.OnLoadException = context => context.Ignore = true;
                     });
+                    configuration.AddDictationMcpConfiguration();
                 })
                 .ConfigureServices((_, services) =>
                 {
@@ -99,6 +102,7 @@ namespace Dictation.Presentation
                         .AddDictationDataAccess(AppContext.BaseDirectory)
                         .AddDictationCore()
                         .AddLocalTtsHost(Path.Combine(AppContext.BaseDirectory, "Dictation.TtsHost.exe"))
+                        .AddDictationMcp()
                         .AddDictationPresentation();
                 });
         }
