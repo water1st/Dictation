@@ -34,7 +34,7 @@
 
 **Interfaces:**
 - `IKanaPlanReader.LoadAsync(token)->KanaPlanDto`，`IKanaPlanEditor.SaveAsync(KanaPlanDto,token)`：Enabled、Hiragana、Katakana、Clear、Voiced、Contracted、ReviewAll、DailyTarget(1–214)。
-- `IKanaSessionReader.GetCurrentQuestionAsync(sessionId,token)->KanaQuestionDto?`、`GetProgressAsync(token)->KanaProgressDto`；`IKanaSessionOperations.StartOrResumeAsync(token)->KanaSessionDto?`、`SubmitAsync(sessionId,questionOrdinal,text,token)->KanaFeedbackDto`。
+- `IKanaSessionReader.GetCurrentQuestionAsync(sessionId,token)->KanaQuestionDto?`；`IKanaProgressReader.GetProgressAsync(token)->KanaProgressDto` 单独供首页与计划读取，两个合同由同一单例实现；`IKanaSessionOperations.StartOrResumeAsync(token)->KanaSessionDto?`、`SubmitAsync(sessionId,questionOrdinal,text,token)->KanaFeedbackDto`。
 - Question含轮次ID、题号、字形／音类／必要行提示和朗读文本，不显示待答文本；Feedback才返回正确答案和原始错误摘要。
 
 - [x] 先写十二项真实DI/SQLite测试：默认与非法范围／数量；214事实项及限定范围；每日数量和独立性；全量第一次逐项覆盖；错误延后重试与Again；同音提示、NFC和片假名精确判定；保存恢复、原活动设置不变；跨天实际完成统计；取消／陈旧题号／非法轮次；未来项不凑数；数据失败传播。修正错误表名夹具后重新冻结，只在实现临时数量+1及强行Good，编译成功后12项5行为RED、7通过、0跳过。
@@ -45,8 +45,8 @@
 
 **Files:** KanaPlan/KanaSession ViewModel及页面、首页入口、导航最小能力接口、唯一DI和App模板；`Tests/Presentation/KanaPresentationTests.cs`。复用现有内存音频和输入适配，不把五十音伪装成词库成员，不另造Window。
 
-- [ ] 先写STA/XAML+DI测试：日语专属入口、英语隐藏、两组选项分别阻止取消最后一项、全量／每日X、进度、真实开始→播放→作答→即时反馈→稍后重试→结算→返回；音频失败不观察、取消与退出不迟到污染。
-- [ ] 冻结后仅生产临时行为错误取得有效RED；恢复GREEN，主题和返回动画沿用Shell，只有题型／字形／必要行提示，不显示答案，喇叭播放实际目标音。
-- [ ] 构建、完整测试和实际链路冒烟通过后第二次中文提交；完整计划唯一最终只读审查，集中处理阻塞问题，记录并提交后精确删除本计划临时目录。OCR和统计日历接入仍按后续原目标切片完成，不冒称整个产品已完成。
+- [x] 先写STA/XAML+DI测试：日语专属入口、英语隐藏、两组选项分别阻止取消最后一项、全量／每日X、进度、真实开始→播放→作答→即时反馈→稍后重试→结算→返回；音频失败不观察、取消与退出不迟到污染。新增UI九项，加同风险随机／只读随机源／风险优先两项。
+- [x] 冻结后仅生产临时行为错误取得有效RED：编译零警告错误，UI九项四行为失败；恢复实现后同批九项及新选入两项、原后端十二项共23/23 GREEN。主题和返回动画沿用Shell，只有题型／字形／必要行提示，不显示答案，喇叭播放实际目标音；单独统计合同避免首页依赖答题能力。
+- [x] 构建零警告错误、真实DI／SQLite／STA／XAML链路23/23，完整回归1822/1822，证据`docs/verification/2026-10-09-kana-presentation.md`。准备第二次中文提交；完整计划唯一最终只读审查随后执行，集中处理阻塞问题，记录并提交后精确删除本计划临时目录。实际模型及人工视觉验收不以受控音频替代；OCR和统计日历接入仍按后续原目标切片完成，不冒称整个产品已完成。
 
 假名事实来源：[国际交流基金 Irodori 拗音表](https://www.irodori-online.jpf.go.jp/a1/introduction/02-008-16-01/)、[Irodori 假名练习](https://www.irodori.jpf.go.jp/assets/data/Kana_all.pdf)。只实现语言事实，不分发第三方插图或教材。

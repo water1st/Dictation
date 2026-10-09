@@ -5,6 +5,7 @@ using Dictation.Presentation.Navigation;
 using Dictation.Core.Configuration;
 using Dictation.Core.Learning;
 using Dictation.Core.Review;
+using Dictation.Core.Kana;
 
 namespace Dictation.Presentation.ViewModels
 {
@@ -19,6 +20,10 @@ namespace Dictation.Presentation.ViewModels
         private readonly ILearningPlanReader learningPlanReader;
         private readonly ILearningSessionReader learningSessionReader;
         private readonly IReviewProgressReader reviewProgressReader;
+        private readonly IKanaProgressReader kanaProgressReader;
+        private string kanaProgressLabel = string.Empty;
+        private string? kanaProgressErrorMessage;
+        private long kanaRefreshVersion;
         private readonly SemaphoreSlim persistenceGate = new(1, 1);
         private ThemeMode selectedThemeMode = ThemeMode.System;
         private LearningLanguage selectedLanguage = LearningLanguage.Japanese;
@@ -38,13 +43,15 @@ namespace Dictation.Presentation.ViewModels
         /// <param name="learningPlanReader">判断当前语言是否要求手动选词的计划读取能力。</param>
         /// <param name="learningSessionReader">判断当前语言是否有应优先恢复的活动会话。</param>
         /// <param name="reviewProgressReader">只读查询当前语言每日复习进度的能力。</param>
+        /// <param name="kanaProgressReader">只读查询日语独立五十音进度。</param>
         public HomeViewModel(
             SettingsService settingsService,
             IHomeNavigation homeNavigation,
             ILearningProgressReader learningProgressReader,
             ILearningPlanReader learningPlanReader,
             ILearningSessionReader learningSessionReader,
-            IReviewProgressReader reviewProgressReader)
+            IReviewProgressReader reviewProgressReader,
+            IKanaProgressReader kanaProgressReader)
         {
             this.settingsService = settingsService
                 ?? throw new ArgumentNullException(nameof(settingsService));
@@ -58,6 +65,7 @@ namespace Dictation.Presentation.ViewModels
                 ?? throw new ArgumentNullException(nameof(learningSessionReader));
             this.reviewProgressReader = reviewProgressReader
                 ?? throw new ArgumentNullException(nameof(reviewProgressReader));
+            this.kanaProgressReader = kanaProgressReader ?? throw new ArgumentNullException(nameof(kanaProgressReader));
             SelectJapaneseCommand = new AsyncCommand(() => SelectLanguageAsync(LearningLanguage.Japanese));
             SelectEnglishCommand = new AsyncCommand(() => SelectLanguageAsync(LearningLanguage.English));
             SelectSystemThemeCommand = new AsyncCommand(() => SelectThemeAsync(ThemeMode.System));
@@ -72,6 +80,7 @@ namespace Dictation.Presentation.ViewModels
             OpenReviewPlanCommand = new AsyncCommand(() => OpenReviewPlanAsync());
             OpenReviewSessionCommand = new AsyncCommand(() => OpenReviewSessionAsync());
             OpenWrongAnswersCommand = new AsyncCommand(() => OpenWrongAnswersAsync());
+            OpenKanaCommand = new AsyncCommand(() => OpenKanaAsync(), () => IsJapaneseSelected);
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -83,6 +92,51 @@ namespace Dictation.Presentation.ViewModels
         public bool IsJapaneseSelected => selectedLanguage == LearningLanguage.Japanese;
 
         public bool IsEnglishSelected => selectedLanguage == LearningLanguage.English;
+
+        public string KanaProgressLabel
+        {
+            get => kanaProgressLabel;
+            private set { if (kanaProgressLabel == value) return; kanaProgressLabel = value; OnPropertyChanged(); }
+        }
+        public string? KanaProgressErrorMessage
+        {
+            get => kanaProgressErrorMessage;
+            private set { if (kanaProgressErrorMessage == value) return; kanaProgressErrorMessage = value; OnPropertyChanged(); }
+        }
+        public ICommand OpenKanaCommand { get; }
+
+        /// <summary>从日语首页打开独立五十音设置，英语模式不能进入。</summary>
+        /// <param name="cancellationToken">取消导航和加载。</param>
+        public Task OpenKanaAsync(CancellationToken cancellationToken = default)
+        {
+            if (!IsJapaneseSelected) throw new InvalidOperationException("五十音仅在日语首页提供。");
+            return homeNavigation.OpenKanaAsync(selectedLanguage, cancellationToken);
+        }
+
+        /// <summary>读取独立五十音进度，只允许当前日语页面的最新读取发布结果。</summary>
+        /// <param name="cancellationToken">取消本次查询。</param>
+        public async Task RefreshKanaProgressAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var version = Interlocked.Increment(ref kanaRefreshVersion);
+            if (!IsJapaneseSelected) { KanaProgressLabel = string.Empty; KanaProgressErrorMessage = null; return; }
+            try
+            {
+                var progress = await kanaProgressReader.GetProgressAsync(cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!IsJapaneseSelected || version != Volatile.Read(ref kanaRefreshVersion)) return;
+                KanaProgressLabel = $"五十音 {progress.CompletedToday}/{progress.Target}";
+                KanaProgressErrorMessage = null;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception exception)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!IsJapaneseSelected || version != Volatile.Read(ref kanaRefreshVersion)) return;
+                KanaProgressLabel = "五十音进度暂不可用";
+                KanaProgressErrorMessage = $"读取五十音进度失败：{exception.Message}";
+            }
+        }
 
         public string CurrentLanguageLabel => selectedLanguage == LearningLanguage.Japanese
             ? "日语模式"
@@ -171,6 +225,7 @@ namespace Dictation.Presentation.ViewModels
         {
             await RefreshLearningProgressAsync(cancellationToken);
             await RefreshReviewProgressAsync(cancellationToken);
+            await RefreshKanaProgressAsync(cancellationToken);
         }
 
         public bool IsLightThemeSelected => selectedThemeMode == ThemeMode.Light;
@@ -462,6 +517,10 @@ namespace Dictation.Presentation.ViewModels
             {
                 // 切换后旧请求即使先于新读取结束，也不能把上一语言的计数写回首页。
                 Interlocked.Increment(ref reviewRefreshVersion);
+                Interlocked.Increment(ref kanaRefreshVersion);
+                KanaProgressLabel = string.Empty;
+                KanaProgressErrorMessage = null;
+                ((AsyncCommand)OpenKanaCommand).NotifyCanExecuteChanged();
                 ReviewProgressLabel = "正在读取复习进度";
                 ReviewProgressErrorMessage = null;
                 OnPropertyChanged(nameof(SelectedLanguage));

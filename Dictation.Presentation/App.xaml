@@ -5,6 +5,8 @@
              xmlns:views="clr-namespace:Dictation.Presentation.Views"
              ShutdownMode="OnMainWindowClose">
     <Application.Resources>
+        <DataTemplate DataType="{x:Type viewModels:KanaPlanViewModel}"><views:KanaPlanPage /></DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:KanaSessionViewModel}"><views:KanaSessionPage /></DataTemplate>
         <DataTemplate DataType="{x:Type viewModels:HomeViewModel}">
             <views:HomePage />
         </DataTemplate>

@@ -29,6 +29,7 @@ namespace Dictation.Presentation
             services.AddSingleton<NavigationService>();
             services.AddSingleton<IHomeNavigation>(serviceProvider =>
                 serviceProvider.GetRequiredService<NavigationService>());
+            services.AddSingleton<IKanaSessionNavigation>(serviceProvider => serviceProvider.GetRequiredService<NavigationService>());
             services.AddSingleton<IWrongAnswerNavigation>(serviceProvider =>
                 serviceProvider.GetRequiredService<NavigationService>());
             services.AddSingleton<ILearningSessionNavigation>(serviceProvider =>
@@ -55,6 +56,8 @@ namespace Dictation.Presentation
             services.AddScoped<ReviewLibraryViewModel>();
             services.AddScoped<WrongAnswerListViewModel>();
             services.AddScoped<ReviewPlanViewModel>();
+            services.AddScoped<KanaPlanViewModel>();
+            services.AddScoped<KanaSessionViewModel>();
             services.AddSingleton<Utf8TextFileReader>();
             services.AddSingleton<StartupTextImport>();
             services.AddScoped<ImportInboxListViewModel>();

@@ -259,7 +259,8 @@ namespace Dictation.Tests.Architecture
                     typeof(ILearningProgressReader),
                     typeof(ILearningPlanReader),
                     typeof(ILearningSessionReader),
-                    typeof(Dictation.Core.Review.IReviewProgressReader)
+                    typeof(Dictation.Core.Review.IReviewProgressReader),
+                    typeof(Dictation.Core.Kana.IKanaProgressReader)
                 },
                 homeParameters);
 
@@ -285,6 +286,7 @@ namespace Dictation.Tests.Architecture
 
         private sealed class RejectingHomeNavigation : IHomeNavigation
         {
+            public Task OpenKanaAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.FromException(new InvalidOperationException("此架构测试不执行导航。"));
             public Task OpenWrongAnswersAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.CompletedTask;
             public Task OpenReviewSessionAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.CompletedTask;
             public Task OpenReviewPlanAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.CompletedTask;

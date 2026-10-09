@@ -53,7 +53,7 @@ namespace Dictation.Tests.Presentation
                 reader,
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
-                new StubReviewProgressReader());
+                new StubReviewProgressReader(), new EmptyKanaProgressReader());
             var changes = new List<string?>();
             viewModel.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
 
@@ -78,7 +78,7 @@ namespace Dictation.Tests.Presentation
                 reader,
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
-                new StubReviewProgressReader());
+                new StubReviewProgressReader(), new EmptyKanaProgressReader());
             await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
             reader.ReadAsync = (_, _) => Task.FromException<Dictation.Core.Learning.LearningDailyProgressDto>(
                 new LearningSessionDataAccessException("数据库不可用", new IOException("模拟故障")));
@@ -100,7 +100,7 @@ namespace Dictation.Tests.Presentation
                 reader,
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
-                new StubReviewProgressReader());
+                new StubReviewProgressReader(), new EmptyKanaProgressReader());
             await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
             reader.ReadAsync = async (_, token) =>
             {
@@ -250,7 +250,7 @@ namespace Dictation.Tests.Presentation
                 new StubLearningProgressReader(),
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
-                new StubReviewProgressReader());
+                new StubReviewProgressReader(), new EmptyKanaProgressReader());
             navigation.InitializeHome(viewModel);
             await viewModel.SelectLanguageAsync(LearningLanguage.English, CancellationToken.None);
             var reachedPage = new TaskCompletionSource<object?>(
@@ -278,7 +278,7 @@ namespace Dictation.Tests.Presentation
                 new StubLearningProgressReader(),
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
-                new StubReviewProgressReader());
+                new StubReviewProgressReader(), new EmptyKanaProgressReader());
             navigation.InitializeHome(viewModel);
             var reachedPage = new TaskCompletionSource<object?>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
@@ -303,7 +303,7 @@ namespace Dictation.Tests.Presentation
                 new StubLearningProgressReader(),
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
-                new StubReviewProgressReader());
+                new StubReviewProgressReader(), new EmptyKanaProgressReader());
         }
 
         private static SettingsService CreateSettingsService(ApplicationPaths paths)
@@ -374,6 +374,7 @@ namespace Dictation.Tests.Presentation
 
         private sealed class RejectingHomeNavigation : IHomeNavigation
         {
+            public Task OpenKanaAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.FromException(new InvalidOperationException("此测试不执行五十音导航。"));
             public Task OpenWrongAnswersAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.CompletedTask;
             public Task OpenReviewSessionAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.CompletedTask;
             public Task OpenReviewPlanAsync(LearningLanguage language, CancellationToken cancellationToken = default) => Task.CompletedTask;

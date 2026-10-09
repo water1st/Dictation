@@ -7,6 +7,11 @@ namespace Dictation.Presentation.Navigation
     /// </summary>
     public interface IHomeNavigation
     {
+        /// <summary>从日语首页打开独立五十音计划。</summary>
+        /// <param name="language">必须为日语。</param>
+        /// <param name="cancellationToken">取消导航和读取。</param>
+        Task OpenKanaAsync(LearningLanguage language, CancellationToken cancellationToken = default);
+
         /// <summary>打开固定语言的历史错题列表与页面内详情。</summary>
         /// <param name="language">首页选择的语言。</param>
         /// <param name="cancellationToken">取消导航与读取的令牌。</param>

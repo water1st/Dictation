@@ -239,6 +239,27 @@
                     </Grid>
                 </Button>
 
+                <Button x:Name="KanaButton" Command="{Binding OpenKanaCommand}" HorizontalContentAlignment="Stretch">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource LanguageCardButtonStyle}">
+                            <Setter Property="Margin" Value="0,12,0,0" />
+                            <Setter Property="Padding" Value="18,14" />
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers><DataTrigger Binding="{Binding IsJapaneseSelected}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="あ" FontSize="25" Foreground="{DynamicResource AccentBrush}" />
+                        <StackPanel Grid.Column="1" Margin="14,0,0,0">
+                            <TextBlock Text="五十音听写" FontSize="17" FontWeight="SemiBold" />
+                            <TextBlock Text="独立练习假名，不穿插在词汇中" Margin="0,3,0,0" Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" Text="{Binding KanaProgressLabel}" VerticalAlignment="Center" Foreground="{DynamicResource AccentBrush}" />
+                    </Grid>
+                </Button>
+                <TextBlock Text="{Binding KanaProgressErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
+
                 <Button Command="{Binding OpenWrongAnswersCommand}" HorizontalContentAlignment="Stretch"
                         Style="{StaticResource LanguageCardButtonStyle}" Margin="0,12,0,0" Padding="18,14">
                     <StackPanel Orientation="Horizontal">

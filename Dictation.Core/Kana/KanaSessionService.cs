@@ -7,7 +7,7 @@ using System.Globalization;
 namespace Dictation.Core.Kana
 {
     /// <summary>编排五十音恢复、独立听写和每日目标。</summary>
-    internal sealed class KanaSessionService : IKanaSessionReader, IKanaSessionOperations
+    internal sealed class KanaSessionService : IKanaSessionReader, IKanaSessionOperations, IKanaProgressReader
     {
         private readonly IKanaPlanReader plans;
         private readonly KanaSessionDataAccessor data;
@@ -49,7 +49,12 @@ namespace Dictation.Core.Kana
             var quantity = plan.ReviewAll ? eligible.Count : Math.Min(eligible.Count, Math.Max(0, plan.DailyTarget - done));
             if (quantity == 0) return null;
             var id = Guid.NewGuid().ToString("N");
-            var items = planner.Shuffle(eligible.Take(quantity).ToArray()).Select((symbol, order) => KanaSessionMapper.ToItem(id, symbol, order)).ToArray();
+            // 先随机打散同风险候选，再稳定按风险排序；不能先截断，再只随机题序。
+            var now = clock.GetUtcNow();
+            var selected = planner.Shuffle(eligible)
+                .OrderBy(symbol => fsrs.GetRetrievability(memories.GetValueOrDefault(symbol.Id), now))
+                .Take(quantity).ToArray();
+            var items = planner.Shuffle(selected).Select((symbol, order) => KanaSessionMapper.ToItem(id, symbol, order)).ToArray();
             var created = await data.CreateAsync(new KanaSessionPo
             {
                 SessionId = id, StartedLocalDate = LocalDate(), CurrentKanaId = items[0].KanaId
@@ -108,14 +113,13 @@ namespace Dictation.Core.Kana
         /// <param name="completed">本地今天已完成标识。</param>
         /// <param name="memories">独立记忆状态。</param>
         /// <param name="all">全量模式是否忽略未来到期限制。</param>
-        /// <returns>风险优先、未测优先的候选，后续才随机排题。</returns>
+        /// <returns>适用候选；只读进度复用过滤，不消耗选入随机源。</returns>
         private IReadOnlyList<KanaSymbol> SelectEligible(IReadOnlyList<KanaSymbol> symbols, HashSet<string> completed,
             IReadOnlyDictionary<string, FsrsMemoryState?> memories, bool all)
         {
             var now = clock.GetUtcNow();
             return symbols.Where(symbol => !completed.Contains(symbol.Id))
-                .Where(symbol => all || !memories.TryGetValue(symbol.Id, out var state) || state is null || state.DueAtUtc <= now)
-                .OrderBy(symbol => fsrs.GetRetrievability(memories.GetValueOrDefault(symbol.Id), now)).ThenBy(symbol => symbol.Id, StringComparer.Ordinal).ToArray();
+                .Where(symbol => all || !memories.TryGetValue(symbol.Id, out var state) || state is null || state.DueAtUtc <= now).ToArray();
         }
 
         /// <summary>统一校验已存在轮次，不把未知ID当空轮次吞掉。</summary>

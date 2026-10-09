@@ -13,6 +13,7 @@ namespace Dictation.Presentation.Navigation
     /// </summary>
     internal sealed class NavigationService :
         IHomeNavigation,
+        IKanaSessionNavigation,
         IWrongAnswerNavigation,
         ILearningSessionNavigation,
         IBackNavigation,
@@ -106,6 +107,48 @@ namespace Dictation.Presentation.Navigation
             if (currentEntry?.ViewModel is not WrongAnswerListViewModel || currentEntry.Language != language)
                 throw new InvalidOperationException("请从相同语言错题列表进入重练。");
             return OpenPracticeSessionAsync(PracticeSessionMode.WrongAnswers, language, wordGroupIds, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public async Task OpenKanaAsync(LearningLanguage language, CancellationToken cancellationToken = default)
+        {
+            ValidateLanguage(language);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (language != LearningLanguage.Japanese || currentEntry?.ViewModel is not HomeViewModel home || !home.IsJapaneseSelected)
+                throw new InvalidOperationException("五十音只能从日语首页打开。");
+            if (!TryPrepareForwardNavigation()) return;
+            var scope = scopeFactory.CreateScope();
+            try
+            {
+                var viewModel = scope.ServiceProvider.GetRequiredService<KanaPlanViewModel>();
+                NavigateForward(new NavigationEntry(viewModel, "五十音计划", language, scope, viewModel.RefreshAsync));
+                await viewModel.RefreshAsync(cancellationToken);
+            }
+            catch
+            {
+                if (!ReferenceEquals(currentEntry?.Scope, scope) && !pendingDisposals.Any(entry => ReferenceEquals(entry.Scope, scope))) scope.Dispose();
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task OpenKanaSessionAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (currentEntry?.ViewModel is not KanaPlanViewModel) throw new InvalidOperationException("请从五十音计划开始听写。");
+            if (!TryPrepareForwardNavigation()) return;
+            var scope = scopeFactory.CreateScope();
+            try
+            {
+                var viewModel = scope.ServiceProvider.GetRequiredService<KanaSessionViewModel>();
+                NavigateForward(new NavigationEntry(viewModel, "五十音听写", LearningLanguage.Japanese, scope, null));
+                await viewModel.StartAsync(cancellationToken);
+            }
+            catch
+            {
+                if (!ReferenceEquals(currentEntry?.Scope, scope) && !pendingDisposals.Any(entry => ReferenceEquals(entry.Scope, scope))) scope.Dispose();
+                throw;
+            }
         }
 
         /// <inheritdoc />
@@ -456,6 +499,8 @@ namespace Dictation.Presentation.Navigation
             {
                 wrongAnswers.CancelOperation();
             }
+            if (currentEntry?.ViewModel is KanaPlanViewModel kanaPlan) kanaPlan.CancelOperation();
+            if (currentEntry?.ViewModel is KanaSessionViewModel kanaSession) kanaSession.CancelOperation();
             navigationOperationPending = true;
             OnPropertyChanged(nameof(CanGoBack));
             try

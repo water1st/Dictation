@@ -88,6 +88,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<KanaSessionService>();
             services.AddSingleton<KanaSessionPlanner>();
             services.AddSingleton<IKanaSessionReader>(provider => provider.GetRequiredService<KanaSessionService>());
+            services.AddSingleton<IKanaProgressReader>(provider => provider.GetRequiredService<KanaSessionService>());
             services.AddSingleton<IKanaSessionOperations>(provider => provider.GetRequiredService<KanaSessionService>());
             return services;
         }

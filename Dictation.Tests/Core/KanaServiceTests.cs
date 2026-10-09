@@ -66,7 +66,7 @@ namespace Dictation.Tests.Core
             Assert.Equal(3, session.TotalCount);
             var question = Assert.IsType<KanaQuestionDto>(await provider.GetRequiredService<IKanaSessionReader>().GetCurrentQuestionAsync(session.SessionId, token));
             Assert.Equal(KanaScript.Hiragana, question.Script);
-            var progress = await provider.GetRequiredService<IKanaSessionReader>().GetProgressAsync(token);
+            var progress = await provider.GetRequiredService<IKanaProgressReader>().GetProgressAsync(token);
             Assert.Equal(3, progress.Target);
             Assert.True(progress.HasActiveSession);
             Assert.Equal(0L, await ScalarAsync(provider, "SELECT COUNT(*) FROM WordGroups;"));
@@ -177,7 +177,7 @@ namespace Dictation.Tests.Core
             clock.Now = clock.Now.AddMinutes(20);
             Assert.Equal(session.SessionId, (await operations.StartOrResumeAsync(token))!.SessionId);
             await CompleteAsync(provider, session, Answer);
-            Assert.Equal(1, (await provider.GetRequiredService<IKanaSessionReader>().GetProgressAsync(token)).CompletedToday);
+            Assert.Equal(1, (await provider.GetRequiredService<IKanaProgressReader>().GetProgressAsync(token)).CompletedToday);
             Assert.Equal(0L, await ScalarAsync(provider, "SELECT COUNT(*) FROM KanaSessionItems WHERE CompletedLocalDate='2026-10-08';"));
             Assert.Equal(1L, await ScalarAsync(provider, "SELECT COUNT(*) FROM KanaSessionItems WHERE CompletedLocalDate='2026-10-09';"));
         }
@@ -195,7 +195,7 @@ namespace Dictation.Tests.Core
             clock.Now = clock.Now.AddMinutes(20);
             await SaveAsync(provider, new(true, true, false, true, false, false, false, 3));
             Assert.Null(await operations.StartOrResumeAsync(token));
-            var progress = await provider.GetRequiredService<IKanaSessionReader>().GetProgressAsync(token);
+            var progress = await provider.GetRequiredService<IKanaProgressReader>().GetProgressAsync(token);
             Assert.Equal(0, progress.Target);
             Assert.Equal(0, progress.CompletedToday);
         }
