@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Globalization;
 using System.Windows.Input;
 using Dictation.Core.Kana;
 using Dictation.Presentation.Navigation;
@@ -23,6 +24,7 @@ namespace Dictation.Presentation.ViewModels
         private bool contracted;
         private bool reviewAll;
         private int dailyTarget = 20;
+        private string dailyTargetText = "20";
         private bool hasActiveSession;
 
         /// <summary>组合计划读写、只读进度和下一层导航能力。</summary>
@@ -51,7 +53,12 @@ namespace Dictation.Presentation.ViewModels
         public bool Contracted { get => contracted; set => SetChoice(ref contracted, value, clear || voiced); }
         public bool ReviewAll { get => reviewAll; set => Set(ref reviewAll, value); }
         public bool ReviewDaily { get => !ReviewAll; set { if (value) ReviewAll = false; } }
-        public int DailyTarget { get => dailyTarget; set => Set(ref dailyTarget, value); }
+        public int DailyTarget
+        {
+            get => dailyTarget;
+            set { dailyTarget = value; dailyTargetText = value.ToString(CultureInfo.InvariantCulture); Notify(); }
+        }
+        public string DailyTargetText { get => dailyTargetText; set => Set(ref dailyTargetText, value); }
         public bool IsBusy { get; private set; }
         public bool CanToggleHiragana => !IsBusy && (!hiragana || katakana);
         public bool CanToggleKatakana => !IsBusy && (!katakana || hiragana);
@@ -79,6 +86,7 @@ namespace Dictation.Presentation.ViewModels
             enabled = plan.Enabled; hiragana = plan.Hiragana; katakana = plan.Katakana;
             clear = plan.Clear; voiced = plan.Voiced; contracted = plan.Contracted;
             reviewAll = plan.ReviewAll; dailyTarget = plan.DailyTarget;
+            dailyTargetText = dailyTarget.ToString(CultureInfo.InvariantCulture);
             await ReadProgressAsync(token);
         }, cancellationToken);
 
@@ -99,9 +107,13 @@ namespace Dictation.Presentation.ViewModels
         /// <param name="token">取消业务写入。</param>
         private async Task SaveCoreAsync(CancellationToken token)
         {
-            var plan = new KanaPlanDto(Enabled, Hiragana, Katakana, Clear, Voiced, Contracted, ReviewAll, DailyTarget);
+            // 保存原始编辑文本才能看见转换失败；WPF直接绑定int会静默保留旧值。
+            if (!int.TryParse(DailyTargetText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var requestedTarget))
+                throw new ArgumentException("每日数量必须为整数，不能为空、含小数或超过整数范围。");
+            var plan = new KanaPlanDto(Enabled, Hiragana, Katakana, Clear, Voiced, Contracted, ReviewAll, requestedTarget);
             await Task.Run(() => editor.SaveAsync(plan, token), token);
             token.ThrowIfCancellationRequested();
+            dailyTarget = requestedTarget;
             await ReadProgressAsync(token);
             StatusMessage = "计划已保存；未完成轮次继续使用原范围。";
         }

@@ -133,6 +133,22 @@ namespace Dictation.DataAccess.Kana
             await transaction.CommitAsync(cancellationToken);
         }
 
+        /// <summary>读取原题序已保存的观察及正确答案，不写入任何状态。</summary>
+        /// <param name="sessionId">轮次标识。</param>
+        /// <param name="questionOrdinal">需要确认的原提交题序。</param>
+        /// <param name="cancellationToken">取消只读查询。</param>
+        /// <returns>已保存观察及原正确答案，未保存时为空。</returns>
+        public async Task<KanaAttemptPo?> GetAttemptAsync(string sessionId, int questionOrdinal, CancellationToken cancellationToken = default)
+        {
+            await using var connection = connections.CreateConnection();
+            await connection.OpenAsync(cancellationToken);
+            return await connection.QuerySingleOrDefaultAsync<KanaAttemptPo>(new CommandDefinition("""
+                SELECT A.*, I.Text AS CorrectAnswer FROM KanaAttempts A
+                JOIN KanaSessionItems I ON I.SessionId=A.SessionId AND I.KanaId=A.KanaId
+                WHERE A.SessionId=@sessionId AND A.QuestionOrdinal=@questionOrdinal;
+                """, new { sessionId, questionOrdinal }, cancellationToken: cancellationToken));
+        }
+
         /// <summary>读取保留的原始错误，正确重试不删除旧观察。</summary>
         /// <param name="sessionId">轮次标识。</param>
         /// <param name="cancellationToken">取消读取令牌。</param>

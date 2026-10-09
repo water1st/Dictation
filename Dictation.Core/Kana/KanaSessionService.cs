@@ -83,6 +83,20 @@ namespace Dictation.Core.Kana
             return new(plan.Enabled, done, plan.Enabled ? target : 0, available, active is not null);
         }
         /// <inheritdoc />
+        public async Task<KanaFeedbackDto?> GetSubmissionFeedbackAsync(string sessionId, int questionOrdinal, CancellationToken cancellationToken = default)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(questionOrdinal);
+            var session = await RequireSessionAsync(sessionId, cancellationToken);
+            var attempt = await data.GetAttemptAsync(session.SessionId, questionOrdinal, cancellationToken);
+            if (attempt is null) return null;
+            var items = await data.GetItemsAsync(session.SessionId, cancellationToken);
+            var next = session.CurrentKanaId is null ? null : items.Single(item => item.KanaId == session.CurrentKanaId);
+            var errors = KanaSessionMapper.ToErrors(await data.GetErrorsAsync(session.SessionId, cancellationToken));
+            return new(attempt.WasCorrect, attempt.CorrectAnswer,
+                next is null ? null : KanaSessionMapper.ToQuestion(session.SessionId, session.QuestionOrdinal, next),
+                session.Status == "Completed", items.Count(item => item.IsCompleted), items.Count, errors);
+        }
+        /// <inheritdoc />
         public async Task<KanaFeedbackDto> SubmitAsync(string sessionId, int questionOrdinal, string? submittedText, CancellationToken cancellationToken = default)
         {
             if (questionOrdinal < 0) throw new ArgumentOutOfRangeException(nameof(questionOrdinal));
@@ -101,9 +115,12 @@ namespace Dictation.Core.Kana
                 memory = KanaSessionMapper.ToMemory(item.KanaId, fsrs.Schedule(KanaSessionMapper.ToState(previous), !item.HasWrong, now));
             }
             var next = planner.SelectNext(items, checked(questionOrdinal + 1));
+            var attempt = KanaSessionMapper.ToAttempt(session.SessionId, questionOrdinal, item.KanaId, submittedText, correct, item.Text, now);
+            // 所有反馈读取在提交前完成。提交成功之后不再因取消读取而丢失已保存结果。
+            var previousErrors = await data.GetErrorsAsync(session.SessionId, cancellationToken);
+            var errors = KanaSessionMapper.ToErrors(correct ? previousErrors : previousErrors.Append(attempt).ToArray());
             await data.CommitAsync(session.SessionId, questionOrdinal, item,
-                KanaSessionMapper.ToAttempt(session.SessionId, questionOrdinal, item.KanaId, submittedText, correct, now), next?.KanaId, memory, cancellationToken);
-            var errors = KanaSessionMapper.ToErrors(await data.GetErrorsAsync(session.SessionId, cancellationToken));
+                attempt, next?.KanaId, memory, cancellationToken);
             return new(correct, item.Text, next is null ? null : KanaSessionMapper.ToQuestion(session.SessionId, questionOrdinal + 1, next),
                 next is null, items.Count(candidate => candidate.IsCompleted), items.Count, errors);
         }

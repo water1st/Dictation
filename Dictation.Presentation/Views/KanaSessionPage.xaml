@@ -80,6 +80,14 @@
                         </TextBlock.Style>
                     </TextBlock>
                     <TextBlock Margin="0,14,0,0" Text="{Binding ErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
+                    <Button Content="重试读取已提交结果" Command="{Binding RecoverSubmissionCommand}" HorizontalAlignment="Left">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers><DataTrigger Binding="{Binding HasPendingFeedback}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </StackPanel>
             </Border>
         </StackPanel>

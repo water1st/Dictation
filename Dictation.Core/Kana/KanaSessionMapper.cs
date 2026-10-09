@@ -64,10 +64,11 @@ namespace Dictation.Core.Kana
         /// <param name="kanaId">对应独立项目。</param>
         /// <param name="submitted">用户原始输入。</param>
         /// <param name="correct">客观比较结果。</param>
+        /// <param name="correctAnswer">原项目快照中的正确写法，用于即时反馈。</param>
         /// <param name="at">作答UTC时间。</param>
         /// <returns>本次观察列。</returns>
-        internal static KanaAttemptPo ToAttempt(string sessionId, int ordinal, string kanaId, string? submitted, bool correct, DateTimeOffset at) =>
+        internal static KanaAttemptPo ToAttempt(string sessionId, int ordinal, string kanaId, string? submitted, bool correct, string correctAnswer, DateTimeOffset at) =>
             new() { SessionId = sessionId, QuestionOrdinal = ordinal, KanaId = kanaId, SubmittedText = submitted ?? "",
-                WasCorrect = correct, AnsweredAtUtc = at.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture) };
+                WasCorrect = correct, CorrectAnswer = correctAnswer, AnsweredAtUtc = at.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture) };
     }
 }

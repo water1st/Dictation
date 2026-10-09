@@ -500,7 +500,7 @@ namespace Dictation.Presentation.Navigation
                 wrongAnswers.CancelOperation();
             }
             if (currentEntry?.ViewModel is KanaPlanViewModel kanaPlan) kanaPlan.CancelOperation();
-            if (currentEntry?.ViewModel is KanaSessionViewModel kanaSession) kanaSession.CancelOperation();
+            if (currentEntry?.ViewModel is KanaSessionViewModel kanaSession) kanaSession.CancelOperation(leavingPage: true);
             navigationOperationPending = true;
             OnPropertyChanged(nameof(CanGoBack));
             try

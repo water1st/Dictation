@@ -43,7 +43,7 @@
                         <RadioButton GroupName="Quantity" Content="全部复习" IsChecked="{Binding ReviewAll}" />
                         <RadioButton GroupName="Quantity" Content="每天复习" IsChecked="{Binding ReviewDaily}" />
                         <TextBox x:Name="DailyQuantity" Width="72" Margin="0,6,8,6" Padding="8,5"
-                                 IsEnabled="{Binding IsDailyTargetEnabled}" Text="{Binding DailyTarget, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding IsDailyTargetEnabled}" Text="{Binding DailyTargetText, UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{DynamicResource ForegroundBrush}" Background="{DynamicResource WindowBackgroundBrush}"
                                  SpellCheck.IsEnabled="False" />
                         <TextBlock Text="项" VerticalAlignment="Center" />

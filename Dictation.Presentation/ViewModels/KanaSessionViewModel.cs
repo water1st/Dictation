@@ -14,8 +14,10 @@ namespace Dictation.Presentation.ViewModels
         private readonly TtsService tts;
         private readonly IAudioPlayer player;
         private readonly List<AsyncCommand> commands = new();
+        private readonly CancellationTokenSource pageLifetime = new();
         private CancellationTokenSource? operation;
         private bool disposed;
+        private bool leavingPage;
         private bool hasHeardQuestion;
         private string answerText = string.Empty;
 
@@ -33,6 +35,7 @@ namespace Dictation.Presentation.ViewModels
             PlayCommand = Command(() => PlayAsync(), () => !IsBusy && Question is not null && !IsCompleted);
             SubmitCommand = Command(() => SubmitAsync(), () => CanSubmit);
             ContinueCommand = Command(() => ContinueAsync(), () => !IsBusy && IsFeedbackVisible);
+            RecoverSubmissionCommand = Command(() => RecoverSubmissionAsync(), () => !IsBusy && HasPendingFeedback);
             CancelCommand = Command(() => { CancelOperation(); return Task.CompletedTask; }, () => IsBusy);
         }
 
@@ -44,6 +47,7 @@ namespace Dictation.Presentation.ViewModels
         public bool IsBusy { get; private set; }
         public bool IsFeedbackVisible { get; private set; }
         public bool IsCompleted { get; private set; }
+        public bool HasPendingFeedback { get; private set; }
         public bool IsEmpty => !IsBusy && Session is null;
         public bool IsAnswering => Question is not null && !IsFeedbackVisible && !IsCompleted;
         public string? ErrorMessage { get; private set; }
@@ -56,8 +60,9 @@ namespace Dictation.Presentation.ViewModels
         public ICommand PlayCommand { get; }
         public ICommand SubmitCommand { get; }
         public ICommand ContinueCommand { get; }
+        public ICommand RecoverSubmissionCommand { get; }
         public ICommand CancelCommand { get; }
-        private bool CanSubmit => !IsBusy && IsAnswering && hasHeardQuestion;
+        private bool CanSubmit => !IsBusy && IsAnswering && hasHeardQuestion && !HasPendingFeedback;
 
         /// <summary>开始或恢复原轮次，首题播放成功前不允许计入作答。</summary>
         /// <param name="cancellationToken">取消准备和播放。</param>
@@ -84,11 +89,57 @@ namespace Dictation.Presentation.ViewModels
         public Task SubmitAsync(CancellationToken cancellationToken = default) => RunAsync(async token =>
         {
             if (!IsAnswering || !hasHeardQuestion) { ErrorMessage = "请先成功播放当前发音，再提交答案。"; return; }
+            if (HasPendingFeedback) { ErrorMessage = "请先回读上一笔提交的结果，避免重复作答。"; return; }
             var question = Question!;
-            var feedback = await Task.Run(() => operations.SubmitAsync(question.SessionId, question.QuestionOrdinal, AnswerText, token), token);
-            token.ThrowIfCancellationRequested();
-            Feedback = feedback; IsFeedbackVisible = true;
+            HasPendingFeedback = true;
+            KanaFeedbackDto feedback;
+            try
+            {
+                feedback = await Task.Run(() => operations.SubmitAsync(question.SessionId, question.QuestionOrdinal, AnswerText, token), token);
+            }
+            catch
+            {
+                // 用户取消不是事务回滚证明。仍在本页时只读确认；离页后禁止回写旧页。
+                if (disposed || leavingPage) throw;
+                var recovered = await ReadSubmissionAsync(pageLifetime.Token);
+                if (recovered is null) { HasPendingFeedback = false; throw; }
+                feedback = recovered;
+            }
+            PublishFeedback(feedback);
         }, cancellationToken);
+
+        /// <summary>提交结果读取失败后仅回读原观察，不再次提交或更新记忆。</summary>
+        /// <param name="cancellationToken">取消本次只读恢复。</param>
+        public Task RecoverSubmissionAsync(CancellationToken cancellationToken = default) => RunAsync(async token =>
+        {
+            if (!HasPendingFeedback || Question is null) return;
+            var feedback = await ReadSubmissionAsync(token);
+            token.ThrowIfCancellationRequested();
+            if (feedback is null)
+            {
+                HasPendingFeedback = false;
+                ErrorMessage = "上一笔作答尚未保存，可以重新提交。";
+                return;
+            }
+            PublishFeedback(feedback);
+        }, cancellationToken);
+
+        /// <summary>从Core回读原题序，包括已经完成的轮次，不创建新轮次。</summary>
+        /// <param name="token">取消只读确认。</param>
+        /// <returns>原题序已保存反馈，未保存时为空。</returns>
+        private Task<KanaFeedbackDto?> ReadSubmissionAsync(CancellationToken token)
+        {
+            var question = Question!;
+            return Task.Run(() => reader.GetSubmissionFeedbackAsync(question.SessionId, question.QuestionOrdinal, token), token);
+        }
+
+        /// <summary>已提交反馈允许在本页取消后呈现，但退场动画期间也不得污染旧页。</summary>
+        /// <param name="feedback">已经成功提交或回读确认的反馈。</param>
+        private void PublishFeedback(KanaFeedbackDto feedback)
+        {
+            if (disposed || leavingPage) return;
+            Feedback = feedback; IsFeedbackVisible = true; HasPendingFeedback = false;
+        }
 
         /// <summary>反馈确认后进入原业务队列下一题，全部完成则显示结算及原始错题。</summary>
         /// <param name="cancellationToken">取消下一题准备与播放。</param>
@@ -120,22 +171,22 @@ namespace Dictation.Presentation.ViewModels
             ObjectDisposedException.ThrowIf(disposed, this);
             token.ThrowIfCancellationRequested();
             if (IsBusy) return;
-            using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
+            using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(token, pageLifetime.Token);
             operation = cancellation; IsBusy = true; ErrorMessage = null; Notify();
             try { await action(cancellation.Token); }
             catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { token.ThrowIfCancellationRequested(); }
             catch (Exception exception)
             {
                 token.ThrowIfCancellationRequested();
-                if (!disposed && !cancellation.IsCancellationRequested)
+                if (!disposed && !leavingPage && !cancellation.IsCancellationRequested)
                     ErrorMessage = $"五十音操作失败：{exception.Message} {exception.InnerException?.Message}".TrimEnd();
             }
-            finally { operation = null; IsBusy = false; if (!disposed) Notify(); }
+            finally { operation = null; IsBusy = false; if (!disposed && !leavingPage) Notify(); }
         }
 
         private AsyncCommand Command(Func<Task> action, Func<bool> canExecute)
         {
-            var command = new AsyncCommand(action, () => !disposed && canExecute());
+            var command = new AsyncCommand(action, () => !disposed && !leavingPage && canExecute());
             commands.Add(command); return command;
         }
         private void Notify()
@@ -151,8 +202,14 @@ namespace Dictation.Presentation.ViewModels
             KanaRange.Clear => "清音", KanaRange.Voiced => "浊音／半浊音", _ => "拗音"
         };
         /// <summary>返回开始就取消后台操作，不等退出动画结束。</summary>
-        public void CancelOperation() => operation?.Cancel();
+        /// <param name="leavingPage">为true表示开始退场，禁止任何迟到状态发布；页面内取消为false。</param>
+        public void CancelOperation(bool leavingPage = false)
+        {
+            this.leavingPage |= leavingPage;
+            if (this.leavingPage) pageLifetime.Cancel();
+            operation?.Cancel();
+        }
         /// <inheritdoc />
-        public void Dispose() { if (disposed) return; disposed = true; CancelOperation(); }
+        public void Dispose() { if (disposed) return; disposed = true; CancelOperation(leavingPage: true); pageLifetime.Dispose(); }
     }
 }
