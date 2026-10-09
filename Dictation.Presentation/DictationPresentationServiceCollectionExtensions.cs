@@ -6,6 +6,8 @@ using Dictation.Presentation.Audio;
 using Dictation.Presentation.Importing;
 using Dictation.Presentation.Practice;
 using Dictation.Core.Tts;
+using Dictation.Core.Configuration;
+using Dictation.Presentation.Mcp;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dictation.Presentation
@@ -27,6 +29,7 @@ namespace Dictation.Presentation
             services.AddSingleton<App>();
             services.AddSingleton<HomeViewModel>();
             services.AddSingleton<NavigationService>();
+            services.AddSingleton<IMcpSettingsNavigation>(provider => provider.GetRequiredService<NavigationService>());
             services.AddSingleton<IHomeNavigation>(serviceProvider =>
                 serviceProvider.GetRequiredService<NavigationService>());
             services.AddSingleton<IKanaSessionNavigation>(serviceProvider => serviceProvider.GetRequiredService<NavigationService>());
@@ -52,6 +55,11 @@ namespace Dictation.Presentation
             services.AddSingleton<IAudioPlayer, MemoryWavAudioPlayer>();
 
             services.AddScoped<LexiconLookupViewModel>();
+            services.AddScoped<McpSettingsViewModel>(provider => new McpSettingsViewModel(
+                provider.GetRequiredService<McpSettingsService>(), provider.GetRequiredService<IMcpHostControl>(),
+                provider.GetRequiredService<IMcpStatusReader>(), provider.GetRequiredService<CodexMcpRegistrationService>(),
+                Path.Combine(Environment.GetEnvironmentVariable("CODEX_HOME") is { Length: > 0 } codexDirectory
+                    ? codexDirectory : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex"), "config.toml")));
             services.AddScoped<TextImportViewModel>();
             services.AddScoped<ReviewLibraryViewModel>();
             services.AddScoped<WrongAnswerListViewModel>();

@@ -19,14 +19,17 @@ namespace Dictation.Presentation.Shell
         /// </summary>
         /// <param name="navigationHost">提供导航状态和转场生命周期的宿主能力。</param>
         /// <param name="overlayHost">提供弹层显示状态和完成操作的宿主能力。</param>
+        /// <param name="settingsNavigation">仅进入AI设置的导航能力。</param>
         public ShellViewModel(
             INavigationHost navigationHost,
-            IOverlayHost overlayHost)
+            IOverlayHost overlayHost,
+            IMcpSettingsNavigation settingsNavigation)
         {
             this.navigationHost = navigationHost
                 ?? throw new ArgumentNullException(nameof(navigationHost));
             this.overlayHost = overlayHost
                 ?? throw new ArgumentNullException(nameof(overlayHost));
+            ArgumentNullException.ThrowIfNull(settingsNavigation);
             GoBackCommand = new AsyncCommand(async () =>
             {
                 await this.navigationHost.GoBackAsync();
@@ -34,6 +37,7 @@ namespace Dictation.Presentation.Shell
             AcceptOverlayCommand = new RelayCommand(this.overlayHost.Accept);
             CancelOverlayCommand = new RelayCommand(this.overlayHost.Cancel);
             DismissOverlayCommand = new RelayCommand(this.overlayHost.Dismiss);
+            OpenMcpSettingsCommand = new AsyncCommand(() => settingsNavigation.OpenMcpSettingsAsync());
             this.navigationHost.PropertyChanged += OnNavigationPropertyChanged;
             this.overlayHost.PropertyChanged += OnOverlayPropertyChanged;
         }
@@ -61,6 +65,7 @@ namespace Dictation.Presentation.Shell
         public bool IsOverlayConfirmation => overlayHost.IsConfirmation;
 
         public ICommand GoBackCommand { get; }
+        public ICommand OpenMcpSettingsCommand { get; }
 
         public ICommand AcceptOverlayCommand { get; }
 

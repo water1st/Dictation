@@ -374,6 +374,15 @@
                     </StackPanel>
                 </Button>
 
+                <Button x:Name="OpenMcpSettingsButton" Margin="0,20,0,0" Padding="20,16"
+                        Background="{DynamicResource CardBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
+                        Command="{Binding DataContext.OpenMcpSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}">
+                    <StackPanel HorizontalAlignment="Left">
+                        <TextBlock Text="AI 导入设置" FontSize="20" FontWeight="SemiBold" />
+                        <TextBlock Margin="0,6,0,0" Text="通过本机 MCP 让 Agent 查词和暂存导入，随后在收件箱确认。"
+                                   TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                    </StackPanel>
+                </Button>
                 <TextBlock Margin="0,34,0,5"
                            FontSize="16"
                            FontWeight="SemiBold"

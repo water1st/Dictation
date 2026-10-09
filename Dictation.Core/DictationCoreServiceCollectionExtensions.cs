@@ -27,6 +27,7 @@ namespace Microsoft.Extensions.DependencyInjection
             ArgumentNullException.ThrowIfNull(services);
             services.AddSingleton<SettingsService>();
             services.AddSingleton<McpSettingsService>();
+            services.AddSingleton<CodexMcpRegistrationService>();
             services.AddSingleton<StartupInitializer>();
             services.AddSingleton<SingleInstanceCoordinator>();
             services.AddSingleton<TtsService>();

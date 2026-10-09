@@ -96,7 +96,7 @@ namespace Dictation.Tests.Presentation
                     new StubLearningSessionReader(),
                     new StubReviewProgressReader(), new EmptyKanaProgressReader());
                 navigation.InitializeHome(homeViewModel);
-                var shell = new ShellViewModel(navigation, overlay);
+                var shell = new ShellViewModel(navigation, overlay, navigation);
                 var homeWindow = new HomeWindow(shell);
 
                 homeWindow.ApplyTemplate();
@@ -216,7 +216,7 @@ namespace Dictation.Tests.Presentation
                     new StubLearningSessionReader(),
                     new StubReviewProgressReader(), new EmptyKanaProgressReader());
                 navigation.InitializeHome(homeViewModel);
-                var shell = new ShellViewModel(navigation, overlay);
+                var shell = new ShellViewModel(navigation, overlay, navigation);
                 var homeWindow = new HomeWindow(shell);
 
                 try

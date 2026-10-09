@@ -13,6 +13,7 @@ namespace Dictation.Presentation.Navigation
     /// </summary>
     internal sealed class NavigationService :
         IHomeNavigation,
+        IMcpSettingsNavigation,
         IKanaSessionNavigation,
         IWrongAnswerNavigation,
         ILearningSessionNavigation,
@@ -76,6 +77,27 @@ namespace Dictation.Presentation.Navigation
             OnPropertyChanged(nameof(PageTitle));
             OnPropertyChanged(nameof(CanGoBack));
             OnPropertyChanged(nameof(LastDirection));
+        }
+
+        /// <inheritdoc />
+        public async Task OpenMcpSettingsAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (currentEntry?.ViewModel is not HomeViewModel)
+                throw new InvalidOperationException("请从首页进入AI导入设置。");
+            if (!TryPrepareForwardNavigation()) return;
+            var scope = scopeFactory.CreateScope();
+            try
+            {
+                var viewModel = scope.ServiceProvider.GetRequiredService<McpSettingsViewModel>();
+                NavigateForward(new NavigationEntry(viewModel, "AI导入设置", null, scope, viewModel.RefreshAsync));
+                await viewModel.RefreshAsync(cancellationToken);
+            }
+            catch
+            {
+                if (!ReferenceEquals(currentEntry?.Scope, scope) && !pendingDisposals.Any(entry => ReferenceEquals(entry.Scope, scope))) scope.Dispose();
+                throw;
+            }
         }
 
         /// <inheritdoc />
@@ -500,6 +522,7 @@ namespace Dictation.Presentation.Navigation
                 wrongAnswers.CancelOperation();
             }
             if (currentEntry?.ViewModel is KanaPlanViewModel kanaPlan) kanaPlan.CancelOperation();
+            if (currentEntry?.ViewModel is McpSettingsViewModel mcpSettings) mcpSettings.CancelOperation();
             if (currentEntry?.ViewModel is KanaSessionViewModel kanaSession) kanaSession.CancelOperation(leavingPage: true);
             navigationOperationPending = true;
             OnPropertyChanged(nameof(CanGoBack));
