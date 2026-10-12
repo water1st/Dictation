@@ -399,7 +399,7 @@ namespace Dictation.Tests.Presentation
                 new StubLearningProgressReader(),
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
-                new StubReviewProgressReader(), new EmptyKanaProgressReader());
+                new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
             navigation.InitializeHome(home);
             await navigation.OpenLexiconLookupAsync(
                 LearningLanguage.English,

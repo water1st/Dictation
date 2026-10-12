@@ -39,7 +39,7 @@ namespace Dictation.Tests.Presentation
                 new StubLearningProgressReader(),
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
-                new StubReviewProgressReader(), new EmptyKanaProgressReader());
+                new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
             await home.SelectLanguageAsync(
                 LearningLanguage.English,
                 TestContext.Current.CancellationToken);

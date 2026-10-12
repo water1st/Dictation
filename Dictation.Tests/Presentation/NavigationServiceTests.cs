@@ -64,7 +64,7 @@ namespace Dictation.Tests.Presentation
                 new StubLearningProgressReader(),
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
-                new StubReviewProgressReader(), new EmptyKanaProgressReader());
+                new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
             navigation.InitializeHome(home);
 
             var homeNavigation = provider.GetRequiredService<IHomeNavigation>();
@@ -462,7 +462,7 @@ namespace Dictation.Tests.Presentation
                     new StubLearningProgressReader(),
                     new StubLearningPlanReader(),
                     new StubLearningSessionReader(),
-                    new StubReviewProgressReader(), new EmptyKanaProgressReader());
+                    new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
             }
 
             public List<ScopeProbe> ScopeProbes { get; } = new();

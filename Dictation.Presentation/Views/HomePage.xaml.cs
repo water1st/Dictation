@@ -11,6 +11,11 @@ namespace Dictation.Presentation.Views
         public HomePage()
         {
             InitializeComponent();
+            Unloaded += (_, _) =>
+            {
+                if (DataContext is Dictation.Presentation.ViewModels.HomeViewModel viewModel)
+                    viewModel.DismissCheckInCelebration();
+            };
         }
     }
 }

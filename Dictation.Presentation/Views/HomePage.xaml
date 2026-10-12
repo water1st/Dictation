@@ -159,6 +159,33 @@
                     </Button>
                 </Grid>
 
+                <Border x:Name="CheckInCard" Margin="0,18,0,0" Padding="18,14" CornerRadius="18"
+                        Background="{DynamicResource AccentSoftBrush}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ShowCheckInCelebration}" Value="True">
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard x:Name="CheckInCelebration">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.55" To="1" Duration="0:0:0.6" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions><RemoveStoryboard BeginStoryboardName="CheckInCelebration" /></DataTrigger.ExitActions>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel>
+                        <TextBlock x:Name="TodayCheckInStatus" Text="{Binding CheckInStatusLabel}" FontWeight="SemiBold" FontSize="17"
+                                   Foreground="{DynamicResource AccentBrush}" />
+                        <TextBlock Text="{Binding ActualTasksLabel}" Margin="0,5,0,0" TextWrapping="Wrap" />
+                        <TextBlock Text="当天任务在首次练习时确定，日语与英语分别打卡。" Margin="0,5,0,0" FontSize="12"
+                                   Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                        <TextBlock Text="{Binding CheckInErrorMessage}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
                 <Button Command="{Binding OpenLearningCommand}"
                         HorizontalContentAlignment="Stretch">
                     <Button.Style>

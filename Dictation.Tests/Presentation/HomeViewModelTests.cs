@@ -53,7 +53,7 @@ namespace Dictation.Tests.Presentation
                 reader,
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
-                new StubReviewProgressReader(), new EmptyKanaProgressReader());
+                new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
             var changes = new List<string?>();
             viewModel.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
 
@@ -78,7 +78,7 @@ namespace Dictation.Tests.Presentation
                 reader,
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
-                new StubReviewProgressReader(), new EmptyKanaProgressReader());
+                new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
             await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
             reader.ReadAsync = (_, _) => Task.FromException<Dictation.Core.Learning.LearningDailyProgressDto>(
                 new LearningSessionDataAccessException("数据库不可用", new IOException("模拟故障")));
@@ -100,7 +100,7 @@ namespace Dictation.Tests.Presentation
                 reader,
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
-                new StubReviewProgressReader(), new EmptyKanaProgressReader());
+                new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
             await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
             reader.ReadAsync = async (_, token) =>
             {
@@ -250,7 +250,7 @@ namespace Dictation.Tests.Presentation
                 new StubLearningProgressReader(),
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
-                new StubReviewProgressReader(), new EmptyKanaProgressReader());
+                new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
             navigation.InitializeHome(viewModel);
             await viewModel.SelectLanguageAsync(LearningLanguage.English, CancellationToken.None);
             var reachedPage = new TaskCompletionSource<object?>(
@@ -278,7 +278,7 @@ namespace Dictation.Tests.Presentation
                 new StubLearningProgressReader(),
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
-                new StubReviewProgressReader(), new EmptyKanaProgressReader());
+                new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
             navigation.InitializeHome(viewModel);
             var reachedPage = new TaskCompletionSource<object?>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
@@ -303,7 +303,7 @@ namespace Dictation.Tests.Presentation
                 new StubLearningProgressReader(),
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
-                new StubReviewProgressReader(), new EmptyKanaProgressReader());
+                new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
         }
 
         private static SettingsService CreateSettingsService(ApplicationPaths paths)

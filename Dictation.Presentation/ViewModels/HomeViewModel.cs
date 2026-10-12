@@ -6,6 +6,7 @@ using Dictation.Core.Configuration;
 using Dictation.Core.Learning;
 using Dictation.Core.Review;
 using Dictation.Core.Kana;
+using Dictation.Core.Statistics;
 
 namespace Dictation.Presentation.ViewModels
 {
@@ -21,6 +22,14 @@ namespace Dictation.Presentation.ViewModels
         private readonly ILearningSessionReader learningSessionReader;
         private readonly IReviewProgressReader reviewProgressReader;
         private readonly IKanaProgressReader kanaProgressReader;
+        private readonly IDailyCheckInReader checkInReader;
+        private DailyCheckInDto? todayCheckIn;
+        private string? checkInErrorMessage;
+        private bool showCheckInCelebration;
+        private long checkInRefreshVersion;
+        private int currentReviewPlanTarget = 20;
+        private readonly Dictionary<(LearningLanguage Language, DateOnly Date), bool> observedCheckIns = new();
+        private readonly HashSet<(LearningLanguage Language, DateOnly Date)> celebratedCheckIns = new();
         private string kanaProgressLabel = string.Empty;
         private string? kanaProgressErrorMessage;
         private long kanaRefreshVersion;
@@ -44,6 +53,7 @@ namespace Dictation.Presentation.ViewModels
         /// <param name="learningSessionReader">判断当前语言是否有应优先恢复的活动会话。</param>
         /// <param name="reviewProgressReader">只读查询当前语言每日复习进度的能力。</param>
         /// <param name="kanaProgressReader">只读查询日语独立五十音进度。</param>
+        /// <param name="checkInReader">读取业务层判定的实际任务与打卡状态。</param>
         public HomeViewModel(
             SettingsService settingsService,
             IHomeNavigation homeNavigation,
@@ -51,7 +61,8 @@ namespace Dictation.Presentation.ViewModels
             ILearningPlanReader learningPlanReader,
             ILearningSessionReader learningSessionReader,
             IReviewProgressReader reviewProgressReader,
-            IKanaProgressReader kanaProgressReader)
+            IKanaProgressReader kanaProgressReader,
+            IDailyCheckInReader checkInReader)
         {
             this.settingsService = settingsService
                 ?? throw new ArgumentNullException(nameof(settingsService));
@@ -66,6 +77,7 @@ namespace Dictation.Presentation.ViewModels
             this.reviewProgressReader = reviewProgressReader
                 ?? throw new ArgumentNullException(nameof(reviewProgressReader));
             this.kanaProgressReader = kanaProgressReader ?? throw new ArgumentNullException(nameof(kanaProgressReader));
+            this.checkInReader = checkInReader ?? throw new ArgumentNullException(nameof(checkInReader));
             SelectJapaneseCommand = new AsyncCommand(() => SelectLanguageAsync(LearningLanguage.Japanese));
             SelectEnglishCommand = new AsyncCommand(() => SelectLanguageAsync(LearningLanguage.English));
             SelectSystemThemeCommand = new AsyncCommand(() => SelectThemeAsync(ThemeMode.System));
@@ -142,6 +154,77 @@ namespace Dictation.Presentation.ViewModels
             ? "日语模式"
             : "英语模式";
 
+        public bool IsTodayCheckedIn => todayCheckIn?.Language == selectedLanguage && todayCheckIn.IsCheckedIn;
+        public bool ShowCheckInCelebration => showCheckInCelebration;
+        public string CheckInStatusLabel => checkInErrorMessage is not null ? "打卡进度暂不可用"
+            : todayCheckIn?.Language != selectedLanguage || !todayCheckIn.HasSnapshot ? "今日尚未开始"
+            : IsTodayCheckedIn ? "今日已打卡，做得不错！" : "完成今天的任务即可打卡";
+        public string ActualTasksLabel => todayCheckIn?.Language != selectedLanguage || !todayCheckIn.HasSnapshot ? string.Empty
+            : $"{FormatTask("学习", todayCheckIn.LearningCompleted, todayCheckIn.LearningTarget)} · "
+                + FormatTask("复习", todayCheckIn.ReviewCompleted, todayCheckIn.ReviewTarget)
+                + (todayCheckIn.ReviewTarget > 0 && todayCheckIn.ReviewTarget != currentReviewPlanTarget ? $"（计划 {currentReviewPlanTarget}）" : string.Empty)
+                + (IsJapaneseSelected && todayCheckIn.KanaTarget > 0 ? $" · 五十音 {todayCheckIn.KanaCompleted}/{todayCheckIn.KanaTarget}" : string.Empty);
+        public string? CheckInErrorMessage => checkInErrorMessage;
+
+        /// <summary>刷新当前语言打卡呈现；资格判定完全由业务层提供。</summary>
+        /// <param name="cancellationToken">取消读取。</param>
+        public async Task RefreshCheckInAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var language = selectedLanguage;
+            var version = Interlocked.Increment(ref checkInRefreshVersion);
+            DismissCheckInCelebration();
+            try
+            {
+                var result = await checkInReader.GetTodayAsync(language, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                if (language != selectedLanguage || version != Volatile.Read(ref checkInRefreshVersion)) return;
+                if (result.Language != language) throw new InvalidDataException("打卡查询返回了其它语言的状态。");
+                var key = (language, result.LocalDate);
+                var known = observedCheckIns.TryGetValue(key, out var previous);
+                showCheckInCelebration = known && !previous && result.IsCheckedIn && !celebratedCheckIns.Contains(key);
+                // 启动时已达标也记为见过：不重复庆祝，删除再练也不能同日反复播放。
+                if (result.IsCheckedIn) celebratedCheckIns.Add(key);
+                observedCheckIns[key] = result.IsCheckedIn;
+                todayCheckIn = result;
+                checkInErrorMessage = null;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception exception)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (language != selectedLanguage || version != Volatile.Read(ref checkInRefreshVersion)) return;
+                todayCheckIn = null;
+                checkInErrorMessage = $"读取打卡进度失败：{exception.Message}";
+            }
+            NotifyCheckInChanged();
+        }
+
+        /// <summary>离开首页时收起短动画，不改变业务打卡状态或当天已庆祝标记。</summary>
+        public void DismissCheckInCelebration()
+        {
+            if (!showCheckInCelebration) return;
+            showCheckInCelebration = false;
+            OnPropertyChanged(nameof(ShowCheckInCelebration));
+        }
+
+        /// <summary>只格式化业务提供的目标，不在页面重新判定达标。</summary>
+        /// <param name="label">任务名称。</param>
+        /// <param name="completed">真实完成数。</param>
+        /// <param name="target">冻结的有效目标。</param>
+        private static string FormatTask(string label, long completed, long target) => target > 0 ? $"{label} {completed}/{target}"
+            : completed > 0 ? $"{label}额外完成 {completed}" : $"{label}暂无任务";
+
+        /// <summary>通知统一打卡视图绑定刷新，避免遗漏状态和错误提示。</summary>
+        private void NotifyCheckInChanged()
+        {
+            OnPropertyChanged(nameof(IsTodayCheckedIn));
+            OnPropertyChanged(nameof(ShowCheckInCelebration));
+            OnPropertyChanged(nameof(CheckInStatusLabel));
+            OnPropertyChanged(nameof(ActualTasksLabel));
+            OnPropertyChanged(nameof(CheckInErrorMessage));
+        }
+
         public string LearningProgressLabel
         {
             get => learningProgressLabel;
@@ -198,6 +281,8 @@ namespace Dictation.Presentation.ViewModels
                     throw new InvalidDataException("每日复习进度的语言与首页不一致。");
                 }
                 ReviewProgressLabel = $"复习 {progress.CompletedGroupCount}/{progress.DailyTarget}";
+                currentReviewPlanTarget = progress.DailyTarget;
+                OnPropertyChanged(nameof(ActualTasksLabel));
                 ReviewProgressErrorMessage = null;
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -226,6 +311,7 @@ namespace Dictation.Presentation.ViewModels
             await RefreshLearningProgressAsync(cancellationToken);
             await RefreshReviewProgressAsync(cancellationToken);
             await RefreshKanaProgressAsync(cancellationToken);
+            await RefreshCheckInAsync(cancellationToken);
         }
 
         public bool IsLightThemeSelected => selectedThemeMode == ThemeMode.Light;
@@ -518,6 +604,11 @@ namespace Dictation.Presentation.ViewModels
                 // 切换后旧请求即使先于新读取结束，也不能把上一语言的计数写回首页。
                 Interlocked.Increment(ref reviewRefreshVersion);
                 Interlocked.Increment(ref kanaRefreshVersion);
+                Interlocked.Increment(ref checkInRefreshVersion);
+                todayCheckIn = null;
+                checkInErrorMessage = null;
+                DismissCheckInCelebration();
+                NotifyCheckInChanged();
                 KanaProgressLabel = string.Empty;
                 KanaProgressErrorMessage = null;
                 ((AsyncCommand)OpenKanaCommand).NotifyCanExecuteChanged();

@@ -260,7 +260,8 @@ namespace Dictation.Tests.Architecture
                     typeof(ILearningPlanReader),
                     typeof(ILearningSessionReader),
                     typeof(Dictation.Core.Review.IReviewProgressReader),
-                    typeof(Dictation.Core.Kana.IKanaProgressReader)
+                    typeof(Dictation.Core.Kana.IKanaProgressReader),
+                    typeof(Dictation.Core.Statistics.IDailyCheckInReader)
                 },
                 homeParameters);
 
