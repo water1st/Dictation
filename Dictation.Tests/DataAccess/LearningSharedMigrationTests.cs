@@ -29,6 +29,7 @@ namespace Dictation.Tests.DataAccess
                 DROP TABLE KanaPlans;
                 DROP TABLE LearningSharedAnswerAttempts;
                 DROP TABLE DailyPlanSnapshots;
+                DROP TABLE LearningCompletionDates;
                 DELETE FROM SchemaMigrations WHERE Version>=12;
                 """);
             var paths = environment.Provider.GetRequiredService<ApplicationPaths>();
@@ -38,7 +39,7 @@ namespace Dictation.Tests.DataAccess
             Assert.Equal(2, await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM LearningQuestionAttempts;"));
             Assert.Equal(memory, await connection.ExecuteScalarAsync<string>("SELECT DueAtUtc FROM ReviewFormMemories;"));
             Assert.Equal("Review", await connection.ExecuteScalarAsync<string>("SELECT Placement FROM WordGroups WHERE WordGroupId=@Id;", new { Id = group }));
-            Assert.Equal(14, await connection.ExecuteScalarAsync<int>("SELECT MAX(Version) FROM SchemaMigrations;"));
+            Assert.Equal(15, await connection.ExecuteScalarAsync<int>("SELECT MAX(Version) FROM SchemaMigrations;"));
             Assert.Equal(0, await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM LearningSharedAnswerAttempts;"));
             Assert.Single(Directory.GetFiles(paths.Backups));
             Assert.Equal("ok", await connection.ExecuteScalarAsync<string>("PRAGMA integrity_check;"));

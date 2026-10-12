@@ -48,6 +48,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<ITextImportPreparation, TextImportPreparationService>();
             services.AddSingleton(TimeProvider.System);
             services.AddSingleton<Dictation.Core.Statistics.IDailyCheckInReader, Dictation.Core.Statistics.DailyCheckInService>();
+            services.AddSingleton<Dictation.Core.Statistics.ICheckInCalendarReader, Dictation.Core.Statistics.CheckInCalendarService>();
             services.AddSingleton<Dictation.Core.Statistics.IDailyPlanSnapshotRecorder, Dictation.Core.Statistics.DailyPlanSnapshotService>();
             services.AddSingleton<KanaDailyAvailabilityService>();
             services.AddSingleton(Random.Shared);

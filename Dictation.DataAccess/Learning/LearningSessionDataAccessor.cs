@@ -805,6 +805,12 @@ namespace Dictation.DataAccess.Learning
                             },
                             transaction,
                             cancellationToken: cancellationToken));
+                        // 完成日是事实而非掌握状态；补学可以更新当前进度，但不能抹掉原来的日期。
+                        await connection.ExecuteAsync(new CommandDefinition("""
+                            INSERT OR IGNORE INTO LearningCompletionDates(WordGroupId,LocalDate)
+                            SELECT WordGroupId,@LocalDate FROM WordGroups WHERE WordGroupId IN @WordGroupIds;
+                            """, new { LocalDate = answer.AnsweredLocalDate, WordGroupIds = answer.CompletedWordGroupIds },
+                            transaction, cancellationToken: cancellationToken));
                     }
 
                     if (answer.MemorySeeds is { Count: > 0 })

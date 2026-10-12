@@ -61,3 +61,22 @@ Core 最小实现提交为 `5e9d23b`。首页接入使用窄能力 `IDailyCheckI
 截图：`images/2026-10-12-checkin-home-light.png`、`images/2026-10-12-checkin-home-dark.png`。
 
 第二次提交最终验收：`dotnet build Dictation.sln --configuration Debug --no-restore --disable-build-servers -m:1` 0 警告／0 错误；`dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 1954 --max-threads 4` 实际 **1954/1954，通过、0 跳过**，4 分 40 秒。最终冻结哈希不变，语言／版本屏障已恢复，无临时红状态。`git diff --check` 通过，用户 Resources 未修改。
+
+## 月历与历史事实最小实现
+
+Task 1 首页提交为 `c048b6f`，Task 2 从该提交继续。原学习进度只保存最后完成日，不能用来保留补学之前的历史；迁移 15 增加只有词组 ID／本地日期的完成事实表，原答题事务插入、日期去重、整组外键级联删除。升级仅回填现有的已知日期，不猜旧轮次或发明缺失历史。没有复制答案、掌握或 FSRS 状态，也没有引入读写分离或新框架。
+
+| 冻结测试 | SHA-256 |
+| --- | --- |
+| CheckInCalendarServiceTests.cs | F24854C66177E69994126ADFE83C3323389E9B4D018FBC5EE26158278A93B22A |
+| LearningCompletionHistoryTests.cs | FB535DF72E822CA9AC535F8D4C510B64D7CD3BADFE9D5B1F5A6CDA2C78F815CB |
+| CalendarMonthQueryTests.cs | AD596DBF8798295AF6CC5D138C2FCB87B77FDF105D38B4DC017D08800D1CC7E3 |
+
+- 月历可编译骨架的 14 项中，5 项因缺少完成计数／徽章而行为断言失败。
+- 历史删除测试先补“事实确实存在”断言并重新冻结；4 项历史测试在 build 0 警告／0 错误后全部以值断言失败，未把空表删除当有效验证。
+- 直接 SQL 边界冻结后，临时将最大月份上界改为排除 `9999-12-31`；build 0 警告／0 错误，3 项实际执行、1 项 `Assert.Single` 失败、2 通过。仅恢复上界，不改测试。
+- 首次实现测试暴露 SQLite 空查询／UNION 列类型被推断为 Byte[]，Dapper 位置 record 无法匹配构造函数。使用仓库已有的无参可赋值 PO 方式，消费者只读、setter internal，不手搓反射映射，不修改测试期望。
+
+恢复实现后，月历／历史／直接 SQL 新增测试 **21/21**；连同每日资格、迁移与启动曾验证 **49/49**。解决方案最终构建 **0 警告／0 错误**，测试冻结哈希保持不变。临时数据库验证了真实答题保存、补学不抹旧日、升级回填、双语言独立计数、同日去重、删除、闰年及最大日期边界。
+
+提交前全量命令 `dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 1975 --max-threads 4` 实际 **1975/1975，通过、0 跳过**，4 分 54 秒。`git diff --check` 通过，临时 mutation 全部恢复。月历 UI 及报表仍未验收，不能将此最小实现当完整计划或 GOAL 达成。

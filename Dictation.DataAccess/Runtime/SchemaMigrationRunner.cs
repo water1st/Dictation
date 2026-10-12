@@ -778,7 +778,8 @@ namespace Dictation.DataAccess.Runtime
                     );
                     """),
                 KanaSchemaMigration.Definition,
-                Dictation.DataAccess.Statistics.StatisticsSchemaMigration.Definition
+                Dictation.DataAccess.Statistics.StatisticsSchemaMigration.Definition,
+                Dictation.DataAccess.Statistics.LearningCompletionHistoryMigration.Definition
             };
         }
     }

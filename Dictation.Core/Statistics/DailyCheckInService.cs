@@ -29,16 +29,7 @@ namespace Dictation.Core.Statistics
             var key = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             var snapshot = await data.GetSnapshotAsync(language.ToString(), key, cancellationToken);
             var counts = await data.GetCompletionCountsAsync(language.ToString(), key, cancellationToken);
-            return DailyCheckInMapper.ToDto(language, date, snapshot, counts, IsCheckedIn(snapshot, counts));
+            return DailyCheckInMapper.ToDto(language, date, snapshot, counts, DailyCheckInPolicy.IsCheckedIn(snapshot, counts));
         }
-
-        /// <summary>各有效任务必须达标，空任务日不能凭零目标点亮徽章。</summary>
-        /// <param name="snapshot">当天冻结目标；没有证据时不补造打卡。</param>
-        /// <param name="counts">删除级联后仍存在的完成事实。</param>
-        internal static bool IsCheckedIn(DailyPlanSnapshotPo? snapshot, DailyCompletionCountsPo counts) =>
-            snapshot is not null && (counts.LearningCompleted > 0 || counts.ReviewCompleted > 0 || counts.KanaCompleted > 0)
-            && counts.LearningCompleted >= snapshot.LearningTarget
-            && counts.ReviewCompleted >= snapshot.ReviewTarget
-            && counts.KanaCompleted >= snapshot.KanaTarget;
     }
 }

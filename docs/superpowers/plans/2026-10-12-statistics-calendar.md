@@ -71,7 +71,7 @@
 
 **文件：**
 - 新增 `Dictation.DataAccess/Statistics/CalendarDayCountsPo.cs`；在 `DailyCheckInDataAccessor.cs` 增加月区间只读查询。
-- 执行核对发现原 `LearningGroupProgress.CompletedLocalDate` 只保存最后完成日，补学新词形会改写它。Task 2 追加迁移 15，为原 `LearningSessionGroups` 增加 `CompletedLocalDate`；在原答题事务按组记录实际完成日，升级仅回填现有日期证据，不补造缺失历史。月历与报表按该历史事实去重读取，未能归属旧轮次的原进度事实作为兼容读取，不另建进度系统。
+- 执行核对发现原 `LearningGroupProgress.CompletedLocalDate` 只保存最后完成日，补学新词形会改写它。Task 2 追加迁移 15，增加只有词组 ID／日期两个字段的 `LearningCompletionDates` 历史事实表；原答题事务插入去重完成日，原外键级联删除。升级只回填现有进度的已知完成日，不能猜哪一旧轮次完成，也不补造其它日期。月历与报表读取完成事实与原进度兼容来源的去重并集，不复制进度、答案或 FSRS 状态。
 - 新增 `Dictation.Core/Statistics/ICheckInCalendarReader.cs`、`CalendarMonthDto.cs`、`CalendarDayDto.cs`、`CheckInCalendarService.cs`、`CheckInCalendarMapper.cs`。
 - 新增 `Dictation.Presentation/Navigation/IStatisticsNavigation.cs`、`ViewModels/StatisticsViewModel.cs`、`ViewModels/CalendarDayViewModel.cs`、`Views/StatisticsPage.xaml` 及其必要 code-behind。
 - 修改 `Navigation/NavigationService.cs`、表现层注册入口、`App.xaml`、首页入口绑定；复用已有转场、返回栈和页面作用域，不增加 Window。
@@ -84,9 +84,9 @@
 - `IStatisticsNavigation.OpenStatisticsAsync(LearningLanguage language, CancellationToken cancellationToken = default) : Task`：只从首页进入，页面语言固定；同一 NavigationService 的实例别名。
 - `StatisticsViewModel.Initialize(LearningLanguage language)`、`RefreshAsync(CancellationToken cancellationToken = default)`；提供上月／下月／本月 ICommand，边界月份禁用越界按钮。
 
-- [ ] 写至少 14 项测试：2028 年 2 月 29 天、月末边界、当月无记录全空、同格日英独立、重启不重算历史门槛、删除后图标与计数同步、升级旧数据不补徽章；取消和非法月份必须失败／传播。
-- [ ] 补充学习历史断言：补学新形式不得抹掉原完成日，跨日未结束的大轮次按各组完成日计数，同日同组去重，删除仍级联移除；升级有已知日期才回填，无证据不造历史。
-- [ ] 冻结并取得编译成功的行为 RED（临时混用日英完成数）；恢复实现 GREEN，构建／全量通过后提交“实现双语言月历与历史打卡查询”。
+- [x] 写至少 14 项测试：2028 年 2 月 29 天、月末边界、当月无记录全空、同格日英独立、重启不重算历史门槛、删除后图标与计数同步、升级旧数据不补徽章；取消和非法月份必须失败／传播。
+- [x] 补充学习历史断言：补学新形式不得抹掉原完成日，跨日未结束的大轮次按各组完成日计数，同日同组去重，删除仍级联移除；升级有已知日期才回填，无证据不造历史。
+- [x] 冻结并取得编译成功的行为 RED；恢复实现 GREEN，构建／全量通过后提交“实现双语言月历与历史打卡查询”。
 - [ ] 将页面接入原单窗口：月格下半部放两个圆形图标，各约四分之一格；白圈红心／圆形米字旗用 WPF 几何图形，避免引入图片依赖。显示日期和简明空态，不做 ERP 表格。
 - [ ] 添加至少 8 项 STA／导航测试，覆盖真实服务查询、返回动画、月份请求逆序、取消、页内错误和深浅色；持有旧页的作用域在转场结束后释放。
 - [ ] 构建／全量和截图冒烟通过后提交“打通单窗口打卡日历与月份导航”。
