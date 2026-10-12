@@ -66,10 +66,11 @@ namespace Dictation.Presentation.ViewModels
         /// <param name="cancellationToken">取消读取。</param>
         public Task RefreshAsync(CancellationToken cancellationToken = default) => RunAsync(async token =>
         {
+            // 即使持久化配置损坏，也先显示Host的真实Failed状态，不沿用页面初始化的“已关闭”。
+            UpdateRuntime();
             var saved = settings.Load();
             Enabled = saved.Enabled;
             PortText = saved.Port.ToString(CultureInfo.InvariantCulture);
-            UpdateRuntime();
             await ReadRegistrationAsync(token);
         }, cancellationToken);
         /// <summary>校验原始端口文本，保存后应用监听开关。</summary>

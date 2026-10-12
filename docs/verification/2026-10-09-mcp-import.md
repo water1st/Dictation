@@ -79,3 +79,17 @@ UI首轮测试未布局便输入，绑定未真实生效，明确作废。修正
 此记录只验收MCP切片，不代表整个GOAL完成；统计／更新发布／正式模型和最后OCR仍按完整目标执行。
 
 Task2最终验收：`dotnet build Dictation.sln --configuration Debug --no-restore --disable-build-servers -m:1`零警告／错误；`dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 1905 --max-threads 4`实际1905/1905通过、跳过0，3分27秒。上述冻结哈希保持不变。自包含Release发布成功，Tomlyn.dll为323,072字节，LICENSES/tomlyn.txt存在；未打包CONFIG／DATA等用户运行目录。
+
+## 唯一最终审查及集中修正
+
+只读审查范围7137962→9bf0a1c，发现1项Important、1项Minor，无Critical。没有派第二审查或重新执行旧RED。
+
+Important：允许FileShare.Delete的旧句柄在外部File.Replace后仍读取旧版本，旧快照相等不足以证明当前路径没变。提升上下文的独立Windows探针证明该BCL交错可丢失外部版本；AppContainer下的拒绝不计产品证据。修正使用BCL File.Replace同时保留实际被替换文件，核对保留下来的内容；不一致时独占当前文件核对其仍为本次写入，然后恢复外部完整内容。若已经再次被外部保存或不能独占／恢复，则不覆盖后续版本，保留同目录.codex-conflict-<随机值>.bak并报重试错误。
+
+这不是对不合作第三方进程的文件事务或原子CAS：竞争被识别前可能已有短暂替换，异常恢复／进程意外终止时需要保留的备份恢复。正常提交仍为原子替换，冲突路径不丢弃捕获到的外部版本，不宣称绝对无瞬时变化；没有引入自制TOML、事务框架或Native锁框架。
+
+Minor：损坏mcp.json导致Settings.Load抛错，原Refresh跳过实际状态更新、误显示“已关闭”。现在先读Host状态，失败也准确显示Failed；保存有效值后恢复，不自动写Codex。
+
+补充测试冻结SHA-256：Core/CodexConfigCommitTests.cs为95469E9562EC03689F2A2C11613F0DCCA0999830574E7607DAFEFB3BA51BDB9A，Presentation/McpSettingsRecoveryTests.cs为187BEECEC06FCC447C353F5490E67B43DA4E044D24EAFE7A7B1D46B5FFF77970。项目build零警告／错误后5项实际执行、5项行为断言失败（未抛冲突、错误回退结果、Failed文字缺失）；仅改生产实现后相关42/42通过，两个新冻结哈希与既有冻结测试均未变。锁后换档测试控制实际BCL交错并调用生产提交方法，不使用定时sleep或虚假IO。
+
+集中修正最终验收（2026-10-09）：solution构建零警告／错误；全量`--minimum-expected-tests 1910 --max-threads 4`实际1910/1910通过、跳过0，3分21秒；自包含发布已刷新。2026-10-12续作时读取终态日志、核对测试冻结哈希及源码差异，源码修改时间早于完整验收日志，未发生新增产品修改，因此复用已完成结果，不再次消耗全量测试。
