@@ -124,6 +124,14 @@ Resources/Lexicons/
 
 当前可运行预览位于仓库内 `artifacts/Dictation-preview/`，原先的本轮 `artifacts/mcp-task1/` 只做目录改名，未再复制一份大型产物。已加入上述日语Piper／OpenJTalk与英式Kokoro运行时子集（366文件、524,919,796字节），未复制原始仓库、训练权重、Piper优化缓存、未用的中文／美式词典。两个schema v2中文词库直接复用已验收预览的固定SHA产物，未重建；旧预览用户数据库保持不变。
 
-资源清单位于预览 `Resources/Tts/manifest.json`，包含366项逐文件大小／SHA、来源版本、英式音色和10份当前已取得的归属文件；清单SHA为 `6BD8A5CCBE2D525F181EC17D3B8A22C47556291893D238336882FF50FAF2E952`。`releaseReady=false`：PiperPlus.Core、Sherpa-ONNX及eSpeak再分发归属／对应源码信息尚需完整核验，不能把本地开发预览当成已合规的外部发行包。
+资源清单位于预览 `Resources/Tts/manifest.json`，包含366项逐文件大小／SHA、来源版本、英式音色和19份已取得的归属文件；补许可后的清单SHA为 `97AE38C3A17C75D651E3F49509980BFC8050201171B5D6E49664298D24C1B099`。`releaseReady=false`：许可原文已补不代表再分发义务已完成；原生二进制／eSpeak数据对应源码、编译配置及本项目的许可关系仍需核验，不能把本地开发预览当成已合规外部发行包。
 
 正式隐藏宿主与命名管道已实际完成两门语言CPU合成、有效非静音内存WAV及正常退出；合成后366项资源哈希不变、没有音频文件或模型缓存新增。此验证证明生成与传输链路，不代替人工听感／自然度／发音内容验收。详细证据见[真实资源预览验收](../verification/2026-10-12-runtime-tts-resources.md)。统计打卡、更新发布、OCR及完整GOAL验收仍未完成。
+
+## 6. 固定版本许可补查（2026-10-12）
+
+PiperPlus.Core 0.4.0的NuGet元数据固定源码提交为 `782edf41248a996551163b0acb3949d5c32258e5`，已取得[原始MIT许可](https://github.com/ayutaz/piper-plus/blob/782edf41248a996551163b0acb3949d5c32258e5/LICENSE.md)，保留Michael Hansen／ayutaz版权。Sherpa托管及win-x64运行时均固定 `3dc7c569f31ca2cd4a20ed6f7db780327e6714c5`，已取得[原始Apache-2.0许可](https://github.com/k2-fsa/sherpa-onnx/blob/3dc7c569f31ca2cd4a20ed6f7db780327e6714c5/LICENSE)。
+
+该Sherpa版本的[构建定义](https://github.com/k2-fsa/sherpa-onnx/blob/3dc7c569f31ca2cd4a20ed6f7db780327e6714c5/cmake/espeak-ng-for-piper.cmake)固定拉取eSpeak分支提交 `ed530aa113046142eb5115cf2fc9157854d0ffe1`（源码归档SHA `E4E262CBE34F7FE21F91F1BA3397F2728E1F30EAFBAE7853F2B753A9ED13F0DD`）。其[README](https://github.com/csukuangfj/espeak-ng/blob/ed530aa113046142eb5115cf2fc9157854d0ffe1/README.md)声明GPLv3或后续版本；已附COPYING及Apache／BSD2／UCD子组件许可副本，来源链另附 `Resources/Attribution/Tts/SOURCES.md`。
+
+不得把上层NuGet的Apache标签扩大为所有依赖许可，不能仅因为非商业或只附许可文本就跳过再分发核验。这里记录源码声明，不从单份元数据断言实际二进制／模型数据已具备完整对应源码，也不自动判断整个Dictation必须采用某许可证。当前仓库根目录未设置LICENSE，未代替作者选择许可；实际发布组合应完成相应许可审查后才放开Release门槛。

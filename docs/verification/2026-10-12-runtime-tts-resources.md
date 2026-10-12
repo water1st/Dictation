@@ -41,3 +41,9 @@ TTS子集366文件、524,919,796字节。随预览加入模型卡、OpenJTalk CO
 ## 交付边界
 
 产品源码未修改，已有1910/1910回归不再运行。尚未更新dotnet-desktop.yml、实现Updater、统计打卡或最后OCR，也未推送／合并／发布Release。本记录是完整GOAL中的资源与真实模型进展，不是整个目标完成声明。
+
+## 后续许可补查
+
+同日按已安装NuGet的固定提交补齐PiperPlus.Core MIT、Sherpa Apache-2.0以及eSpeak GPLv3及五项子组件许可原文，另附来源说明；归属文件从10增至19，模型文件366项未变。新清单SHA为97AE38C3A17C75D651E3F49509980BFC8050201171B5D6E49664298D24C1B099；上文6BD8A5...为首次真实合成验收时的历史清单，不覆盖历史证据。未重复合成、构建或全量测试。
+
+实际查明的依赖链是Sherpa源码3dc7c569...中的cmake/espeak-ng-for-piper.cmake→eSpeak源码ed530aa...，后者README明确GPLv3或后续版本。原生二进制／模型数据的完整对应源码、编译配置与本项目许可适用关系尚未确定，releaseReady继续false；没有给用户源代码换许可证。固定来源链接见ThirdPartyResources第6节，不能把这些原文副本称为完整发布法律审查结论。
