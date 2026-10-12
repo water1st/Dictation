@@ -13,20 +13,24 @@ namespace Dictation.Core.Review
         private readonly ReviewSessionDataAccessor dataAccessor;
         private readonly TimeProvider timeProvider;
         private readonly ReviewSessionSelectionPlanner selectionPlanner;
+        private readonly Dictation.Core.Statistics.IDailyPlanSnapshotRecorder dailyTargets;
         /// <summary>组合计划、只读风险查询、会话持久化与时钟。</summary>
         /// <param name="plans">读取独立复习计划。</param>
         /// <param name="library">读取完整复习组及当前记忆风险。</param>
         /// <param name="dataAccessor">保存和读取会话。</param>
         /// <param name="timeProvider">提供统一 UTC 与本地日期。</param>
         /// <param name="selectionPlanner">按启用适用形式进行风险选词。</param>
+        /// <param name="dailyTargets">在有题目时冻结当天有效任务。</param>
         public ReviewSessionService(IReviewPlanReader plans, IReviewLibraryQuery library,
-            ReviewSessionDataAccessor dataAccessor, TimeProvider timeProvider, ReviewSessionSelectionPlanner selectionPlanner)
+            ReviewSessionDataAccessor dataAccessor, TimeProvider timeProvider, ReviewSessionSelectionPlanner selectionPlanner,
+            Dictation.Core.Statistics.IDailyPlanSnapshotRecorder dailyTargets)
         {
             this.plans = plans ?? throw new ArgumentNullException(nameof(plans));
             this.library = library ?? throw new ArgumentNullException(nameof(library));
             this.dataAccessor = dataAccessor ?? throw new ArgumentNullException(nameof(dataAccessor));
             this.timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
             this.selectionPlanner = selectionPlanner ?? throw new ArgumentNullException(nameof(selectionPlanner));
+            this.dailyTargets = dailyTargets ?? throw new ArgumentNullException(nameof(dailyTargets));
         }
 
         /// <inheritdoc />
@@ -37,6 +41,7 @@ namespace Dictation.Core.Review
             var active = await dataAccessor.GetActiveAsync(language.ToString(), cancellationToken);
             if (active is not null)
             {
+                await dailyTargets.RecordTodayAsync(language, cancellationToken);
                 return ReviewSessionMapper.ToDto(active);
             }
             var plan = await plans.LoadAsync(language, cancellationToken);
@@ -49,6 +54,7 @@ namespace Dictation.Core.Review
             {
                 return null;
             }
+            await dailyTargets.RecordTodayAsync(language, cancellationToken);
             var created = await dataAccessor.CreateAsync(ReviewSessionMapper.ToCreatePo(Guid.NewGuid().ToString("N"), plan, selected, timeProvider.GetUtcNow(), localDate), cancellationToken);
             return ReviewSessionMapper.ToDto(created);
         }

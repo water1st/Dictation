@@ -777,7 +777,8 @@ namespace Dictation.DataAccess.Runtime
                         FOREIGN KEY (WordGroupId, MemberId, FormCode) REFERENCES LearningFormStates (WordGroupId, MemberId, FormCode) ON DELETE CASCADE
                     );
                     """),
-                KanaSchemaMigration.Definition
+                KanaSchemaMigration.Definition,
+                Dictation.DataAccess.Statistics.StatisticsSchemaMigration.Definition
             };
         }
     }

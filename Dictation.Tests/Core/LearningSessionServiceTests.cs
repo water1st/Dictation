@@ -378,7 +378,7 @@ namespace Dictation.Tests.Core
                     new AnswerEvaluationService(),
                     timeProvider,
                     random,
-                    new LearningMemorySeedPlanner(new FsrsScheduler()));
+                    new LearningMemorySeedPlanner(new FsrsScheduler()), new EmptyDailyPlanSnapshotRecorder());
                 return new TestEnvironment(temporaryDirectory, paths, timeProvider, planService, importService, sessionService);
             }
 

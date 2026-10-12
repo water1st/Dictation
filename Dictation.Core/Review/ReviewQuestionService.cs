@@ -8,14 +8,18 @@ namespace Dictation.Core.Review
     {
         private readonly ReviewQuestionDataAccessor dataAccessor;
         private readonly PracticeQuestionScheduler scheduler;
+        private readonly Dictation.Core.Statistics.IDailyPlanSnapshotRecorder dailyTargets;
 
         /// <summary>组合独立复习持久化与两种模式共用的纯调度能力。</summary>
         /// <param name="dataAccessor">只访问复习本轮状态的数据访问器。</param>
         /// <param name="scheduler">不读取或修改数据库的共享调度组件。</param>
-        public ReviewQuestionService(ReviewQuestionDataAccessor dataAccessor, PracticeQuestionScheduler scheduler)
+        /// <param name="dailyTargets">跨午夜恢复待答题时记录当天任务。</param>
+        public ReviewQuestionService(ReviewQuestionDataAccessor dataAccessor, PracticeQuestionScheduler scheduler,
+            Dictation.Core.Statistics.IDailyPlanSnapshotRecorder dailyTargets)
         {
             this.dataAccessor = dataAccessor ?? throw new ArgumentNullException(nameof(dataAccessor));
             this.scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
+            this.dailyTargets = dailyTargets ?? throw new ArgumentNullException(nameof(dailyTargets));
         }
 
         /// <inheritdoc />
@@ -30,6 +34,7 @@ namespace Dictation.Core.Review
             }
             // 使用本轮快照而非当前设置，避免修改计划改变待答题及覆盖要求。
             var session = ReviewSessionMapper.ToDto(snapshot.Session);
+            await dailyTargets.RecordTodayAsync(session.Language, cancellationToken);
             var pending = snapshot.PendingQuestion;
             if (pending is null)
             {

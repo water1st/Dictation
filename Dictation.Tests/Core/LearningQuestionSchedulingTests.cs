@@ -715,7 +715,7 @@ namespace Dictation.Tests.Core
                     evaluationService,
                     timeProvider,
                     random,
-                    new Dictation.Core.Review.LearningMemorySeedPlanner(new Dictation.Core.Review.FsrsScheduler()));
+                    new Dictation.Core.Review.LearningMemorySeedPlanner(new Dictation.Core.Review.FsrsScheduler()), new EmptyDailyPlanSnapshotRecorder());
                 var environment = new TestEnvironment(
                     temporaryDirectory,
                     paths,
@@ -741,7 +741,7 @@ namespace Dictation.Tests.Core
                     evaluationService,
                     TimeProvider,
                     random,
-                    new Dictation.Core.Review.LearningMemorySeedPlanner(new Dictation.Core.Review.FsrsScheduler()));
+                    new Dictation.Core.Review.LearningMemorySeedPlanner(new Dictation.Core.Review.FsrsScheduler()), new EmptyDailyPlanSnapshotRecorder());
             }
 
             public async Task<string> StageLearningAsync(

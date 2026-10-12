@@ -21,6 +21,7 @@ namespace Dictation.Core.Learning
         private readonly TimeProvider timeProvider;
         private readonly Random random;
         private readonly LearningMemorySeedPlanner memorySeedPlanner;
+        private readonly Dictation.Core.Statistics.IDailyPlanSnapshotRecorder dailyTargets;
 
         /// <summary>
         /// 初始化学习会话编排服务。
@@ -33,6 +34,7 @@ namespace Dictation.Core.Learning
         /// <param name="timeProvider">用于记录会话、题目和答案的时间。</param>
         /// <param name="random">用于保留选词与出题的随机顺序。</param>
         /// <param name="memorySeedPlanner">为完成的启用形式计算首次客观记忆评价。</param>
+        /// <param name="dailyTargets">记录非空练习首次每日目标。</param>
         public LearningSessionService(
             LearningSessionDataAccessor dataAccessor,
             ILearningPlanReader learningPlanReader,
@@ -41,7 +43,8 @@ namespace Dictation.Core.Learning
             AnswerEvaluationService answerEvaluationService,
             TimeProvider timeProvider,
             Random random,
-            LearningMemorySeedPlanner memorySeedPlanner)
+            LearningMemorySeedPlanner memorySeedPlanner,
+            Dictation.Core.Statistics.IDailyPlanSnapshotRecorder dailyTargets)
         {
             ArgumentNullException.ThrowIfNull(dataAccessor);
             ArgumentNullException.ThrowIfNull(learningPlanReader);
@@ -59,6 +62,7 @@ namespace Dictation.Core.Learning
             this.timeProvider = timeProvider;
             this.random = random;
             this.memorySeedPlanner = memorySeedPlanner;
+            this.dailyTargets = dailyTargets ?? throw new ArgumentNullException(nameof(dailyTargets));
         }
 
         /// <inheritdoc />
@@ -73,6 +77,7 @@ namespace Dictation.Core.Learning
             var active = await dataAccessor.GetActiveAsync(request.Language.ToString(), cancellationToken);
             if (active is not null)
             {
+                await dailyTargets.RecordTodayAsync(request.Language, cancellationToken);
                 return LearningSessionMapper.ToDto(active);
             }
 
@@ -99,6 +104,7 @@ namespace Dictation.Core.Learning
                 : SelectAutomatic(plan, eligible, remainingNewCount);
             var now = timeProvider.GetUtcNow();
             var status = selected.Count == 0 ? LearningSessionStatus.Completed : LearningSessionStatus.InProgress;
+            if (selected.Count > 0) await dailyTargets.RecordTodayAsync(request.Language, cancellationToken);
             var created = await dataAccessor.CreateAsync(
                 new CreateLearningSessionPo(
                     Guid.NewGuid().ToString("N"),
@@ -156,6 +162,7 @@ namespace Dictation.Core.Learning
             }
 
             var plan = await learningPlanReader.LoadAsync(language, cancellationToken);
+            await dailyTargets.RecordTodayAsync(language, cancellationToken);
             if (snapshot.PendingQuestion is not null)
             {
                 return PracticeQuestionPresenter.Create(language, snapshot.Units, snapshot.PendingQuestion, plan);
@@ -186,6 +193,7 @@ namespace Dictation.Core.Learning
 
             var language = ParseEnum<LearningLanguage>(snapshot.Session.Language, "学习语言");
             var plan = await learningPlanReader.LoadAsync(language, cancellationToken);
+            await dailyTargets.RecordTodayAsync(language, cancellationToken);
             var currentQuestion = snapshot.PendingQuestion;
             var currentUnit = FindUnit(snapshot.Units, currentQuestion);
             var output = ParseEnum<LearningOutputMode>(currentQuestion.OutputMode, "输出方式");
@@ -410,44 +418,8 @@ namespace Dictation.Core.Learning
             IReadOnlyList<LearningOutputMode> outputModes,
             LearningLanguage language)
         {
-            var forms = candidate.AvailableForms
-                .Where(form => enabledForms.Contains(form.FormCode))
-                .Where(form => IsApplicableCandidateForm(form, outputModes, language))
-                .DistinctBy(form => (form.MemberId, form.FormCode))
-                .ToArray();
-            if (forms.Length == 0)
-            {
-                return null;
-            }
-
-            var states = candidate.FormStates.ToDictionary(
-                state => (state.MemberId, state.FormCode),
-                state => state.IsMastered);
-            var requiresPractice = !candidate.HasProgress
-                || forms.Any(form => !states.TryGetValue((form.MemberId, form.FormCode), out var mastered) || !mastered);
-            return requiresPractice ? new EligibleCandidate(candidate, forms) : null;
-        }
-
-        /// <summary>
-        /// 英语要求拉丁输出；日语汉字输出只允许常用汉字形式，假名输出使用假名形式。
-        /// </summary>
-        private static bool IsApplicableCandidateForm(
-            LearningFormIdentityPo form,
-            IReadOnlyList<LearningOutputMode> outputModes,
-            LearningLanguage language)
-        {
-            if (language == LearningLanguage.English)
-            {
-                return outputModes.Contains(LearningOutputMode.Latin);
-            }
-
-            return outputModes.Any(output => output switch
-            {
-                LearningOutputMode.Kana => string.Equals(form.ScriptCode, "Kana", StringComparison.Ordinal),
-                LearningOutputMode.Kanji => string.Equals(form.KanjiUsageCode, "Common", StringComparison.Ordinal)
-                    && string.Equals(form.ScriptCode, "Kanji", StringComparison.Ordinal),
-                _ => false
-            });
+            var forms = LearningSessionSelectionEligibility.GetForms(candidate, enabledForms, outputModes, language);
+            return LearningSessionSelectionEligibility.NeedsPractice(candidate, forms) ? new EligibleCandidate(candidate, forms) : null;
         }
 
         private static void ValidateLanguage(LearningLanguage language)

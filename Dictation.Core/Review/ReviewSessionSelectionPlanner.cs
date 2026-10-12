@@ -16,6 +16,14 @@ namespace Dictation.Core.Review
             {
                 return Array.Empty<ReviewSessionGroupSelection>();
             }
+            return GetCandidates(library, plan).Take(Math.Min(remainingDailyCount, plan.SessionWordLimit)).ToArray();
+        }
+
+        /// <summary>提供未经轮次数量截断的同一适用队列，供每日目标和实际选词共用。</summary>
+        /// <param name="library">完整风险快照。</param>
+        /// <param name="plan">启用范围、形式及输出要求。</param>
+        internal IReadOnlyList<ReviewSessionGroupSelection> GetCandidates(ReviewLibraryDto library, ReviewPlanDto plan)
+        {
             var scope = plan.WordGroupIds.ToHashSet(StringComparer.Ordinal);
             var enabled = plan.FormCodes.ToHashSet(StringComparer.Ordinal);
             var candidates = library.Groups
@@ -35,8 +43,7 @@ namespace Dictation.Core.Review
                 .ThenBy(candidate => candidate.Forms.Min(form => form.EstimatedRetention ?? 0))
                 .ThenBy(candidate => candidate.Forms.Min(form => form.DueAtUtc))
                 .ThenBy(candidate => candidate.Group.CreatedAtUtc)
-                .ThenBy(candidate => candidate.Group.WordGroupId, StringComparer.Ordinal)
-                .Take(Math.Min(remainingDailyCount, plan.SessionWordLimit));
+                .ThenBy(candidate => candidate.Group.WordGroupId, StringComparer.Ordinal);
             return candidates.Select(candidate => new ReviewSessionGroupSelection(candidate.Group.WordGroupId, candidate.Forms)).ToArray();
         }
     }

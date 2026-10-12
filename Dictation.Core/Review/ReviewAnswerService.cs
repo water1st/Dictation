@@ -16,6 +16,7 @@ namespace Dictation.Core.Review
         private readonly AnswerEvaluationService evaluation;
         private readonly ReviewMemoryUpdatePlanner memoryPlanner;
         private readonly TimeProvider timeProvider;
+        private readonly Dictation.Core.Statistics.IDailyPlanSnapshotRecorder dailyTargets;
 
         /// <summary>组合独立复习持久化及已有纯判题、调度、记忆能力。</summary>
         /// <param name="questions">读取一致的复习快照。</param>
@@ -24,8 +25,10 @@ namespace Dictation.Core.Review
         /// <param name="evaluation">共用客观文本判题。</param>
         /// <param name="memoryPlanner">续算完成形式的 FSRS。</param>
         /// <param name="timeProvider">提供 UTC 评价时间及本地完成日期。</param>
+        /// <param name="dailyTargets">跨午夜直接提交已有题目时记录当天目标。</param>
         public ReviewAnswerService(ReviewQuestionDataAccessor questions, ReviewAnswerDataAccessor answers,
-            PracticeQuestionScheduler scheduler, AnswerEvaluationService evaluation, ReviewMemoryUpdatePlanner memoryPlanner, TimeProvider timeProvider)
+            PracticeQuestionScheduler scheduler, AnswerEvaluationService evaluation, ReviewMemoryUpdatePlanner memoryPlanner, TimeProvider timeProvider,
+            Dictation.Core.Statistics.IDailyPlanSnapshotRecorder dailyTargets)
         {
             this.questions = questions ?? throw new ArgumentNullException(nameof(questions));
             this.answers = answers ?? throw new ArgumentNullException(nameof(answers));
@@ -33,6 +36,7 @@ namespace Dictation.Core.Review
             this.evaluation = evaluation ?? throw new ArgumentNullException(nameof(evaluation));
             this.memoryPlanner = memoryPlanner ?? throw new ArgumentNullException(nameof(memoryPlanner));
             this.timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+            this.dailyTargets = dailyTargets ?? throw new ArgumentNullException(nameof(dailyTargets));
         }
 
         /// <inheritdoc />
@@ -49,6 +53,7 @@ namespace Dictation.Core.Review
                 throw new InvalidOperationException("复习题目已经过期、不属于当前会话或会话已完成。");
             }
             var session = ReviewSessionMapper.ToDto(snapshot.Session);
+            await dailyTargets.RecordTodayAsync(session.Language, cancellationToken);
             var unit = snapshot.Units.Single(value => value.MemberId == pending.MemberId && value.FormCode == pending.FormCode);
             var output = Enum.Parse<LearningOutputMode>(pending.OutputMode);
             var wasCorrect = evaluation.IsCorrect(request.SubmittedText,

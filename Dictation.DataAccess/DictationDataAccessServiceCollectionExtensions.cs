@@ -29,6 +29,7 @@ namespace Dictation.DataAccess
             var applicationPaths = new ApplicationPaths(applicationRootDirectory);
             services.AddSingleton(applicationPaths);
             services.AddSingleton<SqliteConnectionFactory>();
+            services.AddSingleton<Dictation.DataAccess.Statistics.DailyCheckInDataAccessor>();
             services.AddSingleton<WrongAnswerDataAccessor>();
             services.AddSingleton<KanaPlanDataAccessor>();
             services.AddSingleton<KanaSessionDataAccessor>();

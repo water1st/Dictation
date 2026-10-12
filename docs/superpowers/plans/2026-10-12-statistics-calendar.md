@@ -2,7 +2,7 @@
 
 > **执行要求：**批准后使用 `superpowers:executing-plans`，由主代理在当前会话串行实施；不分派实施 worker。步骤使用复选框追踪。最终按既定流程进行一次独立审查。
 
-**状态：**待用户审核；仅打卡数量规则已确认，本文件不代表代码实施已经获批。
+**状态：**2026-10-12 用户 y 批准执行，采用主代理串行实施；完成状态按下列复选框与验证记录核对。
 
 **目标：**在现有单窗口中交付日英独立打卡、月历、已学词组数、易错词和可解释的记忆／到期趋势。
 
@@ -42,7 +42,7 @@
 4. 删除整组及同日修改计划：删除记录立即反映到统计，历史不能继续显示已删除的完成数。
 5. 异步刷新逆序／取消、读取失败和主题切换：旧语言或旧月份结果不覆盖当前页面；错误展示在页内，不伪造零数或打开新窗口。
 
-## 切片 1：真实每日目标与打卡入口
+## Task 1：真实每日目标与打卡入口
 
 **文件：**
 - 新增 `Dictation.DataAccess/Statistics/StatisticsSchemaMigration.cs`（迁移 14）、`DailyPlanSnapshotPo.cs`、`DailyCompletionCountsPo.cs`、`DailyCheckInDataAccessor.cs`。
@@ -60,17 +60,18 @@
 - `DailyCheckInDto` 包含 Language、LocalDate、LearningCompleted／Target、ReviewCompleted／Target、KanaCompleted／Target、IsCheckedIn；计数使用 long，日期使用 DateOnly。
 - DataAccessor 提供 `GetSnapshotAsync(string language, string localDate, CancellationToken cancellationToken = default) : Task<DailyPlanSnapshotPo?>`、`InsertIfAbsentAsync(DailyPlanSnapshotPo snapshot, CancellationToken cancellationToken = default) : Task`、`GetCompletionCountsAsync(string language, string localDate, CancellationToken cancellationToken = default) : Task<DailyCompletionCountsPo>`。SQL 负责事实计数，Core 负责目标和达标判断；目标暂未记录时首页显示“尚未开始”，不能展示成完成全部任务。
 
-- [ ] 写至少 20 项行为测试（DailyCheckInServiceTests 至少 10 项）：20 组计划／5 组到期，完成 4 为 false、完成 5 为 true；无任何完成 false；学习未达标阻止徽章；启用五十音未达标阻止日语而不影响英语；同组多形式只计 1；重复启动目标不变；活动轮次跨日恢复有当日快照；整组删除撤回相应事实。非法语言、取消、迁移回滚、并发 InsertIfAbsent 也必须覆盖。
-- [ ] 完成可编译骨架、冻结测试 SHA-256；仅临时将达标比较改成少算一组，或将空日判定改为 true；构建成功后运行聚焦测试，准确记录失败名称／期望／实际。
-- [ ] 恢复正确实现，同一批测试转绿；确认旧学习、复习、五十音选词及恢复行为回归通过。
-- [ ] 在隔离临时数据库验证迁移、重启和目标读取；构建／全量测试通过后提交“实现每日有效目标与客观打卡判定”。
+- [x] 写至少 20 项行为测试（DailyCheckInServiceTests 至少 10 项）：20 组计划／5 组到期，完成 4 为 false、完成 5 为 true；无任何完成 false；学习未达标阻止徽章；启用五十音未达标阻止日语而不影响英语；同组多形式只计 1；重复启动目标不变；活动轮次跨日恢复有当日快照；整组删除撤回相应事实。非法语言、取消、迁移回滚、并发 InsertIfAbsent 也必须覆盖。
+- [x] 完成可编译骨架、冻结测试 SHA-256；仅临时将达标比较改成少算一组，或将空日判定改为 true；构建成功后运行聚焦测试，准确记录失败名称／期望／实际。
+- [x] 恢复正确实现，同一批测试转绿；确认旧学习、复习、五十音选词及恢复行为回归通过。
+- [x] 在隔离临时数据库验证迁移、重启和目标读取；构建／全量测试通过后提交“实现每日有效目标与客观打卡判定”。
 - [ ] 接入首页：返回首页刷新，只在未达标→达标时播放短动画；UI 不判定业务。编写真实 DI＋SQLite＋STA 首页测试，错误／取消不显示伪造徽章。
 - [ ] 运行聚焦、构建、全量与首页浅深色冒烟，提交“打通首页独立打卡与实际任务进度”。
 
-## 切片 2：同一窗口的双语言月历
+## Task 2：同一窗口的双语言月历
 
 **文件：**
 - 新增 `Dictation.DataAccess/Statistics/CalendarDayCountsPo.cs`；在 `DailyCheckInDataAccessor.cs` 增加月区间只读查询。
+- 执行核对发现原 `LearningGroupProgress.CompletedLocalDate` 只保存最后完成日，补学新词形会改写它。Task 2 追加迁移 15，为原 `LearningSessionGroups` 增加 `CompletedLocalDate`；在原答题事务按组记录实际完成日，升级仅回填现有日期证据，不补造缺失历史。月历与报表按该历史事实去重读取，未能归属旧轮次的原进度事实作为兼容读取，不另建进度系统。
 - 新增 `Dictation.Core/Statistics/ICheckInCalendarReader.cs`、`CalendarMonthDto.cs`、`CalendarDayDto.cs`、`CheckInCalendarService.cs`、`CheckInCalendarMapper.cs`。
 - 新增 `Dictation.Presentation/Navigation/IStatisticsNavigation.cs`、`ViewModels/StatisticsViewModel.cs`、`ViewModels/CalendarDayViewModel.cs`、`Views/StatisticsPage.xaml` 及其必要 code-behind。
 - 修改 `Navigation/NavigationService.cs`、表现层注册入口、`App.xaml`、首页入口绑定；复用已有转场、返回栈和页面作用域，不增加 Window。
@@ -84,12 +85,13 @@
 - `StatisticsViewModel.Initialize(LearningLanguage language)`、`RefreshAsync(CancellationToken cancellationToken = default)`；提供上月／下月／本月 ICommand，边界月份禁用越界按钮。
 
 - [ ] 写至少 14 项测试：2028 年 2 月 29 天、月末边界、当月无记录全空、同格日英独立、重启不重算历史门槛、删除后图标与计数同步、升级旧数据不补徽章；取消和非法月份必须失败／传播。
+- [ ] 补充学习历史断言：补学新形式不得抹掉原完成日，跨日未结束的大轮次按各组完成日计数，同日同组去重，删除仍级联移除；升级有已知日期才回填，无证据不造历史。
 - [ ] 冻结并取得编译成功的行为 RED（临时混用日英完成数）；恢复实现 GREEN，构建／全量通过后提交“实现双语言月历与历史打卡查询”。
 - [ ] 将页面接入原单窗口：月格下半部放两个圆形图标，各约四分之一格；白圈红心／圆形米字旗用 WPF 几何图形，避免引入图片依赖。显示日期和简明空态，不做 ERP 表格。
 - [ ] 添加至少 8 项 STA／导航测试，覆盖真实服务查询、返回动画、月份请求逆序、取消、页内错误和深浅色；持有旧页的作用域在转场结束后释放。
 - [ ] 构建／全量和截图冒烟通过后提交“打通单窗口打卡日历与月份导航”。
 
-## 切片 3：简明词汇与记忆报表
+## Task 3：简明词汇与记忆报表
 
 **文件：**
 - 新增 `Dictation.DataAccess/Statistics/LearningStatisticsDataAccessor.cs`、`LearningStatisticsCountsPo.cs`。
