@@ -2,7 +2,7 @@
 
 ## 1. 资源边界
 
-下表的原始输入暂存于开发机 `D:\Source\Repos\Dictation\Resources`。这是用户工作区中的输入位置，不是应用运行时依赖路径，也不属于本隔离工作树；原始资源不直接提交到本仓库。发布根目录只包含经过确认的 `Resources/` 运行时子集。
+下表的原始输入暂存于开发机 `D:\Source\Repos\Dictation\Resources`。这是当前仓库目录内用户保留、未跟踪的构建输入，不是应用运行时依赖路径；原始资源不直接提交到本仓库。发布根目录只包含经过确认的 `Resources/` 运行时子集。
 
 资源分为三类：构建时输入（用于生成只读数据库）、运行时模型/词库（随发布 ZIP 提供）和许可证/归属文件。每次发布都要生成版本、来源、许可证、文件大小、SHA-256 的 manifest；发布前重新计算哈希，不能以文件名代替校验。
 
@@ -26,7 +26,7 @@
 | NuGet 包 | 版本 | 许可证 |
 | --- | --- | --- |
 | `PiperPlus.Core` | `0.4.0` | MIT |
-| `Microsoft.ML.OnnxRuntime` | `1.24.3` | MIT |
+| `Microsoft.ML.OnnxRuntime` | `1.27.1`（与英语引擎共用当前宿主依赖） | MIT |
 | `DotNetG2P` | `1.8.0` | Apache-2.0 |
 | `DotNetG2P.MeCab` | `1.8.0` | Apache-2.0 |
 
@@ -119,3 +119,11 @@ Resources/Lexicons/
 - 发布前复制或随包提供 EDRDG JMdict、Open English WordNet、Princeton WordNet、Kokoro、Piper Plus/CSS10、PaddleOCR 的适用许可证和归属说明；不得把“模型卡标记”扩大解释为所有运行时依赖的许可证。
 - 资源版本、来源、commit/日期、大小、SHA-256、处理结果和许可证路径必须可从 manifest 追溯。缺少核验信息的新增资源不能进入发布子集。
 - 发布校验只检查不可变 `Resources/`；根目录 `CONFIG/`、`DATA/`、`LOGS/`、`BACKUPS/` 和必要的 `CACHE/` 属于用户运行数据，不打包成会覆盖它们的文件。
+
+## 5. 当前本地预览资源状态（2026-10-12）
+
+当前可运行预览位于仓库内 `artifacts/Dictation-preview/`，原先的本轮 `artifacts/mcp-task1/` 只做目录改名，未再复制一份大型产物。已加入上述日语Piper／OpenJTalk与英式Kokoro运行时子集（366文件、524,919,796字节），未复制原始仓库、训练权重、Piper优化缓存、未用的中文／美式词典。两个schema v2中文词库直接复用已验收预览的固定SHA产物，未重建；旧预览用户数据库保持不变。
+
+资源清单位于预览 `Resources/Tts/manifest.json`，包含366项逐文件大小／SHA、来源版本、英式音色和10份当前已取得的归属文件；清单SHA为 `6BD8A5CCBE2D525F181EC17D3B8A22C47556291893D238336882FF50FAF2E952`。`releaseReady=false`：PiperPlus.Core、Sherpa-ONNX及eSpeak再分发归属／对应源码信息尚需完整核验，不能把本地开发预览当成已合规的外部发行包。
+
+正式隐藏宿主与命名管道已实际完成两门语言CPU合成、有效非静音内存WAV及正常退出；合成后366项资源哈希不变、没有音频文件或模型缓存新增。此验证证明生成与传输链路，不代替人工听感／自然度／发音内容验收。详细证据见[真实资源预览验收](../verification/2026-10-12-runtime-tts-resources.md)。统计打卡、更新发布、OCR及完整GOAL验收仍未完成。
