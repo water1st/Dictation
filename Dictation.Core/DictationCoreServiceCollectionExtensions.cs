@@ -33,6 +33,8 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<Dictation.Core.Updating.IUpdateReleaseQuery>(provider => provider.GetRequiredService<Dictation.Core.Updating.UpdateService>());
             services.AddSingleton<Dictation.Core.Updating.IUpdatePreparation>(provider => provider.GetRequiredService<Dictation.Core.Updating.UpdateService>());
             services.AddSingleton<Dictation.Core.Updating.IUpdateInstaller>(provider => provider.GetRequiredService<Dictation.Core.Updating.UpdateInstaller>());
+            services.AddSingleton<Dictation.Core.Updating.IUpdateRollback>(provider => provider.GetRequiredService<Dictation.Core.Updating.UpdateInstaller>());
+            services.AddSingleton<Dictation.Core.Updating.IUpdateCommit>(provider => provider.GetRequiredService<Dictation.Core.Updating.UpdateInstaller>());
             services.AddSingleton<SettingsService>();
             services.AddSingleton<McpSettingsService>();
             services.AddSingleton<CodexMcpRegistrationService>();

@@ -50,3 +50,13 @@ CONFIG、DATA、LOGS、BACKUPS、CACHE 从不进入受管理清单；原用户�
 - 联合测试参数采用 `--filter-class '*UpdatePreparationTests' '*UpdateDownloadInterruptionTests'`；两次错误的组合表达式被测试运行器拒绝、0 项执行，不作为任何测试成功或 RED 证据。
 
 当前候选完整命令 `dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 2082 --max-threads 4` 实际 **2082/2082**，0 失败／0 跳过，5 分 43 秒；解决方案构建 **0 警告／0 错误**。两份冻结 SHA 不变，差异检查通过。本段尚不代表隐藏进程、UI、重启确认及 CI 完成。
+
+## Task 2：安装收据与启动失败恢复能力
+
+下载准备已提交 `20832d3`。安装返回独占 CACHE 事务收据，旧文件备份保留到调用方确认启动成功。确认／回滚以两个窄接口映射到同一安装器；恢复记录与收据、根目录、版本匹配，拒绝外部目录和不安全路径。确认只删除该事务；恢复只改受管理程序文件，保留运行目录与未知用户文件。恢复使用旧文件副本，全部恢复成功才清理，锁冲突中断后可在解锁后重试。
+
+- `UpdateRecoveryTests.cs` 冻结 `DA878137AE5643DB8FCA9ED83060FE105D7C0F07F9B0F0CFD47B8BC62D1B4D1E`。可编译骨架 0 警告／0 错误；7 项执行、6 行为断言失败／1 通过，随后只补生产实现。
+- `UpdateRecoveryRetryTests.cs` 最终冻结 `32343129AD7F9C6B4D7D6248AEBDD4DAC7CF5E0B6280D2AFB9537491B67F8955`。首轮只命中 Windows 锁异常类别差异，作废该轮；修正测试规范，明确检查备份存在后重新冻结。生产临时把 Copy 改为 Move，编译成功，1 项因旧备份应存在但不存在的行为断言失败；恢复 Copy 后转绿。冻结文件未改。
+- 与原包安装及路径边界联合 **40/40**，0 跳过；最终解决方案构建 **0 警告／0 错误**。真实 Windows 文件锁验证恢复中途失败不丢旧备份，解锁后旧程序与清单均可恢复。
+
+当前收据能力完整命令 `dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 2090 --max-threads 4` 实际 **2090/2090**，0 失败／0 跳过，5 分 43 秒；解决方案构建 0 警告／0 错误，两份冻结SHA未变，差异检查通过。隐藏runner的父进程等待／重启／就绪通知和WPF工具栏仍待接入，不把Core恢复能力当作整条更新链路已经完成。
