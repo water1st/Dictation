@@ -13,6 +13,8 @@ using Dictation.Presentation.Shell;
 using Dictation.Presentation.ViewModels;
 using Dictation.Presentation.Views;
 using Dictation.Core.Configuration;
+using Dictation.Core.Updating;
+using Dictation.DataAccess;
 using Dictation.Tests.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -84,7 +86,8 @@ namespace Dictation.Tests.Presentation
             {
                 using var temporaryDirectory = new TemporaryDirectory();
                 var paths = new ApplicationPaths(temporaryDirectory.Path);
-                using var provider = new ServiceCollection().BuildServiceProvider();
+                using var provider = new ServiceCollection().AddDictationDataAccess(temporaryDirectory.Path)
+                    .AddDictationCore().AddDictationPresentation().BuildServiceProvider();
                 using var overlay = new OverlayService();
                 var navigation = new NavigationService(
                     provider.GetRequiredService<IServiceScopeFactory>());
@@ -97,7 +100,7 @@ namespace Dictation.Tests.Presentation
                     new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
                 navigation.InitializeHome(homeViewModel);
                 var shell = new ShellViewModel(navigation, overlay, navigation, navigation);
-                var homeWindow = new HomeWindow(shell);
+                var homeWindow = new HomeWindow(shell, provider.GetRequiredService<UpdateViewModel>(), provider.GetRequiredService<IUpdateStartupNotifier>());
 
                 homeWindow.ApplyTemplate();
                 var content = (UIElement)homeWindow.Content;
@@ -204,7 +207,8 @@ namespace Dictation.Tests.Presentation
             {
                 using var temporaryDirectory = new TemporaryDirectory();
                 var paths = new ApplicationPaths(temporaryDirectory.Path);
-                using var provider = new ServiceCollection().BuildServiceProvider();
+                using var provider = new ServiceCollection().AddDictationDataAccess(temporaryDirectory.Path)
+                    .AddDictationCore().AddDictationPresentation().BuildServiceProvider();
                 using var overlay = new OverlayService();
                 using var navigation = new NavigationService(
                     provider.GetRequiredService<IServiceScopeFactory>());
@@ -217,7 +221,7 @@ namespace Dictation.Tests.Presentation
                     new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
                 navigation.InitializeHome(homeViewModel);
                 var shell = new ShellViewModel(navigation, overlay, navigation, navigation);
-                var homeWindow = new HomeWindow(shell);
+                var homeWindow = new HomeWindow(shell, provider.GetRequiredService<UpdateViewModel>(), provider.GetRequiredService<IUpdateStartupNotifier>());
 
                 try
                 {

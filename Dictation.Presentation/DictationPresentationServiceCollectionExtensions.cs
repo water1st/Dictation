@@ -52,6 +52,8 @@ namespace Dictation.Presentation
                 serviceProvider.GetRequiredService<OverlayService>());
             services.AddSingleton<ShellViewModel>();
             services.AddSingleton<HomeWindow>();
+            services.AddSingleton<Dictation.Presentation.Updating.IUpdateLauncher, Dictation.Presentation.Updating.UpdateLauncher>();
+            services.AddSingleton<UpdateViewModel>();
             services.AddSingleton<ThemeManager>();
             services.AddSingleton<ISystemThemeProvider, WindowsSystemThemeProvider>();
             services.AddSingleton<IAudioPlayer, MemoryWavAudioPlayer>();

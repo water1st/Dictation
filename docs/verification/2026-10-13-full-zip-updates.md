@@ -60,3 +60,23 @@ CONFIG、DATA、LOGS、BACKUPS、CACHE 从不进入受管理清单；原用户�
 - 与原包安装及路径边界联合 **40/40**，0 跳过；最终解决方案构建 **0 警告／0 错误**。真实 Windows 文件锁验证恢复中途失败不丢旧备份，解锁后旧程序与清单均可恢复。
 
 当前收据能力完整命令 `dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 2090 --max-threads 4` 实际 **2090/2090**，0 失败／0 跳过，5 分 43 秒；解决方案构建 0 警告／0 错误，两份冻结SHA未变，差异检查通过。隐藏runner的父进程等待／重启／就绪通知和WPF工具栏仍待接入，不把Core恢复能力当作整条更新链路已经完成。
+
+## Task 2：单窗口入口与真实隐藏更新器
+
+恢复能力已提交 `ba4791e`。主窗口组合独立 UpdateViewModel 与 Core 就绪通知，不把更新状态塞入语言页面或导航 Shell。Loaded 后先写有效事务的就绪信号，再异步检查；只显示工具栏按钮和页内错误，不弹框、不自动下载。用户点击才准备完整包；只有隐藏 runner 真正启动成功才正常关闭主窗口。关闭时取消并屏蔽晚到响应。
+
+Updater 为独立 WinExe，使用微软 Generic Host、命令行配置绑定与同一 Core 注册入口；没有新业务层或数据库旁路。等待原 PID 正常退出，调用原安装能力，启动新版并等待迁移／Host／Loaded 确认；失败先停自己启动但未就绪的新版，再恢复旧程序并重启。所有错误记入 LOGS；新版已经就绪时若备份清理失败，只记日志保留备份，不杀正在运行的新版回滚。
+
+| 冻结测试 | SHA-256 | 可编译行为 RED |
+| --- | --- | --- |
+| UpdateViewModelTests.cs | 506F3062072947AE9503405F99B863C2969F5168E764B48D7A46B380006ED32B | 8项，5失败／3通过 |
+| UpdateLauncherTests.cs | BF323AD2600ED09572ED3BEE7A5FCF34A8AFF2C062591D35D9D4CFDBD910345A | 2项，2行为失败 |
+| UpdateStartupNotifierTests.cs | 973330350C00E893339E94517C72E90660D57CBE5A81885C06C887AC24574449 | 4项，3失败／1普通启动通过 |
+| UpdaterProcessTests.cs | 22F165B332AF6F7664228127BF869A20188AC99B0A3E05DE1AC2F4BDA5CBE565 | 2项，2错误成功码断言失败 |
+| UpdateToolbarTests.cs | 6862BEFFBFA8CE23A78D5D9449098591CA28DBAA16CA8ABAE2072E5C3EECE802 | 2项，2真实入口缺失断言失败 |
+
+各轮构建均 0 警告／0 错误，测试实际执行、0 跳过；只补生产实现转绿。原三个直接窗口构造调用仅做新 DI 参数的编译适配，不改原导航或 MCP 业务断言。联合新 18 项及原单窗口／MCP 19 项 **37/37**，0 跳过，解决方案构建 **0 警告／0 错误**。
+
+真实成功冒烟使用本计划独占 scratch 目录：复制本次程序输出，模型／词库只借用已下载资源的只读链接，不修改旧预览、重新构建词库或重新验证音频。父探针仍运行时安装版本保持 1.0.1；隐藏 Updater 窗口句柄为 0；原进程退出后安装 1.0.2，真实 WPF 主窗口 Loaded 并确认，Updater 退出码 **0**；五个运行目录的 `keep.bin` 均不变，安装事务确认后为 **0**。主窗口正常 Close、WaitForExit 成功，不声称未取得的主程序退出码。成功测试目录和资源链接已清理，没有修改实际用户数据。
+
+本候选完整命令 `dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 2108 --max-threads 4` 实际 **2108/2108**，0 失败／0 跳过，5 分 31 秒；解决方案构建 **0 警告／0 错误**，五份冻结SHA未变，差异检查通过。CI、正式自包含 ZIP、许可门槛及最终预览交付仍属于后续 Task 3，完整 GOAL 也仍包含最后 OCR 与收尾清理，不能以本段结束整项目目标。

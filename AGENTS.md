@@ -2,11 +2,11 @@
 
 ## 当前状态与批准目标
 
-当前解决方案已迁入 `.NET 10`：`Dictation.Presentation` 使用 WPF，`Dictation.Core` 承载业务服务，`Dictation.DataAccess` 负责持久化；另有 `Dictation.TtsHost`、`Dictation.LexiconBuilder` 和 `Dictation.Tests`。旧 WinForms、Edge/System TTS 与独立 Services 项目已移除。其余目标功能仍按已批准计划分片实现，不得把计划中的项目或功能当成已存在。
+当前解决方案已迁入 `.NET 10`：`Dictation.Presentation` 使用 WPF，`Dictation.Core` 承载业务服务，`Dictation.DataAccess` 负责持久化；另有 `Dictation.TtsHost`、`Dictation.Updater`、`Dictation.LexiconBuilder` 和 `Dictation.Tests`。旧 WinForms、Edge/System TTS 与独立 Services 项目已移除。其余目标功能仍按已批准计划分片实现，不得把计划中的项目或功能当成已存在。
 
 ## 目标结构与迁移方式
 
-物理三层固定为 `Dictation.Presentation → Dictation.Core → Dictation.DataAccess`；业务按 `Core/Configuration`、`Core/Importing`、`Core/Learning`、`Core/Lexicon`、`Core/Tts` 等目录内聚组织。支持程序包括现有 `Dictation.TtsHost` 和待实现的 `Dictation.Updater`。按可运行、可验证的垂直切片迁移，不铺设没有行为的空壳；已被新链路取代且没有引用的旧实现应删除，不留无用兼容层。
+物理三层固定为 `Dictation.Presentation → Dictation.Core → Dictation.DataAccess`；业务按 `Core/Configuration`、`Core/Importing`、`Core/Learning`、`Core/Lexicon`、`Core/Tts` 等目录内聚组织。支持程序包括隐藏的 `Dictation.TtsHost` 和 `Dictation.Updater`，后者复用 Core 更新能力，不直接写用户数据库。按可运行、可验证的垂直切片迁移，不铺设没有行为的空壳；已被新链路取代且没有引用的旧实现应删除，不留无用兼容层。
 
 ## 架构边界
 
@@ -54,11 +54,11 @@ DTO、业务模型和持久化对象（PO）按职责分离，不要求机械地
 ```powershell
 dotnet restore Dictation.sln
 dotnet build Dictation.sln --configuration Debug --no-restore
-dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 2090 --max-threads 4
+dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 2108 --max-threads 4
 dotnet run --project Dictation.Presentation/Dictation.Presentation.csproj
 ```
 
-`Dictation.Tests` 使用 xUnit v3 与 Microsoft.Testing.Platform，测试命名采用 `行为_场景_预期`。聚焦测试用 `--filter-class` 或 `--filter-method`，并指定合理的 `--minimum-expected-tests`；零测试不算通过。全量数量不得少于当前基线 2090 项；有意删除失效测试时必须记录原因及数量变化，不能用跳过测试或降低门槛掩盖回归。开发不应依赖 Edge、Windows TTS、Node、Docker、SQL Server、EF 或 CUDA。
+`Dictation.Tests` 使用 xUnit v3 与 Microsoft.Testing.Platform，测试命名采用 `行为_场景_预期`。聚焦测试用 `--filter-class` 或 `--filter-method`，并指定合理的 `--minimum-expected-tests`；零测试不算通过。全量数量不得少于当前基线 2108 项；有意删除失效测试时必须记录原因及数量变化，不能用跳过测试或降低门槛掩盖回归。开发不应依赖 Edge、Windows TTS、Node、Docker、SQL Server、EF 或 CUDA。
 
 ## 编码约定
 

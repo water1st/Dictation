@@ -4,6 +4,8 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using Dictation.Presentation.Navigation;
 using Dictation.Presentation.Shell;
+using Dictation.Presentation.ViewModels;
+using Dictation.Core.Updating;
 
 namespace Dictation.Presentation
 {
@@ -16,21 +18,31 @@ namespace Dictation.Presentation
             new(TimeSpan.FromMilliseconds(200));
         private readonly ShellViewModel shellViewModel;
         private bool isTransitioning;
+        private readonly IUpdateStartupNotifier startupNotifier;
 
         /// <summary>
         /// 承载单窗口页面、导航动画和弹层的 WPF 主窗口。
         /// </summary>
         /// <param name="shellViewModel">提供页面、转场和弹层状态的窗口宿主模型。</param>
-        public HomeWindow(ShellViewModel shellViewModel)
+        /// <param name="update">独立于语言页面的更新入口状态。</param>
+        /// <param name="startupNotifier">迁移和Host成功后确认窗口Loaded的能力。</param>
+        public HomeWindow(ShellViewModel shellViewModel, UpdateViewModel update, IUpdateStartupNotifier startupNotifier)
         {
             this.shellViewModel = shellViewModel
                 ?? throw new ArgumentNullException(nameof(shellViewModel));
+            Update = update ?? throw new ArgumentNullException(nameof(update));
+            this.startupNotifier = startupNotifier ?? throw new ArgumentNullException(nameof(startupNotifier));
             InitializeComponent();
             DataContext = this.shellViewModel;
             this.shellViewModel.TransitionRequested += OnTransitionRequested;
+            Loaded += OnLoaded;
+            Update.ShutdownRequested += OnUpdateShutdownRequested;
         }
 
         public ShellViewModel ViewModel => shellViewModel;
+
+        /// <summary>工具栏的独立更新组件，不让导航和语言页面互相依赖。</summary>
+        public UpdateViewModel Update { get; }
 
         /// <summary>
         /// 将主窗口恢复到可见状态并请求前台激活。
@@ -141,10 +153,32 @@ namespace Dictation.Presentation
             shellViewModel.CompleteTransition();
         }
 
+        /// <summary>窗口Loaded确认迁移及Host成功，随后异步检查，不弹框或自动下载。</summary>
+        /// <param name="sender">已加载窗口。</param>
+        /// <param name="e">加载事件。</param>
+        private async void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= OnLoaded;
+            startupNotifier.NotifyReady();
+            await Update.CheckAsync();
+        }
+
+        /// <summary>只有独占runner启动成功才按正常窗口关闭流程退出。</summary>
+        /// <param name="sender">更新组件。</param>
+        /// <param name="e">关闭请求。</param>
+        private void OnUpdateShutdownRequested(object? sender, EventArgs e)
+        {
+            if (Dispatcher.CheckAccess()) Close();
+            else Dispatcher.BeginInvoke(new Action(Close));
+        }
+
         private void OnClosed(object? sender, EventArgs e)
         {
             // 已关闭窗口不能继续持有导航转场订阅；其余 Shell 订阅与根容器单例同寿命。
             shellViewModel.TransitionRequested -= OnTransitionRequested;
+            Loaded -= OnLoaded;
+            Update.ShutdownRequested -= OnUpdateShutdownRequested;
+            Update.Dispose();
         }
     }
 }

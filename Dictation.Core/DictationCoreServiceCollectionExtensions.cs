@@ -35,6 +35,9 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<Dictation.Core.Updating.IUpdateInstaller>(provider => provider.GetRequiredService<Dictation.Core.Updating.UpdateInstaller>());
             services.AddSingleton<Dictation.Core.Updating.IUpdateRollback>(provider => provider.GetRequiredService<Dictation.Core.Updating.UpdateInstaller>());
             services.AddSingleton<Dictation.Core.Updating.IUpdateCommit>(provider => provider.GetRequiredService<Dictation.Core.Updating.UpdateInstaller>());
+            services.AddSingleton<Dictation.Core.Updating.IUpdateStartupNotifier>(provider => new Dictation.Core.Updating.UpdateStartupNotifier(
+                provider.GetRequiredService<Dictation.DataAccess.Runtime.ApplicationPaths>(),
+                provider.GetService<Microsoft.Extensions.Configuration.IConfiguration>()?["DICTATION_UPDATE_READY_FILE"]));
             services.AddSingleton<SettingsService>();
             services.AddSingleton<McpSettingsService>();
             services.AddSingleton<CodexMcpRegistrationService>();

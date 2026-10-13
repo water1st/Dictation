@@ -148,7 +148,7 @@ namespace Dictation.Tests.Presentation
             var home = provider.GetRequiredService<HomeViewModel>();
             navigation.InitializeHome(home);
             var shell = provider.GetRequiredService<ShellViewModel>();
-            var window = new HomeWindow(shell);
+            var window = provider.GetRequiredService<HomeWindow>();
             var homePage = new HomePage { DataContext = home };
             window.Content = homePage;
             homePage.Measure(new Size(1000, 1200)); homePage.Arrange(new Rect(0, 0, 1000, 1200)); homePage.UpdateLayout();

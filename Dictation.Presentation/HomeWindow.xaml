@@ -28,6 +28,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Button Command="{Binding GoBackCommand}"
                         Content="‹  返回"
@@ -42,6 +43,26 @@
                            FontSize="24"
                            FontWeight="SemiBold"
                            Text="{Binding PageTitle}" />
+                <StackPanel Grid.Column="2"
+                            Margin="12,0,0,0"
+                            MaxWidth="260"
+                            VerticalAlignment="Center"
+                            DataContext="{Binding Update, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
+                    <Button x:Name="UpdateButton"
+                            HorizontalAlignment="Right"
+                            Padding="12,7"
+                            Content="{Binding ButtonText}"
+                            Command="{Binding InstallCommand}"
+                            Visibility="{Binding HasUpdate, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Background="{DynamicResource AccentBrush}"
+                            Foreground="White" />
+                    <TextBlock x:Name="UpdateStatusText"
+                               Margin="0,4,0,0"
+                               FontSize="11"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource SecondaryForegroundBrush}"
+                               Text="{Binding StatusMessage}" />
+                </StackPanel>
             </Grid>
         </Border>
 

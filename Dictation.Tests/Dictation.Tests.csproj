@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Dictation.TtsHost\Dictation.TtsHost.csproj" />
     <ProjectReference Include="..\Dictation.LexiconBuilder\Dictation.LexiconBuilder.csproj" />
+    <ProjectReference Include="..\Dictation.Updater\Dictation.Updater.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>
