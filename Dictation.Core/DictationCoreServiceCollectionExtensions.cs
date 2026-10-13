@@ -24,6 +24,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns>完成 Core 业务服务注册后的原服务集合。</returns>
         public static IServiceCollection AddDictationCore(this IServiceCollection services)
         {
+            services.AddSingleton<Dictation.Core.Statistics.ILanguageStatisticsReader, Dictation.Core.Statistics.LanguageStatisticsService>();
             ArgumentNullException.ThrowIfNull(services);
             services.AddSingleton<SettingsService>();
             services.AddSingleton<McpSettingsService>();

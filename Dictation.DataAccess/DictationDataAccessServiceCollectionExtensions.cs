@@ -24,6 +24,7 @@ namespace Dictation.DataAccess
             this IServiceCollection services,
             string applicationRootDirectory)
         {
+            services.AddSingleton<Dictation.DataAccess.Statistics.LearningStatisticsDataAccessor>();
             ArgumentNullException.ThrowIfNull(services);
 
             var applicationPaths = new ApplicationPaths(applicationRootDirectory);
