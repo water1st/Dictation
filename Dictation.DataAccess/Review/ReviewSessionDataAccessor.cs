@@ -37,6 +37,23 @@ namespace Dictation.DataAccess.Review
             return result;
         }
 
+        /// <summary>只读指定轮次尚未完成的组，不改变完整轮次的浏览与结算合同。</summary>
+        /// <param name="sessionId">已读取活动轮次的稳定标识。</param>
+        /// <param name="cancellationToken">取消查询。</param>
+        /// <returns>未记录完成日的整组 ID；已完成或删除的组不返回。</returns>
+        public async Task<IReadOnlyList<string>> GetIncompleteWordGroupIdsAsync(string sessionId, CancellationToken cancellationToken = default)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
+            cancellationToken.ThrowIfCancellationRequested();
+            await using var connection = connectionFactory.CreateConnection();
+            await connection.OpenAsync(cancellationToken);
+            return (await connection.QueryAsync<string>(new CommandDefinition("""
+                SELECT G.WordGroupId FROM ReviewSessionGroups G JOIN ReviewSessions S ON S.SessionId=G.SessionId
+                WHERE G.SessionId=@sessionId AND S.Status='InProgress' AND G.CompletedLocalDate IS NULL
+                ORDER BY G.SortOrder;
+                """, new { sessionId }, cancellationToken: cancellationToken))).ToArray();
+        }
+
         /// <summary>在写事务内验证归属并创建会话；并发启动返回已有活动会话。</summary>
         /// <param name="request">已由业务层准备的会话与形式。</param>
         /// <param name="cancellationToken">取消事务的令牌。</param>

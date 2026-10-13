@@ -56,8 +56,7 @@ namespace Dictation.Core.Statistics
                 .Where(candidate => LearningSessionSelectionEligibility.NeedsPractice(candidate,
                     LearningSessionSelectionEligibility.GetForms(candidate, enabled, learningPlan.OutputModes, language)))
                 .Select(candidate => candidate.WordGroupId).ToHashSet(StringComparer.Ordinal);
-            var learningActive = await learning.GetActiveAsync(code, cancellationToken);
-            learningIds.UnionWith(learningActive?.WordGroupIds ?? Array.Empty<string>());
+            // 原候选查询已包含活动学习组；已掌握的昨日组不能随整个轮次再次进入今天目标。
             learningIds.UnionWith(learningCompleted);
 
             var reviewPlan = await reviewPlans.LoadAsync(language, cancellationToken);
@@ -66,7 +65,8 @@ namespace Dictation.Core.Statistics
             // 每轮数量不能缩小当天目标；已完成、当前到期和恢复轮次按组ID合并。
             var reviewIds = reviewSelection.GetCandidates(library, reviewPlan).Select(item => item.WordGroupId).ToHashSet(StringComparer.Ordinal);
             var reviewActive = await review.GetActiveAsync(code, cancellationToken);
-            reviewIds.UnionWith(reviewActive?.WordGroupIds ?? Array.Empty<string>());
+            if (reviewActive is not null)
+                reviewIds.UnionWith(await review.GetIncompleteWordGroupIdsAsync(reviewActive.SessionId, cancellationToken));
             reviewIds.UnionWith(reviewCompleted);
             var kanaTarget = language == LearningLanguage.Japanese ? (await kana.GetProgressAsync(cancellationToken)).Target : 0;
             var learningTarget = Math.Min(learningPlan.DailyNewTarget, learningIds.Count);
