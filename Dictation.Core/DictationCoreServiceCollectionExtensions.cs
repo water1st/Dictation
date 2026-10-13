@@ -26,6 +26,8 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             services.AddSingleton<Dictation.Core.Statistics.ILanguageStatisticsReader, Dictation.Core.Statistics.LanguageStatisticsService>();
             ArgumentNullException.ThrowIfNull(services);
+            services.AddSingleton<Dictation.Core.Updating.UpdateInstaller>();
+            services.AddSingleton<Dictation.Core.Updating.IUpdateInstaller>(provider => provider.GetRequiredService<Dictation.Core.Updating.UpdateInstaller>());
             services.AddSingleton<SettingsService>();
             services.AddSingleton<McpSettingsService>();
             services.AddSingleton<CodexMcpRegistrationService>();
