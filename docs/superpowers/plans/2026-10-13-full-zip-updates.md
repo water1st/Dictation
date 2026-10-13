@@ -38,6 +38,8 @@
 
 **合同：**`IUpdateReleaseQuery.CheckAsync(CancellationToken = default) : Task<AvailableUpdateDto?>`，`IUpdatePreparation.PrepareAsync(AvailableUpdateDto update, CancellationToken = default) : Task<PreparedUpdateDto>`。AvailableUpdateDto 保存 Version／PackageUri／ChecksumUri；PreparedUpdateDto 保存独占任务目录、RunnerPath、PackagePath、Sha256、Version、RootDirectory。`IUpdateLauncher.Launch(PreparedUpdateDto update)` 只启动隐藏进程，成功后 UI 关闭；启动失败仍留在原窗口。
 
+**启动失败恢复补齐：**Task 1 的安装能力目前只覆盖文件替换失败。接入进程时改为 `IUpdateInstaller.ApplyAsync(...) : Task<UpdateInstallationDto>`，收据含 RootDirectory、TransactionDirectory、Version；同一实现增加窄 `IUpdateRollback.RollbackAsync(UpdateInstallationDto, CancellationToken)` 与 `IUpdateCommit.CommitAsync(UpdateInstallationDto, CancellationToken)`。旧备份在新版 WPF 发出启动就绪信号前不清理；迁移／启动失败时先回滚程序，再重启旧版。WPF 在迁移、Host 和窗口 Loaded 成功后，由 Core 的 `IUpdateStartupNotifier.NotifyReady()` 写入限定 CACHE 任务的就绪文件（Updater 通过环境变量传递，不改变用户文件导入参数或次实例规则）。三种安装能力保留同一 DI 实例，不做通用事务框架。该补齐仅落实原“失败回滚、重启并迁移”，不是额外恢复界面。
+
 - [ ] 用受控 HttpMessageHandler、真实文件及 STA 先覆盖正式新版本／无新版／旧版／404／离线／坏 JSON／缺资产／不可信下载地址／哈希不符／取消／部分下载清理；数据保留沿用 Task 1，不另建安装逻辑。
 - [ ] 开发目录无 package-manifest 时不自动查询或更新源码；发行目录 Loaded 后异步检查，只发布按钮，不弹窗、不自动下载。VM 独立版本屏障、取消和页内错误；月份／语言页不影响更新入口。
 - [ ] Updater 用 Generic Host 和现有 Core 注册，等待原 PID 退出，不强杀进程；调用 Task 1 能力，成功重启根目录主程序，失败记录 LOGS 并重启旧程序。参数用微软配置绑定，禁止手写第二套业务／容器。
