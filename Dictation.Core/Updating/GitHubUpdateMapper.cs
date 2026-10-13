@@ -5,6 +5,21 @@ namespace Dictation.Core.Updating
     {
         internal const string PackageName = "Dictation-win-x64.zip";
 
+        /// <summary>重新验证公开DTO的下载地址，不能信任调用方自行构造的资产。</summary>
+        /// <param name="update">下载条件。</param>
+        internal static void ValidateDownload(AvailableUpdateDto update)
+        {
+            if (!System.Text.RegularExpressions.Regex.IsMatch(update.Version ?? string.Empty, "\\A[0-9]+\\.[0-9]+\\.[0-9]+\\z"))
+                throw new InvalidDataException("更新版本格式错误。");
+            foreach (var tag in new[] { "v" + update.Version, update.Version })
+            {
+                var prefix = $"https://github.com/water1st/Dictation/releases/download/{tag}/";
+                if (update.PackageUri?.AbsoluteUri == prefix + PackageName
+                    && update.ChecksumUri?.AbsoluteUri == prefix + PackageName + ".sha256") return;
+            }
+            throw new InvalidDataException("更新资产必须来自同一正式发行的固定仓库。");
+        }
+
         /// <summary>将来源文档转换为业务 DTO；缺失、重复或外部下载地址均拒绝。</summary>
         /// <param name="release">已经通过正式／新版本筛选的发行。</param>
         /// <param name="version">规范化后的三段版本。</param>

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Security.Cryptography;
 
 namespace Dictation.Core.Updating
 {
@@ -42,6 +43,33 @@ namespace Dictation.Core.Updating
             if (!Regex.IsMatch(tag, "\\A[0-9]+\\.[0-9]+\\.[0-9]+\\z") || !Version.TryParse(tag, out var version) || version <= current) return null;
             timeout.Token.ThrowIfCancellationRequested();
             return GitHubUpdateMapper.ToDto(release, version.ToString(3));
+        }
+
+        /// <summary>先读取校验文件，再以流下载完整包，失败由准备任务清理独占文件。</summary>
+        /// <param name="update">已验证的固定发行。</param>
+        /// <param name="destination">独占任务内尚不存在的ZIP路径。</param>
+        /// <param name="cancellationToken">取消下载。</param>
+        /// <returns>校验文件提供的规范SHA-256。</returns>
+        internal async Task<string> DownloadAsync(AvailableUpdateDto update, string destination, CancellationToken cancellationToken)
+        {
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromMinutes(30));
+            using var checksumResponse = await client.GetAsync(update.ChecksumUri, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            checksumResponse.EnsureSuccessStatusCode();
+            await checksumResponse.Content.LoadIntoBufferAsync(4096, timeout.Token);
+            var text = await checksumResponse.Content.ReadAsStringAsync(timeout.Token);
+            var match = Regex.Match(text, "\\A([0-9a-fA-F]{64})[ \\t]+\\*?Dictation-win-x64\\.zip[\\r\\n]*\\z", RegexOptions.CultureInvariant);
+            if (!match.Success) throw new InvalidDataException("校验文件格式或包名错误。");
+            var expected = match.Groups[1].Value.ToUpperInvariant();
+            using var response = await client.GetAsync(update.PackageUri, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            response.EnsureSuccessStatusCode();
+            await using (var source = await response.Content.ReadAsStreamAsync(timeout.Token))
+            await using (var target = new FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, useAsync: true))
+                await source.CopyToAsync(target, timeout.Token);
+            await using var downloaded = File.OpenRead(destination);
+            var actual = Convert.ToHexString(await SHA256.HashDataAsync(downloaded, timeout.Token));
+            if (actual != expected) throw new InvalidDataException("更新包SHA-256不匹配。");
+            return expected;
         }
 
         /// <summary>释放本提供器持有的 HTTP 资源。</summary>
