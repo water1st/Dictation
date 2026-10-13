@@ -46,6 +46,52 @@
                     <Button Content="刷新记录" Command="{Binding RefreshCommand}" HorizontalAlignment="Left" Margin="0,12,0,0" />
                 </StackPanel>
             </Border>
+            <TextBlock Text="{Binding ReportErrorMessage}" Foreground="{DynamicResource ErrorBrush}" Margin="0,16,0,0" TextWrapping="Wrap" />
+            <Border Margin="0,20,0,0" Padding="20" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="24">
+                <StackPanel>
+                    <TextBlock Text="词汇小结 · 按词组计数" FontSize="20" FontWeight="SemiBold" />
+                    <WrapPanel Margin="0,16,0,0">
+                        <StackPanel Width="130" Margin="0,0,10,12"><TextBlock Text="累计已学" /><TextBlock x:Name="LearnedCount" Text="{Binding Report.LearnedGroupCount}" FontSize="28" FontWeight="SemiBold" /></StackPanel>
+                        <StackPanel Width="130" Margin="0,0,10,12"><TextBlock Text="今日学习" /><TextBlock x:Name="TodayLearnedCount" Text="{Binding Report.TodayLearnedGroupCount}" FontSize="28" FontWeight="SemiBold" /></StackPanel>
+                        <StackPanel Width="130" Margin="0,0,10,12"><TextBlock Text="今日复习" /><TextBlock x:Name="TodayReviewedCount" Text="{Binding Report.TodayReviewedGroupCount}" FontSize="28" FontWeight="SemiBold" /></StackPanel>
+                        <StackPanel Width="130" Margin="0,0,10,12"><TextBlock Text="等待初测" /><TextBlock Text="{Binding Report.PendingTestGroupCount}" FontSize="28" FontWeight="SemiBold" /></StackPanel>
+                        <StackPanel Width="130" Margin="0,0,10,12"><TextBlock Text="已逾期" /><TextBlock Text="{Binding Report.OverdueGroupCount}" FontSize="28" FontWeight="SemiBold" /></StackPanel>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding Report.MistakesDescription}" Margin="0,8,0,12" Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                    <ItemsControl x:Name="FrequentMistakes" ItemsSource="{Binding Report.TopMistakes}">
+                        <ItemsControl.ItemTemplate><DataTemplate>
+                            <Border Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="12" Padding="14,10" Margin="0,0,0,6">
+                                <DockPanel><TextBlock DockPanel.Dock="Right" Margin="14,0,0,0"><Run Text="{Binding ErrorCount}" /><Run Text=" 次错误" /></TextBlock>
+                                    <StackPanel><TextBlock Text="{Binding Headword}" FontSize="16" FontWeight="SemiBold" /><TextBlock Text="{Binding Meanings}" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}" /></StackPanel>
+                                </DockPanel>
+                            </Border>
+                        </DataTemplate></ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+            <Border Margin="0,20,0,0" Padding="20" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="24">
+                <StackPanel>
+                    <TextBlock Text="记忆的脚印" FontSize="20" FontWeight="SemiBold" />
+                    <TextBlock x:Name="RetentionCaption" Text="{Binding Report.RetentionDescription}" Margin="0,8,0,16" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="38" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Grid><TextBlock Text="100%" VerticalAlignment="Top" FontSize="11" /><TextBlock Text="0%" VerticalAlignment="Bottom" FontSize="11" /></Grid>
+                        <Viewbox Grid.Column="1" Stretch="Fill" Height="150"><Canvas Width="600" Height="150">
+                            <Line X1="0" Y1="140" X2="600" Y2="140" Stroke="{DynamicResource SecondaryForegroundBrush}" Opacity="0.3" />
+                            <Polyline x:Name="RetentionLine" Points="{Binding Report.RetentionPoints}" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3" />
+                        </Canvas></Viewbox>
+                    </Grid>
+                    <DockPanel Margin="38,8,0,16"><TextBlock DockPanel.Dock="Right" Text="{Binding Report.RetentionEndLabel}" /><TextBlock Text="{Binding Report.RetentionStartLabel}" /></DockPanel>
+                    <TextBlock Text="接下来要复习" FontSize="18" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Report.DueDescription}" Margin="0,8,0,12" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                    <ItemsControl x:Name="DueBars" ItemsSource="{Binding Report.DueBars}">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="14" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate><DataTemplate><StackPanel>
+                            <Grid Height="128" Margin="3,0"><StackPanel VerticalAlignment="Bottom"><TextBlock Text="{Binding CountLabel}" HorizontalAlignment="Center" FontSize="11" /><Border Height="{Binding Height}" Background="{DynamicResource AccentSoftBrush}" CornerRadius="5,5,0,0" /></StackPanel></Grid>
+                            <TextBlock Text="{Binding DateLabel}" FontSize="10" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                        </StackPanel></DataTemplate></ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

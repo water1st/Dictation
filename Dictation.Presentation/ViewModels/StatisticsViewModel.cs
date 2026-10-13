@@ -10,6 +10,7 @@ namespace Dictation.Presentation.ViewModels
     public sealed class StatisticsViewModel : INotifyPropertyChanged, IDisposable
     {
         private readonly ICheckInCalendarReader calendar;
+        private readonly ILanguageStatisticsReader reports;
         private readonly TimeProvider clock;
         private readonly CancellationTokenSource lifetime = new();
         private DateOnly month;
@@ -19,14 +20,19 @@ namespace Dictation.Presentation.ViewModels
         private long refreshVersion;
         private IReadOnlyList<CalendarDayViewModel> cells = Array.Empty<CalendarDayViewModel>();
         private string? calendarErrorMessage;
+        private long reportVersion;
+        private StatisticsReportViewModel? report;
+        private string? reportErrorMessage;
 
         /// <summary>组合只读月历服务与时钟，作用域释放时停止发布旧结果。</summary>
         /// <param name="calendar">业务层历史月历查询。</param>
         /// <param name="clock">确定本月的统一时钟。</param>
-        public StatisticsViewModel(ICheckInCalendarReader calendar, TimeProvider clock)
+        /// <param name="reports">只读当前语言的统计报表。</param>
+        public StatisticsViewModel(ICheckInCalendarReader calendar, TimeProvider clock, ILanguageStatisticsReader reports)
         {
             this.calendar = calendar ?? throw new ArgumentNullException(nameof(calendar));
             this.clock = clock ?? throw new ArgumentNullException(nameof(clock));
+            this.reports = reports ?? throw new ArgumentNullException(nameof(reports));
             var now = clock.GetLocalNow();
             month = new DateOnly(now.Year, now.Month, 1);
             PreviousMonthCommand = new AsyncCommand(() => ShowMonthAsync(month.AddMonths(-1).Year, month.AddMonths(-1).Month), () => month.Year > 1 || month.Month > 1);
@@ -41,6 +47,8 @@ namespace Dictation.Presentation.ViewModels
         public string MonthLabel => $"{month.Year}年{month.Month}月";
         public IReadOnlyList<CalendarDayViewModel> Cells => cells;
         public string? CalendarErrorMessage => calendarErrorMessage;
+        public StatisticsReportViewModel? Report => report;
+        public string? ReportErrorMessage => reportErrorMessage;
         public ICommand PreviousMonthCommand { get; }
         public ICommand NextMonthCommand { get; }
         public ICommand CurrentMonthCommand { get; }
@@ -71,12 +79,48 @@ namespace Dictation.Presentation.ViewModels
             OnPropertyChanged(nameof(MonthLabel));
             ((AsyncCommand)PreviousMonthCommand).NotifyCanExecuteChanged();
             ((AsyncCommand)NextMonthCommand).NotifyCanExecuteChanged();
-            return RefreshAsync(cancellationToken);
+            return RefreshCalendarAsync(cancellationToken);
         }
 
         /// <summary>异步刷新当前月份，只让最新请求更新绑定；错误留在页面内。</summary>
         /// <param name="cancellationToken">取消查询。</param>
-        public async Task RefreshAsync(CancellationToken cancellationToken = default)
+        public Task RefreshAsync(CancellationToken cancellationToken = default) =>
+            Task.WhenAll(RefreshCalendarAsync(cancellationToken), RefreshReportAsync(cancellationToken));
+
+        /// <summary>独立刷新报表；月份导航不重复查询与月份无关的统计。</summary>
+        /// <param name="cancellationToken">取消本次报表读取。</param>
+        public async Task RefreshReportAsync(CancellationToken cancellationToken = default)
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            if (!initialized) throw new InvalidOperationException("请先初始化统计语言。");
+            cancellationToken.ThrowIfCancellationRequested();
+            var version = Interlocked.Increment(ref reportVersion);
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lifetime.Token);
+            try
+            {
+                var result = await reports.LoadAsync(language, linked.Token);
+                linked.Token.ThrowIfCancellationRequested();
+                if (disposed || version != Volatile.Read(ref reportVersion)) return;
+                if (result.Language != language) throw new InvalidDataException("报表语言与页面不符。");
+                report = new StatisticsReportViewModel(result);
+                reportErrorMessage = null;
+            }
+            catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { return; }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception exception)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (disposed || version != Volatile.Read(ref reportVersion)) return;
+                report = null;
+                reportErrorMessage = $"读取统计失败：{exception.Message}";
+            }
+            OnPropertyChanged(nameof(Report));
+            OnPropertyChanged(nameof(ReportErrorMessage));
+        }
+
+        /// <summary>只刷新当前月份的日历并隔离迟到结果。</summary>
+        /// <param name="cancellationToken">取消月历查询。</param>
+        private async Task RefreshCalendarAsync(CancellationToken cancellationToken = default)
         {
             ObjectDisposedException.ThrowIf(disposed, this);
             if (!initialized) throw new InvalidOperationException("请先初始化统计语言。");
