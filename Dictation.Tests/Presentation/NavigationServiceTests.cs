@@ -178,7 +178,7 @@ namespace Dictation.Tests.Presentation
         {
             using var fixture = new NavigationFixture();
             using var overlay = new OverlayService();
-            var shell = new ShellViewModel(fixture.Navigation, overlay, fixture.Navigation);
+            var shell = new ShellViewModel(fixture.Navigation, overlay, fixture.Navigation, fixture.Navigation);
             var transitions = new List<NavigationTransitionEventArgs>();
             shell.TransitionRequested += (_, args) => transitions.Add(args);
             fixture.Navigation.InitializeHome(fixture.HomeViewModel);

@@ -287,6 +287,16 @@
                 </Button>
                 <TextBlock Text="{Binding KanaProgressErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
 
+                <Button Command="{Binding DataContext.OpenStatisticsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                        HorizontalContentAlignment="Stretch" Style="{StaticResource LanguageCardButtonStyle}" Margin="0,12,0,0" Padding="18,14">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock FontSize="25" Foreground="{DynamicResource AccentBrush}" Text="◷" />
+                        <StackPanel Margin="14,0,0,0">
+                            <TextBlock FontSize="17" FontWeight="SemiBold" Text="学习足迹" />
+                            <TextBlock Margin="0,3,0,0" Text="打卡日历与词汇、记忆趋势" Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Button>
                 <Button Command="{Binding OpenWrongAnswersCommand}" HorizontalContentAlignment="Stretch"
                         Style="{StaticResource LanguageCardButtonStyle}" Margin="0,12,0,0" Padding="18,14">
                     <StackPanel Orientation="Horizontal">

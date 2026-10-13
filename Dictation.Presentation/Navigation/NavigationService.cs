@@ -14,6 +14,7 @@ namespace Dictation.Presentation.Navigation
     internal sealed class NavigationService :
         IHomeNavigation,
         IMcpSettingsNavigation,
+        IStatisticsNavigation,
         IKanaSessionNavigation,
         IWrongAnswerNavigation,
         ILearningSessionNavigation,
@@ -77,6 +78,29 @@ namespace Dictation.Presentation.Navigation
             OnPropertyChanged(nameof(PageTitle));
             OnPropertyChanged(nameof(CanGoBack));
             OnPropertyChanged(nameof(LastDirection));
+        }
+
+        /// <inheritdoc />
+        public async Task OpenStatisticsAsync(LearningLanguage language, CancellationToken cancellationToken = default)
+        {
+            ValidateLanguage(language);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (currentEntry?.ViewModel is not HomeViewModel home || home.SelectedLanguage != language)
+                throw new InvalidOperationException("请从当前语言首页进入统计。");
+            if (!TryPrepareForwardNavigation()) return;
+            var scope = scopeFactory.CreateScope();
+            try
+            {
+                var viewModel = scope.ServiceProvider.GetRequiredService<StatisticsViewModel>();
+                viewModel.Initialize(language);
+                NavigateForward(new NavigationEntry(viewModel, viewModel.WindowTitle, language, scope, viewModel.RefreshAsync));
+                await viewModel.RefreshAsync(cancellationToken);
+            }
+            catch
+            {
+                if (!ReferenceEquals(currentEntry?.Scope, scope) && !pendingDisposals.Any(entry => ReferenceEquals(entry.Scope, scope))) scope.Dispose();
+                throw;
+            }
         }
 
         /// <inheritdoc />

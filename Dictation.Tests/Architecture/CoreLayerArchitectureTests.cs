@@ -269,7 +269,7 @@ namespace Dictation.Tests.Architecture
                 .GetParameters()
                 .Select(parameter => parameter.ParameterType)
                 .ToArray();
-            Assert.Equal(new[] { typeof(INavigationHost), typeof(IOverlayHost), typeof(IMcpSettingsNavigation) }, shellParameters);
+            Assert.Equal(new[] { typeof(INavigationHost), typeof(IOverlayHost), typeof(IMcpSettingsNavigation), typeof(IStatisticsNavigation) }, shellParameters);
             Assert.Single(typeof(IMcpSettingsNavigation).GetMethods());
             Assert.DoesNotContain(
                 typeof(ShellViewModel).GetProperties(BindingFlags.Public | BindingFlags.Instance),

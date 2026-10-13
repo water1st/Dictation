@@ -20,16 +20,19 @@ namespace Dictation.Presentation.Shell
         /// <param name="navigationHost">提供导航状态和转场生命周期的宿主能力。</param>
         /// <param name="overlayHost">提供弹层显示状态和完成操作的宿主能力。</param>
         /// <param name="settingsNavigation">仅进入AI设置的导航能力。</param>
+        /// <param name="statisticsNavigation">仅从当前首页进入固定语言统计的能力。</param>
         public ShellViewModel(
             INavigationHost navigationHost,
             IOverlayHost overlayHost,
-            IMcpSettingsNavigation settingsNavigation)
+            IMcpSettingsNavigation settingsNavigation,
+            IStatisticsNavigation statisticsNavigation)
         {
             this.navigationHost = navigationHost
                 ?? throw new ArgumentNullException(nameof(navigationHost));
             this.overlayHost = overlayHost
                 ?? throw new ArgumentNullException(nameof(overlayHost));
             ArgumentNullException.ThrowIfNull(settingsNavigation);
+            ArgumentNullException.ThrowIfNull(statisticsNavigation);
             GoBackCommand = new AsyncCommand(async () =>
             {
                 await this.navigationHost.GoBackAsync();
@@ -38,6 +41,8 @@ namespace Dictation.Presentation.Shell
             CancelOverlayCommand = new RelayCommand(this.overlayHost.Cancel);
             DismissOverlayCommand = new RelayCommand(this.overlayHost.Dismiss);
             OpenMcpSettingsCommand = new AsyncCommand(() => settingsNavigation.OpenMcpSettingsAsync());
+            OpenStatisticsCommand = new AsyncCommand(() => statisticsNavigation.OpenStatisticsAsync(
+                this.navigationHost.CurrentPage is HomeViewModel home ? home.SelectedLanguage : throw new InvalidOperationException("请从首页进入统计。")));
             this.navigationHost.PropertyChanged += OnNavigationPropertyChanged;
             this.overlayHost.PropertyChanged += OnOverlayPropertyChanged;
         }
@@ -66,6 +71,7 @@ namespace Dictation.Presentation.Shell
 
         public ICommand GoBackCommand { get; }
         public ICommand OpenMcpSettingsCommand { get; }
+        public ICommand OpenStatisticsCommand { get; }
 
         public ICommand AcceptOverlayCommand { get; }
 

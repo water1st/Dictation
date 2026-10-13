@@ -30,6 +30,8 @@ namespace Dictation.Presentation
             services.AddSingleton<HomeViewModel>();
             services.AddSingleton<NavigationService>();
             services.AddSingleton<IMcpSettingsNavigation>(provider => provider.GetRequiredService<NavigationService>());
+            services.AddSingleton<IStatisticsNavigation>(provider => provider.GetRequiredService<NavigationService>());
+            services.AddScoped<StatisticsViewModel>();
             services.AddSingleton<IHomeNavigation>(serviceProvider =>
                 serviceProvider.GetRequiredService<NavigationService>());
             services.AddSingleton<IKanaSessionNavigation>(serviceProvider => serviceProvider.GetRequiredService<NavigationService>());
