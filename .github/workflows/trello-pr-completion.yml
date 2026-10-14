@@ -2,13 +2,29 @@ name: Complete Trello Task after merge
 
 on:
   pull_request:
-    types: [closed]
+    types: [opened, synchronize, reopened, closed]
     branches: [master]
 
 permissions:
   contents: read
 
 jobs:
+  validate-script:
+    if: ${{ github.event.action != 'closed' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check synchronization script syntax
+        run: node --check .github/scripts/trello-pr-completion.mjs
+
   complete-trello-task:
     if: ${{ github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
