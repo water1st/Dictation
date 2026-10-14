@@ -3,12 +3,11 @@
   "githubRepository": "water1st/Dictation",
   "programVersion": "2.0.0",
   "prBaseBranch": "master",
-  "technicalReferenceBranch": "codex/dictation-refactor",
   "trello": {
     "boardName": "Development Hub",
     "projectLabel": {
       "name": "Dictation",
-      "color": "yellow"
+      "color": "blue"
     }
   }
 }
