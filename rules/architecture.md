@@ -1,6 +1,6 @@
 # Architecture and Verified Target Structure
 
-> 技术事实取自 Dictation `codex/dictation-refactor` 已批准的参考架构；本 PR 基于旧版 `master`，此处描述目标结构，**不宣称 `master` 已实现这些模块和表**。项目版本信息以 `ProjectInfo.json` 为准；SDK 补丁号不在架构中锁死。
+> 项目架构、数据库结构以当前仓库源代码和正式迁移定义为准；项目程序版本由 `ProjectInfo.json` 管理。
 
 ## Project
 
@@ -29,470 +29,565 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。已�
 
 ## SQLite User Database Tables
 
-本节按目标参考分支的实际迁移定义记录用户数据库的表字段、SQLite 类型、主外键、CHECK、UNIQUE 等约束；表定义及后续添加字段按来源保留，需以完整迁移顺序应用的实际结果为准。引入此文档并不执行任何迁移。
+本节记录 SQLite 用户数据库最终有效的字段、类型和约束。数据库定义以实际迁移执行结果为准。
 
 **迁移定义来源**：`Dictation.DataAccess/Runtime/SchemaMigrationRunner.cs`；`Dictation.DataAccess/Kana/KanaSchemaMigration.cs`；`Dictation.DataAccess/Statistics/StatisticsSchemaMigration.cs`；`Dictation.DataAccess/Statistics/LearningCompletionHistoryMigration.cs`。
 
 ### DailyPlanSnapshots
 
-```sql
-CREATE TABLE DailyPlanSnapshots (
-                Language TEXT NOT NULL CHECK (Language IN ('Japanese','English')),
-                LocalDate TEXT NOT NULL,
-                LearningTarget INTEGER NOT NULL CHECK (LearningTarget>=0),
-                ReviewTarget INTEGER NOT NULL CHECK (ReviewTarget>=0),
-                KanaTarget INTEGER NOT NULL CHECK (KanaTarget>=0 AND (Language='Japanese' OR KanaTarget=0)),
-                PRIMARY KEY (Language,LocalDate)
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| Language | TEXT | 否 | — | CHECK (Language IN ('Japanese','English')) | — |
+| LocalDate | TEXT | 否 | — | — | — |
+| LearningTarget | INTEGER | 否 | — | CHECK (LearningTarget>=0) | — |
+| ReviewTarget | INTEGER | 否 | — | CHECK (ReviewTarget>=0) | — |
+| KanaTarget | INTEGER | 否 | — | CHECK (KanaTarget>=0 AND (Language='Japanese' OR KanaTarget=0)) | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (Language,LocalDate) |
+
 
 ### ImportBatchItems
 
-```sql
-CREATE TABLE ImportBatchItems (
-                        ItemId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                        BatchId TEXT NOT NULL,
-                        SourceText TEXT NOT NULL,
-                        AnchorSourceSenseId TEXT NOT NULL,
-                        WordGroupId TEXT NULL,
-                        Decision TEXT NOT NULL CHECK (Decision IN ('Pending', 'Duplicate', 'Learning', 'Review', 'Discard')),
-                        FOREIGN KEY (BatchId) REFERENCES ImportBatches (BatchId) ON DELETE CASCADE,
-                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE SET NULL
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| ItemId | INTEGER | 否 | — | PRIMARY KEY | — |
+| BatchId | TEXT | 否 | — | — | — |
+| SourceText | TEXT | 否 | — | — | — |
+| AnchorSourceSenseId | TEXT | 否 | — | — | — |
+| WordGroupId | TEXT | 是 | — | — | — |
+| Decision | TEXT | 否 | — | CHECK (Decision IN ('Pending', 'Duplicate', 'Learning', 'Review', 'Discard')) | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| FOREIGN KEY (BatchId) REFERENCES ImportBatches (BatchId) ON DELETE CASCADE |
+| FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE SET NULL |
+
 
 ### ImportBatches
 
-```sql
-CREATE TABLE ImportBatches (
-                        BatchId TEXT NOT NULL PRIMARY KEY,
-                        Language TEXT NOT NULL CHECK (Language IN ('Japanese', 'English')),
-                        SourceKind TEXT NOT NULL CHECK (SourceKind IN ('Manual', 'Text', 'Mcp')),
-                        Status TEXT NOT NULL CHECK (Status IN ('Pending', 'Completed')),
-                        CreatedAtUtc TEXT NOT NULL,
-                        CompletedAtUtc TEXT NULL
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| BatchId | TEXT | 否 | — | PRIMARY KEY | — |
+| Language | TEXT | 否 | — | CHECK (Language IN ('Japanese', 'English')) | — |
+| SourceKind | TEXT | 否 | — | CHECK (SourceKind IN ('Manual', 'Text', 'Mcp')) | — |
+| Status | TEXT | 否 | — | CHECK (Status IN ('Pending', 'Completed')) | — |
+| CreatedAtUtc | TEXT | 否 | — | — | — |
+| CompletedAtUtc | TEXT | 是 | — | — | — |
+
 
 ### KanaAttempts
 
-```sql
-CREATE TABLE KanaAttempts (
-                SessionId TEXT NOT NULL,
-                QuestionOrdinal INTEGER NOT NULL CHECK (QuestionOrdinal>=0),
-                KanaId TEXT NOT NULL,
-                SubmittedText TEXT NOT NULL,
-                WasCorrect INTEGER NOT NULL CHECK (WasCorrect IN (0,1)),
-                AnsweredAtUtc TEXT NOT NULL,
-                PRIMARY KEY (SessionId,QuestionOrdinal),
-                FOREIGN KEY (SessionId,KanaId) REFERENCES KanaSessionItems(SessionId,KanaId) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| SessionId | TEXT | 否 | — | — | — |
+| QuestionOrdinal | INTEGER | 否 | — | CHECK (QuestionOrdinal>=0) | — |
+| KanaId | TEXT | 否 | — | — | — |
+| SubmittedText | TEXT | 否 | — | — | — |
+| WasCorrect | INTEGER | 否 | — | CHECK (WasCorrect IN (0,1)) | — |
+| AnsweredAtUtc | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (SessionId,QuestionOrdinal) |
+| FOREIGN KEY (SessionId,KanaId) REFERENCES KanaSessionItems(SessionId,KanaId) ON DELETE CASCADE |
+
 
 ### KanaMemories
 
-```sql
-CREATE TABLE KanaMemories (
-                KanaId TEXT PRIMARY KEY,
-                Stability REAL NOT NULL CHECK (Stability>0),
-                Difficulty REAL NOT NULL CHECK (Difficulty BETWEEN 1 AND 10),
-                LastReviewedAtUtc TEXT NOT NULL,
-                DueAtUtc TEXT NOT NULL,
-                ReviewCount INTEGER NOT NULL CHECK (ReviewCount>=1),
-                LapseCount INTEGER NOT NULL CHECK (LapseCount>=0)
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| KanaId | TEXT | 是 | — | PRIMARY KEY | — |
+| Stability | REAL | 否 | — | CHECK (Stability>0) | — |
+| Difficulty | REAL | 否 | — | CHECK (Difficulty BETWEEN 1 AND 10) | — |
+| LastReviewedAtUtc | TEXT | 否 | — | — | — |
+| DueAtUtc | TEXT | 否 | — | — | — |
+| ReviewCount | INTEGER | 否 | — | CHECK (ReviewCount>=1) | — |
+| LapseCount | INTEGER | 否 | — | CHECK (LapseCount>=0) | — |
+
 
 ### KanaPlans
 
-```sql
-CREATE TABLE KanaPlans (
-                Id INTEGER PRIMARY KEY CHECK (Id=1),
-                Enabled INTEGER NOT NULL CHECK (Enabled IN (0,1)),
-                Hiragana INTEGER NOT NULL CHECK (Hiragana IN (0,1)),
-                Katakana INTEGER NOT NULL CHECK (Katakana IN (0,1)),
-                Clear INTEGER NOT NULL CHECK (Clear IN (0,1)),
-                Voiced INTEGER NOT NULL CHECK (Voiced IN (0,1)),
-                Contracted INTEGER NOT NULL CHECK (Contracted IN (0,1)),
-                ReviewAll INTEGER NOT NULL CHECK (ReviewAll IN (0,1)),
-                DailyTarget INTEGER NOT NULL CHECK (DailyTarget BETWEEN 1 AND 214),
-                CHECK (Hiragana + Katakana >= 1),
-                CHECK (Clear + Voiced + Contracted >= 1)
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| Id | INTEGER | 是 | — | PRIMARY KEY; CHECK (Id=1) | — |
+| Enabled | INTEGER | 否 | — | CHECK (Enabled IN (0,1)) | — |
+| Hiragana | INTEGER | 否 | — | CHECK (Hiragana IN (0,1)) | — |
+| Katakana | INTEGER | 否 | — | CHECK (Katakana IN (0,1)) | — |
+| Clear | INTEGER | 否 | — | CHECK (Clear IN (0,1)) | — |
+| Voiced | INTEGER | 否 | — | CHECK (Voiced IN (0,1)) | — |
+| Contracted | INTEGER | 否 | — | CHECK (Contracted IN (0,1)) | — |
+| ReviewAll | INTEGER | 否 | — | CHECK (ReviewAll IN (0,1)) | — |
+| DailyTarget | INTEGER | 否 | — | CHECK (DailyTarget BETWEEN 1 AND 214) | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| CHECK (Hiragana + Katakana >= 1) |
+| CHECK (Clear + Voiced + Contracted >= 1) |
+
 
 ### KanaSessionItems
 
-```sql
-CREATE TABLE KanaSessionItems (
-                SessionId TEXT NOT NULL,
-                KanaId TEXT NOT NULL,
-                Text TEXT NOT NULL,
-                Reading TEXT NOT NULL,
-                RowHint TEXT NOT NULL,
-                Script TEXT NOT NULL CHECK (Script IN ('Hiragana','Katakana')),
-                Range TEXT NOT NULL CHECK (Range IN ('Clear','Voiced','Contracted')),
-                QueueOrder INTEGER NOT NULL CHECK (QueueOrder>=0),
-                HasWrong INTEGER NOT NULL DEFAULT 0 CHECK (HasWrong IN (0,1)),
-                CorrectStreak INTEGER NOT NULL DEFAULT 0 CHECK (CorrectStreak>=0),
-                NextEligibleOrdinal INTEGER NOT NULL DEFAULT 0 CHECK (NextEligibleOrdinal>=0),
-                IsCompleted INTEGER NOT NULL DEFAULT 0 CHECK (IsCompleted IN (0,1)),
-                CompletedLocalDate TEXT NULL,
-                PRIMARY KEY (SessionId,KanaId),
-                FOREIGN KEY (SessionId) REFERENCES KanaSessions(SessionId) ON DELETE CASCADE,
-                CHECK ((IsCompleted=0 AND CompletedLocalDate IS NULL) OR (IsCompleted=1 AND CompletedLocalDate IS NOT NULL))
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| SessionId | TEXT | 否 | — | — | — |
+| KanaId | TEXT | 否 | — | — | — |
+| Text | TEXT | 否 | — | — | — |
+| Reading | TEXT | 否 | — | — | — |
+| RowHint | TEXT | 否 | — | — | — |
+| Script | TEXT | 否 | — | CHECK (Script IN ('Hiragana','Katakana')) | — |
+| Range | TEXT | 否 | — | CHECK (Range IN ('Clear','Voiced','Contracted')) | — |
+| QueueOrder | INTEGER | 否 | — | CHECK (QueueOrder>=0) | — |
+| HasWrong | INTEGER | 否 | 0 | CHECK (HasWrong IN (0,1)) | — |
+| CorrectStreak | INTEGER | 否 | 0 | CHECK (CorrectStreak>=0) | — |
+| NextEligibleOrdinal | INTEGER | 否 | 0 | CHECK (NextEligibleOrdinal>=0) | — |
+| IsCompleted | INTEGER | 否 | 0 | CHECK (IsCompleted IN (0,1)) | — |
+| CompletedLocalDate | TEXT | 是 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (SessionId,KanaId) |
+| FOREIGN KEY (SessionId) REFERENCES KanaSessions(SessionId) ON DELETE CASCADE |
+| CHECK ((IsCompleted=0 AND CompletedLocalDate IS NULL) OR (IsCompleted=1 AND CompletedLocalDate IS NOT NULL)) |
+
 
 ### KanaSessions
 
-```sql
-CREATE TABLE KanaSessions (
-                SessionId TEXT PRIMARY KEY,
-                StartedLocalDate TEXT NOT NULL,
-                Status TEXT NOT NULL CHECK (Status IN ('Active','Completed')),
-                QuestionOrdinal INTEGER NOT NULL CHECK (QuestionOrdinal>=0),
-                CurrentKanaId TEXT NULL,
-                CHECK ((Status='Active' AND CurrentKanaId IS NOT NULL) OR (Status='Completed' AND CurrentKanaId IS NULL))
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| SessionId | TEXT | 是 | — | PRIMARY KEY | — |
+| StartedLocalDate | TEXT | 否 | — | — | — |
+| Status | TEXT | 否 | — | CHECK (Status IN ('Active','Completed')) | — |
+| QuestionOrdinal | INTEGER | 否 | — | CHECK (QuestionOrdinal>=0) | — |
+| CurrentKanaId | TEXT | 是 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| CHECK ((Status='Active' AND CurrentKanaId IS NOT NULL) OR (Status='Completed' AND CurrentKanaId IS NULL)) |
+
 
 ### LearningCompletionDates
 
-```sql
-CREATE TABLE LearningCompletionDates (
-                WordGroupId TEXT NOT NULL,
-                LocalDate TEXT NOT NULL,
-                PRIMARY KEY (WordGroupId,LocalDate),
-                FOREIGN KEY (WordGroupId) REFERENCES WordGroups(WordGroupId) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| WordGroupId | TEXT | 否 | — | — | — |
+| LocalDate | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (WordGroupId,LocalDate) |
+| FOREIGN KEY (WordGroupId) REFERENCES WordGroups(WordGroupId) ON DELETE CASCADE |
+
 
 ### LearningFormStates
 
-```sql
-CREATE TABLE LearningFormStates (
-                        WordGroupId TEXT NOT NULL,
-                        MemberId INTEGER NOT NULL,
-                        FormCode TEXT NOT NULL,
-                        CorrectStreak INTEGER NOT NULL DEFAULT 0 CHECK (CorrectStreak BETWEEN 0 AND 2),
-                        IsMastered INTEGER NOT NULL DEFAULT 0 CHECK (IsMastered IN (0, 1)),
-                        NextEligibleOrdinal INTEGER NOT NULL DEFAULT 0 CHECK (NextEligibleOrdinal >= 0),
-                        MeaningWritingCount INTEGER NOT NULL DEFAULT 0 CHECK (MeaningWritingCount >= 0),
-                        DictationCount INTEGER NOT NULL DEFAULT 0 CHECK (DictationCount >= 0),
-                        LatinCount INTEGER NOT NULL DEFAULT 0 CHECK (LatinCount >= 0),
-                        KanaCount INTEGER NOT NULL DEFAULT 0 CHECK (KanaCount >= 0),
-                        KanjiCount INTEGER NOT NULL DEFAULT 0 CHECK (KanjiCount >= 0),
-                        CorrectCount INTEGER NOT NULL DEFAULT 0 CHECK (CorrectCount >= 0),
-                        ErrorCount INTEGER NOT NULL DEFAULT 0 CHECK (ErrorCount >= 0),
-                        LastAnsweredAtUtc TEXT NULL,
-                        PRIMARY KEY (WordGroupId, MemberId, FormCode),
-                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE,
-                        FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| WordGroupId | TEXT | 否 | — | — | — |
+| MemberId | INTEGER | 否 | — | — | — |
+| FormCode | TEXT | 否 | — | — | — |
+| CorrectStreak | INTEGER | 否 | 0 | CHECK (CorrectStreak BETWEEN 0 AND 2) | — |
+| IsMastered | INTEGER | 否 | 0 | CHECK (IsMastered IN (0, 1)) | — |
+| NextEligibleOrdinal | INTEGER | 否 | 0 | CHECK (NextEligibleOrdinal >= 0) | — |
+| MeaningWritingCount | INTEGER | 否 | 0 | CHECK (MeaningWritingCount >= 0) | — |
+| DictationCount | INTEGER | 否 | 0 | CHECK (DictationCount >= 0) | — |
+| LatinCount | INTEGER | 否 | 0 | CHECK (LatinCount >= 0) | — |
+| KanaCount | INTEGER | 否 | 0 | CHECK (KanaCount >= 0) | — |
+| KanjiCount | INTEGER | 否 | 0 | CHECK (KanjiCount >= 0) | — |
+| CorrectCount | INTEGER | 否 | 0 | CHECK (CorrectCount >= 0) | — |
+| ErrorCount | INTEGER | 否 | 0 | CHECK (ErrorCount >= 0) | — |
+| LastAnsweredAtUtc | TEXT | 是 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (WordGroupId, MemberId, FormCode) |
+| FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE |
+| FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE |
+
 
 ### LearningGroupProgress
 
-```sql
-CREATE TABLE LearningGroupProgress (
-                        WordGroupId TEXT NOT NULL PRIMARY KEY,
-                        Language TEXT NOT NULL CHECK (Language IN ('Japanese', 'English')),
-                        FirstStartedLocalDate TEXT NOT NULL,
-                        CompletedLocalDate TEXT NULL,
-                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| WordGroupId | TEXT | 否 | — | PRIMARY KEY | — |
+| Language | TEXT | 否 | — | CHECK (Language IN ('Japanese', 'English')) | — |
+| FirstStartedLocalDate | TEXT | 否 | — | — | — |
+| CompletedLocalDate | TEXT | 是 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE |
+
 
 ### LearningPlanChannels
 
-```sql
-CREATE TABLE LearningPlanChannels (
-                        Language TEXT NOT NULL,
-                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
-                        Channel TEXT NOT NULL CHECK (Channel IN ('MeaningWriting', 'Dictation')),
-                        PRIMARY KEY (Language, SortOrder),
-                        UNIQUE (Language, Channel),
-                        FOREIGN KEY (Language) REFERENCES LearningPlans (Language) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| Language | TEXT | 否 | — | — | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
+| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting', 'Dictation')) | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (Language, SortOrder) |
+| UNIQUE (Language, Channel) |
+| FOREIGN KEY (Language) REFERENCES LearningPlans (Language) ON DELETE CASCADE |
+
 
 ### LearningPlanForms
 
-```sql
-CREATE TABLE LearningPlanForms (
-                        Language TEXT NOT NULL,
-                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
-                        FormCode TEXT NOT NULL CHECK (length(trim(FormCode)) > 0),
-                        PRIMARY KEY (Language, SortOrder),
-                        UNIQUE (Language, FormCode),
-                        FOREIGN KEY (Language) REFERENCES LearningPlans (Language) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| Language | TEXT | 否 | — | — | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
+| FormCode | TEXT | 否 | — | CHECK (length(trim(FormCode)) > 0) | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (Language, SortOrder) |
+| UNIQUE (Language, FormCode) |
+| FOREIGN KEY (Language) REFERENCES LearningPlans (Language) ON DELETE CASCADE |
+
 
 ### LearningPlanOutputs
 
-```sql
-CREATE TABLE LearningPlanOutputs (
-                        Language TEXT NOT NULL,
-                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
-                        OutputMode TEXT NOT NULL CHECK (OutputMode IN ('Latin', 'Kana', 'Kanji')),
-                        PRIMARY KEY (Language, SortOrder),
-                        UNIQUE (Language, OutputMode),
-                        FOREIGN KEY (Language) REFERENCES LearningPlans (Language) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| Language | TEXT | 否 | — | — | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
+| OutputMode | TEXT | 否 | — | CHECK (OutputMode IN ('Latin', 'Kana', 'Kanji')) | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (Language, SortOrder) |
+| UNIQUE (Language, OutputMode) |
+| FOREIGN KEY (Language) REFERENCES LearningPlans (Language) ON DELETE CASCADE |
+
 
 ### LearningPlans
 
-```sql
-CREATE TABLE LearningPlans (
-                        Language TEXT NOT NULL PRIMARY KEY CHECK (Language IN ('Japanese', 'English')),
-                        DailyNewTarget INTEGER NOT NULL CHECK (DailyNewTarget BETWEEN 1 AND 500),
-                        SessionWordLimit INTEGER NOT NULL CHECK (SessionWordLimit BETWEEN 1 AND 500),
-                        SelectionMode TEXT NOT NULL CHECK (SelectionMode IN ('Random', 'Sequential', 'Manual')),
-                        EnglishFormLabelMode TEXT NOT NULL CHECK (EnglishFormLabelMode IN ('GrammarName', 'ExampleParadigm')),
-                        EnglishExampleSourceSenseId TEXT NULL,
-                        UpdatedAtUtc TEXT NOT NULL,
-                        CHECK (
-                            Language = 'English'
-                            OR (EnglishFormLabelMode = 'GrammarName' AND EnglishExampleSourceSenseId IS NULL)
-                        )
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| Language | TEXT | 否 | — | PRIMARY KEY; CHECK (Language IN ('Japanese', 'English')) | — |
+| DailyNewTarget | INTEGER | 否 | — | CHECK (DailyNewTarget BETWEEN 1 AND 500) | — |
+| SessionWordLimit | INTEGER | 否 | — | CHECK (SessionWordLimit BETWEEN 1 AND 500) | — |
+| SelectionMode | TEXT | 否 | — | CHECK (SelectionMode IN ('Random', 'Sequential', 'Manual')) | — |
+| EnglishFormLabelMode | TEXT | 否 | — | CHECK (EnglishFormLabelMode IN ('GrammarName', 'ExampleParadigm')) | — |
+| EnglishExampleSourceSenseId | TEXT | 是 | — | — | — |
+| UpdatedAtUtc | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| CHECK ( Language = 'English' OR (EnglishFormLabelMode = 'GrammarName' AND EnglishExampleSourceSenseId IS NULL) ) |
+
 
 ### LearningQuestionAttempts
 
-```sql
-CREATE TABLE LearningQuestionAttempts (
-                        AttemptId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                        QuestionId INTEGER NOT NULL UNIQUE,
-                        SubmittedText TEXT NOT NULL,
-                        WasCorrect INTEGER NOT NULL CHECK (WasCorrect IN (0, 1)),
-                        AnsweredAtUtc TEXT NOT NULL,
-                        FOREIGN KEY (QuestionId) REFERENCES LearningQuestions (QuestionId) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| AttemptId | INTEGER | 否 | — | PRIMARY KEY | — |
+| QuestionId | INTEGER | 否 | — | UNIQUE | — |
+| SubmittedText | TEXT | 否 | — | — | — |
+| WasCorrect | INTEGER | 否 | — | CHECK (WasCorrect IN (0, 1)) | — |
+| AnsweredAtUtc | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| FOREIGN KEY (QuestionId) REFERENCES LearningQuestions (QuestionId) ON DELETE CASCADE |
+
 
 ### LearningQuestions
 
-```sql
-CREATE TABLE LearningQuestions (
-                        QuestionId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                        SessionId TEXT NOT NULL,
-                        WordGroupId TEXT NOT NULL,
-                        MemberId INTEGER NOT NULL,
-                        FormCode TEXT NOT NULL,
-                        Channel TEXT NOT NULL CHECK (Channel IN ('MeaningWriting', 'Dictation')),
-                        OutputMode TEXT NOT NULL CHECK (OutputMode IN ('Latin', 'Kana', 'Kanji')),
-                        QuestionOrdinal INTEGER NOT NULL CHECK (QuestionOrdinal >= 0),
-                        Status TEXT NOT NULL CHECK (Status IN ('Pending', 'Answered')),
-                        CreatedAtUtc TEXT NOT NULL,
-                        UNIQUE (SessionId, QuestionOrdinal),
-                        FOREIGN KEY (SessionId) REFERENCES LearningSessions (SessionId) ON DELETE CASCADE,
-                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE,
-                        FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| QuestionId | INTEGER | 否 | — | PRIMARY KEY | — |
+| SessionId | TEXT | 否 | — | — | — |
+| WordGroupId | TEXT | 否 | — | — | — |
+| MemberId | INTEGER | 否 | — | — | — |
+| FormCode | TEXT | 否 | — | — | — |
+| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting', 'Dictation')) | — |
+| OutputMode | TEXT | 否 | — | CHECK (OutputMode IN ('Latin', 'Kana', 'Kanji')) | — |
+| QuestionOrdinal | INTEGER | 否 | — | CHECK (QuestionOrdinal >= 0) | — |
+| Status | TEXT | 否 | — | CHECK (Status IN ('Pending', 'Answered')) | — |
+| CreatedAtUtc | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| UNIQUE (SessionId, QuestionOrdinal) |
+| FOREIGN KEY (SessionId) REFERENCES LearningSessions (SessionId) ON DELETE CASCADE |
+| FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE |
+| FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE |
+
 
 ### LearningSessionGroups
 
-```sql
-CREATE TABLE LearningSessionGroups (
-                        SessionId TEXT NOT NULL,
-                        WordGroupId TEXT NOT NULL,
-                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
-                        PRIMARY KEY (SessionId, WordGroupId),
-                        UNIQUE (SessionId, SortOrder),
-                        FOREIGN KEY (SessionId) REFERENCES LearningSessions (SessionId) ON DELETE CASCADE,
-                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| SessionId | TEXT | 否 | — | — | — |
+| WordGroupId | TEXT | 否 | — | — | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (SessionId, WordGroupId) |
+| UNIQUE (SessionId, SortOrder) |
+| FOREIGN KEY (SessionId) REFERENCES LearningSessions (SessionId) ON DELETE CASCADE |
+| FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE |
+
 
 ### LearningSessions
 
-```sql
-CREATE TABLE LearningSessions (
-                        SessionId TEXT NOT NULL PRIMARY KEY,
-                        Language TEXT NOT NULL CHECK (Language IN ('Japanese', 'English')),
-                        Status TEXT NOT NULL CHECK (Status IN ('InProgress', 'Completed')),
-                        CurrentOrdinal INTEGER NOT NULL DEFAULT 0 CHECK (CurrentOrdinal >= 0),
-                        CreatedAtUtc TEXT NOT NULL,
-                        CompletedAtUtc TEXT NULL
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| SessionId | TEXT | 否 | — | PRIMARY KEY | — |
+| Language | TEXT | 否 | — | CHECK (Language IN ('Japanese', 'English')) | — |
+| Status | TEXT | 否 | — | CHECK (Status IN ('InProgress', 'Completed')) | — |
+| CurrentOrdinal | INTEGER | 否 | 0 | CHECK (CurrentOrdinal >= 0) | — |
+| CreatedAtUtc | TEXT | 否 | — | — | — |
+| CompletedAtUtc | TEXT | 是 | — | — | — |
+
 
 ### LearningSharedAnswerAttempts
 
-```sql
-CREATE TABLE LearningSharedAnswerAttempts (
-                        SessionId TEXT NOT NULL,
-                        QuestionId INTEGER NOT NULL,
-                        QuestionOrdinal INTEGER NOT NULL CHECK (QuestionOrdinal >= 0),
-                        WordGroupId TEXT NOT NULL,
-                        MemberId INTEGER NOT NULL,
-                        FormCode TEXT NOT NULL,
-                        Channel TEXT NOT NULL CHECK (Channel IN ('MeaningWriting','Dictation')),
-                        OutputMode TEXT NOT NULL CHECK (OutputMode IN ('Latin','Kana','Kanji')),
-                        SubmittedText TEXT NOT NULL,
-                        WasCorrect INTEGER NOT NULL CHECK (WasCorrect IN (0,1)),
-                        AnsweredAtUtc TEXT NOT NULL,
-                        PRIMARY KEY (SessionId, QuestionOrdinal, MemberId, FormCode),
-                        FOREIGN KEY (SessionId, WordGroupId) REFERENCES LearningSessionGroups (SessionId, WordGroupId) ON DELETE CASCADE,
-                        FOREIGN KEY (WordGroupId, MemberId, FormCode) REFERENCES LearningFormStates (WordGroupId, MemberId, FormCode) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| SessionId | TEXT | 否 | — | — | — |
+| QuestionId | INTEGER | 否 | — | — | — |
+| QuestionOrdinal | INTEGER | 否 | — | CHECK (QuestionOrdinal >= 0) | — |
+| WordGroupId | TEXT | 否 | — | — | — |
+| MemberId | INTEGER | 否 | — | — | — |
+| FormCode | TEXT | 否 | — | — | — |
+| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting','Dictation')) | — |
+| OutputMode | TEXT | 否 | — | CHECK (OutputMode IN ('Latin','Kana','Kanji')) | — |
+| SubmittedText | TEXT | 否 | — | — | — |
+| WasCorrect | INTEGER | 否 | — | CHECK (WasCorrect IN (0,1)) | — |
+| AnsweredAtUtc | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (SessionId, QuestionOrdinal, MemberId, FormCode) |
+| FOREIGN KEY (SessionId, WordGroupId) REFERENCES LearningSessionGroups (SessionId, WordGroupId) ON DELETE CASCADE |
+| FOREIGN KEY (WordGroupId, MemberId, FormCode) REFERENCES LearningFormStates (WordGroupId, MemberId, FormCode) ON DELETE CASCADE |
+
 
 ### ReviewAnswerAttempts
 
-```sql
-CREATE TABLE ReviewAnswerAttempts (
-                        SessionId TEXT NOT NULL,
-                        QuestionId INTEGER NOT NULL,
-                        QuestionOrdinal INTEGER NOT NULL CHECK (QuestionOrdinal >= 0),
-                        WordGroupId TEXT NOT NULL,
-                        MemberId INTEGER NOT NULL,
-                        FormCode TEXT NOT NULL,
-                        Channel TEXT NOT NULL CHECK (Channel IN ('MeaningWriting','Dictation')),
-                        OutputMode TEXT NOT NULL CHECK (OutputMode IN ('Latin','Kana','Kanji')),
-                        SubmittedText TEXT NOT NULL,
-                        WasCorrect INTEGER NOT NULL CHECK (WasCorrect IN (0,1)),
-                        AnsweredAtUtc TEXT NOT NULL,
-                        PRIMARY KEY (SessionId, QuestionOrdinal, MemberId, FormCode),
-                        FOREIGN KEY (SessionId, WordGroupId) REFERENCES ReviewSessionGroups (SessionId, WordGroupId) ON DELETE CASCADE,
-                        FOREIGN KEY (SessionId, MemberId, FormCode) REFERENCES ReviewSessionForms (SessionId, MemberId, FormCode) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| SessionId | TEXT | 否 | — | — | — |
+| QuestionId | INTEGER | 否 | — | — | — |
+| QuestionOrdinal | INTEGER | 否 | — | CHECK (QuestionOrdinal >= 0) | — |
+| WordGroupId | TEXT | 否 | — | — | — |
+| MemberId | INTEGER | 否 | — | — | — |
+| FormCode | TEXT | 否 | — | — | — |
+| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting','Dictation')) | — |
+| OutputMode | TEXT | 否 | — | CHECK (OutputMode IN ('Latin','Kana','Kanji')) | — |
+| SubmittedText | TEXT | 否 | — | — | — |
+| WasCorrect | INTEGER | 否 | — | CHECK (WasCorrect IN (0,1)) | — |
+| AnsweredAtUtc | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (SessionId, QuestionOrdinal, MemberId, FormCode) |
+| FOREIGN KEY (SessionId, WordGroupId) REFERENCES ReviewSessionGroups (SessionId, WordGroupId) ON DELETE CASCADE |
+| FOREIGN KEY (SessionId, MemberId, FormCode) REFERENCES ReviewSessionForms (SessionId, MemberId, FormCode) ON DELETE CASCADE |
+
 
 ### ReviewFormMemories
 
-```sql
-CREATE TABLE ReviewFormMemories (
-                        WordGroupId TEXT NOT NULL,
-                        MemberId INTEGER NOT NULL,
-                        FormCode TEXT NOT NULL,
-                        Stability REAL NOT NULL CHECK (Stability > 0),
-                        Difficulty REAL NOT NULL CHECK (Difficulty BETWEEN 1 AND 10),
-                        LastReviewedAtUtc TEXT NOT NULL,
-                        DueAtUtc TEXT NOT NULL CHECK (DueAtUtc > LastReviewedAtUtc),
-                        ReviewCount INTEGER NOT NULL CHECK (ReviewCount >= 1),
-                        LapseCount INTEGER NOT NULL CHECK (LapseCount >= 0 AND LapseCount <= ReviewCount),
-                        PRIMARY KEY (MemberId, FormCode),
-                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE,
-                        FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| WordGroupId | TEXT | 否 | — | — | — |
+| MemberId | INTEGER | 否 | — | — | — |
+| FormCode | TEXT | 否 | — | — | — |
+| Stability | REAL | 否 | — | CHECK (Stability > 0) | — |
+| Difficulty | REAL | 否 | — | CHECK (Difficulty BETWEEN 1 AND 10) | — |
+| LastReviewedAtUtc | TEXT | 否 | — | — | — |
+| DueAtUtc | TEXT | 否 | — | CHECK (DueAtUtc > LastReviewedAtUtc) | — |
+| ReviewCount | INTEGER | 否 | — | CHECK (ReviewCount >= 1) | — |
+| LapseCount | INTEGER | 否 | — | CHECK (LapseCount >= 0 AND LapseCount <= ReviewCount) | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (MemberId, FormCode) |
+| FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE |
+| FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE |
+
 
 ### ReviewPlanChannels
 
-```sql
-CREATE TABLE ReviewPlanChannels (
-                        Language TEXT NOT NULL,
-                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
-                        Channel TEXT NOT NULL CHECK (Channel IN ('MeaningWriting', 'Dictation')),
-                        PRIMARY KEY (Language, Channel),
-                        UNIQUE (Language, SortOrder),
-                        FOREIGN KEY (Language) REFERENCES ReviewPlans (Language) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| Language | TEXT | 否 | — | — | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
+| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting', 'Dictation')) | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (Language, Channel) |
+| UNIQUE (Language, SortOrder) |
+| FOREIGN KEY (Language) REFERENCES ReviewPlans (Language) ON DELETE CASCADE |
+
 
 ### ReviewPlanForms
 
-```sql
-CREATE TABLE ReviewPlanForms (
-                        Language TEXT NOT NULL,
-                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
-                        FormCode TEXT NOT NULL,
-                        PRIMARY KEY (Language, FormCode),
-                        UNIQUE (Language, SortOrder),
-                        CHECK ((Language = 'Japanese' AND FormCode IN ('Dictionary', 'Polite', 'Te', 'Ta'))
-                            OR (Language = 'English' AND FormCode IN ('Base', 'PresentFirstPersonSingular', 'PresentNonThirdPerson',
-                                'ThirdPersonSingular', 'Past', 'PastParticiple', 'PresentParticiple', 'Plural', 'Comparative', 'Superlative'))),
-                        FOREIGN KEY (Language) REFERENCES ReviewPlans (Language) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| Language | TEXT | 否 | — | — | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
+| FormCode | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (Language, FormCode) |
+| UNIQUE (Language, SortOrder) |
+| CHECK ((Language = 'Japanese' AND FormCode IN ('Dictionary', 'Polite', 'Te', 'Ta')) OR (Language = 'English' AND FormCode IN ('Base', 'PresentFirstPersonSingular', 'PresentNonThirdPerson', 'ThirdPersonSingular', 'Past', 'PastParticiple', 'PresentParticiple', 'Plural', 'Comparative', 'Superlative'))) |
+| FOREIGN KEY (Language) REFERENCES ReviewPlans (Language) ON DELETE CASCADE |
+
 
 ### ReviewPlanGroups
 
-```sql
-CREATE TABLE ReviewPlanGroups (
-                        Language TEXT NOT NULL,
-                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
-                        WordGroupId TEXT NOT NULL,
-                        PRIMARY KEY (Language, WordGroupId),
-                        UNIQUE (Language, SortOrder),
-                        FOREIGN KEY (Language) REFERENCES ReviewPlans (Language) ON DELETE CASCADE,
-                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| Language | TEXT | 否 | — | — | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
+| WordGroupId | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (Language, WordGroupId) |
+| UNIQUE (Language, SortOrder) |
+| FOREIGN KEY (Language) REFERENCES ReviewPlans (Language) ON DELETE CASCADE |
+| FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE |
+
 
 ### ReviewPlanOutputs
 
-```sql
-CREATE TABLE ReviewPlanOutputs (
-                        Language TEXT NOT NULL,
-                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
-                        OutputMode TEXT NOT NULL,
-                        PRIMARY KEY (Language, OutputMode),
-                        UNIQUE (Language, SortOrder),
-                        CHECK ((Language = 'Japanese' AND OutputMode IN ('Kana', 'Kanji')) OR (Language = 'English' AND OutputMode = 'Latin')),
-                        FOREIGN KEY (Language) REFERENCES ReviewPlans (Language) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| Language | TEXT | 否 | — | — | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
+| OutputMode | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (Language, OutputMode) |
+| UNIQUE (Language, SortOrder) |
+| CHECK ((Language = 'Japanese' AND OutputMode IN ('Kana', 'Kanji')) OR (Language = 'English' AND OutputMode = 'Latin')) |
+| FOREIGN KEY (Language) REFERENCES ReviewPlans (Language) ON DELETE CASCADE |
+
 
 ### ReviewPlans
 
-```sql
-CREATE TABLE ReviewPlans (
-                        Language TEXT NOT NULL PRIMARY KEY CHECK (Language IN ('Japanese', 'English')),
-                        DailyReviewTarget INTEGER NOT NULL CHECK (DailyReviewTarget BETWEEN 1 AND 500),
-                        SessionWordLimit INTEGER NOT NULL CHECK (SessionWordLimit BETWEEN 1 AND 500),
-                        RangeMode TEXT NOT NULL CHECK (RangeMode IN ('All', 'Selected')),
-                        EnglishFormLabelMode TEXT NOT NULL CHECK (EnglishFormLabelMode IN ('GrammarName', 'ExampleParadigm')),
-                        EnglishExampleSourceSenseId TEXT,
-                        UpdatedAtUtc TEXT NOT NULL,
-                        CHECK (Language = 'English' OR (EnglishFormLabelMode = 'GrammarName' AND EnglishExampleSourceSenseId IS NULL)),
-                        CHECK ((EnglishFormLabelMode = 'GrammarName' AND EnglishExampleSourceSenseId IS NULL)
-                            OR (EnglishFormLabelMode = 'ExampleParadigm' AND EnglishExampleSourceSenseId IS NOT NULL AND LENGTH(TRIM(EnglishExampleSourceSenseId)) > 0))
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| Language | TEXT | 否 | — | PRIMARY KEY; CHECK (Language IN ('Japanese', 'English')) | — |
+| DailyReviewTarget | INTEGER | 否 | — | CHECK (DailyReviewTarget BETWEEN 1 AND 500) | — |
+| SessionWordLimit | INTEGER | 否 | — | CHECK (SessionWordLimit BETWEEN 1 AND 500) | — |
+| RangeMode | TEXT | 否 | — | CHECK (RangeMode IN ('All', 'Selected')) | — |
+| EnglishFormLabelMode | TEXT | 否 | — | CHECK (EnglishFormLabelMode IN ('GrammarName', 'ExampleParadigm')) | — |
+| EnglishExampleSourceSenseId | TEXT | 是 | — | — | — |
+| UpdatedAtUtc | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| CHECK (Language = 'English' OR (EnglishFormLabelMode = 'GrammarName' AND EnglishExampleSourceSenseId IS NULL)) |
+| CHECK ((EnglishFormLabelMode = 'GrammarName' AND EnglishExampleSourceSenseId IS NULL) OR (EnglishFormLabelMode = 'ExampleParadigm' AND EnglishExampleSourceSenseId IS NOT NULL AND LENGTH(TRIM(EnglishExampleSourceSenseId)) > 0)) |
+
 
 ### ReviewQuestions
 
-```sql
-CREATE TABLE ReviewQuestions (
-                        QuestionId INTEGER PRIMARY KEY AUTOINCREMENT,
-                        SessionId TEXT NOT NULL,
-                        WordGroupId TEXT NOT NULL,
-                        MemberId INTEGER NOT NULL,
-                        FormCode TEXT NOT NULL,
-                        Channel TEXT NOT NULL CHECK (Channel IN ('MeaningWriting', 'Dictation')),
-                        OutputMode TEXT NOT NULL CHECK (OutputMode IN ('Latin', 'Kana', 'Kanji')),
-                        QuestionOrdinal INTEGER NOT NULL CHECK (QuestionOrdinal >= 0),
-                        Status TEXT NOT NULL CHECK (Status IN ('Pending', 'Answered')),
-                        CreatedAtUtc TEXT NOT NULL,
-                        SubmittedText TEXT NULL,
-                        WasCorrect INTEGER NULL CHECK (WasCorrect IN (0, 1)),
-                        AnsweredAtUtc TEXT NULL,
-                        UNIQUE (SessionId, QuestionOrdinal),
-                        FOREIGN KEY (SessionId, WordGroupId) REFERENCES ReviewSessionGroups (SessionId, WordGroupId) ON DELETE CASCADE,
-                        FOREIGN KEY (SessionId, MemberId, FormCode) REFERENCES ReviewSessionForms (SessionId, MemberId, FormCode) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| QuestionId | INTEGER | 是 | — | PRIMARY KEY | — |
+| SessionId | TEXT | 否 | — | — | — |
+| WordGroupId | TEXT | 否 | — | — | — |
+| MemberId | INTEGER | 否 | — | — | — |
+| FormCode | TEXT | 否 | — | — | — |
+| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting', 'Dictation')) | — |
+| OutputMode | TEXT | 否 | — | CHECK (OutputMode IN ('Latin', 'Kana', 'Kanji')) | — |
+| QuestionOrdinal | INTEGER | 否 | — | CHECK (QuestionOrdinal >= 0) | — |
+| Status | TEXT | 否 | — | CHECK (Status IN ('Pending', 'Answered')) | — |
+| CreatedAtUtc | TEXT | 否 | — | — | — |
+| SubmittedText | TEXT | 是 | — | — | — |
+| WasCorrect | INTEGER | 是 | — | CHECK (WasCorrect IN (0, 1)) | — |
+| AnsweredAtUtc | TEXT | 是 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| UNIQUE (SessionId, QuestionOrdinal) |
+| FOREIGN KEY (SessionId, WordGroupId) REFERENCES ReviewSessionGroups (SessionId, WordGroupId) ON DELETE CASCADE |
+| FOREIGN KEY (SessionId, MemberId, FormCode) REFERENCES ReviewSessionForms (SessionId, MemberId, FormCode) ON DELETE CASCADE |
+
 
 ### ReviewSessionForms
 
-```sql
-CREATE TABLE ReviewSessionForms (
-                        SessionId TEXT NOT NULL,
-                        WordGroupId TEXT NOT NULL,
-                        MemberId INTEGER NOT NULL,
-                        FormCode TEXT NOT NULL CHECK (length(trim(FormCode)) > 0),
-                        PRIMARY KEY (SessionId, MemberId, FormCode),
-                        FOREIGN KEY (SessionId, WordGroupId) REFERENCES ReviewSessionGroups (SessionId, WordGroupId) ON DELETE CASCADE,
-                        FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| SessionId | TEXT | 否 | — | — | — |
+| WordGroupId | TEXT | 否 | — | — | — |
+| MemberId | INTEGER | 否 | — | — | — |
+| FormCode | TEXT | 否 | — | CHECK (length(trim(FormCode)) > 0) | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (SessionId, MemberId, FormCode) |
+| FOREIGN KEY (SessionId, WordGroupId) REFERENCES ReviewSessionGroups (SessionId, WordGroupId) ON DELETE CASCADE |
+| FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE |
+
 
 后续迁移追加的字段定义：
 
@@ -509,32 +604,35 @@ CREATE TABLE ReviewSessionForms (
 
 ### ReviewSessionGroups
 
-```sql
-CREATE TABLE ReviewSessionGroups (
-                        SessionId TEXT NOT NULL,
-                        WordGroupId TEXT NOT NULL,
-                        SortOrder INTEGER NOT NULL CHECK (SortOrder >= 0),
-                        CompletedLocalDate TEXT NULL,
-                        PRIMARY KEY (SessionId, WordGroupId),
-                        UNIQUE (SessionId, SortOrder),
-                        FOREIGN KEY (SessionId) REFERENCES ReviewSessions (SessionId) ON DELETE CASCADE,
-                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| SessionId | TEXT | 否 | — | — | — |
+| WordGroupId | TEXT | 否 | — | — | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
+| CompletedLocalDate | TEXT | 是 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (SessionId, WordGroupId) |
+| UNIQUE (SessionId, SortOrder) |
+| FOREIGN KEY (SessionId) REFERENCES ReviewSessions (SessionId) ON DELETE CASCADE |
+| FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE |
+
 
 ### ReviewSessions
 
-```sql
-CREATE TABLE ReviewSessions (
-                        SessionId TEXT NOT NULL PRIMARY KEY,
-                        Language TEXT NOT NULL CHECK (Language IN ('Japanese', 'English')),
-                        Status TEXT NOT NULL CHECK (Status IN ('InProgress', 'Completed')),
-                        PlanJson TEXT NOT NULL CHECK (json_valid(PlanJson)),
-                        CreatedAtUtc TEXT NOT NULL,
-                        StartedLocalDate TEXT NOT NULL,
-                        CompletedAtUtc TEXT NULL
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| SessionId | TEXT | 否 | — | PRIMARY KEY | — |
+| Language | TEXT | 否 | — | CHECK (Language IN ('Japanese', 'English')) | — |
+| Status | TEXT | 否 | — | CHECK (Status IN ('InProgress', 'Completed')) | — |
+| PlanJson | TEXT | 否 | — | CHECK (json_valid(PlanJson)) | — |
+| CreatedAtUtc | TEXT | 否 | — | — | — |
+| StartedLocalDate | TEXT | 否 | — | — | — |
+| CompletedAtUtc | TEXT | 是 | — | — | — |
+
 
 后续迁移追加的字段定义：
 
@@ -542,66 +640,77 @@ CREATE TABLE ReviewSessions (
 
 ### SchemaMigrations
 
-```sql
-CREATE TABLE SchemaMigrations (Version INTEGER NOT NULL PRIMARY KEY, Name TEXT NOT NULL, AppliedAtUtc TEXT NOT NULL);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| Version | INTEGER | 否 | — | PRIMARY KEY | — |
+| Name | TEXT | 否 | — | — | — |
+| AppliedAtUtc | TEXT | 否 | — | — | — |
+
 
 ### WordGroupForms
 
-```sql
-CREATE TABLE WordGroupForms (
-                        MemberId INTEGER NOT NULL,
-                        FormIndex INTEGER NOT NULL,
-                        Surface TEXT NOT NULL,
-                        Reading TEXT NULL,
-                        FormCode TEXT NOT NULL CHECK (FormCode IN (
-                            'Dictionary', 'Polite', 'Te', 'Ta',
-                            'Base', 'PresentFirstPersonSingular', 'PresentNonThirdPerson',
-                            'ThirdPersonSingular', 'Past', 'PastParticiple', 'PresentParticiple',
-                            'Plural', 'Comparative', 'Superlative')),
-                        ScriptCode TEXT NULL CHECK (ScriptCode IS NULL OR ScriptCode IN ('Kanji', 'Kana')),
-                        RoleCode TEXT NULL CHECK (RoleCode IS NULL OR RoleCode IN ('Noun', 'Verb', 'Adjective', 'Adverb', 'Other')),
-                        FormLabel TEXT NOT NULL,
-                        DetailLabel TEXT NOT NULL,
-                        IsCommon INTEGER NOT NULL CHECK (IsCommon IN (0, 1)),
-                        IsPrimary INTEGER NOT NULL CHECK (IsPrimary IN (0, 1)),
-                        PRIMARY KEY (MemberId, FormIndex),
-                        FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| MemberId | INTEGER | 否 | — | — | — |
+| FormIndex | INTEGER | 否 | — | — | — |
+| Surface | TEXT | 否 | — | — | — |
+| Reading | TEXT | 是 | — | — | — |
+| FormCode | TEXT | 否 | — | CHECK (FormCode IN ( 'Dictionary', 'Polite', 'Te', 'Ta', 'Base', 'PresentFirstPersonSingular', 'PresentNonThirdPerson', 'ThirdPersonSingular', 'Past', 'PastParticiple', 'PresentParticiple', 'Plural', 'Comparative', 'Superlative')) | — |
+| ScriptCode | TEXT | 是 | — | CHECK (ScriptCode IS NULL OR ScriptCode IN ('Kanji', 'Kana')) | — |
+| RoleCode | TEXT | 是 | — | CHECK (RoleCode IS NULL OR RoleCode IN ('Noun', 'Verb', 'Adjective', 'Adverb', 'Other')) | — |
+| FormLabel | TEXT | 否 | — | — | — |
+| DetailLabel | TEXT | 否 | — | — | — |
+| IsCommon | INTEGER | 否 | — | CHECK (IsCommon IN (0, 1)) | — |
+| IsPrimary | INTEGER | 否 | — | CHECK (IsPrimary IN (0, 1)) | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (MemberId, FormIndex) |
+| FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE |
+
 
 ### WordGroupMeanings
 
-```sql
-CREATE TABLE WordGroupMeanings (
-                        MemberId INTEGER NOT NULL,
-                        MeaningIndex INTEGER NOT NULL,
-                        Text TEXT NOT NULL,
-                        PRIMARY KEY (MemberId, MeaningIndex),
-                        FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| MemberId | INTEGER | 否 | — | — | — |
+| MeaningIndex | INTEGER | 否 | — | — | — |
+| Text | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (MemberId, MeaningIndex) |
+| FOREIGN KEY (MemberId) REFERENCES WordGroupMembers (MemberId) ON DELETE CASCADE |
+
 
 ### WordGroupMembers
 
-```sql
-CREATE TABLE WordGroupMembers (
-                        MemberId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                        WordGroupId TEXT NOT NULL,
-                        Language TEXT NOT NULL CHECK (Language IN ('Japanese', 'English')),
-                        SourceSenseId TEXT NOT NULL,
-                        SourceLexemeId TEXT NOT NULL,
-                        Headword TEXT NOT NULL,
-                        Reading TEXT NULL,
-                        PartOfSpeechLabel TEXT NOT NULL,
-                        AttributeLabel TEXT NOT NULL,
-                        IsPhrase INTEGER NOT NULL CHECK (IsPhrase IN (0, 1)),
-                        SortOrder INTEGER NOT NULL,
-                        UNIQUE (Language, SourceSenseId),
-                        UNIQUE (WordGroupId, SortOrder),
-                        FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| MemberId | INTEGER | 否 | — | PRIMARY KEY | — |
+| WordGroupId | TEXT | 否 | — | — | — |
+| Language | TEXT | 否 | — | CHECK (Language IN ('Japanese', 'English')) | — |
+| SourceSenseId | TEXT | 否 | — | — | — |
+| SourceLexemeId | TEXT | 否 | — | — | — |
+| Headword | TEXT | 否 | — | — | — |
+| Reading | TEXT | 是 | — | — | — |
+| PartOfSpeechLabel | TEXT | 否 | — | — | — |
+| AttributeLabel | TEXT | 否 | — | — | — |
+| IsPhrase | INTEGER | 否 | — | CHECK (IsPhrase IN (0, 1)) | — |
+| SortOrder | INTEGER | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| UNIQUE (Language, SourceSenseId) |
+| UNIQUE (WordGroupId, SortOrder) |
+| FOREIGN KEY (WordGroupId) REFERENCES WordGroups (WordGroupId) ON DELETE CASCADE |
+
 
 后续迁移追加的字段定义：
 
@@ -612,37 +721,287 @@ CREATE TABLE WordGroupMembers (
 
 ### WordGroups
 
-```sql
-CREATE TABLE WordGroups (
-                        WordGroupId TEXT NOT NULL PRIMARY KEY,
-                        Language TEXT NOT NULL CHECK (Language IN ('Japanese', 'English')),
-                        AnchorSourceSenseId TEXT NOT NULL,
-                        Placement TEXT NOT NULL CHECK (Placement IN ('Inbox', 'Learning', 'Review')),
-                        CreatedAtUtc TEXT NOT NULL
-);
-```
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| WordGroupId | TEXT | 否 | — | PRIMARY KEY | — |
+| Language | TEXT | 否 | — | CHECK (Language IN ('Japanese', 'English')) | — |
+| AnchorSourceSenseId | TEXT | 否 | — | — | — |
+| Placement | TEXT | 否 | — | CHECK (Placement IN ('Inbox', 'Learning', 'Review')) | — |
+| CreatedAtUtc | TEXT | 否 | — | — | — |
 
-## Explicit Indices
 
-以下索引直接来自 Schema Migration 定义；主键、UNIQUE 列组合也会形成相应约束或 SQLite 隐式索引。
+## 索引
 
-- `CREATE INDEX IX_ImportBatchItems_BatchDecision ON ImportBatchItems (BatchId, Decision);`
-- `CREATE INDEX IX_ImportBatchItems_WordGroupId ON ImportBatchItems (WordGroupId);`
-- `CREATE INDEX IX_ImportBatches_StatusLanguage ON ImportBatches (Status, Language);`
-- `CREATE INDEX IX_KanaSessionItems_CompletedDate ON KanaSessionItems(CompletedLocalDate);`
-- `CREATE INDEX IX_LearningCompletionDates_LocalDate ON LearningCompletionDates(LocalDate);`
-- `CREATE INDEX IX_ReviewFormMemories_WordGroupId ON ReviewFormMemories (WordGroupId);`
-- `CREATE INDEX IX_ReviewPlanGroups_WordGroupId ON ReviewPlanGroups (WordGroupId);`
-- `CREATE INDEX IX_ReviewSessionGroups_WordGroupId ON ReviewSessionGroups (WordGroupId);`
-- `CREATE UNIQUE INDEX UX_KanaSessions_Active ON KanaSessions(Status) WHERE Status='Active';`
-- `CREATE UNIQUE INDEX UX_LearningQuestions_PendingSession ON LearningQuestions (SessionId) WHERE Status = 'Pending';`
-- `CREATE UNIQUE INDEX UX_LearningSessions_ActiveLanguage ON LearningSessions (Language) WHERE Status = 'InProgress';`
-- `CREATE UNIQUE INDEX UX_ReviewQuestions_Pending ON ReviewQuestions (SessionId) WHERE Status='Pending';`
-- `CREATE UNIQUE INDEX UX_ReviewSessions_ActiveLanguage ON ReviewSessions (Language) WHERE Status = 'InProgress';`
+| 索引名称 | 表 | 字段 | 唯一 | 条件 |
+|---|---|---|---|---|
+| IX_ImportBatchItems_BatchDecision | ImportBatchItems | BatchId, Decision | 否 | — |
+| IX_ImportBatchItems_WordGroupId | ImportBatchItems | WordGroupId | 否 | — |
+| IX_ImportBatches_StatusLanguage | ImportBatches | Status, Language | 否 | — |
+| IX_KanaSessionItems_CompletedDate | KanaSessionItems | CompletedLocalDate | 否 | — |
+| IX_LearningCompletionDates_LocalDate | LearningCompletionDates | LocalDate | 否 | — |
+| IX_ReviewFormMemories_WordGroupId | ReviewFormMemories | WordGroupId | 否 | — |
+| IX_ReviewPlanGroups_WordGroupId | ReviewPlanGroups | WordGroupId | 否 | — |
+| IX_ReviewSessionGroups_WordGroupId | ReviewSessionGroups | WordGroupId | 否 | — |
+| UX_KanaSessions_Active | KanaSessions | Status | 是 | WHERE Status='Active' |
+| UX_LearningQuestions_PendingSession | LearningQuestions | SessionId | 是 | WHERE Status = 'Pending' |
+| UX_LearningSessions_ActiveLanguage | LearningSessions | Language | 是 | WHERE Status = 'InProgress' |
+| UX_ReviewQuestions_Pending | ReviewQuestions | SessionId | 是 | WHERE Status='Pending' |
+| UX_ReviewSessions_ActiveLanguage | ReviewSessions | Language | 是 | WHERE Status = 'InProgress' |
 
-## Schema Changes and Source of Truth
+## 日语只读词库
 
-- `WordGroupForms` 在迁移中由新表重建并替换，以上使用替换后的定义；历史中间表 `WordGroupForms_New` 不是最终的独立表。
-- ALTER 添加列的定义独立列出，以避免将后续字段误认成最初建表时的字段；实际数据库结构由连续执行迁移确定。
-- 静态词库文件与 LexiconBuilder 产生的数据不得按用户数据库的 Migration 臆造表结构。分析相关持久化行为时，应检查真实的词库库文件、构建器和数据访问代码。
-- 业务表结构的变动必须先更新权威代码/迁移并通过测试，再同步此架构描述；不允许只改文档来“实现”数据库变化。
+数据定义来源：`Dictation.LexiconBuilder/JmDict/JapaneseLexiconDatabaseBuilder.cs`。
+
+### BuildMetadata
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| Key | TEXT | 否 | — | PRIMARY KEY | — |
+| Value | TEXT | 否 | — | — | — |
+
+### Entries
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| EntryId | TEXT | 否 | — | PRIMARY KEY | — |
+| SourceSequence | INTEGER | 否 | — | — | — |
+| SenseIndex | INTEGER | 否 | — | — | — |
+| PrimaryWritten | TEXT | 否 | — | — | — |
+| PrimaryReading | TEXT | 否 | — | — | — |
+| LexicalCategory | TEXT | 否 | — | — | — |
+| VerbClass | TEXT | 否 | — | — | — |
+| Transitivity | TEXT | 否 | — | — | — |
+| KanjiUsage | TEXT | 否 | — | CHECK (KanjiUsage IN ('None', 'Common', 'Rare')) | — |
+| IsPhrase | INTEGER | 否 | — | CHECK (IsPhrase IN (0, 1)) | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| UNIQUE (SourceSequence, SenseIndex) |
+
+### PartsOfSpeech
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| EntryId | TEXT | 否 | — | — | — |
+| SortIndex | INTEGER | 否 | — | — | — |
+| Value | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (EntryId, SortIndex) |
+| FOREIGN KEY (EntryId) REFERENCES Entries (EntryId) ON DELETE CASCADE |
+
+### SourceGlosses
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| EntryId | TEXT | 否 | — | — | — |
+| Language | TEXT | 否 | — | — | — |
+| GlossIndex | INTEGER | 否 | — | — | — |
+| GlossType | TEXT | 是 | — | — | — |
+| Text | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (EntryId, Language, GlossIndex) |
+| FOREIGN KEY (EntryId) REFERENCES Entries (EntryId) ON DELETE CASCADE |
+
+### ChineseMeanings
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| EntryId | TEXT | 否 | — | — | — |
+| MeaningIndex | INTEGER | 否 | — | — | — |
+| Text | TEXT | 否 | — | — | — |
+| MeaningSource | TEXT | 否 | — | CHECK (MeaningSource = 'Tomoshi') | — |
+| MeaningPrecision | TEXT | 否 | — | CHECK (MeaningPrecision = 'Exact') | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (EntryId, MeaningIndex) |
+| FOREIGN KEY (EntryId) REFERENCES Entries (EntryId) ON DELETE CASCADE |
+
+### Forms
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| FormId | INTEGER | 否 | — | PRIMARY KEY | — |
+| EntryId | TEXT | 否 | — | — | — |
+| Surface | TEXT | 否 | — | — | — |
+| Reading | TEXT | 否 | — | — | — |
+| FormKind | TEXT | 否 | — | — | — |
+| ScriptKind | TEXT | 否 | — | — | — |
+| LexicalRole | TEXT | 否 | — | — | — |
+| IsCommon | INTEGER | 否 | — | CHECK (IsCommon IN (0, 1)) | — |
+| IsPrimary | INTEGER | 否 | — | CHECK (IsPrimary IN (0, 1)) | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| UNIQUE (EntryId, Surface, Reading, FormKind, ScriptKind, LexicalRole) |
+| FOREIGN KEY (EntryId) REFERENCES Entries (EntryId) ON DELETE CASCADE |
+
+## 英语只读词库
+
+数据定义来源：`Dictation.LexiconBuilder/WordNet/EnglishLexiconDatabaseBuilder.cs`。
+
+### BuildMetadata
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| Key | TEXT | 否 | — | PRIMARY KEY | — |
+| Value | TEXT | 否 | — | — | — |
+
+### Lexemes
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| LexemeId | TEXT | 否 | — | PRIMARY KEY | — |
+| Lemma | TEXT | 否 | — | — | — |
+| SourceEntryKey | TEXT | 否 | — | — | — |
+| PartOfSpeech | TEXT | 否 | — | — | — |
+| IsPhrase | INTEGER | 否 | — | CHECK (IsPhrase IN (0, 1)) | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| UNIQUE (Lemma, SourceEntryKey) |
+
+### Synsets
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| SynsetId | TEXT | 否 | — | PRIMARY KEY | — |
+| PartOfSpeech | TEXT | 否 | — | — | — |
+| Ili | TEXT | 是 | — | — | — |
+
+### Senses
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| SenseId | TEXT | 否 | — | PRIMARY KEY | — |
+| LexemeId | TEXT | 否 | — | — | — |
+| SynsetId | TEXT | 否 | — | — | — |
+| SenseOrder | INTEGER | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| FOREIGN KEY (LexemeId) REFERENCES Lexemes (LexemeId) |
+| FOREIGN KEY (SynsetId) REFERENCES Synsets (SynsetId) |
+
+### Definitions
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| SynsetId | TEXT | 否 | — | — | — |
+| DefinitionIndex | INTEGER | 否 | — | — | — |
+| Text | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (SynsetId, DefinitionIndex) |
+| FOREIGN KEY (SynsetId) REFERENCES Synsets (SynsetId) |
+
+### Examples
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| SynsetId | TEXT | 否 | — | — | — |
+| ExampleIndex | INTEGER | 否 | — | — | — |
+| Text | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (SynsetId, ExampleIndex) |
+| FOREIGN KEY (SynsetId) REFERENCES Synsets (SynsetId) |
+
+### Forms
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| FormId | INTEGER | 否 | — | PRIMARY KEY | — |
+| LexemeId | TEXT | 否 | — | — | — |
+| Surface | TEXT | 否 | — | — | — |
+| FormKind | TEXT | 否 | — | — | — |
+| FormSourceKind | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| UNIQUE (LexemeId, Surface, FormKind) |
+| FOREIGN KEY (LexemeId) REFERENCES Lexemes (LexemeId) |
+
+### Derivations
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| SourceSenseId | TEXT | 否 | — | — | — |
+| TargetSenseId | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (SourceSenseId, TargetSenseId) |
+| FOREIGN KEY (SourceSenseId) REFERENCES Senses (SenseId) |
+| FOREIGN KEY (TargetSenseId) REFERENCES Senses (SenseId) |
+
+### LearningSenses
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| LearningSenseId | TEXT | 否 | — | PRIMARY KEY | — |
+| SourceLexemeId | TEXT | 否 | — | — | — |
+| Headword | TEXT | 否 | — | — | — |
+| PartOfSpeech | TEXT | 否 | — | — | — |
+| IsPhrase | INTEGER | 否 | — | CHECK (IsPhrase IN (0, 1)) | — |
+| MeaningSource | TEXT | 否 | — | CHECK (MeaningSource IN ('ChineseOpenWordNet', 'Ecdict', 'Missing')) | — |
+| MeaningPrecision | TEXT | 否 | — | CHECK (MeaningPrecision IN ('Exact', 'Broad', 'Missing')) | — |
+| SortOrder | INTEGER | 否 | — | — | — |
+
+### LearningSenseSources
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| LearningSenseId | TEXT | 否 | — | — | — |
+| SenseId | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (LearningSenseId, SenseId) |
+| FOREIGN KEY (LearningSenseId) REFERENCES LearningSenses (LearningSenseId) |
+| FOREIGN KEY (SenseId) REFERENCES Senses (SenseId) |
+
+### LearningMeanings
+
+| 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
+|---|---|---|---|---|---|
+| LearningSenseId | TEXT | 否 | — | — | — |
+| MeaningIndex | INTEGER | 否 | — | — | — |
+| Text | TEXT | 否 | — | — | — |
+
+**表级约束**
+
+| 约束定义 |
+|---|
+| PRIMARY KEY (LearningSenseId, MeaningIndex) |
+| FOREIGN KEY (LearningSenseId) REFERENCES LearningSenses (LearningSenseId) |
