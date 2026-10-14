@@ -10,7 +10,7 @@
 
 ## Git Traceability
 
-- 开发分支格式 `codex/<feature|fix|opt|verify>/<task-id>/<slug>`，本项目最终 PR 目标 `master`，参考分支 `codex/dictation-refactor` 仅用于检索技术架构。
+- 开发分支格式 `codex/<feature|fix|opt|verify>/<task-id>/<slug>`，本项目最终 PR 目标 `master`，本项目 PR 目标是 `master`，架构与构建环境以当前仓库的实际代码及已批准的规范为准。
 - 每次 Commit 的摘要末尾包含唯一拥有者 ID：`<中文动作句> [task-Dictation_xxxxxxxxxx]`。任务 ID 不放入 conventional-commit 的 scope 中。
 - 普通 Task 一个分支、一个 PR；父子组仅父任务分支和 PR。子任务 Commit 只标该子 ID，PR 标题只标父 ID，PR 正文列明子任务 ID。
 - 不强推、直接合并、覆盖用户未提交文件，不直接修改主分支。
@@ -23,7 +23,7 @@
 - 每个业务切片按 Dictation 已批准流程做两次中文 Commit：行为 GREEN 证据后一次；集成穿透和相关构建/测试/冒烟全部通过后一次。
 - 采用现有 `Dictation.Tests` **xUnit v3 测试项目**与 Microsoft.Testing.Platform。目标参考分支可使用：
   `dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 2108 --max-threads 4`。
-  该命令只在该测试项目实际存在并适用于当前分支时执行，不能误报旧版 master 已有测试项目。冻结与测试数量阈值按有效基线和有据可查的合法变化处理。
+  测试项目现已存在于 `master`；实际执行命令时应先确认构建与测试基线。冻结与测试数量阈值按有效基线和有据可查的合法变化处理。
 - 单纯 Rules、文档、Skills、配置修改不制造 RED 测试；采用静态检查、内容与引用核对、适用构建及前后回归。
 
 ## Checkpoint, Suspension and Resume
@@ -49,5 +49,4 @@
 - Skills：检查相对文件引用、许可证、依赖和实际调用可用性；无法验证不得声称完整。
 - PR 明确变更范围、真实执行的验证命令、未验证项目和限制。涉及 UI 行为时按实际要求提供截图。
 - 合并成功才完成父 Task（子 Task 的内部完成遵守父子组规则）；不得把 PR 创建或关闭当成合并。
-- **分阶段 Trello 自动化**：首次 PR 提交后，待用户自己配置 Board ID、API Key 和 Token GitHub Actions Secrets 并告知变量名称，才允许增加 `.github/scripts/trello-pr-completion.mjs` 与 `.github/workflows/trello-pr-completion.yml`。二者更新原 PR，不新建 PR，不将秘密或实际 Board ID 写入仓库。
 - 自动化应确认真实合并、仓库、目标分支、完整 Task ID、唯一卡片及合法状态；有异常则不变更任何卡片。
