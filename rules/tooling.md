@@ -4,7 +4,7 @@
 
 ## .NET and SDK Compatibility
 
-- 当前已批准的重构目标使用 .NET 10 / C# / WPF；`TargetFramework` 描述目标 API/运行时兼容性，**不等于必须安装某个精确 SDK 补丁号**。
+- 当前项目使用 .NET 10 / C# / WPF；`TargetFramework` 描述目标 API/运行时兼容性，**不等于必须安装某个精确 SDK 补丁号**。
 - 优先使用当前已安装、支持目标框架且实际能成功 Restore/Build/Test 的稳定 SDK。兼容的较新 SDK、不同补丁号和合理前滚的 `global.json` 均应允许。
 - 不能仅凭 `dotnet --version` 与文档示例数字不同就停止；应先检验 `dotnet --list-sdks`、适用的 `global.json`、目标框架和实际编译/测试结果。
 - 若升级的 SDK 或编译器引发实际不兼容，记录具体错误、官方兼容约束及修复范围。需要锁定版本时必须存在可验证的不兼容或用户显式要求，不设置无根据的补丁锁。
@@ -15,7 +15,7 @@
 
 - 在适用分支验证：`dotnet restore Dictation.sln`；`dotnet build Dictation.sln --configuration Debug --no-restore`。
 - 参考架构中的测试为现有 `Dictation.Tests` **xUnit v3 项目**，使用 Microsoft.Testing.Platform；只在当前分支有此项目且依赖可用时执行测试命令。
-- 原 `- 检查真实输出，不声称未运行验证通过。数据 Schema 仅引用真实迁移、项目源码和验证事实，不推测表字段。
+- 检查真实输出，不声称未运行验证通过。数据 Schema 仅引用真实迁移、项目源码和验证事实，不推测表字段。
 
 ## Workspaces and Skills
 
