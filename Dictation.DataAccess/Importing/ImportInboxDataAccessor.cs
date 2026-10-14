@@ -1,0 +1,972 @@
+using System.Globalization;
+using Dapper;
+using Dictation.DataAccess.Runtime;
+using Microsoft.Data.Sqlite;
+
+namespace Dictation.DataAccess.Importing
+{
+    /// <summary>
+    /// 负责导入批次、收件箱决策及其词组快照的持久化访问。
+    /// </summary>
+    public sealed class ImportInboxDataAccessor
+    {
+        private static readonly HashSet<string> Languages = new(StringComparer.Ordinal)
+        {
+            "Japanese",
+            "English"
+        };
+
+        private static readonly HashSet<string> SourceKinds = new(StringComparer.Ordinal)
+        {
+            "Manual",
+            "Text",
+            "Mcp"
+        };
+
+        private static readonly HashSet<string> Decisions = new(StringComparer.Ordinal)
+        {
+            "Learning",
+            "Review",
+            "Discard"
+        };
+
+        private readonly SqliteConnectionFactory connectionFactory;
+        private readonly WordGroupMemberSnapshotReader wordGroupMemberSnapshotReader;
+
+        /// <summary>
+        /// 使用指定连接工厂和词组成员快照读取组件初始化数据访问器。
+        /// </summary>
+        /// <param name="connectionFactory">运行数据库连接工厂。</param>
+        /// <param name="wordGroupMemberSnapshotReader">复用调用方连接读取词组成员快照的组件。</param>
+        internal ImportInboxDataAccessor(
+            SqliteConnectionFactory connectionFactory,
+            WordGroupMemberSnapshotReader wordGroupMemberSnapshotReader)
+        {
+            this.connectionFactory = connectionFactory
+                ?? throw new ArgumentNullException(nameof(connectionFactory));
+            this.wordGroupMemberSnapshotReader = wordGroupMemberSnapshotReader
+                ?? throw new ArgumentNullException(nameof(wordGroupMemberSnapshotReader));
+        }
+
+        /// <summary>
+        /// 在事务中写入导入批次和词组快照，并保留已存在义项的重复关系。
+        /// </summary>
+        /// <param name="request">已由业务层准备的持久化请求。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        public async Task<ImportBatchPo> StageAsync(
+            ImportBatchStagePo request,
+            CancellationToken cancellationToken = default)
+        {
+            ValidateStageRequest(request);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                await using var connection = connectionFactory.CreateConnection();
+                await connection.OpenAsync(cancellationToken);
+                await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+                var batchId = Guid.NewGuid().ToString("N");
+                var createdAtUtc = DateTimeOffset.UtcNow;
+
+                try
+                {
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        """
+                        INSERT INTO ImportBatches (BatchId, Language, SourceKind, Status, CreatedAtUtc, CompletedAtUtc)
+                        VALUES (@BatchId, @Language, @SourceKind, 'Pending', @CreatedAtUtc, NULL);
+                        """,
+                        new
+                        {
+                            BatchId = batchId,
+                            request.Language,
+                            request.SourceKind,
+                            CreatedAtUtc = FormatDateTime(createdAtUtc)
+                        },
+                        transaction,
+                        cancellationToken: cancellationToken));
+
+                    foreach (var item in request.Items)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        var memberSenseIds = item.Group.Members
+                            .Select(member => member.SourceSenseId)
+                            .ToArray();
+                        var duplicate = await HasExistingMemberAsync(
+                            connection,
+                            transaction,
+                            request.Language,
+                            memberSenseIds,
+                            cancellationToken);
+                        string? wordGroupId = null;
+                        if (!duplicate)
+                        {
+                            wordGroupId = Guid.NewGuid().ToString("N");
+                            await InsertGroupAsync(
+                                connection,
+                                transaction,
+                                wordGroupId,
+                                item.Group,
+                                createdAtUtc,
+                                cancellationToken);
+                        }
+
+                        await connection.ExecuteAsync(new CommandDefinition(
+                            """
+                            INSERT INTO ImportBatchItems (
+                                BatchId, SourceText, AnchorSourceSenseId, WordGroupId, Decision)
+                            VALUES (@BatchId, @SourceText, @AnchorSourceSenseId, @WordGroupId, @Decision);
+                            """,
+                            new
+                            {
+                                BatchId = batchId,
+                                item.SourceText,
+                                item.AnchorSourceSenseId,
+                                WordGroupId = wordGroupId,
+                                Decision = duplicate ? "Duplicate" : "Pending"
+                            },
+                            transaction,
+                            cancellationToken: cancellationToken));
+                    }
+
+                    await UpdateBatchStatusAsync(
+                        connection,
+                        transaction,
+                        batchId,
+                        createdAtUtc,
+                        cancellationToken);
+                    await transaction.CommitAsync(cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    await TryRollbackAsync(transaction);
+                    throw;
+                }
+                catch (ImportInboxDataAccessException)
+                {
+                    await TryRollbackAsync(transaction);
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    await TryRollbackAsync(transaction);
+                    throw new ImportInboxDataAccessException(
+                        "写入导入收件箱失败，事务已回滚。",
+                        exception);
+                }
+
+                return await LoadBatchAsync(connection, batchId, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (ImportInboxDataAccessException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw new ImportInboxDataAccessException(
+                    "写入导入收件箱失败。",
+                    exception);
+            }
+        }
+
+        /// <summary>
+        /// 读取指定语言仍待处理的导入批次。
+        /// </summary>
+        /// <param name="language">持久化使用的语言代码。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        public async Task<IReadOnlyList<ImportBatchPo>> ListPendingAsync(
+            string language,
+            CancellationToken cancellationToken = default)
+        {
+            ValidateLanguage(language, nameof(language));
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                await using var connection = connectionFactory.CreateConnection();
+                await connection.OpenAsync(cancellationToken);
+                var batchIds = (await connection.QueryAsync<string>(new CommandDefinition(
+                    """
+                    SELECT BatchId
+                    FROM ImportBatches
+                    WHERE Language = @Language
+                      AND Status = 'Pending'
+                      AND EXISTS (
+                          SELECT 1
+                          FROM ImportBatchItems
+                          WHERE ImportBatchItems.BatchId = ImportBatches.BatchId
+                            AND Decision = 'Pending')
+                    ORDER BY CreatedAtUtc, BatchId;
+                    """,
+                    new { Language = language },
+                    cancellationToken: cancellationToken))).ToArray();
+
+                var batches = new List<ImportBatchPo>(batchIds.Length);
+                foreach (var batchId in batchIds)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    batches.Add(await LoadBatchAsync(connection, batchId, cancellationToken));
+                }
+
+                return batches;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (ImportInboxDataAccessException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw new ImportInboxDataAccessException(
+                    "读取导入收件箱失败。",
+                    exception);
+            }
+        }
+
+        /// <summary>
+        /// 读取导入批次及其条目和词组快照。
+        /// </summary>
+        /// <param name="batchId">目标导入批次标识。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        /// <returns>完整批次快照；不存在时抛出收件箱访问异常。</returns>
+        public async Task<ImportBatchPo> GetBatchAsync(
+            string batchId,
+            CancellationToken cancellationToken = default)
+        {
+            RequireText(batchId, nameof(batchId));
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await using var connection = connectionFactory.CreateConnection();
+                await connection.OpenAsync(cancellationToken);
+                return await LoadBatchAsync(connection, batchId, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (ImportInboxDataAccessException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw new ImportInboxDataAccessException("读取导入批次失败。", exception);
+            }
+        }
+
+        /// <summary>
+        /// 事务性替换指定成员的人工中文释义及来源元数据。
+        /// </summary>
+        /// <param name="wordGroupId">目标词组标识。</param>
+        /// <param name="sourceSenseId">目标成员的来源义项标识。</param>
+        /// <param name="meanings">按顺序保存的非空人工释义。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        public async Task UpdateMeaningsAsync(
+            string wordGroupId,
+            string sourceSenseId,
+            IReadOnlyList<string> meanings,
+            CancellationToken cancellationToken = default)
+        {
+            RequireText(wordGroupId, nameof(wordGroupId));
+            RequireText(sourceSenseId, nameof(sourceSenseId));
+            if (meanings is null || meanings.Count == 0 || meanings.Any(string.IsNullOrWhiteSpace))
+            {
+                throw new ArgumentException("中文释义不能为空。", nameof(meanings));
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await using var connection = connectionFactory.CreateConnection();
+                await connection.OpenAsync(cancellationToken);
+                await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+                try
+                {
+                    var member = await connection.QuerySingleOrDefaultAsync<EditableMemberRow>(new CommandDefinition(
+                        """
+                        SELECT WordGroupMembers.MemberId, WordGroups.Placement
+                        FROM WordGroupMembers
+                        INNER JOIN WordGroups ON WordGroups.WordGroupId = WordGroupMembers.WordGroupId
+                        WHERE WordGroupMembers.WordGroupId = @WordGroupId
+                          AND WordGroupMembers.SourceSenseId = @SourceSenseId;
+                        """,
+                        new { WordGroupId = wordGroupId, SourceSenseId = sourceSenseId },
+                        transaction,
+                        cancellationToken: cancellationToken));
+                    if (member is null)
+                    {
+                        throw InvalidRequest("收件箱词组或成员不存在。");
+                    }
+
+                    if (!string.Equals(member.Placement, "Inbox", StringComparison.Ordinal))
+                    {
+                        throw InvalidRequest("只有收件箱中的词组可以修改释义。");
+                    }
+
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        "DELETE FROM WordGroupMeanings WHERE MemberId = @MemberId;",
+                        new { member.MemberId },
+                        transaction,
+                        cancellationToken: cancellationToken));
+                    for (var index = 0; index < meanings.Count; index++)
+                    {
+                        await connection.ExecuteAsync(new CommandDefinition(
+                            "INSERT INTO WordGroupMeanings (MemberId, MeaningIndex, Text) VALUES (@MemberId, @MeaningIndex, @Text);",
+                            new { member.MemberId, MeaningIndex = index, Text = meanings[index] },
+                            transaction,
+                            cancellationToken: cancellationToken));
+                    }
+
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        """
+                        UPDATE WordGroupMembers
+                        SET MeaningLanguage = 'zh-CN', MeaningSource = 'User', MeaningPrecision = 'UserProvided'
+                        WHERE MemberId = @MemberId;
+                        """,
+                        new { member.MemberId },
+                        transaction,
+                        cancellationToken: cancellationToken));
+                    await transaction.CommitAsync(cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    await TryRollbackAsync(transaction);
+                    throw;
+                }
+                catch (ImportInboxDataAccessException)
+                {
+                    await TryRollbackAsync(transaction);
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    await TryRollbackAsync(transaction);
+                    throw new ImportInboxDataAccessException("修改中文释义失败，事务已回滚。", exception);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (ImportInboxDataAccessException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw new ImportInboxDataAccessException("修改中文释义失败。", exception);
+            }
+        }
+
+        /// <summary>
+        /// 在事务中处理选中条目的去向，并同步词组位置和批次完成状态。
+        /// </summary>
+        /// <param name="batchId">目标导入批次标识。</param>
+        /// <param name="itemIds">本次要处理的批次条目标识集合。</param>
+        /// <param name="decision">条目的持久化去向代码。</param>
+        /// <param name="cancellationToken">取消数据库操作的令牌；取消异常保持原样传播。</param>
+        public async Task DecideAsync(
+            string batchId,
+            IReadOnlyList<long> itemIds,
+            string decision,
+            CancellationToken cancellationToken = default)
+        {
+            ValidateDecisionRequest(batchId, itemIds, decision);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                await using var connection = connectionFactory.CreateConnection();
+                await connection.OpenAsync(cancellationToken);
+                await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+                try
+                {
+                    var batchExists = await connection.ExecuteScalarAsync<long?>(new CommandDefinition(
+                        "SELECT 1 FROM ImportBatches WHERE BatchId = @BatchId LIMIT 1;",
+                        new { BatchId = batchId },
+                        transaction,
+                        cancellationToken: cancellationToken));
+                    if (batchExists is null)
+                    {
+                        throw InvalidRequest("导入批次不存在。");
+                    }
+
+                    var items = (await connection.QueryAsync<DecisionItemRow>(new CommandDefinition(
+                        """
+                        SELECT ItemId, WordGroupId, Decision
+                        FROM ImportBatchItems
+                        WHERE BatchId = @BatchId AND ItemId IN @ItemIds
+                        ORDER BY ItemId;
+                        """,
+                        new { BatchId = batchId, ItemIds = itemIds },
+                        transaction,
+                        cancellationToken: cancellationToken))).ToArray();
+                    if (items.Length != itemIds.Count)
+                    {
+                        throw InvalidRequest("选择的批次项目不存在或不属于当前批次。");
+                    }
+
+                    if (items.Any(item => !string.Equals(item.Decision, "Pending", StringComparison.Ordinal)
+                        || string.IsNullOrWhiteSpace(item.WordGroupId)))
+                    {
+                        throw InvalidRequest("选择的批次项目已处理，不能重复确认。");
+                    }
+
+                    foreach (var item in items)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        if (string.Equals(decision, "Discard", StringComparison.Ordinal))
+                        {
+                            await connection.ExecuteAsync(new CommandDefinition(
+                                "UPDATE ImportBatchItems SET Decision = @Decision WHERE ItemId = @ItemId;",
+                                new { Decision = decision, item.ItemId },
+                                transaction,
+                                cancellationToken: cancellationToken));
+                            await connection.ExecuteAsync(new CommandDefinition(
+                                "DELETE FROM WordGroups WHERE WordGroupId = @WordGroupId;",
+                                new { item.WordGroupId },
+                                transaction,
+                                cancellationToken: cancellationToken));
+                        }
+                        else
+                        {
+                            await connection.ExecuteAsync(new CommandDefinition(
+                                "UPDATE WordGroups SET Placement = @Placement WHERE WordGroupId = @WordGroupId;",
+                                new { Placement = decision, item.WordGroupId },
+                                transaction,
+                                cancellationToken: cancellationToken));
+                            await connection.ExecuteAsync(new CommandDefinition(
+                                "UPDATE ImportBatchItems SET Decision = @Decision WHERE ItemId = @ItemId;",
+                                new { Decision = decision, item.ItemId },
+                                transaction,
+                                cancellationToken: cancellationToken));
+                        }
+                    }
+
+                    await UpdateBatchStatusAsync(
+                        connection,
+                        transaction,
+                        batchId,
+                        DateTimeOffset.UtcNow,
+                        cancellationToken);
+                    await transaction.CommitAsync(cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    await TryRollbackAsync(transaction);
+                    throw;
+                }
+                catch (ImportInboxDataAccessException)
+                {
+                    await TryRollbackAsync(transaction);
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    await TryRollbackAsync(transaction);
+                    throw new ImportInboxDataAccessException(
+                        "确认导入收件箱失败，事务已回滚。",
+                        exception);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (ImportInboxDataAccessException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw new ImportInboxDataAccessException(
+                    "确认导入收件箱失败。",
+                    exception);
+            }
+        }
+
+        private static async Task<bool> HasExistingMemberAsync(
+            SqliteConnection connection,
+            System.Data.Common.DbTransaction transaction,
+            string language,
+            IReadOnlyList<string> sourceSenseIds,
+            CancellationToken cancellationToken)
+        {
+            var existing = await connection.ExecuteScalarAsync<long?>(new CommandDefinition(
+                """
+                SELECT 1
+                FROM WordGroupMembers
+                INNER JOIN WordGroups ON WordGroups.WordGroupId = WordGroupMembers.WordGroupId
+                WHERE WordGroupMembers.Language = @Language
+                  AND WordGroups.Placement IN ('Inbox', 'Learning', 'Review')
+                  AND WordGroupMembers.SourceSenseId IN @SourceSenseIds
+                LIMIT 1;
+                """,
+                new { Language = language, SourceSenseIds = sourceSenseIds },
+                transaction,
+                cancellationToken: cancellationToken));
+            return existing is not null;
+        }
+
+        private static async Task InsertGroupAsync(
+            SqliteConnection connection,
+            System.Data.Common.DbTransaction transaction,
+            string wordGroupId,
+            ImportWordGroupSnapshotPo group,
+            DateTimeOffset createdAtUtc,
+            CancellationToken cancellationToken)
+        {
+            await connection.ExecuteAsync(new CommandDefinition(
+                """
+                INSERT INTO WordGroups (
+                    WordGroupId, Language, AnchorSourceSenseId, Placement, CreatedAtUtc)
+                VALUES (@WordGroupId, @Language, @AnchorSourceSenseId, 'Inbox', @CreatedAtUtc);
+                """,
+                new
+                {
+                    WordGroupId = wordGroupId,
+                    group.Language,
+                    group.AnchorSourceSenseId,
+                    CreatedAtUtc = FormatDateTime(createdAtUtc)
+                },
+                transaction,
+                cancellationToken: cancellationToken));
+
+            for (var sortOrder = 0; sortOrder < group.Members.Count; sortOrder++)
+            {
+                var member = group.Members[sortOrder];
+                var memberId = await connection.ExecuteScalarAsync<long>(new CommandDefinition(
+                    """
+                    INSERT INTO WordGroupMembers (
+                        WordGroupId, Language, SourceSenseId, SourceLexemeId, Headword, Reading,
+                        PartOfSpeechLabel, AttributeLabel, IsPhrase, SortOrder,
+                        MeaningLanguage, MeaningSource, MeaningPrecision, KanjiUsageCode)
+                    VALUES (
+                        @WordGroupId, @Language, @SourceSenseId, @SourceLexemeId, @Headword, @Reading,
+                        @PartOfSpeechLabel, @AttributeLabel, @IsPhrase, @SortOrder,
+                        @MeaningLanguage, @MeaningSource, @MeaningPrecision, @KanjiUsageCode);
+                    SELECT last_insert_rowid();
+                    """,
+                    new
+                    {
+                        WordGroupId = wordGroupId,
+                        member.Language,
+                        member.SourceSenseId,
+                        member.SourceLexemeId,
+                        member.Headword,
+                        member.Reading,
+                        member.PartOfSpeechLabel,
+                        member.AttributeLabel,
+                        member.MeaningLanguage,
+                        member.MeaningSource,
+                        member.MeaningPrecision,
+                        member.KanjiUsageCode,
+                        IsPhrase = member.IsPhrase ? 1 : 0,
+                        SortOrder = sortOrder
+                    },
+                    transaction,
+                    cancellationToken: cancellationToken));
+
+                for (var meaningIndex = 0; meaningIndex < member.Meanings.Count; meaningIndex++)
+                {
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        "INSERT INTO WordGroupMeanings (MemberId, MeaningIndex, Text) VALUES (@MemberId, @MeaningIndex, @Text);",
+                        new { MemberId = memberId, MeaningIndex = meaningIndex, Text = member.Meanings[meaningIndex] },
+                        transaction,
+                        cancellationToken: cancellationToken));
+                }
+
+                for (var formIndex = 0; formIndex < member.Forms.Count; formIndex++)
+                {
+                    var form = member.Forms[formIndex];
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        """
+                        INSERT INTO WordGroupForms (
+                            MemberId, FormIndex, Surface, Reading, FormCode, ScriptCode, RoleCode,
+                            FormLabel, DetailLabel, IsCommon, IsPrimary)
+                        VALUES (
+                            @MemberId, @FormIndex, @Surface, @Reading, @FormCode, @ScriptCode, @RoleCode,
+                            @FormLabel, @DetailLabel, @IsCommon, @IsPrimary);
+                        """,
+                        new
+                        {
+                            MemberId = memberId,
+                            FormIndex = formIndex,
+                            form.Surface,
+                            form.Reading,
+                            form.FormCode,
+                            form.ScriptCode,
+                            form.RoleCode,
+                            form.FormLabel,
+                            form.DetailLabel,
+                            IsCommon = form.IsCommon ? 1 : 0,
+                            IsPrimary = form.IsPrimary ? 1 : 0
+                        },
+                        transaction,
+                        cancellationToken: cancellationToken));
+                }
+            }
+
+        }
+
+        private static async Task UpdateBatchStatusAsync(
+            SqliteConnection connection,
+            System.Data.Common.DbTransaction transaction,
+            string batchId,
+            DateTimeOffset completedAtCandidate,
+            CancellationToken cancellationToken)
+        {
+            var pendingCount = await connection.ExecuteScalarAsync<long>(new CommandDefinition(
+                "SELECT COUNT(*) FROM ImportBatchItems WHERE BatchId = @BatchId AND Decision = 'Pending';",
+                new { BatchId = batchId },
+                transaction,
+                cancellationToken: cancellationToken));
+            var completed = pendingCount == 0;
+            await connection.ExecuteAsync(new CommandDefinition(
+                """
+                UPDATE ImportBatches
+                SET Status = @Status, CompletedAtUtc = @CompletedAtUtc
+                WHERE BatchId = @BatchId;
+                """,
+                new
+                {
+                    BatchId = batchId,
+                    Status = completed ? "Completed" : "Pending",
+                    CompletedAtUtc = completed ? FormatDateTime(completedAtCandidate) : null
+                },
+                transaction,
+                cancellationToken: cancellationToken));
+        }
+
+        private async Task<ImportBatchPo> LoadBatchAsync(
+            SqliteConnection connection,
+            string batchId,
+            CancellationToken cancellationToken)
+        {
+            var batch = await connection.QuerySingleOrDefaultAsync<BatchRow>(new CommandDefinition(
+                "SELECT BatchId, Language, SourceKind, Status, CreatedAtUtc, CompletedAtUtc FROM ImportBatches WHERE BatchId = @BatchId;",
+                new { BatchId = batchId },
+                cancellationToken: cancellationToken));
+            if (batch is null)
+            {
+                throw InvalidRequest("导入批次不存在。");
+            }
+
+            var items = (await connection.QueryAsync<ItemRow>(new CommandDefinition(
+                """
+                SELECT ItemId, SourceText, AnchorSourceSenseId, WordGroupId, Decision
+                FROM ImportBatchItems
+                WHERE BatchId = @BatchId
+                ORDER BY ItemId;
+                """,
+                new { BatchId = batchId },
+                cancellationToken: cancellationToken))).ToArray();
+            var groupIds = items
+                .Where(item => !string.IsNullOrWhiteSpace(item.WordGroupId))
+                .Select(item => item.WordGroupId!)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            var groups = groupIds.Length == 0
+                ? Array.Empty<GroupRow>()
+                : (await connection.QueryAsync<GroupRow>(new CommandDefinition(
+                    """
+                    SELECT WordGroupId, Language, AnchorSourceSenseId, Placement, CreatedAtUtc
+                    FROM WordGroups
+                    WHERE WordGroupId IN @GroupIds;
+                    """,
+                    new { GroupIds = groupIds },
+                    cancellationToken: cancellationToken))).ToArray();
+            var membersByGroup = await wordGroupMemberSnapshotReader.ReadAsync(
+                connection,
+                transaction: null,
+                groupIds,
+                cancellationToken);
+            var groupPoById = new Dictionary<string, ImportWordGroupPo>(StringComparer.Ordinal);
+            foreach (var group in groups)
+            {
+                groupPoById[group.WordGroupId] = new ImportWordGroupPo(
+                    group.WordGroupId,
+                    group.Language,
+                    group.AnchorSourceSenseId,
+                    group.Placement,
+                    ParseDateTime(group.CreatedAtUtc, "WordGroups.CreatedAtUtc"),
+                    membersByGroup.TryGetValue(group.WordGroupId, out var groupMembers)
+                        ? groupMembers
+                        : Array.Empty<ImportWordGroupMemberPo>());
+            }
+
+            return new ImportBatchPo(
+                batch.BatchId,
+                batch.Language,
+                batch.SourceKind,
+                batch.Status,
+                ParseDateTime(batch.CreatedAtUtc, "ImportBatches.CreatedAtUtc"),
+                batch.CompletedAtUtc is null
+                    ? null
+                    : ParseDateTime(batch.CompletedAtUtc, "ImportBatches.CompletedAtUtc"),
+                items.Select(item => new ImportBatchItemPo(
+                    item.ItemId,
+                    item.SourceText,
+                    item.AnchorSourceSenseId,
+                    item.WordGroupId,
+                    item.Decision,
+                    item.WordGroupId is not null && groupPoById.TryGetValue(item.WordGroupId, out var group)
+                        ? group
+                        : null)).ToArray());
+        }
+
+        private static void ValidateStageRequest(ImportBatchStagePo request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            ValidateLanguage(request.Language, nameof(request.Language));
+            ValidateSourceKind(request.SourceKind, nameof(request.SourceKind));
+            if (request.Items is null || request.Items.Count == 0)
+            {
+                throw new ArgumentException("导入批次至少需要一个项目。", nameof(request.Items));
+            }
+
+            foreach (var item in request.Items)
+            {
+                if (item is null)
+                {
+                    throw new ArgumentException("导入批次项目不能为空。", nameof(request.Items));
+                }
+
+                RequireText(item.SourceText, "批次项目来源词形");
+                RequireText(item.AnchorSourceSenseId, "批次项目来源义项");
+                if (item.Group is null)
+                {
+                    throw new ArgumentException("批次项目词组不能为空。", nameof(request.Items));
+                }
+
+                ValidateGroup(request.Language, item.AnchorSourceSenseId, item.Group);
+            }
+        }
+
+        private static void ValidateGroup(
+            string requestLanguage,
+            string itemAnchorSourceSenseId,
+            ImportWordGroupSnapshotPo group)
+        {
+            ValidateLanguage(group.Language, "group.Language");
+            if (!string.Equals(group.Language, requestLanguage, StringComparison.Ordinal))
+            {
+                throw new ArgumentException("词组语言必须与导入批次一致。", nameof(group));
+            }
+
+            RequireText(group.AnchorSourceSenseId, "group.AnchorSourceSenseId");
+            if (!string.Equals(group.AnchorSourceSenseId, itemAnchorSourceSenseId, StringComparison.Ordinal))
+            {
+                throw new ArgumentException("批次项目锚点必须与词组锚点一致。", nameof(group));
+            }
+
+            if (group.Members is null || group.Members.Count == 0)
+            {
+                throw new ArgumentException("词组至少需要一个成员。", nameof(group.Members));
+            }
+
+            var memberIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var member in group.Members)
+            {
+                if (member is null)
+                {
+                    throw new ArgumentException("词组成员不能为空。", nameof(group.Members));
+                }
+
+                ValidateLanguage(member.Language, "member.Language");
+                if (!string.Equals(member.Language, requestLanguage, StringComparison.Ordinal))
+                {
+                    throw new ArgumentException("词组成员语言必须一致。", nameof(group.Members));
+                }
+
+                RequireText(member.SourceSenseId, "member.SourceSenseId");
+                if (!memberIds.Add(member.SourceSenseId))
+                {
+                    throw new ArgumentException("词组不能包含重复来源义项。", nameof(group.Members));
+                }
+
+                RequireText(member.SourceLexemeId, "member.SourceLexemeId");
+                RequireText(member.Headword, "member.Headword");
+                RequireText(member.PartOfSpeechLabel, "member.PartOfSpeechLabel");
+                RequireText(member.AttributeLabel, "member.AttributeLabel");
+                if (member.Meanings is null || member.Forms is null)
+                {
+                    throw new ArgumentException("词组成员释义和词形不能为空。", nameof(group.Members));
+                }
+
+                foreach (var meaning in member.Meanings)
+                {
+                    RequireText(meaning, "member.Meanings");
+                }
+
+                foreach (var form in member.Forms)
+                {
+                    if (form is null)
+                    {
+                        throw new ArgumentException("词组词形不能为空。", nameof(member.Forms));
+                    }
+
+                    RequireText(form.Surface, "form.Surface");
+                    RequireText(form.FormLabel, "form.FormLabel");
+                    RequireText(form.DetailLabel, "form.DetailLabel");
+                }
+            }
+
+            if (!memberIds.Contains(group.AnchorSourceSenseId))
+            {
+                throw new ArgumentException("词组锚点必须存在于成员中。", nameof(group));
+            }
+
+        }
+
+        private static void ValidateDecisionRequest(
+            string batchId,
+            IReadOnlyList<long> itemIds,
+            string decision)
+        {
+            RequireText(batchId, nameof(batchId));
+            if (itemIds is null || itemIds.Count == 0)
+            {
+                throw new ArgumentException("至少选择一个批次项目。", nameof(itemIds));
+            }
+
+            if (itemIds.Any(itemId => itemId <= 0)
+                || itemIds.Distinct().Count() != itemIds.Count)
+            {
+                throw new ArgumentException("批次项目编号必须是正数且不能重复。", nameof(itemIds));
+            }
+
+            if (!Decisions.Contains(decision))
+            {
+                throw new ArgumentException("导入决定必须是 Learning、Review 或 Discard。", nameof(decision));
+            }
+        }
+
+        private static void ValidateLanguage(string language, string parameterName)
+        {
+            RequireText(language, parameterName);
+            if (!Languages.Contains(language))
+            {
+                throw new ArgumentException("语言必须是 Japanese 或 English。", parameterName);
+            }
+        }
+
+        private static void ValidateSourceKind(string sourceKind, string parameterName)
+        {
+            RequireText(sourceKind, parameterName);
+            if (!SourceKinds.Contains(sourceKind))
+            {
+                throw new ArgumentException("导入来源必须是 Manual、Text 或 Mcp。", parameterName);
+            }
+        }
+
+        private static string RequireText(string value, string parameterName)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? throw new ArgumentException("文本不能为空。", parameterName)
+                : value;
+        }
+
+        private static ImportInboxDataAccessException InvalidRequest(string message)
+        {
+            return new ImportInboxDataAccessException(message);
+        }
+
+        private static string FormatDateTime(DateTimeOffset value)
+        {
+            return value.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
+        }
+
+        private static DateTimeOffset ParseDateTime(string value, string fieldName)
+        {
+            if (!DateTimeOffset.TryParse(
+                value,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind,
+                out var result))
+            {
+                throw new FormatException($"{fieldName} 不是有效的 UTC 时间。");
+            }
+
+            return result;
+        }
+
+        private static async Task TryRollbackAsync(System.Data.Common.DbTransaction transaction)
+        {
+            try
+            {
+                await transaction.RollbackAsync(CancellationToken.None);
+            }
+            catch
+            {
+                // 保留原始收件箱异常，连接释放时会终止未完成的事务。
+            }
+        }
+
+        private sealed class BatchRow
+        {
+            public string BatchId { get; set; } = string.Empty;
+
+            public string Language { get; set; } = string.Empty;
+
+            public string SourceKind { get; set; } = string.Empty;
+
+            public string Status { get; set; } = string.Empty;
+
+            public string CreatedAtUtc { get; set; } = string.Empty;
+
+            public string? CompletedAtUtc { get; set; }
+        }
+
+        private sealed class ItemRow
+        {
+            public long ItemId { get; set; }
+
+            public string SourceText { get; set; } = string.Empty;
+
+            public string AnchorSourceSenseId { get; set; } = string.Empty;
+
+            public string? WordGroupId { get; set; }
+
+            public string Decision { get; set; } = string.Empty;
+        }
+
+        private sealed class DecisionItemRow
+        {
+            public long ItemId { get; set; }
+
+            public string? WordGroupId { get; set; }
+
+            public string Decision { get; set; } = string.Empty;
+        }
+
+        private sealed class GroupRow
+        {
+            public string WordGroupId { get; set; } = string.Empty;
+
+            public string Language { get; set; } = string.Empty;
+
+            public string AnchorSourceSenseId { get; set; } = string.Empty;
+
+            public string Placement { get; set; } = string.Empty;
+
+            public string CreatedAtUtc { get; set; } = string.Empty;
+        }
+
+        private sealed class EditableMemberRow
+        {
+            public long MemberId { get; set; }
+
+            public string Placement { get; set; } = string.Empty;
+        }
+
+    }
+}
