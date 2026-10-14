@@ -1,4 +1,4 @@
-# Architecture and Verified Target Structure
+# Dictation Architecture and Database Schema
 
 > 项目架构、数据库结构以当前仓库源代码和正式迁移定义为准；项目程序版本由 `ProjectInfo.json` 管理。
 
@@ -11,11 +11,11 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 - `Dictation.Presentation/`：WPF 界面、ViewModel、绑定、用户输入和 UI 适配。
 - `Dictation.Core/`：业务用例与服务、配置、导入、学习、词汇、TTS 合同、DTO、Mapper；UI 与 MCP 通过共同的 Core 业务入口。
 - `Dictation.DataAccess/`：SQLite 数据访问、Dapper SQL、连接、事务及 Schema Migration，不管理 UI 或业务规则。
-- `Dictation.TtsHost/`：按已批准方案提供 TTS 支持进程。
+- `Dictation.TtsHost/`：提供 TTS 支持进程。
 - `Dictation.Updater/`：独立更新器，通过受批准的 Core 服务边界使用能力。
 - `Dictation.LexiconBuilder/`：词库构建工具。
 - `Dictation.Tests/`：**直接采用仓库既有的 xUnit v3 测试项目**；测试 Runner 使用 Microsoft.Testing.Platform，不额外创建第二套单元测试工程。
-- `docs/requirements/RefactorSpecification.md`：正式需求来源，需结合当前仓库实际实现核对。
+- `docs/requirements/RefactorSpecification.md`：项目正式需求；实际能力和实现状态以当前仓库代码为准。
 
 ## Layer Dependencies and Design
 
