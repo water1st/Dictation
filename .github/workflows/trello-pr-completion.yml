@@ -1,0 +1,37 @@
+name: Complete Trello Task after merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  complete-trello-task:
+    if: ${{ github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      BOARD_ID: ${{ secrets.BOARD_ID }}
+      TRELLO_API_KEY: ${{ secrets.TRELLO_API_KEY }}
+      TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
+    steps:
+      - name: Checkout trusted merged master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: |
+          node --check .github/scripts/trello-pr-completion.mjs
+          node --check .github/scripts/trello-pr-completion.test.mjs
+      - name: Run integration-free Trello tests
+        run: node --test .github/scripts/trello-pr-completion.test.mjs
+      - name: Complete matching merged Trello Task
+        run: node .github/scripts/trello-pr-completion.mjs
