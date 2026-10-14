@@ -49,6 +49,17 @@
 - 纯 `AGENTS.md`、`rules/*.md`、`.agents/skills/**`、普通配置和 `.github/**` 修改不消耗 Program Version。正式设计文档按 `rules/design-documents.md` 的独立 Document Version 规则执行；混合 Task 分别适用。
 - 不用 Program Version 假定 SDK 精确版本或自动覆盖另一个已批准的构建/发布版本机制。
 
+## Task 内容与 Checklist
+
+- Task 的 Execution Plan 和 Checklist 仅记录该任务节点的特有交付及必要实施方法；不能复制通用项目管理规范或开发流程。
+- Checklist 只列可核验的任务特有交付项，例如实际文档、工具脚本、功能模块和父卡直接子任务 ID。
+- 创建 Task、创建/切换分支、提交 Commit、创建/更新 PR、变更 Trello 状态、一般构建测试与常规验收属于统一工作流，不得列为 Task Checklist 项。
+- 不按开发阶段拆分同一个 Task 的 Checklist，不创建重复、空白或仅表示普通工作流状态的 Checklist。
+- Task-specific Acceptance Criteria 表示交付验证结果；一般性测试和 PR 准入不复制到每个 Task。
+- 父卡中子任务仅出现一次，子任务的具体工作留在子卡。废弃子任务时删除父卡对应项，不以勾选模拟完成。
+- Required Context References 使用仓库相对路径与稳定章节/代码符号，避免复制已有大段文档。
+- Tool 无法执行真实的删除/修改时报告阻碍，不以重命名空白条目、虚假打勾替代删除。
+
 ## Context and Acceptance
 
 - Task 引用现有权威规范和源码，不复制通用规则或全篇规格；必须写清当前状态、预期结果、可验证标准、特定执行步骤与 Checklist。
