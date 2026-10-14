@@ -866,6 +866,13 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | UNIQUE (EntryId, Surface, Reading, FormKind, ScriptKind, LexicalRole) |
 | FOREIGN KEY (EntryId) REFERENCES Entries (EntryId) ON DELETE CASCADE |
 
+
+#### 日语词库索引
+
+| 索引名称 | 表 | 字段 | 唯一 | 过滤条件 |
+|---|---|---|---|---|
+| IX_Forms_Surface | Forms | Surface | 否 | — |
+
 ## 英语只读词库
 
 数据定义来源：`Dictation.LexiconBuilder/WordNet/EnglishLexiconDatabaseBuilder.cs`。
@@ -1021,3 +1028,15 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 |---|
 | PRIMARY KEY (LearningSenseId, MeaningIndex) |
 | FOREIGN KEY (LearningSenseId) REFERENCES LearningSenses (LearningSenseId) |
+
+#### 英语词库索引
+
+| 索引名称 | 表 | 字段 | 唯一 | 过滤条件 |
+|---|---|---|---|---|
+| IX_Lexemes_Lemma | Lexemes | Lemma | 否 | — |
+| IX_Forms_Surface | Forms | Surface | 否 | — |
+| IX_Senses_SynsetId | Senses | SynsetId | 否 | — |
+| IX_Derivations_TargetSenseId | Derivations | TargetSenseId | 否 | — |
+| IX_LearningSenses_Headword | LearningSenses | Headword, PartOfSpeech, SortOrder | 否 | — |
+| IX_LearningSenseSources_SenseId | LearningSenseSources | SenseId | 否 | — |
+
