@@ -15,8 +15,7 @@
 
 - 在适用分支验证：`dotnet restore Dictation.sln`；`dotnet build Dictation.sln --configuration Debug --no-restore`。
 - 参考架构中的测试为现有 `Dictation.Tests` **xUnit v3 项目**，使用 Microsoft.Testing.Platform；只在当前分支有此项目且依赖可用时执行测试命令。
-- 原 `master` 的 .NET 8/WinForms 代码不因为参考分支目标是 .NET 10 而被视为已转换；不能假装执行不存在的项目或测试。
-- 检查真实输出，不声称未运行验证通过。数据 Schema 仅引用真实迁移、项目源码和验证事实，不推测表字段。
+- 原 `- 检查真实输出，不声称未运行验证通过。数据 Schema 仅引用真实迁移、项目源码和验证事实，不推测表字段。
 
 ## Workspaces and Skills
 
