@@ -12,7 +12,7 @@ export function validateMergeEvent(event, info) {
   const project = info?.projectName;
   const repository = info?.githubRepository;
   const baseBranch = info?.prBaseBranch;
-  if (project !== "Dictation" || repository !== "water1st/Dictation" || baseBranch !== "master") {
+  if (!project || !repository || !baseBranch || !repository.includes("/")) {
     throw new Error("ProjectInfo 项目身份或 PR 基准与仓库不一致");
   }
   if (event?.action !== "closed" || event?.pull_request?.merged !== true) {
@@ -43,7 +43,7 @@ export function validateMergeEvent(event, info) {
     throw new Error("PR Task ID 与配置的项目名称不匹配");
   }
   const branchPattern = new RegExp(
-    "^codex/(feature|fix|opt|verify)/(" + taskId + ")/[a-z0-9][a-z0-9-]*$",
+    "^codex/(feature|fix|opt|verify)/" + taskId + "/[a-z0-9][a-z0-9-]*$",
   );
   if (!branchPattern.test(headRef)) {
     throw new Error("PR 开发分支格式或其中的 Task ID 不匹配");
@@ -97,6 +97,7 @@ function verifyCardMetadata(description, info) {
     throw new Error("Task 缺少描述和项目归属");
   }
   for (const [key, expected] of [
+    ["TASK_ID", info.taskId],
     ["PROJECT", info.projectName],
     ["GITHUB_REPOSITORY", info.githubRepository],
     ["TRELLO_BOARD", info.trello.boardName],
@@ -113,7 +114,7 @@ export async function completeMergedTask({ event, projectInfo, env, fetchImpl = 
   const taskId = validateMergeEvent(event, projectInfo);
   const labelInfo = projectInfo?.trello?.projectLabel;
   if (
-    projectInfo?.trello?.boardName !== "Development Hub" ||
+    !projectInfo?.trello?.boardName ||
     labelInfo?.name !== projectInfo.projectName ||
     typeof labelInfo?.color !== "string" ||
     labelInfo.color.length === 0
@@ -171,12 +172,12 @@ export async function completeMergedTask({ event, projectInfo, env, fetchImpl = 
   if (!TRELLO_ID_PATTERN.test(card.id) || card.closed) {
     throw new Error("Task 卡片已归档或 ID 不合法");
   }
-  verifyCardMetadata(card.desc, projectInfo);
+  verifyCardMetadata(card.desc, { ...projectInfo, taskId });
   if (
     !Array.isArray(card.idLabels) ||
     !card.idLabels.includes(projectLabel.id) ||
-    labels.filter((label) => label.name === projectInfo.projectName &&
-      card.idLabels.includes(label.id)).length !== 1
+    labels.filter((label) => card.idLabels.includes(label.id) && label.name &&
+      label.name !== "Blocked" && label.name !== "Delayed").length !== 1
   ) {
     throw new Error("Task 卡片必须包含唯一正确的项目标签");
   }
