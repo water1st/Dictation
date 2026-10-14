@@ -1,54 +1,111 @@
-# Dictation · Repository Agent Rules
+# Repository Guidelines
 
-> 本仓库的权威项目身份和项目程序版本位于根目录 `ProjectInfo.json`。当前提交分支基于 `master`；经批准的目标技术架构参考 `codex/dictation-refactor`。参考分支不是 PR 目标，且其中的代码不代表 `master` 已经实现的功能。
+## 当前状态与批准目标
 
-## Non-Negotiables
+当前解决方案已迁入 `.NET 10`：`Dictation.Presentation` 使用 WPF，`Dictation.Core` 承载业务服务，`Dictation.DataAccess` 负责持久化；另有 `Dictation.TtsHost`、`Dictation.Updater`、`Dictation.LexiconBuilder` 和 `Dictation.Tests`。旧 WinForms、Edge/System TTS 与独立 Services 项目已移除。其余目标功能仍按已批准计划分片实现，不得把计划中的项目或功能当成已存在。
 
-- 仓库文件修改必须先有有效 Trello Task ID 和用户授权；讨论、审计、需求澄清及草案计划本身不自动创建 Task。
-- 使用 Development Hub 统一管理任务；不同项目允许并行。同一项目限制一个逻辑任务交付单元，父任务和当前子任务视为一个单元。
-- 每张 Task 必须关联正确的项目标签，名称必须等于 `ProjectInfo.json.projectName`，同一项目颜色固定，不同项目颜色不同。
-- 所有开发任务分支以 `codex/` 开头，由任务分支向 `master` 提交 PR。不得直接提交到 `master` 或擅自合并 PR。
-- 默认只在项目原始 Git 工作目录通过切换分支开发；未经用户对当次任务的明确授权，禁止新建 Worktree、额外 Clone、复制源码或使用 Agent/IDE 隔离开发工作区。不得擅自丢弃未提交修改。
-- C# 开发者手写代码严格一文件一类型（类、接口、结构体、枚举、记录、委托），不得以嵌套类型规避。禁止 Primary Constructor 和 Top-Level Statements；入口使用显式 `Program.Main`。框架生成代码按生成器规则处理。
-- 对正式文档的修改必须先理解最终设计意图，正文直接描述生效状态。用户原话、背景故事、讨论原因、修改轨迹、已废弃的设计不属于正式设计定义；不得未经确认将示例和设想写成规则。
-- 对不确定的需求调用适用的仓库 Skills 访谈用户；发现可以独立查明的技术事实应自行查证。Skills 不得越过用户授权、Task 约束或本文件。
-- SDK 的精确补丁号不是硬性兼容门槛；兼容且经实际验证的较新 SDK 可以直接使用。区分目标框架、SDK 和项目程序版本。
-- 保留 Dictation 已批准的 .NET 10、WPF、SQLite/Dapper、xUnit v3 等目标架构和业务职责；当前 `master` 与参考分支的差异必须实事求是，不得擅自实施重构。
-- 不提交秘密、Trello Board ID 或 Label ID；GitHub Secrets 只在获准的第二阶段接入。
-- 修改必须遵守当前 Task 的范围、Acceptance Criteria、相关权威文件及未提交工作状态。避免无关整理和推测性实现。
+## 目标结构与迁移方式
 
-## Rule Priority
+物理三层固定为 `Dictation.Presentation → Dictation.Core → Dictation.DataAccess`；业务按 `Core/Configuration`、`Core/Importing`、`Core/Learning`、`Core/Lexicon`、`Core/Tts` 等目录内聚组织。支持程序包括隐藏的 `Dictation.TtsHost` 和 `Dictation.Updater`，后者复用 Core 更新能力，不直接写用户数据库。按可运行、可验证的垂直切片迁移，不铺设没有行为的空壳；已被新链路取代且没有引用的旧实现应删除，不留无用兼容层。
 
-1. 本文件 Non-Negotiables。
-2. 与当次任务最直接相关的 `rules/*.md`。
-3. 本文件其他指南。
-4. 环境提供的全局 Agent 规则。
-5. 仓库 Skills 的工作指引；与上述规则冲突时必须服从高优先级规则。
+## 架构边界
 
-## Rule Routing
+采用传统三层边界和一个 Generic Host 管理的单一 DI 容器：
 
-- Trello、项目归属、入库、状态、父子任务、版本批次：`rules/project-management.md`。
-- 分支、Checkpoint、TDD、验证、提交与 PR：`rules/workflow.md`。
-- 技术选型、项目/模块目录、依赖边界、数据库表结构：`rules/architecture.md`。
-- C# 风格、命名、接口、类型和依赖编写：`rules/code-style.md`。
-- SDK 兼容、开发环境、外部工具及工作区约束：`rules/tooling.md`。
-- 正式文档、需求访谈、领域术语、版本、删改和验收：`rules/design-documents.md`。
+- `Presentation` 只负责 WPF UI、ViewModel、绑定和输入输出适配，不承载业务规则或 SQL。
+- `Core` 负责业务编排和用例流程，以及对应 DTO、Mapper、Provider 合同；UI 与 MCP 共用 Core 内的业务服务，不得绕过业务层。
+- `DataAccess` 只负责 CRUD 和 SQL，使用 Dapper 与 `Microsoft.Data.Sqlite`。
 
-只加载与工作直接相关的 Rules，不假定文件中存在未读取的规则。若 `CONTEXT.md` 存在，使用其中已确定的领域术语。Task 是执行入口和上下文索引，业务事实以实际规范、文件和源码为权威。
+`AddDictationCore()` 是唯一业务注册入口，只在组合根注册一次；禁止重建独立 Services 项目、兼容命名空间或第二套容器。DataAccess 不得反向引用 Core。
 
-## Skills Routing
+DTO、业务模型和持久化对象（PO）按职责分离，不要求机械地为每个 PO 再复制一套业务模型。纯模型转换放在对应业务目录的 Mapper 中，不能散落在 Service、ViewModel 或 DataAccessor 中；Mapper 不查询数据库、不编排业务、不修改状态。Service 负责业务校验与用例编排，DataAccessor 负责 SQL、连接和事务；普通请求 DTO 创建、UI 属性绑定及数据库查询本身不等于需要额外包装的映射。纯转换默认使用简单的内部静态 Mapper，不建立通用 IMapper 或全局映射中心。
 
-- 需求不清楚、需要逐层确认决策：`.agents/skills/grilling/SKILL.md`。
-- 需要结合权威资料和术语审问需求、处理较复杂 Bug：`.agents/skills/grill-with-docs/SKILL.md`。
-- 修改领域术语、术语表或重要架构决策：`.agents/skills/domain-modeling/SKILL.md`。
-- 专项计划/代码/QA/安全审查按可用环境使用 `.agents/skills/gstack/SKILL.md`。不能以工具不可用为由自行搭建额外工作区或安装全局组件。
+禁止引入 DDD、CQRS、`Repository`/`Repository<T>`；不要为形式增加接口、基类、兼容层或框架。但“不过度设计”不等于取消职责划分，“减少抽象”不等于禁止有实际价值的接口。减少类和文件数量不是设计目标，不能把 DTO、映射、业务、基础设施等不相关职责揉进一个类。
 
-## Working Mode
+## 能力接口、组合与可见性
 
-1. 理解请求、读取相关文件和规则，区分调查事实与待决选择。
-2. 对复杂或不明确需求调用 Skills，提出有依赖顺序的问题；获得用户对最终方案的确认。
-3. 只在已批准的可执行工作需要修改仓库时创建/读取相应 Trello Task；先检查项目、标签、ID、优先级、状态和执行槽。
-4. 在原目录创建/切换 Task 分支；父子任务遵守同分支同 PR 和独立 Commit ID。
-5. 按任务性质执行必要的 TDD、文档修改、构建、测试、审查和版本操作。
-6. 检查真实 Diff、Git 状态、Trello Checklist、版本和验收要求；提交并创建待审查 PR，不自行合并。
-7. 报告实际完成项、验证结果和未解决阻碍；不声称未实际运行的测试通过。
+- 接口以实际抽象价值为依据，而非实现数量。有明确能力边界、跨模块复用、实现替换或依赖隔离需求时应使用接口，即使当前只有一个实现；不存在这些需求时直接通过 DI 注入具体类，不机械配对 `IXxx + Xxx`。
+- 按调用方需要的能力拆分接口。同一实现可以实现多个小接口；调用方只依赖真正使用的能力，不应被迫接收完整实现的所有操作。有真实组合需求时可定义组合接口，但不得因此建立类继承体系或预建没有消费者的接口。
+- 优先通过 DI 组合能力，不通过无必要的类继承复用实现或字段。框架要求的继承、异常分类和确实成立的类型关系可保留，不能一律禁止继承。
+- 多个能力接口映射到同一实现时，保持原有实例身份、生命周期和释放责任；在唯一组合根注册，不为每个接口创建不同的有状态实例。简单 DataAccessor、纯算法组件等没有抽象价值时继续使用具体类。
+- 使用满足实际访问需求的最小可见性。跨程序集合同可为 `public`，仅内部使用的实现、Mapper 和辅助类型应为 `internal` 或 `private`。不能为了测试方便扩大产品 API；按需使用内部可见性授权。调整 WPF 类型时必须验证 XAML 创建、绑定和资源引用，不机械收窄。
+
+## 内聚性与依赖选型
+
+代码按业务职责保持高内聚、低耦合；同一能力的相关操作应在对应业务目录内聚组织，不得为了分层形式散落到互不相干的命名空间。统一职责归属不等于把所有操作放进一个类或一个大接口，内部按职责组合，外部按能力隔离。封装可以统一入口或隔离第三方 API，但内部必须复用成熟实现，不能复制已有库的核心功能。
+
+新增能力按以下顺序选型：
+
+1. 优先使用 .NET BCL、`Microsoft.Extensions.*` 和仓库已有依赖。
+2. 仍有缺口时，选择刚好覆盖实际需求、主流、活跃维护、许可证兼容的轻量库。
+3. 不为少量功能引入覆盖范围远超需求的重型框架，也不并存功能重叠的多个库。
+4. 仅在成熟方案确实不提供所需能力时实现最小缺口，不自行重写其已经提供的部分。
+
+每个新包必须能说明其必要性，并检查维护状态、离线可用性、包体积、传递依赖及 .NET 10/Windows 兼容性；无法证明必要性时不引入。
+
+## 数据与资源
+
+程序启动时创建根目录运行数据目录：`CONFIG/`、`DATA/`、`LOGS/`、`BACKUPS/`，必要时创建 `CACHE/`。这些目录及其中的用户数据不能被发布更新覆盖。不可变词库和 TTS/OCR 模型放在 `Resources/`。发布采用自包含 `win-x64` 全量 ZIP 时，必须保留上述用户数据目录，不能把配置或用户数据打包成会覆盖现有内容的更新文件。
+
+## 开发环境与命令
+
+环境以 Windows 11、稳定版 Visual Studio 2026 和 .NET 10 SDK 为最低基线；`global.json` 允许向前选择能构建本项目的较新稳定 SDK，不锁定某个补丁版本。常用验证命令：
+
+```powershell
+dotnet restore Dictation.sln
+dotnet build Dictation.sln --configuration Debug --no-restore
+dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 2108 --max-threads 4
+dotnet run --project Dictation.Presentation/Dictation.Presentation.csproj
+```
+
+`Dictation.Tests` 使用 xUnit v3 与 Microsoft.Testing.Platform，测试命名采用 `行为_场景_预期`。聚焦测试用 `--filter-class` 或 `--filter-method`，并指定合理的 `--minimum-expected-tests`；零测试不算通过。全量数量不得少于当前基线 2108 项；有意删除失效测试时必须记录原因及数量变化，不能用跳过测试或降低门槛掩盖回归。开发不应依赖 Edge、Windows TTS、Node、Docker、SQL Server、EF 或 CUDA。
+
+## 编码约定
+
+C# 使用四空格缩进、Allman 大括号和块级命名空间。类型、方法、属性使用 `PascalCase`；局部变量和私有字段使用 `camelCase`；启用可空引用并显式处理 `null`。WPF 表现层不写业务逻辑或 SQL。
+
+原则上一个文件对应一个主要类型，文件名与类型名一致；独立的类、接口、枚举和记录应分别放置，不以减少文件数为由合并。真正只服务于外层类型的私有嵌套辅助类型可以保留；框架生成代码及必要的分部类型按框架约束组织，不为绕过规则把独立业务类型改成嵌套类型。
+
+类、接口及其他业务类型需要简明的中文 XML 职责注释；公开方法和有实际业务意义的方法说明用途、参数含义及不直观的返回值，构造函数说明注入依赖的职责。实现合同可用 `inheritdoc` 复用准确的接口说明。核心算法和复杂流程在必要处解释处理思路、原因、边界或不变量，不逐行翻译代码，不用空泛模板凑注释；简单代码无需额外内部注释。
+
+## 测试与提交循环
+
+每个业务垂直切片严格按以下循环执行：
+
+1. 先写覆盖正常、边界、非法输入、异常和状态变化的测试。
+2. 在可编译的最小生产骨架上冻结测试文件，仅在生产实现中临时制造行为错误并实际运行测试。RED 必须是项目编译成功、目标测试确实执行，并因行为断言失败；编译失败、零测试或测试基础设施错误都不算 RED。
+3. 不修改已冻结的测试，只修正生产实现，使同一批测试由红转绿后做第一次中文提交；临时错误绝不能提交。
+4. 再将该业务从 WPF/ViewModel 经 Service、DTO/Mapper、DataAccessor/PO 打通到数据库或外部 Provider。
+5. 全部测试、构建和相关运行冒烟通过后做第二次中文提交，然后开始下一个切片。
+
+若发现测试规范或断言本身错误，必须作废该轮 RED 证据；先修正测试并重新冻结，再从“编译成功但行为断言失败”开始完整重跑 RED→GREEN。API 变更所需的测试编译适配应在冻结前完成，不得在 GREEN 阶段修改期望值迎合实现。文档、纯配置、注释和不改变行为的纯文件移动不制造无意义的单元测试，采用相称的静态检查、构建和前后回归；映射、DI 边界和业务状态变化仍须有真实行为断言验证。任何提交都不得保留临时红状态。
+
+## Git 与 PR
+
+所有开发分支必须以 `codex/` 开头，禁止直接在 `master` 开发。单个垂直切片控制在约 2–3 人/小时，每次提交只包含一个可验证工作单元；提交摘要使用具体的中文动作句。提交前测试、构建和相关冒烟必须通过。PR 目标为 `master`，描述行为变化并列出实际验证命令；涉及 UI 时附前后截图。
+
+## Agent 规则
+
+没有用户明确授权不得启动 GOAL。环境缺失时只列出所需环境清单并等待用户处理，不擅自安装依赖或工具。实现前先确认已批准的需求和计划。保留无关的已有改动及未跟踪文件，不得擅自清理。
+
+用户指出设计原则问题时，必须在批准范围内检查同类类型、调用方、DI 注册、测试和规则文档，不能只修点名的示例。先说明结构调整与局部整理的范围、依赖影响和验证方式；涉及规则修订的批准计划先修规则、再改代码。不借原则审查扩展无关功能；超过批准范围时先说明，不自行扩大。
+
+## 安全与发布
+
+MCP 仅监听 `127.0.0.1`，不得绕过 Core 业务服务直接写数据库。不得提交令牌或其他凭据。发布为自包含 `win-x64` 全量 ZIP；配置和用户数据目录必须在更新时保留且不被覆盖。
+
+## Development Hub 工程执行规则
+
+项目元数据见 `ProjectInfo.json`；任务管理与项目标签见 `rules/project-management.md`，Git/TDD/PR 见 `rules/workflow.md`，C# 风格见 `rules/code-style.md`，文档维护见 `rules/design-documents.md`，工具与 SDK 兼容见 `rules/tooling.md`，项目及数据库结构见 `rules/architecture.md`。
+
+- 修改仓库前必须有用户授权和对应 Trello Task；讨论、审计和未批准设计不得自动产生开发 Task。
+- Task Checklist 仅包含该任务的特有交付内容，不记录创建分支、Commit、PR 或常规验证等标准流程。
+- Task ID 使用 `task-{ProjectName}_{10位小写十六进制}`；项目名称取自 ProjectInfo，分支、PR 与 Trello 追踪同一完整 ID。
+- 每个项目有独立执行槽，不同项目可并行；父子 Task 按单分支、单 PR 管理。
+- 默认仅在原 Git 工作目录开发；额外 Clone 或 Worktree 需用户当次明确批准。
+- 正式设计文档仅描述当前最终设计，不转写聊天、背景理由、新旧方案对照或废弃设定。
+- C# 手写类型严格一文件一类型，不以嵌套辅助类型规避；构造函数与程序入口显式定义，不使用 Primary Constructor 或 Top-Level Statements。
+- 适用的较新稳定 SDK 只要实际兼容目标框架就可使用，不锁死精确补丁号。
+- 业务代码修改遵守既有 xUnit v3 TDD 与验证规则；纯规则和文档无需制造 RED。
+- GitHub PR、push、merge 不能自行发布应用或创建 Release，正式发布须用户单独授权。
+- 项目 Skills 存于 `.agents/skills/`；此目录原样文件由用户自行同步，本 PR 不改写其中任何文件。

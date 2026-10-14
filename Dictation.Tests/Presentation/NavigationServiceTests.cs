@@ -1,0 +1,573 @@
+using Dictation.DataAccess;
+using Dictation.DataAccess.Importing;
+using Dictation.DataAccess.Lexicon;
+using Dictation.DataAccess.Runtime;
+using Dictation.Presentation;
+using Dictation.Presentation.Navigation;
+using Dictation.Presentation.Shell;
+using Dictation.Presentation.ViewModels;
+using Dictation.Core.Configuration;
+using Dictation.Core.Importing;
+using Dictation.Core.Lexicon;
+using Dictation.Tests.Infrastructure;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Dictation.Tests.Presentation
+{
+    /// <summary>
+    /// 验证真实导航容器的单例别名、页面作用域、返回栈和转场释放。
+    /// </summary>
+    public sealed class NavigationServiceTests
+    {
+        [Fact]
+        public void AddDictationPresentation_NavigationCapabilitiesAliasTheOriginalSingleton()
+        {
+            var services = new ServiceCollection();
+            services.AddDictationPresentation();
+            using var provider = services.BuildServiceProvider();
+
+            var implementation = provider.GetRequiredService<NavigationService>();
+
+            Assert.Same(implementation, provider.GetRequiredService<IHomeNavigation>());
+            Assert.Same(implementation, provider.GetRequiredService<ILearningSessionNavigation>());
+            Assert.Same(implementation, provider.GetRequiredService<IBackNavigation>());
+            Assert.Same(implementation, provider.GetRequiredService<IImportInboxDetailNavigation>());
+            Assert.Same(implementation, provider.GetRequiredService<INavigationHost>());
+        }
+
+        [Fact]
+        public async Task DisposingRealProviderAfterResolvingAllNavigationAliases_ReleasesPageScopeOnce()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var pageServices = new ServiceCollection();
+            pageServices.AddSingleton<ILexiconSearch, EmptyLexiconSearch>();
+            pageServices.AddSingleton<IImportStaging, EmptyImportStaging>();
+            pageServices.AddSingleton(new NavigationService(new RejectingScopeFactory()));
+            pageServices.AddSingleton<IBackNavigation>(serviceProvider =>
+                serviceProvider.GetRequiredService<NavigationService>());
+            pageServices.AddSingleton<OverlayService>();
+            pageServices.AddScoped<LexiconLookupViewModel>();
+            using var pageProvider = pageServices.BuildServiceProvider();
+            var scopeFactory = new CountingScopeFactory(
+                pageProvider.GetRequiredService<IServiceScopeFactory>());
+            var navigation = new NavigationService(scopeFactory);
+            var services = new ServiceCollection();
+            services.AddDictationPresentation();
+            services.AddSingleton(navigation);
+            var provider = services.BuildServiceProvider();
+            var home = new HomeViewModel(
+                new SettingsService(
+                    new ConfigurationBuilder().Build(),
+                    new ApplicationPaths(temporaryDirectory.Path)),
+                navigation,
+                new StubLearningProgressReader(),
+                new StubLearningPlanReader(),
+                new StubLearningSessionReader(),
+                new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
+            navigation.InitializeHome(home);
+
+            var homeNavigation = provider.GetRequiredService<IHomeNavigation>();
+            var backNavigation = provider.GetRequiredService<IBackNavigation>();
+            var detailNavigation = provider.GetRequiredService<IImportInboxDetailNavigation>();
+            var hostNavigation = provider.GetRequiredService<INavigationHost>();
+            Assert.Same(navigation, homeNavigation);
+            Assert.Same(navigation, backNavigation);
+            Assert.Same(navigation, detailNavigation);
+            Assert.Same(navigation, hostNavigation);
+            await homeNavigation.OpenLexiconLookupAsync(
+                LearningLanguage.Japanese,
+                TestContext.Current.CancellationToken);
+            hostNavigation.CompleteTransition();
+            await backNavigation.GoBackAsync(TestContext.Current.CancellationToken);
+            Assert.Equal(0, scopeFactory.DisposeCallCount);
+
+            var exception = Record.Exception(provider.Dispose);
+
+            Assert.Null(exception);
+            Assert.Equal(1, scopeFactory.DisposeCallCount);
+        }
+
+        [Fact]
+        public void InitializeHome_OnlyAcceptsOneRootViewModel()
+        {
+            using var fixture = new NavigationFixture();
+
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+
+            Assert.Same(fixture.HomeViewModel, fixture.Navigation.CurrentPage);
+            Assert.False(fixture.Navigation.CanGoBack);
+            Assert.Equal("首页", fixture.Navigation.PageTitle);
+            Assert.Throws<InvalidOperationException>(() =>
+                fixture.Navigation.InitializeHome(fixture.HomeViewModel));
+        }
+
+        [Fact]
+        public async Task OpenLexiconLookup_UsesForwardDirectionAndFixedLanguage()
+        {
+            using var fixture = new NavigationFixture();
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            var transitions = new List<NavigationTransitionEventArgs>();
+            fixture.Navigation.TransitionRequested += (_, args) => transitions.Add(args);
+
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken);
+
+            var lookup = Assert.IsType<LexiconLookupViewModel>(fixture.Navigation.CurrentPage);
+            Assert.Equal(LearningLanguage.English, lookup.SelectedLanguage);
+            Assert.Equal(NavigationDirection.Forward, fixture.Navigation.LastDirection);
+            Assert.False(fixture.Navigation.CanGoBack);
+            var transition = Assert.Single(transitions);
+            Assert.Same(fixture.HomeViewModel, transition.PreviousPage);
+            Assert.Same(lookup, transition.CurrentPage);
+            Assert.Equal(NavigationDirection.Forward, transition.Direction);
+
+            fixture.Navigation.CompleteTransition();
+            Assert.True(fixture.Navigation.CanGoBack);
+        }
+
+        [Fact]
+        public async Task GoBackDuringTransition_IsIgnoredUntilTransitionCompletes()
+        {
+            using var fixture = new NavigationFixture();
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
+
+            var lookup = Assert.IsType<LexiconLookupViewModel>(fixture.Navigation.CurrentPage);
+            var canGoBackChanges = new List<string?>();
+            fixture.Navigation.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(NavigationService.CanGoBack))
+                {
+                    canGoBackChanges.Add(args.PropertyName);
+                }
+            };
+
+            Assert.False(fixture.Navigation.CanGoBack);
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Same(lookup, fixture.Navigation.CurrentPage);
+            Assert.False(fixture.Navigation.CanGoBack);
+
+            fixture.Navigation.CompleteTransition();
+
+            Assert.True(fixture.Navigation.CanGoBack);
+            Assert.Contains(nameof(NavigationService.CanGoBack), canGoBackChanges);
+        }
+
+        [Fact]
+        public async Task GoBack_UsesBackwardDirectionAndRestoresTheSamePreviousViewModel()
+        {
+            using var fixture = new NavigationFixture();
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
+            fixture.Navigation.CompleteTransition();
+            var lookup = fixture.Navigation.CurrentPage;
+
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Equal(NavigationDirection.Backward, fixture.Navigation.LastDirection);
+            Assert.Same(fixture.HomeViewModel, fixture.Navigation.CurrentPage);
+            Assert.False(fixture.Navigation.CanGoBack);
+            fixture.Navigation.CompleteTransition();
+            Assert.NotSame(lookup, fixture.Navigation.CurrentPage);
+        }
+
+        [Fact]
+        public async Task ShellViewModel_ForwardsTransitionsAndCompletesTransition()
+        {
+            using var fixture = new NavigationFixture();
+            using var overlay = new OverlayService();
+            var shell = new ShellViewModel(fixture.Navigation, overlay, fixture.Navigation, fixture.Navigation);
+            var transitions = new List<NavigationTransitionEventArgs>();
+            shell.TransitionRequested += (_, args) => transitions.Add(args);
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
+
+            var lookup = Assert.IsType<LexiconLookupViewModel>(fixture.Navigation.CurrentPage);
+            var forwardTransition = Assert.Single(transitions);
+            Assert.Same(lookup, forwardTransition.CurrentPage);
+            Assert.Equal(NavigationDirection.Forward, forwardTransition.Direction);
+            shell.CompleteTransition();
+            var probe = Assert.Single(fixture.ScopeProbes);
+
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            var backwardTransition = Assert.Single(transitions.Skip(1));
+            Assert.Same(fixture.HomeViewModel, backwardTransition.CurrentPage);
+            Assert.Equal(NavigationDirection.Backward, backwardTransition.Direction);
+            Assert.False(probe.IsDisposed);
+            shell.CompleteTransition();
+            Assert.True(probe.IsDisposed);
+        }
+
+        [Fact]
+        public async Task GoBackAtRoot_DoesNotRaiseATransition()
+        {
+            using var fixture = new NavigationFixture();
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            var transitionCount = 0;
+            fixture.Navigation.TransitionRequested += (_, _) => transitionCount++;
+
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Equal(0, transitionCount);
+            Assert.Same(fixture.HomeViewModel, fixture.Navigation.CurrentPage);
+            Assert.False(fixture.Navigation.CanGoBack);
+        }
+
+        [Fact]
+        public async Task GoBack_DisposesPoppedScopeOnlyAfterTransitionCompletes()
+        {
+            using var fixture = new NavigationFixture();
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken);
+            fixture.Navigation.CompleteTransition();
+            var probe = Assert.Single(fixture.ScopeProbes);
+
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.False(probe.IsDisposed);
+            fixture.Navigation.CompleteTransition();
+            Assert.True(probe.IsDisposed);
+        }
+
+        [Fact]
+        public async Task ForwardNavigation_DoesNotRetainForwardHistoryAfterGoingBack()
+        {
+            using var fixture = new NavigationFixture();
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
+            fixture.Navigation.CompleteTransition();
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
+            fixture.Navigation.CompleteTransition();
+
+            await fixture.Navigation.OpenImportInboxAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
+            fixture.Navigation.CompleteTransition();
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Same(fixture.HomeViewModel, fixture.Navigation.CurrentPage);
+            Assert.False(fixture.Navigation.CanGoBack);
+            fixture.Navigation.CompleteTransition();
+        }
+
+        [Fact]
+        public async Task Dispose_ReleasesEveryRetainedPageScope()
+        {
+            using var fixture = new NavigationFixture();
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
+            fixture.Navigation.CompleteTransition();
+            await fixture.Navigation.OpenImportInboxAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken);
+            fixture.Navigation.CompleteTransition();
+
+            Assert.Equal(2, fixture.ScopeProbes.Count);
+            Assert.All(fixture.ScopeProbes, probe => Assert.False(probe.IsDisposed));
+
+            fixture.Navigation.Dispose();
+
+            Assert.All(fixture.ScopeProbes, probe => Assert.True(probe.IsDisposed));
+        }
+
+        [Fact]
+        public async Task Dispose_ReleasesScopePendingCompletion()
+        {
+            using var fixture = new NavigationFixture();
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
+            fixture.Navigation.CompleteTransition();
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
+            var probe = Assert.Single(fixture.ScopeProbes);
+
+            fixture.Navigation.Dispose();
+
+            Assert.True(probe.IsDisposed);
+        }
+
+        [Fact]
+        public async Task Navigation_RejectsInvalidLanguageAndCancellationWithoutChangingState()
+        {
+            using var fixture = new NavigationFixture();
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            using var cancellation = new CancellationTokenSource();
+            cancellation.Cancel();
+
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+                fixture.Navigation.OpenLexiconLookupAsync((LearningLanguage)99, cancellationToken: TestContext.Current.CancellationToken));
+            await Assert.ThrowsAsync<OperationCanceledException>(() =>
+                fixture.Navigation.OpenImportInboxAsync(
+                    LearningLanguage.Japanese,
+                    cancellation.Token));
+
+            Assert.Same(fixture.HomeViewModel, fixture.Navigation.CurrentPage);
+            Assert.Empty(fixture.ScopeProbes);
+        }
+
+        [Fact]
+        public async Task Navigation_RejectsAnotherOperationUntilTransitionCompletes()
+        {
+            using var fixture = new NavigationFixture();
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                fixture.Navigation.OpenImportInboxAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken));
+
+            fixture.Navigation.CompleteTransition();
+        }
+
+        [Fact]
+        public async Task PendingInboxLoad_ReservesNavigationUntilItCompletes()
+        {
+            using var fixture = new NavigationFixture(initializeData: false);
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+
+            var inboxNavigation = fixture.Navigation.OpenImportInboxAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken);
+            await WaitForOverlayAsync(fixture.Overlay);
+
+            await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken);
+            var pageDuringLoad = fixture.Navigation.CurrentPage;
+            fixture.Overlay.Dismiss();
+            var navigationException = await Record.ExceptionAsync(() => inboxNavigation);
+
+            Assert.Same(fixture.HomeViewModel, pageDuringLoad);
+            Assert.Null(navigationException);
+            Assert.IsType<ImportInboxListViewModel>(fixture.Navigation.CurrentPage);
+            fixture.Navigation.CompleteTransition();
+        }
+
+        [Fact]
+        public async Task InboxDetailBack_RestoresTheSameListAndRefreshesItsDtoState()
+        {
+            using var fixture = new NavigationFixture();
+            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            await fixture.ImportInboxService.StageAsync(
+                new StageImportBatchRequestDto(
+                    LearningLanguage.English,
+                    ImportSourceKind.Manual,
+                    new[] { new ImportSelectionDto("symbols", "missing:symbols:v") }), cancellationToken: TestContext.Current.CancellationToken);
+            await fixture.ImportInboxService.StageAsync(
+                new StageImportBatchRequestDto(
+                    LearningLanguage.English,
+                    ImportSourceKind.Manual,
+                    new[] { new ImportSelectionDto("go", "ecdict:go:v") }), cancellationToken: TestContext.Current.CancellationToken);
+            await fixture.Navigation.OpenImportInboxAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken);
+            fixture.Navigation.CompleteTransition();
+            var list = Assert.IsType<ImportInboxListViewModel>(fixture.Navigation.CurrentPage);
+            var selectedBatch = list.Batches.Single(batch => batch.Items[0].SourceText == "go");
+            list.SelectedBatch = selectedBatch;
+            var selectedItem = Assert.Single(list.Items);
+            selectedItem.IsSelected = true;
+            list.FilterText = "go";
+            list.ScrollOffset = 91.25;
+
+            await list.OpenSelectedDetailAsync(cancellationToken: TestContext.Current.CancellationToken);
+            var detail = Assert.IsType<ImportInboxDetailViewModel>(fixture.Navigation.CurrentPage);
+            Assert.Equal("go", detail.SourceText);
+            fixture.Navigation.CompleteTransition();
+            var detailProbe = fixture.ScopeProbes[^1];
+
+            await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Same(list, fixture.Navigation.CurrentPage);
+            Assert.Equal(selectedBatch.BatchId, list.SelectedBatch?.BatchId);
+            Assert.Equal("go", list.FilterText);
+            Assert.Equal(91.25, list.ScrollOffset);
+            var refreshedItem = Assert.Single(list.Items);
+            Assert.NotSame(selectedItem, refreshedItem);
+            Assert.True(refreshedItem.IsSelected);
+            Assert.False(detailProbe.IsDisposed);
+            fixture.Navigation.CompleteTransition();
+            Assert.True(detailProbe.IsDisposed);
+        }
+
+        private static async Task WaitForOverlayAsync(OverlayService overlay)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+            while (!overlay.IsVisible && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(1);
+            }
+
+            Assert.True(overlay.IsVisible, "等待导航加载错误弹层显示超时。");
+        }
+
+        private sealed class NavigationFixture : IDisposable
+        {
+            private readonly TemporaryDirectory temporaryDirectory = new();
+
+            public NavigationFixture(bool initializeData = true)
+            {
+                var paths = new ApplicationPaths(temporaryDirectory.Path);
+                paths.EnsureRuntimeDirectories();
+                if (initializeData)
+                {
+                    LexiconTestDatabases.CreateBoth(paths);
+                    new SchemaMigrationRunner(
+                        paths,
+                        new SqliteConnectionFactory(paths)).MigrateAsync().GetAwaiter().GetResult();
+                }
+
+                var services = new ServiceCollection();
+                services.AddSingleton<NavigationService>(serviceProvider =>
+                    new NavigationService(
+                        serviceProvider.GetRequiredService<IServiceScopeFactory>()));
+                services.AddSingleton<IBackNavigation>(serviceProvider =>
+                    serviceProvider.GetRequiredService<NavigationService>());
+                services.AddSingleton<IImportInboxDetailNavigation>(serviceProvider =>
+                    serviceProvider.GetRequiredService<NavigationService>());
+                services.AddSingleton<OverlayService>();
+                services.AddSingleton<IOverlayRequester>(serviceProvider =>
+                    serviceProvider.GetRequiredService<OverlayService>());
+                services.AddScoped<ScopeProbe>();
+                services.AddScoped<LexiconLookupService>(_ => CreateLexiconService(paths));
+                services.AddScoped<ILexiconSearch>(serviceProvider =>
+                    serviceProvider.GetRequiredService<LexiconLookupService>());
+                services.AddScoped<ImportInboxService>(serviceProvider =>
+                    new ImportInboxService(
+                        serviceProvider.GetRequiredService<LexiconLookupService>(),
+                        DataAccessorTestFactory.CreateImportInbox(new SqliteConnectionFactory(paths))));
+                services.AddScoped<IImportStaging>(serviceProvider =>
+                    serviceProvider.GetRequiredService<ImportInboxService>());
+                services.AddScoped<IImportInboxQuery>(serviceProvider =>
+                    serviceProvider.GetRequiredService<ImportInboxService>());
+                services.AddScoped<IImportInboxActions>(serviceProvider =>
+                    serviceProvider.GetRequiredService<ImportInboxService>());
+                services.AddScoped<LexiconLookupViewModel>(serviceProvider =>
+                {
+                    var probe = serviceProvider.GetRequiredService<ScopeProbe>();
+                    ScopeProbes.Add(probe);
+                    return ActivatorUtilities.CreateInstance<LexiconLookupViewModel>(serviceProvider);
+                });
+                services.AddScoped<ImportInboxListViewModel>(serviceProvider =>
+                {
+                    var probe = serviceProvider.GetRequiredService<ScopeProbe>();
+                    ScopeProbes.Add(probe);
+                    return ActivatorUtilities.CreateInstance<ImportInboxListViewModel>(serviceProvider);
+                });
+                services.AddScoped<ImportInboxDetailViewModel>(serviceProvider =>
+                {
+                    var probe = serviceProvider.GetRequiredService<ScopeProbe>();
+                    ScopeProbes.Add(probe);
+                    return ActivatorUtilities.CreateInstance<ImportInboxDetailViewModel>(serviceProvider);
+                });
+                ServiceProvider = services.BuildServiceProvider();
+                Navigation = ServiceProvider.GetRequiredService<NavigationService>();
+                Overlay = ServiceProvider.GetRequiredService<OverlayService>();
+                ImportInboxService = ServiceProvider.GetRequiredService<ImportInboxService>();
+                HomeViewModel = new HomeViewModel(
+                    new SettingsService(new ConfigurationBuilder().Build(), paths),
+                    Navigation,
+                    new StubLearningProgressReader(),
+                    new StubLearningPlanReader(),
+                    new StubLearningSessionReader(),
+                    new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
+            }
+
+            public List<ScopeProbe> ScopeProbes { get; } = new();
+
+            public ServiceProvider ServiceProvider { get; }
+
+            public NavigationService Navigation { get; }
+
+            public OverlayService Overlay { get; }
+
+            public ImportInboxService ImportInboxService { get; }
+
+            public HomeViewModel HomeViewModel { get; }
+
+            public void Dispose()
+            {
+                Navigation.Dispose();
+                ServiceProvider.Dispose();
+                temporaryDirectory.Dispose();
+            }
+
+            private static LexiconLookupService CreateLexiconService(ApplicationPaths paths)
+            {
+                var factory = new LexiconSqliteConnectionFactory(paths);
+                return new LexiconLookupService(
+                    new JapaneseLexiconDataAccessor(factory),
+                    new EnglishLexiconDataAccessor(factory));
+            }
+        }
+
+        private sealed class ScopeProbe : IDisposable
+        {
+            public bool IsDisposed { get; private set; }
+
+            public void Dispose()
+            {
+                IsDisposed = true;
+            }
+        }
+
+        private sealed class EmptyLexiconSearch : ILexiconSearch
+        {
+            public Task<IReadOnlyList<LexiconLookupResultDto>> SearchAsync(
+                LexiconSearchRequestDto request,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyList<LexiconLookupResultDto>>(
+                    Array.Empty<LexiconLookupResultDto>());
+            }
+        }
+
+        private sealed class EmptyImportStaging : IImportStaging
+        {
+            public Task<StageImportBatchResultDto> StageAsync(
+                StageImportBatchRequestDto request,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromException<StageImportBatchResultDto>(
+                    new InvalidOperationException("该测试不会执行导入暂存。"));
+            }
+        }
+
+        private sealed class RejectingScopeFactory : IServiceScopeFactory
+        {
+            public IServiceScope CreateScope()
+            {
+                throw new InvalidOperationException("该测试导航不会创建页面作用域。 ");
+            }
+        }
+
+        private sealed class CountingScopeFactory : IServiceScopeFactory
+        {
+            private readonly IServiceScopeFactory inner;
+
+            public CountingScopeFactory(IServiceScopeFactory inner)
+            {
+                this.inner = inner;
+            }
+
+            public int DisposeCallCount { get; private set; }
+
+            public IServiceScope CreateScope()
+            {
+                return new CountingScope(inner.CreateScope(), this);
+            }
+
+            private sealed class CountingScope : IServiceScope
+            {
+                private readonly IServiceScope innerScope;
+                private readonly CountingScopeFactory owner;
+
+                public CountingScope(IServiceScope innerScope, CountingScopeFactory owner)
+                {
+                    this.innerScope = innerScope;
+                    this.owner = owner;
+                }
+
+                public IServiceProvider ServiceProvider => innerScope.ServiceProvider;
+
+                public void Dispose()
+                {
+                    owner.DisposeCallCount++;
+                    innerScope.Dispose();
+                }
+            }
+        }
+    }
+}

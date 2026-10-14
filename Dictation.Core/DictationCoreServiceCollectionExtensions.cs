@@ -1,21 +1,116 @@
-﻿using Dictation.Core;
+using Dictation.Core.Practice;
+using Dictation.Core.Configuration;
+using Dictation.Core.Importing;
+using Dictation.Core.Learning;
+using Dictation.Core.Lexicon;
+using Dictation.Core.Review;
+using Dictation.Core.Mistakes;
+using Dictation.Core.Kana;
+using Dictation.Core.SingleInstance;
+using Dictation.Core.Startup;
+using Dictation.Core.Tts;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
+    /// <summary>
+    /// 提供 Dictation Core 业务服务及其能力别名的依赖注入注册入口。
+    /// </summary>
     public static class DictationCoreServiceCollectionExtensions
     {
+        /// <summary>
+        /// 注册 Core 层服务；词库检索与整组解析能力共享同一个词库服务单例。
+        /// </summary>
+        /// <param name="services">应用程序唯一组合根使用的服务集合。</param>
+        /// <returns>完成 Core 业务服务注册后的原服务集合。</returns>
         public static IServiceCollection AddDictationCore(this IServiceCollection services)
         {
-            services.AddSingleton<WordCollection>();
-            services.AddSingleton<WordDrawingCollection>();
-
-            services.AddTransient<LanguageRecognizer>();
-            services.AddKeyedTransient<ILanguageSettableTTSPlayer, EdgeTTSPlayer>("edge");
-            services.AddKeyedTransient<ILanguageSettableTTSPlayer, SystemTTSPlayer>("system");
-            services.AddTransient<ITTSPlayer, TTSProxy>();
-            services.AddTransient<DictationManager>();
-            services.AddTransient<TTSFactory>();
-
+            services.AddSingleton<Dictation.Core.Statistics.ILanguageStatisticsReader, Dictation.Core.Statistics.LanguageStatisticsService>();
+            ArgumentNullException.ThrowIfNull(services);
+            services.AddSingleton<Dictation.Core.Updating.UpdateInstaller>();
+            services.AddSingleton<Dictation.Core.Updating.GitHubUpdateProvider>(_ => new(new HttpClient { Timeout = Timeout.InfiniteTimeSpan }));
+            services.AddSingleton<Dictation.Core.Updating.UpdateService>();
+            services.AddSingleton<Dictation.Core.Updating.UpdatePackagePreparer>();
+            services.AddSingleton<Dictation.Core.Updating.IUpdateReleaseQuery>(provider => provider.GetRequiredService<Dictation.Core.Updating.UpdateService>());
+            services.AddSingleton<Dictation.Core.Updating.IUpdatePreparation>(provider => provider.GetRequiredService<Dictation.Core.Updating.UpdateService>());
+            services.AddSingleton<Dictation.Core.Updating.IUpdateInstaller>(provider => provider.GetRequiredService<Dictation.Core.Updating.UpdateInstaller>());
+            services.AddSingleton<Dictation.Core.Updating.IUpdateRollback>(provider => provider.GetRequiredService<Dictation.Core.Updating.UpdateInstaller>());
+            services.AddSingleton<Dictation.Core.Updating.IUpdateCommit>(provider => provider.GetRequiredService<Dictation.Core.Updating.UpdateInstaller>());
+            services.AddSingleton<Dictation.Core.Updating.IUpdateStartupNotifier>(provider => new Dictation.Core.Updating.UpdateStartupNotifier(
+                provider.GetRequiredService<Dictation.DataAccess.Runtime.ApplicationPaths>(),
+                provider.GetService<Microsoft.Extensions.Configuration.IConfiguration>()?["DICTATION_UPDATE_READY_FILE"]));
+            services.AddSingleton<SettingsService>();
+            services.AddSingleton<McpSettingsService>();
+            services.AddSingleton<CodexMcpRegistrationService>();
+            services.AddSingleton<StartupInitializer>();
+            services.AddSingleton<SingleInstanceCoordinator>();
+            services.AddSingleton<TtsService>();
+            services.AddSingleton<LexiconLookupService>();
+            services.AddSingleton<ILexiconSearch>(serviceProvider =>
+                serviceProvider.GetRequiredService<LexiconLookupService>());
+            services.AddSingleton<ILexiconImportGroupResolver>(serviceProvider =>
+                serviceProvider.GetRequiredService<LexiconLookupService>());
+            services.AddSingleton<ImportInboxService>();
+            services.AddSingleton<IImportStaging>(serviceProvider =>
+                serviceProvider.GetRequiredService<ImportInboxService>());
+            services.AddSingleton<IImportInboxQuery>(serviceProvider =>
+                serviceProvider.GetRequiredService<ImportInboxService>());
+            services.AddSingleton<IImportInboxActions>(serviceProvider =>
+                serviceProvider.GetRequiredService<ImportInboxService>());
+            services.AddSingleton<IImportBatchReader>(serviceProvider =>
+                serviceProvider.GetRequiredService<ImportInboxService>());
+            services.AddSingleton<ITextImportPreparation, TextImportPreparationService>();
+            services.AddSingleton(TimeProvider.System);
+            services.AddSingleton<Dictation.Core.Statistics.IDailyCheckInReader, Dictation.Core.Statistics.DailyCheckInService>();
+            services.AddSingleton<Dictation.Core.Statistics.ICheckInCalendarReader, Dictation.Core.Statistics.CheckInCalendarService>();
+            services.AddSingleton<Dictation.Core.Statistics.IDailyPlanSnapshotRecorder, Dictation.Core.Statistics.DailyPlanSnapshotService>();
+            services.AddSingleton<KanaDailyAvailabilityService>();
+            services.AddSingleton(Random.Shared);
+            services.AddSingleton<PracticePlanOptionValidator>();
+            services.AddSingleton<EnglishExampleParadigmResolver>();
+            services.AddSingleton<LearningPlanService>();
+            services.AddSingleton<ILearningPlanReader>(serviceProvider =>
+                serviceProvider.GetRequiredService<LearningPlanService>());
+            services.AddSingleton<ILearningPlanEditor>(serviceProvider =>
+                serviceProvider.GetRequiredService<LearningPlanService>());
+            services.AddSingleton<ILearningLibraryManager>(serviceProvider =>
+                serviceProvider.GetRequiredService<LearningPlanService>());
+            services.AddSingleton<ILearningSessionStartPreparer>(serviceProvider =>
+                serviceProvider.GetRequiredService<LearningPlanService>());
+            services.AddSingleton<PracticeQuestionScheduler>();
+            services.AddSingleton<LearningSessionService>();
+            services.AddSingleton<ILearningSessionOperations>(serviceProvider =>
+                serviceProvider.GetRequiredService<LearningSessionService>());
+            services.AddSingleton<ILearningSessionReader>(serviceProvider =>
+                serviceProvider.GetRequiredService<LearningSessionService>());
+            services.AddSingleton<LearningProgressService>();
+            services.AddSingleton<ILearningProgressReader>(serviceProvider =>
+                serviceProvider.GetRequiredService<LearningProgressService>());
+            services.AddSingleton<AnswerEvaluationService>();
+            services.AddSingleton<FsrsScheduler>();
+            services.AddSingleton<LearningMemorySeedPlanner>();
+            services.AddSingleton<IReviewLibraryQuery, ReviewLibraryService>();
+            services.AddSingleton<ReviewPlanService>();
+            services.AddSingleton<IReviewPlanReader>(provider => provider.GetRequiredService<ReviewPlanService>());
+            services.AddSingleton<IReviewPlanEditor>(provider => provider.GetRequiredService<ReviewPlanService>());
+            services.AddSingleton<IReviewLibraryManager>(provider => provider.GetRequiredService<ReviewPlanService>());
+            services.AddSingleton<ReviewSessionSelectionPlanner>();
+            services.AddSingleton<IReviewQuestionReader, ReviewQuestionService>();
+            services.AddSingleton<IReviewSessionAnswerer, ReviewAnswerService>();
+            services.AddSingleton<ReviewMemoryUpdatePlanner>();
+            services.AddSingleton<IReviewProgressReader, ReviewProgressService>();
+            services.AddSingleton<ReviewSessionService>();
+            services.AddSingleton<IReviewSessionStarter>(provider => provider.GetRequiredService<ReviewSessionService>());
+            services.AddSingleton<IReviewSessionReader>(provider => provider.GetRequiredService<ReviewSessionService>());
+            services.AddSingleton<IWrongAnswerQuery, WrongAnswerQueryService>();
+            services.AddSingleton<IWrongAnswerPractice, WrongAnswerPracticeService>();
+            services.AddSingleton<KanaPlanService>();
+            services.AddSingleton<IKanaPlanReader>(provider => provider.GetRequiredService<KanaPlanService>());
+            services.AddSingleton<IKanaPlanEditor>(provider => provider.GetRequiredService<KanaPlanService>());
+            services.AddSingleton<KanaSessionService>();
+            services.AddSingleton<KanaSessionPlanner>();
+            services.AddSingleton<IKanaSessionReader>(provider => provider.GetRequiredService<KanaSessionService>());
+            services.AddSingleton<IKanaProgressReader>(provider => provider.GetRequiredService<KanaSessionService>());
+            services.AddSingleton<IKanaSessionOperations>(provider => provider.GetRequiredService<KanaSessionService>());
             return services;
         }
     }

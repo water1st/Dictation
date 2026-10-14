@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dictation.DataAccess\Dictation.DataAccess.csproj" />
+    <ProjectReference Include="..\Dictation.Presentation\Dictation.Presentation.csproj" />
+    <ProjectReference Include="..\Dictation.Core\Dictation.Core.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dictation.TtsHost\Dictation.TtsHost.csproj" />
+    <ProjectReference Include="..\Dictation.LexiconBuilder\Dictation.LexiconBuilder.csproj" />
+    <ProjectReference Include="..\Dictation.Updater\Dictation.Updater.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+</Project>

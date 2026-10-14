@@ -1,0 +1,11 @@
+# 每行一个英文词形。可用 went 查询并导入 go 的整组词形。
+went
+do
+child
+good
+convert
+execute
+run
+book
+speak
+learn
