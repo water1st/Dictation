@@ -1,12 +1,12 @@
 # Repository Guidelines
 
-## 当前状态与批准目标
+## 项目架构
 
-当前解决方案已迁入 `.NET 10`：`Dictation.Presentation` 使用 WPF，`Dictation.Core` 承载业务服务，`Dictation.DataAccess` 负责持久化；另有 `Dictation.TtsHost`、`Dictation.Updater`、`Dictation.LexiconBuilder` 和 `Dictation.Tests`。旧 WinForms、Edge/System TTS 与独立 Services 项目已移除。其余目标功能仍按已批准计划分片实现，不得把计划中的项目或功能当成已存在。
+解决方案采用 `.NET 10`：`Dictation.Presentation` 使用 WPF，`Dictation.Core` 承载业务服务，`Dictation.DataAccess` 负责持久化；另有 `Dictation.TtsHost`、`Dictation.Updater`、`Dictation.LexiconBuilder` 和 `Dictation.Tests`。开发和文档均以当前仓库代码、正式需求及已批准的后续任务为准。
 
-## 目标结构与迁移方式
+## 项目结构与实现方式
 
-物理三层固定为 `Dictation.Presentation → Dictation.Core → Dictation.DataAccess`；业务按 `Core/Configuration`、`Core/Importing`、`Core/Learning`、`Core/Lexicon`、`Core/Tts` 等目录内聚组织。支持程序包括隐藏的 `Dictation.TtsHost` 和 `Dictation.Updater`，后者复用 Core 更新能力，不直接写用户数据库。按可运行、可验证的垂直切片迁移，不铺设没有行为的空壳；已被新链路取代且没有引用的旧实现应删除，不留无用兼容层。
+物理三层固定为 `Dictation.Presentation → Dictation.Core → Dictation.DataAccess`；业务按 `Core/Configuration`、`Core/Importing`、`Core/Learning`、`Core/Lexicon`、`Core/Tts` 等目录内聚组织。支持程序包括隐藏的 `Dictation.TtsHost` 和 `Dictation.Updater`，后者复用 Core 更新能力，不直接写用户数据库。按可运行、可验证的垂直切片迁移，不铺设没有行为的空壳；无效或无消费者的实现应清理，并遵守实际 Task 的修改授权。
 
 ## 架构边界
 
