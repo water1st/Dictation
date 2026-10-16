@@ -10,21 +10,50 @@
 
 ## Git Traceability
 
-- 开发分支格式 `codex/<feature|fix|opt|verify>/<task-id>/<slug>`，本项目最终 PR 目标 `master`，本项目 PR 目标是 `master`，架构与构建环境以当前仓库的实际代码及已批准的规范为准。
-- 每次 Commit 的摘要末尾包含唯一拥有者 ID：`<中文动作句> [task-Dictation_xxxxxxxxxx]`。任务 ID 不放入 conventional-commit 的 scope 中。
+- 开发分支格式 `codex/<feature|fix|opt|verify>/<task-id>/<slug>`，PR 目标分支为 `master`。
+- 每次 Commit 的摘要末尾包含唯一拥有者 ID：`<中文动作句> [task-Dictation_xxxxxxxxxx]`。任务 ID 不放入 Conventional Commit 的 scope；分支名只用英文/ASCII，Commit 消息和 PR 标题、描述的自然语言使用简体中文，技术标识符保持原样。
 - 普通 Task 一个分支、一个 PR；父子组仅父任务分支和 PR。子任务 Commit 只标该子 ID，PR 标题只标父 ID，PR 正文列明子任务 ID。
-- 不强推、直接合并、覆盖用户未提交文件，不直接修改主分支。
+- 不强推、直接合并、覆盖用户未提交文件，不直接修改主分支。每次提交只包含一个可验证的工作单元；涉及 UI 的 PR 附前后截图。
 
 ## TDD for Code
 
 - 对有可验证业务行为的代码改动，先在完整的最小垂直切片上写测试，覆盖正常、边界、非法输入、异常和状态变化。
 - RED 必须成功编译并执行预期测试，因行为断言失败；编译失败、零测试或环境错误不算 RED。
-- RED 后冻结正确测试；先让生产代码使同一批测试 GREEN。测试本身错误时，作废该轮证据，修正并重新冻结后从 RED 开始。
-- 每个业务切片按 Dictation 已批准流程做两次中文 Commit：行为 GREEN 证据后一次；集成穿透和相关构建/测试/冒烟全部通过后一次。
-- 采用现有 `Dictation.Tests` **xUnit v3 测试项目**与 Microsoft.Testing.Platform。目标参考分支可使用：
-  `dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 2108 --max-threads 4`。
-  测试项目现已存在于 `master`；实际执行命令时应先确认构建与测试基线。冻结与测试数量阈值按有效基线和有据可查的合法变化处理。
+- RED 前冻结正确测试；API 变更所需的测试编译适配须在冻结前完成，不得在 GREEN 阶段修改期望值迎合实现。若测试本身错误，作废本轮证据，修正测试并重新冻结后重新执行 RED→GREEN。
+- 每个业务垂直切片严格执行两次中文提交：先在可编译的最小生产骨架上冻结测试并运行行为断言失败的 RED，再仅修改生产实现使同一批测试 GREEN，首次提交；随后贯通 WPF/ViewModel、Service、DTO/Mapper、DataAccessor/PO 与数据库或外部 Provider，相关构建、测试及冒烟通过后第二次提交。单个切片约 2–3 人/小时，每次提交只包含一个可验证工作单元，任何提交不得保留临时 RED。
+- 验证命令与测试基线见 AGENTS.md「开发环境与命令」。
 - 单纯 Rules、文档、Skills、配置修改不制造 RED 测试；采用静态检查、内容与引用核对、适用构建及前后回归。
+
+## Task Execution Rules
+
+### Pre-Execution Checklist Completeness Gate
+
+- 开始或恢复任何 Task 前，对照已批准 Goal、Acceptance Criteria 和权威引用逐项检查原生 Trello Checklist：必须覆盖具体类或类组、功能模块、SQLite 迁移、UI 组件、文档单元及特有验证成果；相干单元可合并，普通成员方法不需要逐项拆分。
+- 每项必须在 Execution Plan 中有同名或精确引用的 HOW：输入、职责、关键方法/接口、顺序、约束、产出与验收；描述栏中的 `Checklist:` 不是原生清单。拒绝空泛任务阶段、遗漏单元和未经批准的设计。恢复时核对 Git、实物及勾选情况。
+- Task 执行仅限批准 Goal 与 Acceptance Criteria 所必需的改动；不得顺手修复、重构、优化、清理、重命名或格式化无关代码、规则、测试、配置。发现无关问题只报告；用户明确批准或另建 Task 前不能并入。
+- 优先最小且高置信度的修改；未经批准不得改公共 API、配置键、数据库表或字段、迁移，也不得引入第三方依赖；不为假想的未来需求增加投机性抽象。
+
+## Final Task Verification
+
+- `開發中` 转 `測試中` 前，所有原生 Checklist 具体单元及逐项验收必须真实完成，开发阶段适用检查均已通过；父子组先验证子 Task 及父任务自身交付，再验收父任务集成结果。
+- `測試中` 根据 Expected Result 与 Acceptance Criteria 做最终验证；失败时先同步返回 `開發中` 再修复。
+- **Code Task Gate**：适用 TDD、.NET 构建、xUnit、针对性冒烟；涉及 UI 变更附前后截图。未运行的检查不得声称通过。
+- **Document and Rule Task Gate**：审阅完整 diff，确认只修改授权文件和章节，核对受影响术语及引用；不得加入无依据的新规则，不得让 Task 内容或聊天讨论以原文或改写形式泄漏进正式文档。
+
+## PR Gate
+
+- 最终验证通过且卡片同步至 `PR` 后进行 PR 审阅；PR 描述写明修改范围、实际执行过的验证命令、未验证项和限制。
+- 来源于 GitHub Issue 的 Fix Task 必须在 Task 记录 `Issue: #<issue-number>`，PR 描述包含对应的 `Fixes #<issue-number>`。
+- 代码 Task 的 `ProjectInfo.json.programVersion` 必须等于该 Task 的 Target Program Version。
+- 评审要求返工时先将卡片同步回 `開發中`，完成开发和最终验收后再回到 `PR`。
+
+## Verification
+
+- 实际可运行时执行相应 .NET 构建、xUnit 测试及冒烟；对更名符号和变更 API 做定向检索，提交前审阅完整 diff，记录不能运行的检查。未执行不得宣称通过。
+
+## Final Response
+
+- 报告实际变更、涉及文件、真实运行的验证、无法验证的项目、剩余风险和待决策，以及 Trello 最终状态和同步结果。
 
 ## Checkpoint, Suspension and Resume
 
