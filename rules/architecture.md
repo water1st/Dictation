@@ -39,9 +39,9 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 |---|---|---|---|---|---|
 | Language | TEXT | 否 | — | CHECK (Language IN ('Japanese','English')) | 语言 |
 | LocalDate | TEXT | 否 | — | — | 本地日期 |
-| LearningTarget | INTEGER | 否 | — | CHECK (LearningTarget>=0) | — |
-| ReviewTarget | INTEGER | 否 | — | CHECK (ReviewTarget>=0) | — |
-| KanaTarget | INTEGER | 否 | — | CHECK (KanaTarget>=0 AND (Language='Japanese' OR KanaTarget=0)) | — |
+| LearningTarget | INTEGER | 否 | — | CHECK (LearningTarget>=0) | 当天有效学习目标组数 |
+| ReviewTarget | INTEGER | 否 | — | CHECK (ReviewTarget>=0) | 当天有效复习目标组数 |
+| KanaTarget | INTEGER | 否 | — | CHECK (KanaTarget>=0 AND (Language='Japanese' OR KanaTarget=0)) | 当天五十音有效目标项目数 |
 
 **表级约束**
 
@@ -59,7 +59,7 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | SourceText | TEXT | 否 | — | — | 来源文本 |
 | AnchorSourceSenseId | TEXT | 否 | — | — | 锚定词义标识 |
 | WordGroupId | TEXT | 是 | — | — | 单词组标识 |
-| Decision | TEXT | 否 | — | CHECK (Decision IN ('Pending', 'Duplicate', 'Learning', 'Review', 'Discard')) | — |
+| Decision | TEXT | 否 | — | CHECK (Decision IN ('Pending', 'Duplicate', 'Learning', 'Review', 'Discard')) | 导入条目的处理决定 |
 
 **表级约束**
 
@@ -87,10 +87,10 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 |---|---|---|---|---|---|
 | SessionId | TEXT | 否 | — | — | 会话标识 |
 | QuestionOrdinal | INTEGER | 否 | — | CHECK (QuestionOrdinal>=0) | 题目序号 |
-| KanaId | TEXT | 否 | — | — | — |
+| KanaId | TEXT | 否 | — | — | 五十音项目标识 |
 | SubmittedText | TEXT | 否 | — | — | 提交的答案 |
 | WasCorrect | INTEGER | 否 | — | CHECK (WasCorrect IN (0,1)) | 答案正确标志 |
-| AnsweredAtUtc | TEXT | 否 | — | — | — |
+| AnsweredAtUtc | TEXT | 否 | — | — | 答题时间（UTC） |
 
 **表级约束**
 
@@ -104,7 +104,7 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| KanaId | TEXT | 否 | — | PRIMARY KEY | — |
+| KanaId | TEXT | 否 | — | PRIMARY KEY | 五十音项目标识 |
 | Stability | REAL | 否 | — | CHECK (Stability>0) | 记忆稳定度 |
 | Difficulty | REAL | 否 | — | CHECK (Difficulty BETWEEN 1 AND 10) | 难度 |
 | LastReviewedAtUtc | TEXT | 否 | — | — | 最近复习时间（UTC） |
@@ -119,12 +119,12 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 |---|---|---|---|---|---|
 | Id | INTEGER | 否 | — | PRIMARY KEY; CHECK (Id=1) | 记录标识 |
 | Enabled | INTEGER | 否 | — | CHECK (Enabled IN (0,1)) | 启用标志 |
-| Hiragana | INTEGER | 否 | — | CHECK (Hiragana IN (0,1)) | — |
-| Katakana | INTEGER | 否 | — | CHECK (Katakana IN (0,1)) | — |
-| Clear | INTEGER | 否 | — | CHECK (Clear IN (0,1)) | — |
-| Voiced | INTEGER | 否 | — | CHECK (Voiced IN (0,1)) | — |
-| Contracted | INTEGER | 否 | — | CHECK (Contracted IN (0,1)) | — |
-| ReviewAll | INTEGER | 否 | — | CHECK (ReviewAll IN (0,1)) | — |
+| Hiragana | INTEGER | 否 | — | CHECK (Hiragana IN (0,1)) | 启用平假名范围 |
+| Katakana | INTEGER | 否 | — | CHECK (Katakana IN (0,1)) | 启用片假名范围 |
+| Clear | INTEGER | 否 | — | CHECK (Clear IN (0,1)) | 启用清音范围 |
+| Voiced | INTEGER | 否 | — | CHECK (Voiced IN (0,1)) | 启用浊音范围 |
+| Contracted | INTEGER | 否 | — | CHECK (Contracted IN (0,1)) | 启用拗音范围 |
+| ReviewAll | INTEGER | 否 | — | CHECK (ReviewAll IN (0,1)) | 是否全量复习 |
 | DailyTarget | INTEGER | 否 | — | CHECK (DailyTarget BETWEEN 1 AND 214) | 每日目标数量 |
 
 **表级约束**
@@ -140,18 +140,18 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
 | SessionId | TEXT | 否 | — | — | 会话标识 |
-| KanaId | TEXT | 否 | — | — | — |
-| Text | TEXT | 否 | — | — | — |
-| Reading | TEXT | 否 | — | — | — |
-| RowHint | TEXT | 否 | — | — | — |
-| Script | TEXT | 否 | — | CHECK (Script IN ('Hiragana','Katakana')) | — |
-| Range | TEXT | 否 | — | CHECK (Range IN ('Clear','Voiced','Contracted')) | — |
-| QueueOrder | INTEGER | 否 | — | CHECK (QueueOrder>=0) | — |
-| HasWrong | INTEGER | 否 | 0 | CHECK (HasWrong IN (0,1)) | — |
-| CorrectStreak | INTEGER | 否 | 0 | CHECK (CorrectStreak>=0) | — |
-| NextEligibleOrdinal | INTEGER | 否 | 0 | CHECK (NextEligibleOrdinal>=0) | — |
+| KanaId | TEXT | 否 | — | — | 五十音项目标识 |
+| Text | TEXT | 否 | — | — | 项目字符文本 |
+| Reading | TEXT | 否 | — | — | 项目读音 |
+| RowHint | TEXT | 否 | — | — | 假名行提示 |
+| Script | TEXT | 否 | — | CHECK (Script IN ('Hiragana','Katakana')) | 文字种类 |
+| Range | TEXT | 否 | — | CHECK (Range IN ('Clear','Voiced','Contracted')) | 练习范围 |
+| QueueOrder | INTEGER | 否 | — | CHECK (QueueOrder>=0) | 项目排队顺序 |
+| HasWrong | INTEGER | 否 | 0 | CHECK (HasWrong IN (0,1)) | 是否曾答错 |
+| CorrectStreak | INTEGER | 否 | 0 | CHECK (CorrectStreak>=0) | 连续正确次数 |
+| NextEligibleOrdinal | INTEGER | 否 | 0 | CHECK (NextEligibleOrdinal>=0) | 下次可答题序号 |
 | IsCompleted | INTEGER | 否 | 0 | CHECK (IsCompleted IN (0,1)) | 完成标志 |
-| CompletedLocalDate | TEXT | 是 | — | — | — |
+| CompletedLocalDate | TEXT | 是 | — | — | 项目完成本地日期 |
 
 **表级约束**
 
@@ -167,10 +167,10 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
 | SessionId | TEXT | 否 | — | PRIMARY KEY | 会话标识 |
-| StartedLocalDate | TEXT | 否 | — | — | — |
+| StartedLocalDate | TEXT | 否 | — | — | 会话开始本地日期 |
 | Status | TEXT | 否 | — | CHECK (Status IN ('Active','Completed')) | 状态 |
 | QuestionOrdinal | INTEGER | 否 | — | CHECK (QuestionOrdinal>=0) | 题目序号 |
-| CurrentKanaId | TEXT | 是 | — | — | — |
+| CurrentKanaId | TEXT | 是 | — | — | 当前五十音项目标识 |
 
 **表级约束**
 
@@ -294,12 +294,12 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
 | Language | TEXT | 否 | — | PRIMARY KEY; CHECK (Language IN ('Japanese', 'English')) | 语言 |
-| DailyNewTarget | INTEGER | 否 | — | CHECK (DailyNewTarget BETWEEN 1 AND 500) | — |
-| SessionWordLimit | INTEGER | 否 | — | CHECK (SessionWordLimit BETWEEN 1 AND 500) | — |
-| SelectionMode | TEXT | 否 | — | CHECK (SelectionMode IN ('Random', 'Sequential', 'Manual')) | — |
-| EnglishFormLabelMode | TEXT | 否 | — | CHECK (EnglishFormLabelMode IN ('GrammarName', 'ExampleParadigm')) | — |
-| EnglishExampleSourceSenseId | TEXT | 是 | — | — | — |
-| UpdatedAtUtc | TEXT | 否 | — | — | — |
+| DailyNewTarget | INTEGER | 否 | — | CHECK (DailyNewTarget BETWEEN 1 AND 500) | 每日新学词组目标 |
+| SessionWordLimit | INTEGER | 否 | — | CHECK (SessionWordLimit BETWEEN 1 AND 500) | 单次学习词组上限 |
+| SelectionMode | TEXT | 否 | — | CHECK (SelectionMode IN ('Random', 'Sequential', 'Manual')) | 学习词组选择模式 |
+| EnglishFormLabelMode | TEXT | 否 | — | CHECK (EnglishFormLabelMode IN ('GrammarName', 'ExampleParadigm')) | 英语词形标签模式 |
+| EnglishExampleSourceSenseId | TEXT | 是 | — | — | 英语例词来源词义标识 |
+| UpdatedAtUtc | TEXT | 否 | — | — | 计划更新时间（UTC） |
 
 **表级约束**
 
@@ -375,7 +375,7 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | SessionId | TEXT | 否 | — | PRIMARY KEY | 会话标识 |
 | Language | TEXT | 否 | — | CHECK (Language IN ('Japanese', 'English')) | 语言 |
 | Status | TEXT | 否 | — | CHECK (Status IN ('InProgress', 'Completed')) | 状态 |
-| CurrentOrdinal | INTEGER | 否 | 0 | CHECK (CurrentOrdinal >= 0) | — |
+| CurrentOrdinal | INTEGER | 否 | 0 | CHECK (CurrentOrdinal >= 0) | 当前题目序号 |
 | CreatedAtUtc | TEXT | 否 | — | — | 创建时间（UTC） |
 | CompletedAtUtc | TEXT | 是 | — | — | 完成时间（UTC） |
 
@@ -529,12 +529,12 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
 | Language | TEXT | 否 | — | PRIMARY KEY; CHECK (Language IN ('Japanese', 'English')) | 语言 |
-| DailyReviewTarget | INTEGER | 否 | — | CHECK (DailyReviewTarget BETWEEN 1 AND 500) | — |
-| SessionWordLimit | INTEGER | 否 | — | CHECK (SessionWordLimit BETWEEN 1 AND 500) | — |
-| RangeMode | TEXT | 否 | — | CHECK (RangeMode IN ('All', 'Selected')) | — |
-| EnglishFormLabelMode | TEXT | 否 | — | CHECK (EnglishFormLabelMode IN ('GrammarName', 'ExampleParadigm')) | — |
-| EnglishExampleSourceSenseId | TEXT | 是 | — | — | — |
-| UpdatedAtUtc | TEXT | 否 | — | — | — |
+| DailyReviewTarget | INTEGER | 否 | — | CHECK (DailyReviewTarget BETWEEN 1 AND 500) | 每日复习词组目标 |
+| SessionWordLimit | INTEGER | 否 | — | CHECK (SessionWordLimit BETWEEN 1 AND 500) | 单次复习词组上限 |
+| RangeMode | TEXT | 否 | — | CHECK (RangeMode IN ('All', 'Selected')) | 复习范围模式 |
+| EnglishFormLabelMode | TEXT | 否 | — | CHECK (EnglishFormLabelMode IN ('GrammarName', 'ExampleParadigm')) | 英语词形标签模式 |
+| EnglishExampleSourceSenseId | TEXT | 是 | — | — | 英语例词来源词义标识 |
+| UpdatedAtUtc | TEXT | 否 | — | — | 计划更新时间（UTC） |
 
 **表级约束**
 
@@ -638,42 +638,42 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | SessionId | TEXT | 否 | — | PRIMARY KEY | 会话标识 |
 | Language | TEXT | 否 | — | CHECK (Language IN ('Japanese', 'English')) | 语言 |
 | Status | TEXT | 否 | — | CHECK (Status IN ('InProgress', 'Completed')) | 状态 |
-| PlanJson | TEXT | 否 | — | CHECK (json_valid(PlanJson)) | — |
+| PlanJson | TEXT | 否 | — | CHECK (json_valid(PlanJson)) | 会话启动计划快照 |
 | CreatedAtUtc | TEXT | 否 | — | — | 创建时间（UTC） |
-| StartedLocalDate | TEXT | 否 | — | — | — |
+| StartedLocalDate | TEXT | 否 | — | — | 会话开始本地日期 |
 | CompletedAtUtc | TEXT | 是 | — | — | 完成时间（UTC） |
 
 
 后续迁移追加的字段定义：
 
 - `CurrentOrdinal INTEGER NOT NULL DEFAULT 0 CHECK (CurrentOrdinal >= 0)`
-| CurrentOrdinal | INTEGER | 否 | 0 | CHECK (CurrentOrdinal >= 0) | — |
+| CurrentOrdinal | INTEGER | 否 | 0 | CHECK (CurrentOrdinal >= 0) | 当前题目序号 |
 
 
 ### SchemaMigrations
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| Version | INTEGER | 否 | — | PRIMARY KEY | — |
-| Name | TEXT | 否 | — | — | — |
-| AppliedAtUtc | TEXT | 否 | — | — | — |
+| Version | INTEGER | 否 | — | PRIMARY KEY | 迁移版本 |
+| Name | TEXT | 否 | — | — | 迁移名称 |
+| AppliedAtUtc | TEXT | 否 | — | — | 迁移应用时间（UTC） |
 
 
 ### WordGroupForms
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| MemberId | INTEGER | 否 | — | — | — |
-| FormIndex | INTEGER | 否 | — | — | — |
-| Surface | TEXT | 否 | — | — | — |
-| Reading | TEXT | 是 | — | — | — |
-| FormCode | TEXT | 否 | — | CHECK (FormCode IN ( 'Dictionary', 'Polite', 'Te', 'Ta', 'Base', 'PresentFirstPersonSingular', 'PresentNonThirdPerson', 'ThirdPersonSingular', 'Past', 'PastParticiple', 'PresentParticiple', 'Plural', 'Comparative', 'Superlative')) | — |
-| ScriptCode | TEXT | 是 | — | CHECK (ScriptCode IS NULL OR ScriptCode IN ('Kanji', 'Kana')) | — |
-| RoleCode | TEXT | 是 | — | CHECK (RoleCode IS NULL OR RoleCode IN ('Noun', 'Verb', 'Adjective', 'Adverb', 'Other')) | — |
-| FormLabel | TEXT | 否 | — | — | — |
-| DetailLabel | TEXT | 否 | — | — | — |
-| IsCommon | INTEGER | 否 | — | CHECK (IsCommon IN (0, 1)) | — |
-| IsPrimary | INTEGER | 否 | — | CHECK (IsPrimary IN (0, 1)) | — |
+| MemberId | INTEGER | 否 | — | — | 词组成员标识 |
+| FormIndex | INTEGER | 否 | — | — | 词形排序序号 |
+| Surface | TEXT | 否 | — | — | 词形表面文本 |
+| Reading | TEXT | 是 | — | — | 词形读音 |
+| FormCode | TEXT | 否 | — | CHECK (FormCode IN ( 'Dictionary', 'Polite', 'Te', 'Ta', 'Base', 'PresentFirstPersonSingular', 'PresentNonThirdPerson', 'ThirdPersonSingular', 'Past', 'PastParticiple', 'PresentParticiple', 'Plural', 'Comparative', 'Superlative')) | 词形代码 |
+| ScriptCode | TEXT | 是 | — | CHECK (ScriptCode IS NULL OR ScriptCode IN ('Kanji', 'Kana')) | 文字类别代码 |
+| RoleCode | TEXT | 是 | — | CHECK (RoleCode IS NULL OR RoleCode IN ('Noun', 'Verb', 'Adjective', 'Adverb', 'Other')) | 词汇角色代码 |
+| FormLabel | TEXT | 否 | — | — | 词形显示标签 |
+| DetailLabel | TEXT | 否 | — | — | 词形详情标签 |
+| IsCommon | INTEGER | 否 | — | CHECK (IsCommon IN (0, 1)) | 是否常用词形 |
+| IsPrimary | INTEGER | 否 | — | CHECK (IsPrimary IN (0, 1)) | 是否主要词形 |
 
 **表级约束**
 
@@ -687,9 +687,9 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| MemberId | INTEGER | 否 | — | — | — |
-| MeaningIndex | INTEGER | 否 | — | — | — |
-| Text | TEXT | 否 | — | — | — |
+| MemberId | INTEGER | 否 | — | — | 词组成员标识 |
+| MeaningIndex | INTEGER | 否 | — | — | 释义排列序号 |
+| Text | TEXT | 否 | — | — | 释义文本 |
 
 **表级约束**
 
@@ -703,17 +703,17 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| MemberId | INTEGER | 否 | — | PRIMARY KEY | — |
+| MemberId | INTEGER | 否 | — | PRIMARY KEY | 词组成员标识 |
 | WordGroupId | TEXT | 否 | — | — | 单词组标识 |
 | Language | TEXT | 否 | — | CHECK (Language IN ('Japanese', 'English')) | 语言 |
-| SourceSenseId | TEXT | 否 | — | — | — |
-| SourceLexemeId | TEXT | 否 | — | — | — |
-| Headword | TEXT | 否 | — | — | — |
-| Reading | TEXT | 是 | — | — | — |
-| PartOfSpeechLabel | TEXT | 否 | — | — | — |
-| AttributeLabel | TEXT | 否 | — | — | — |
-| IsPhrase | INTEGER | 否 | — | CHECK (IsPhrase IN (0, 1)) | — |
-| SortOrder | INTEGER | 否 | — | — | — |
+| SourceSenseId | TEXT | 否 | — | — | 来源词义标识 |
+| SourceLexemeId | TEXT | 否 | — | — | 来源词元标识 |
+| Headword | TEXT | 否 | — | — | 词组成员词头 |
+| Reading | TEXT | 是 | — | — | 词组成员读音 |
+| PartOfSpeechLabel | TEXT | 否 | — | — | 词性显示标签 |
+| AttributeLabel | TEXT | 否 | — | — | 词汇属性标签 |
+| IsPhrase | INTEGER | 否 | — | CHECK (IsPhrase IN (0, 1)) | 是否短语 |
+| SortOrder | INTEGER | 否 | — | — | 词组成员排序序号 |
 | MeaningLanguage | TEXT | 否 | 'und' | — | 释义语言 |
 | MeaningSource | TEXT | 否 | 'Legacy' | — | 释义来源 |
 | MeaningPrecision | TEXT | 否 | 'Missing' | — | 释义精度 |
