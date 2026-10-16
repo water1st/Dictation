@@ -1,12 +1,12 @@
 # Repository Guidelines
 
-## 当前状态与批准目标
+## 项目架构
 
-当前解决方案已迁入 `.NET 10`：`Dictation.Presentation` 使用 WPF，`Dictation.Core` 承载业务服务，`Dictation.DataAccess` 负责持久化；另有 `Dictation.TtsHost`、`Dictation.Updater`、`Dictation.LexiconBuilder` 和 `Dictation.Tests`。旧 WinForms、Edge/System TTS 与独立 Services 项目已移除。其余目标功能仍按已批准计划分片实现，不得把计划中的项目或功能当成已存在。
+解决方案采用 `.NET 10`：`Dictation.Presentation` 使用 WPF，`Dictation.Core` 承载业务服务，`Dictation.DataAccess` 负责持久化；另有 `Dictation.TtsHost`、`Dictation.Updater`、`Dictation.LexiconBuilder` 和 `Dictation.Tests`。开发和文档均以当前仓库代码、正式需求及已批准的后续任务为准。
 
-## 目标结构与迁移方式
+## 项目结构与实现方式
 
-物理三层固定为 `Dictation.Presentation → Dictation.Core → Dictation.DataAccess`；业务按 `Core/Configuration`、`Core/Importing`、`Core/Learning`、`Core/Lexicon`、`Core/Tts` 等目录内聚组织。支持程序包括隐藏的 `Dictation.TtsHost` 和 `Dictation.Updater`，后者复用 Core 更新能力，不直接写用户数据库。按可运行、可验证的垂直切片迁移，不铺设没有行为的空壳；已被新链路取代且没有引用的旧实现应删除，不留无用兼容层。
+物理三层固定为 `Dictation.Presentation → Dictation.Core → Dictation.DataAccess`；业务按 `Core/Configuration`、`Core/Importing`、`Core/Learning`、`Core/Lexicon`、`Core/Tts` 等目录内聚组织。支持程序包括隐藏的 `Dictation.TtsHost` 和 `Dictation.Updater`，后者复用 Core 更新能力，不直接写用户数据库。按可运行、可验证的垂直切片实现，不铺设没有行为的空壳。
 
 ## 架构边界
 
@@ -64,32 +64,36 @@ dotnet run --project Dictation.Presentation/Dictation.Presentation.csproj
 
 C# 使用四空格缩进、Allman 大括号和块级命名空间。类型、方法、属性使用 `PascalCase`；局部变量和私有字段使用 `camelCase`；启用可空引用并显式处理 `null`。WPF 表现层不写业务逻辑或 SQL。
 
-原则上一个文件对应一个主要类型，文件名与类型名一致；独立的类、接口、枚举和记录应分别放置，不以减少文件数为由合并。真正只服务于外层类型的私有嵌套辅助类型可以保留；框架生成代码及必要的分部类型按框架约束组织，不为绕过规则把独立业务类型改成嵌套类型。
-
 类、接口及其他业务类型需要简明的中文 XML 职责注释；公开方法和有实际业务意义的方法说明用途、参数含义及不直观的返回值，构造函数说明注入依赖的职责。实现合同可用 `inheritdoc` 复用准确的接口说明。核心算法和复杂流程在必要处解释处理思路、原因、边界或不变量，不逐行翻译代码，不用空泛模板凑注释；简单代码无需额外内部注释。
-
-## 测试与提交循环
-
-每个业务垂直切片严格按以下循环执行：
-
-1. 先写覆盖正常、边界、非法输入、异常和状态变化的测试。
-2. 在可编译的最小生产骨架上冻结测试文件，仅在生产实现中临时制造行为错误并实际运行测试。RED 必须是项目编译成功、目标测试确实执行，并因行为断言失败；编译失败、零测试或测试基础设施错误都不算 RED。
-3. 不修改已冻结的测试，只修正生产实现，使同一批测试由红转绿后做第一次中文提交；临时错误绝不能提交。
-4. 再将该业务从 WPF/ViewModel 经 Service、DTO/Mapper、DataAccessor/PO 打通到数据库或外部 Provider。
-5. 全部测试、构建和相关运行冒烟通过后做第二次中文提交，然后开始下一个切片。
-
-若发现测试规范或断言本身错误，必须作废该轮 RED 证据；先修正测试并重新冻结，再从“编译成功但行为断言失败”开始完整重跑 RED→GREEN。API 变更所需的测试编译适配应在冻结前完成，不得在 GREEN 阶段修改期望值迎合实现。文档、纯配置、注释和不改变行为的纯文件移动不制造无意义的单元测试，采用相称的静态检查、构建和前后回归；映射、DI 边界和业务状态变化仍须有真实行为断言验证。任何提交都不得保留临时红状态。
-
-## Git 与 PR
-
-所有开发分支必须以 `codex/` 开头，禁止直接在 `master` 开发。单个垂直切片控制在约 2–3 人/小时，每次提交只包含一个可验证工作单元；提交摘要使用具体的中文动作句。提交前测试、构建和相关冒烟必须通过。PR 目标为 `master`，描述行为变化并列出实际验证命令；涉及 UI 时附前后截图。
 
 ## Agent 规则
 
 没有用户明确授权不得启动 GOAL。环境缺失时只列出所需环境清单并等待用户处理，不擅自安装依赖或工具。实现前先确认已批准的需求和计划。保留无关的已有改动及未跟踪文件，不得擅自清理。
 
-用户指出设计原则问题时，必须在批准范围内检查同类类型、调用方、DI 注册、测试和规则文档，不能只修点名的示例。先说明结构调整与局部整理的范围、依赖影响和验证方式；涉及规则修订的批准计划先修规则、再改代码。不借原则审查扩展无关功能；超过批准范围时先说明，不自行扩大。
+涉及规则修订的批准计划先修规则、再改代码。不借原则审查扩展无关功能；超过批准范围时先说明，不自行扩大。
 
 ## 安全与发布
 
 MCP 仅监听 `127.0.0.1`，不得绕过 Core 业务服务直接写数据库。不得提交令牌或其他凭据。发布为自包含 `win-x64` 全量 ZIP；配置和用户数据目录必须在更新时保留且不被覆盖。
+
+## Rule Priority
+
+规则冲突时按以下顺序：1. `AGENTS.md`；2. 与当前任务最直接相关的 `rules/*.md`。同一层级更具体的规则优先。
+
+## Development Hub 工程执行规则
+
+项目元数据见 `ProjectInfo.json`；任务管理与项目标签见 `rules/project-management.md`，Git/TDD/PR 见 `rules/workflow.md`，C# 风格见 `rules/code-style.md`，文档维护见 `rules/design-documents.md`，工具与 SDK 兼容见 `rules/tooling.md`，项目及数据库结构见 `rules/architecture.md`。
+
+- 修改仓库前必须有用户授权和对应 Trello Task；Trello 是仓库修改 Task 生命周期状态的权威来源；讨论、审计和未批准设计不得自动产生开发 Task。
+- Task Checklist 仅包含该任务的特有交付内容，不记录创建分支、Commit、PR 或常规验证等标准流程；每个 Task 必须有完整可执行的原生 Trello Checklist，各单元与 Execution Plan 的具体 HOW 一一映射。写入前核对已批准工作完整覆盖、完成条件明确，且只包含现行最终状态。
+- Task ID 使用 `task-{ProjectName}_{10位小写十六进制}`；项目名称取自 ProjectInfo，分支、PR 与 Trello 追踪同一完整 ID。
+- 开始修改前，Task 必须完整到没有聊天或模型记忆的 Agent 仅凭 Task 引用、执行计划、Checklist 和 Git 状态就能完成工作。
+- Task 执行范围严格限于 Task 已写明的内容；没写就不做，没让优化就不优化，没让删除就不删除；发现无关问题只报告。
+- 每个项目有独立执行槽，不同项目可并行；父子 Task 按单分支、单 PR 管理。
+- 默认仅在原 Git 工作目录开发；额外 Clone 或 Worktree 需用户当次明确批准。
+- 用户对话是输入来源而非直接发布的内容；Task、正式设计文档和规格只保留现行最终决定、有效约束和已核验事实，不转写聊天、背景理由、新旧方案对照或废弃设定。
+- C# 手写类型的一文件一类型及嵌套限制见 `rules/code-style.md`；构造函数与程序入口显式定义，不使用 Primary Constructor 或 Top-Level Statements。
+- 适用的较新稳定 SDK 只要实际兼容目标框架就可使用，不锁死精确补丁号。
+- 业务代码修改遵守既有 xUnit v3 TDD 与验证规则；纯规则和文档无需制造 RED。
+- GitHub PR、push、merge 不能自行发布应用或创建 Release，正式发布须用户单独授权。
+- 项目 Skills 存于 `.agents/skills/`。
