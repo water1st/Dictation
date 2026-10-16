@@ -2,6 +2,53 @@
 
 > Trello 是仓库修改 Task 的生命周期和任务执行元数据权威；代码、正式设计和 Git 历史分别保留自身权威。读取本文件时始终遵守 `/AGENTS.md`。
 
+## Sources of Truth
+
+- Trello 是 Task 生命周期状态和任务特有执行记录的权威；`AGENTS.md` 与 `rules/*.md` 是工程约束和工作流权威；仓库是实际已实现内容的权威；`docs/` 下已批准的正式需求与设计文档是批准需求的权威。
+- Task 只记录该交付单元的现状、目标、特有实施方法、约束及完成证据；已有通用规则和权威业务事实应准确引用，不复制为另一套定义。
+- Trello 卡片与已批准设计、规则或仓库实际状态发生实质冲突时，停止修改并报告冲突。
+
+## State Principle
+
+- 正常生命周期为 `需求池 → 已確認／待排期 → 待開發 → 開發中 → 測試中 → PR → 已完成`，`掛起` 和 `廢棄` 是侧状态。目标状态是开展该阶段工作的前置条件：先移动并确认同步，再执行相应工作；`廢棄` 和 `已完成` 遵守各自收尾程序。
+- `需求池`：存在已拆分但尚未进入近期排期的任务；批准的可执行计划可直接形成任务，不把未经批准的资料直接变成任务。
+- `已確認／待排期`：选入近期候选队列，仍需确定顺序、版本、目标和执行依据；此状态不授予修改仓库的权限。
+- `待開發`：已获实施授权、执行资料齐全，但尚未开始改文件。
+- `開發中`：实际实施及开发阶段检查；首次改文件或评审返工前必须已同步到此列。
+- `測試中`：交付单元完成开发阶段检查后，对 Expected Result 与 Acceptance Criteria 做最终验收；失败须先返回 `開發中` 再修正。
+- `PR`：最终验收通过，进入 PR 审阅与合并阶段；评审要求改文件时先返回 `開發中`。
+- `已完成`：普通或父任务的 PR 已真实合并；子任务按父子组独立验收例外。
+- `掛起`：已开始的任务临时中断，先保存 Checkpoint、同步 Checklist 与 Git 状态，再移动并核验；恢复时依实际记录返回原状态。
+- `廢棄`：停止执行，确认状态同步后才在授权范围内清理；保留历史与 Task ID，不重用。
+- 不为凑足状态流转而虚假移动卡片。执行槽仍以 Project 为单位，父任务及当前子任务为同一逻辑单元。
+
+## State Synchronization
+
+- 任何状态同步失败，都不得开始该目标状态的工作；如实报告失败和部分成功的操作。
+- 父子组的状态切换必须核对所有受影响卡片及原生 Checklist，部分成功不能表述为整体同步完成。
+- 禁止用 Markdown TODO、状态文件或其他第二套跟踪替代 Trello。
+
+## Task Creation and Card Content
+
+- Task 必备字段依 `Task Identity` 的完整字段清单；约束、依赖只在实质影响执行时填写，不用空白模板。
+- **Final-State Input Filter**：用户对话仅作为输入；写 Task、设计或规格前筛选最终生效决定、当前约束与已核验事实，排除历史、抱怨、疑问、举例、推理、假设和被否决方案；不通过改写保留已淘汰内容，未定事项不得伪装成已批准。
+- **Current State and Context References**：Current State 指向实际代码、正式资料和当前状态；仓库引用使用相对路径与稳定章节或符号，行号仅作辅助；已有内容准确引用，不整段复制。无任务专属上下文则填 `None`。
+- **Expected Result**：写成可以客观检验的最终结果及 Acceptance Criteria，不把通用项目流程重复作为任务验收。
+
+## Execution Plan and Checklist
+
+- 每个 Task 必须有真实的原生 Trello Checklist；卡片描述出现 `Checklist:` 文字不算原生 Checklist。
+- 写入前先清点 Goal、Acceptance Criteria 和已批准资料所需的全部具体交付单元，按类、紧密相关的类组、功能模块、数据库迁移、UI 组件或可核验文档改动列项；不把普通成员方法独立拆项。
+- **Coverage test**：接手者能从条目和引用判断哪些具体单元尚未完成；“实现系统”“完成功能”“测试全部”等抽象阶段用语不合格；不增添未经批准的单元。
+- **Method mapping**：Execution Plan 必须逐项对应 Checklist 的名称或明确引用，提供输入、职责、相关方法或接口、交互顺序、约束、产出及完成验证；复杂方法细节写在计划中，不把隐藏交付内容埋入长篇文字。
+- 仅示意，不是已批准架构，也不限定条目数量：`Service + DTO/Mapper` 可作一个相干单元，`DataAccessor + SQLite 数据库迁移` 可作一个单元，`ViewModel/View` 绑定可作一个单元，xUnit 行为验证可针对具体业务单元。实际名称、拆分与数量以批准内容为准。
+- 每项产生并核验相应结果后才勾选；父卡的子项必须准确引用子 Task ID。创建分支、Commit、PR、Trello 状态与常规构建测试等通用流程不得成为 Checklist 项。
+
+## Context Independence Gate
+
+- 进入 `待開發` 或 `開發中` 之前，假设新执行者既没有聊天历史也没有模型记忆。仅凭 `AGENTS.md` 所路由规则、Task 及其准确引用、当前 Git 分支与历史，必须能识别现状、目标、实施方法、约束、每项具体交付和验收标准。
+- 如必须猜测缺失的工作单元或 HOW，Task 不完整；同时必须排除对话历史、失效决定及未经批准的推测。
+
 ## Project Identity and Label
 
 - 本仓库项目为 `Dictation`，GitHub 为 `water1st/Dictation`，Trello 看板名称为 `Development Hub`，PR 目标 `master`；读取 `ProjectInfo.json` 进行核对。
@@ -43,7 +90,7 @@
 
 ## Program and Document Versions
 
-- 项目根目录 `ProjectInfo.json` 的 `programVersion` 是 Program Version 权威值，初始化为 `2.0.0`；本版本不因本次纯规则/元数据初始化自动增加。
+- 项目根目录 `ProjectInfo.json` 的 `programVersion` 是 Program Version 权威值。
 - 项目自有代码 Task 在排期或开始前确定 Target Program Version。多个 Task 可以共用一个计划批次；新批次通常递增最末段（如 `2.0.0 → 2.0.1`），除非用户批准其他版本。
 - 未排期 P0 代码抢占任务归当前有效批次。父子共享版本；版本转换必须校验当前值、有效的批次授权和顺序，禁止擅自回退或跳版本。
 - 纯 `AGENTS.md`、`rules/*.md`、`.agents/skills/**`、普通配置和 `.github/**` 修改不消耗 Program Version。正式设计文档按 `rules/design-documents.md` 的独立 Document Version 规则执行；混合 Task 分别适用。
