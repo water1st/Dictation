@@ -199,19 +199,19 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
 | WordGroupId | TEXT | 否 | — | — | 单词组标识 |
-| MemberId | INTEGER | 否 | — | — | — |
-| FormCode | TEXT | 否 | — | — | — |
-| CorrectStreak | INTEGER | 否 | 0 | CHECK (CorrectStreak BETWEEN 0 AND 2) | — |
-| IsMastered | INTEGER | 否 | 0 | CHECK (IsMastered IN (0, 1)) | — |
-| NextEligibleOrdinal | INTEGER | 否 | 0 | CHECK (NextEligibleOrdinal >= 0) | — |
-| MeaningWritingCount | INTEGER | 否 | 0 | CHECK (MeaningWritingCount >= 0) | — |
-| DictationCount | INTEGER | 否 | 0 | CHECK (DictationCount >= 0) | — |
-| LatinCount | INTEGER | 否 | 0 | CHECK (LatinCount >= 0) | — |
-| KanaCount | INTEGER | 否 | 0 | CHECK (KanaCount >= 0) | — |
-| KanjiCount | INTEGER | 否 | 0 | CHECK (KanjiCount >= 0) | — |
-| CorrectCount | INTEGER | 否 | 0 | CHECK (CorrectCount >= 0) | — |
-| ErrorCount | INTEGER | 否 | 0 | CHECK (ErrorCount >= 0) | — |
-| LastAnsweredAtUtc | TEXT | 是 | — | — | — |
+| MemberId | INTEGER | 否 | — | — | 词组成员标识 |
+| FormCode | TEXT | 否 | — | — | 练习词形代码 |
+| CorrectStreak | INTEGER | 否 | 0 | CHECK (CorrectStreak BETWEEN 0 AND 2) | 连续正确次数 |
+| IsMastered | INTEGER | 否 | 0 | CHECK (IsMastered IN (0, 1)) | 是否完成掌握 |
+| NextEligibleOrdinal | INTEGER | 否 | 0 | CHECK (NextEligibleOrdinal >= 0) | 下次可答题序号 |
+| MeaningWritingCount | INTEGER | 否 | 0 | CHECK (MeaningWritingCount >= 0) | 词义书写答题次数 |
+| DictationCount | INTEGER | 否 | 0 | CHECK (DictationCount >= 0) | 听写答题次数 |
+| LatinCount | INTEGER | 否 | 0 | CHECK (LatinCount >= 0) | 拉丁文字答题次数 |
+| KanaCount | INTEGER | 否 | 0 | CHECK (KanaCount >= 0) | 假名答题次数 |
+| KanjiCount | INTEGER | 否 | 0 | CHECK (KanjiCount >= 0) | 汉字答题次数 |
+| CorrectCount | INTEGER | 否 | 0 | CHECK (CorrectCount >= 0) | 答对次数 |
+| ErrorCount | INTEGER | 否 | 0 | CHECK (ErrorCount >= 0) | 答错次数 |
+| LastAnsweredAtUtc | TEXT | 是 | — | — | 最近答题时间（UTC） |
 
 **表级约束**
 
@@ -228,8 +228,8 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 |---|---|---|---|---|---|
 | WordGroupId | TEXT | 否 | — | PRIMARY KEY | 单词组标识 |
 | Language | TEXT | 否 | — | CHECK (Language IN ('Japanese', 'English')) | 语言 |
-| FirstStartedLocalDate | TEXT | 否 | — | — | — |
-| CompletedLocalDate | TEXT | 是 | — | — | — |
+| FirstStartedLocalDate | TEXT | 否 | — | — | 词组首次开始学习本地日期 |
+| CompletedLocalDate | TEXT | 是 | — | — | 词组学习完成本地日期 |
 
 **表级约束**
 
@@ -243,8 +243,8 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
 | Language | TEXT | 否 | — | — | 语言 |
-| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
-| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting', 'Dictation')) | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | 项目排序序号 |
+| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting', 'Dictation')) | 练习通道 |
 
 **表级约束**
 
@@ -260,8 +260,8 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
 | Language | TEXT | 否 | — | — | 语言 |
-| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
-| FormCode | TEXT | 否 | — | CHECK (length(trim(FormCode)) > 0) | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | 项目排序序号 |
+| FormCode | TEXT | 否 | — | CHECK (length(trim(FormCode)) > 0) | 练习词形代码 |
 
 **表级约束**
 
@@ -277,8 +277,8 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
 | Language | TEXT | 否 | — | — | 语言 |
-| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
-| OutputMode | TEXT | 否 | — | CHECK (OutputMode IN ('Latin', 'Kana', 'Kanji')) | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | 项目排序序号 |
+| OutputMode | TEXT | 否 | — | CHECK (OutputMode IN ('Latin', 'Kana', 'Kanji')) | 答案输出模式 |
 
 **表级约束**
 
@@ -312,11 +312,11 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| AttemptId | INTEGER | 否 | — | PRIMARY KEY | — |
-| QuestionId | INTEGER | 否 | — | UNIQUE | — |
+| AttemptId | INTEGER | 否 | — | PRIMARY KEY | 学习答题记录标识 |
+| QuestionId | INTEGER | 否 | — | UNIQUE | 关联学习题目标识 |
 | SubmittedText | TEXT | 否 | — | — | 提交的答案 |
 | WasCorrect | INTEGER | 否 | — | CHECK (WasCorrect IN (0, 1)) | 答案正确标志 |
-| AnsweredAtUtc | TEXT | 否 | — | — | — |
+| AnsweredAtUtc | TEXT | 否 | — | — | 学习答题时间（UTC） |
 
 **表级约束**
 
@@ -329,13 +329,13 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| QuestionId | INTEGER | 否 | — | PRIMARY KEY | — |
+| QuestionId | INTEGER | 否 | — | PRIMARY KEY | 学习题目标识 |
 | SessionId | TEXT | 否 | — | — | 会话标识 |
 | WordGroupId | TEXT | 否 | — | — | 单词组标识 |
-| MemberId | INTEGER | 否 | — | — | — |
-| FormCode | TEXT | 否 | — | — | — |
-| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting', 'Dictation')) | — |
-| OutputMode | TEXT | 否 | — | CHECK (OutputMode IN ('Latin', 'Kana', 'Kanji')) | — |
+| MemberId | INTEGER | 否 | — | — | 词组成员标识 |
+| FormCode | TEXT | 否 | — | — | 练习词形代码 |
+| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting', 'Dictation')) | 练习通道 |
+| OutputMode | TEXT | 否 | — | CHECK (OutputMode IN ('Latin', 'Kana', 'Kanji')) | 答案输出模式 |
 | QuestionOrdinal | INTEGER | 否 | — | CHECK (QuestionOrdinal >= 0) | 题目序号 |
 | Status | TEXT | 否 | — | CHECK (Status IN ('Pending', 'Answered')) | 状态 |
 | CreatedAtUtc | TEXT | 否 | — | — | 创建时间（UTC） |
@@ -356,7 +356,7 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 |---|---|---|---|---|---|
 | SessionId | TEXT | 否 | — | — | 会话标识 |
 | WordGroupId | TEXT | 否 | — | — | 单词组标识 |
-| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | 项目排序序号 |
 
 **表级约束**
 
@@ -385,16 +385,16 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
 | SessionId | TEXT | 否 | — | — | 会话标识 |
-| QuestionId | INTEGER | 否 | — | — | — |
+| QuestionId | INTEGER | 否 | — | — | 共享学习题目标识 |
 | QuestionOrdinal | INTEGER | 否 | — | CHECK (QuestionOrdinal >= 0) | 题目序号 |
 | WordGroupId | TEXT | 否 | — | — | 单词组标识 |
-| MemberId | INTEGER | 否 | — | — | — |
-| FormCode | TEXT | 否 | — | — | — |
-| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting','Dictation')) | — |
-| OutputMode | TEXT | 否 | — | CHECK (OutputMode IN ('Latin','Kana','Kanji')) | — |
+| MemberId | INTEGER | 否 | — | — | 词组成员标识 |
+| FormCode | TEXT | 否 | — | — | 练习词形代码 |
+| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting','Dictation')) | 练习通道 |
+| OutputMode | TEXT | 否 | — | CHECK (OutputMode IN ('Latin','Kana','Kanji')) | 答案输出模式 |
 | SubmittedText | TEXT | 否 | — | — | 提交的答案 |
 | WasCorrect | INTEGER | 否 | — | CHECK (WasCorrect IN (0,1)) | 答案正确标志 |
-| AnsweredAtUtc | TEXT | 否 | — | — | — |
+| AnsweredAtUtc | TEXT | 否 | — | — | 共享学习答题时间（UTC） |
 
 **表级约束**
 
@@ -410,16 +410,16 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
 | SessionId | TEXT | 否 | — | — | 会话标识 |
-| QuestionId | INTEGER | 否 | — | — | — |
+| QuestionId | INTEGER | 否 | — | — | 复习题目标识 |
 | QuestionOrdinal | INTEGER | 否 | — | CHECK (QuestionOrdinal >= 0) | 题目序号 |
 | WordGroupId | TEXT | 否 | — | — | 单词组标识 |
-| MemberId | INTEGER | 否 | — | — | — |
-| FormCode | TEXT | 否 | — | — | — |
-| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting','Dictation')) | — |
-| OutputMode | TEXT | 否 | — | CHECK (OutputMode IN ('Latin','Kana','Kanji')) | — |
+| MemberId | INTEGER | 否 | — | — | 词组成员标识 |
+| FormCode | TEXT | 否 | — | — | 练习词形代码 |
+| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting','Dictation')) | 练习通道 |
+| OutputMode | TEXT | 否 | — | CHECK (OutputMode IN ('Latin','Kana','Kanji')) | 答案输出模式 |
 | SubmittedText | TEXT | 否 | — | — | 提交的答案 |
 | WasCorrect | INTEGER | 否 | — | CHECK (WasCorrect IN (0,1)) | 答案正确标志 |
-| AnsweredAtUtc | TEXT | 否 | — | — | — |
+| AnsweredAtUtc | TEXT | 否 | — | — | 复习答题时间（UTC） |
 
 **表级约束**
 
@@ -435,8 +435,8 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
 | WordGroupId | TEXT | 否 | — | — | 单词组标识 |
-| MemberId | INTEGER | 否 | — | — | — |
-| FormCode | TEXT | 否 | — | — | — |
+| MemberId | INTEGER | 否 | — | — | 词组成员标识 |
+| FormCode | TEXT | 否 | — | — | 练习词形代码 |
 | Stability | REAL | 否 | — | CHECK (Stability > 0) | 记忆稳定度 |
 | Difficulty | REAL | 否 | — | CHECK (Difficulty BETWEEN 1 AND 10) | 难度 |
 | LastReviewedAtUtc | TEXT | 否 | — | — | 最近复习时间（UTC） |
@@ -458,8 +458,8 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
 | Language | TEXT | 否 | — | — | 语言 |
-| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
-| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting', 'Dictation')) | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | 项目排序序号 |
+| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting', 'Dictation')) | 练习通道 |
 
 **表级约束**
 
@@ -475,8 +475,8 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
 | Language | TEXT | 否 | — | — | 语言 |
-| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
-| FormCode | TEXT | 否 | — | — | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | 项目排序序号 |
+| FormCode | TEXT | 否 | — | — | 练习词形代码 |
 
 **表级约束**
 
@@ -493,7 +493,7 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
 | Language | TEXT | 否 | — | — | 语言 |
-| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | 项目排序序号 |
 | WordGroupId | TEXT | 否 | — | — | 单词组标识 |
 
 **表级约束**
@@ -511,8 +511,8 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
 | Language | TEXT | 否 | — | — | 语言 |
-| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
-| OutputMode | TEXT | 否 | — | — | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | 项目排序序号 |
+| OutputMode | TEXT | 否 | — | — | 答案输出模式 |
 
 **表级约束**
 
@@ -548,19 +548,19 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| QuestionId | INTEGER | 否 | — | PRIMARY KEY | — |
+| QuestionId | INTEGER | 否 | — | PRIMARY KEY | 复习题目标识 |
 | SessionId | TEXT | 否 | — | — | 会话标识 |
 | WordGroupId | TEXT | 否 | — | — | 单词组标识 |
-| MemberId | INTEGER | 否 | — | — | — |
-| FormCode | TEXT | 否 | — | — | — |
-| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting', 'Dictation')) | — |
-| OutputMode | TEXT | 否 | — | CHECK (OutputMode IN ('Latin', 'Kana', 'Kanji')) | — |
+| MemberId | INTEGER | 否 | — | — | 词组成员标识 |
+| FormCode | TEXT | 否 | — | — | 练习词形代码 |
+| Channel | TEXT | 否 | — | CHECK (Channel IN ('MeaningWriting', 'Dictation')) | 练习通道 |
+| OutputMode | TEXT | 否 | — | CHECK (OutputMode IN ('Latin', 'Kana', 'Kanji')) | 答案输出模式 |
 | QuestionOrdinal | INTEGER | 否 | — | CHECK (QuestionOrdinal >= 0) | 题目序号 |
 | Status | TEXT | 否 | — | CHECK (Status IN ('Pending', 'Answered')) | 状态 |
 | CreatedAtUtc | TEXT | 否 | — | — | 创建时间（UTC） |
 | SubmittedText | TEXT | 是 | — | — | 提交的答案 |
 | WasCorrect | INTEGER | 是 | — | CHECK (WasCorrect IN (0, 1)) | 答案正确标志 |
-| AnsweredAtUtc | TEXT | 是 | — | — | — |
+| AnsweredAtUtc | TEXT | 是 | — | — | 复习答题时间（UTC） |
 
 **表级约束**
 
@@ -577,18 +577,18 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 |---|---|---|---|---|---|
 | SessionId | TEXT | 否 | — | — | 会话标识 |
 | WordGroupId | TEXT | 否 | — | — | 单词组标识 |
-| MemberId | INTEGER | 否 | — | — | — |
-| FormCode | TEXT | 否 | — | CHECK (length(trim(FormCode)) > 0) | — |
-| CorrectStreak | INTEGER | 否 | 0 | CHECK (CorrectStreak BETWEEN 0 AND 2) | — |
-| IsMastered | INTEGER | 否 | 0 | CHECK (IsMastered IN (0, 1)) | — |
-| NextEligibleOrdinal | INTEGER | 否 | 0 | CHECK (NextEligibleOrdinal >= 0) | — |
-| MeaningWritingCount | INTEGER | 否 | 0 | CHECK (MeaningWritingCount >= 0) | — |
-| DictationCount | INTEGER | 否 | 0 | CHECK (DictationCount >= 0) | — |
-| LatinCount | INTEGER | 否 | 0 | CHECK (LatinCount >= 0) | — |
-| KanaCount | INTEGER | 否 | 0 | CHECK (KanaCount >= 0) | — |
-| KanjiCount | INTEGER | 否 | 0 | CHECK (KanjiCount >= 0) | — |
-| CorrectCount | INTEGER | 否 | 0 | CHECK (CorrectCount >= 0) | — |
-| ErrorCount | INTEGER | 否 | 0 | CHECK (ErrorCount >= 0) | — |
+| MemberId | INTEGER | 否 | — | — | 词组成员标识 |
+| FormCode | TEXT | 否 | — | CHECK (length(trim(FormCode)) > 0) | 练习词形代码 |
+| CorrectStreak | INTEGER | 否 | 0 | CHECK (CorrectStreak BETWEEN 0 AND 2) | 连续正确次数 |
+| IsMastered | INTEGER | 否 | 0 | CHECK (IsMastered IN (0, 1)) | 是否完成掌握 |
+| NextEligibleOrdinal | INTEGER | 否 | 0 | CHECK (NextEligibleOrdinal >= 0) | 下次可答题序号 |
+| MeaningWritingCount | INTEGER | 否 | 0 | CHECK (MeaningWritingCount >= 0) | 词义书写答题次数 |
+| DictationCount | INTEGER | 否 | 0 | CHECK (DictationCount >= 0) | 听写答题次数 |
+| LatinCount | INTEGER | 否 | 0 | CHECK (LatinCount >= 0) | 拉丁文字答题次数 |
+| KanaCount | INTEGER | 否 | 0 | CHECK (KanaCount >= 0) | 假名答题次数 |
+| KanjiCount | INTEGER | 否 | 0 | CHECK (KanjiCount >= 0) | 汉字答题次数 |
+| CorrectCount | INTEGER | 否 | 0 | CHECK (CorrectCount >= 0) | 答对次数 |
+| ErrorCount | INTEGER | 否 | 0 | CHECK (ErrorCount >= 0) | 答错次数 |
 
 **表级约束**
 
@@ -618,8 +618,8 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 |---|---|---|---|---|---|
 | SessionId | TEXT | 否 | — | — | 会话标识 |
 | WordGroupId | TEXT | 否 | — | — | 单词组标识 |
-| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | — |
-| CompletedLocalDate | TEXT | 是 | — | — | — |
+| SortOrder | INTEGER | 否 | — | CHECK (SortOrder >= 0) | 项目排序序号 |
+| CompletedLocalDate | TEXT | 是 | — | — | 复习词组完成本地日期 |
 
 **表级约束**
 
