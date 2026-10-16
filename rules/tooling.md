@@ -13,8 +13,8 @@
 
 ## Verification Tools
 
-- 在适用分支验证：`dotnet restore Dictation.sln`；`dotnet build Dictation.sln --configuration Debug --no-restore`。
-- 参考架构中的测试为现有 `Dictation.Tests` **xUnit v3 项目**，使用 Microsoft.Testing.Platform；只在当前分支有此项目且依赖可用时执行测试命令。
+- 验证命令见 AGENTS.md「开发环境与命令」。
+- 测试项目为 `Dictation.Tests`（xUnit v3 + Microsoft.Testing.Platform）。
 - 检查真实输出，不声称未运行验证通过。数据 Schema 仅引用真实迁移、项目源码和验证事实，不推测表字段。
 
 ## Workspaces and Skills
@@ -24,4 +24,3 @@
 - 不使用 reset/clean 掩盖未提交修改；切换前保存 Checkpoint 并确认 Trello 状态。
 - Skills 入口：`.agents/skills/grilling/SKILL.md`、`.agents/skills/grill-with-docs/SKILL.md`、`.agents/skills/domain-modeling/SKILL.md`、`.agents/skills/gstack/SKILL.md`。
 - 需求/设计不明确先访谈；Bug 先记录 GitHub Issue，再按关联文档访谈；复杂审查可调用 gstack。任何 Skill 与授权、工作区或仓库规范冲突时服从更高规则。
-- 禁止以迁移 Skills 为理由引入未授权的 Release、部署、遥测或大规模工具安装。
