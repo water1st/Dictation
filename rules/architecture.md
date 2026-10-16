@@ -772,23 +772,23 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| Key | TEXT | 否 | — | PRIMARY KEY | — |
-| Value | TEXT | 否 | — | — | — |
+| Key | TEXT | 否 | — | PRIMARY KEY | 构建元数据键 |
+| Value | TEXT | 否 | — | — | 构建元数据值 |
 
 ### Entries
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| EntryId | TEXT | 否 | — | PRIMARY KEY | — |
-| SourceSequence | INTEGER | 否 | — | — | — |
-| SenseIndex | INTEGER | 否 | — | — | — |
-| PrimaryWritten | TEXT | 否 | — | — | — |
-| PrimaryReading | TEXT | 否 | — | — | — |
-| LexicalCategory | TEXT | 否 | — | — | — |
-| VerbClass | TEXT | 否 | — | — | — |
-| Transitivity | TEXT | 否 | — | — | — |
-| KanjiUsage | TEXT | 否 | — | CHECK (KanjiUsage IN ('None', 'Common', 'Rare')) | — |
-| IsPhrase | INTEGER | 否 | — | CHECK (IsPhrase IN (0, 1)) | — |
+| EntryId | TEXT | 否 | — | PRIMARY KEY | 日语词条标识 |
+| SourceSequence | INTEGER | 否 | — | — | JMdict 来源条目序号 |
+| SenseIndex | INTEGER | 否 | — | — | 来源义项序号 |
+| PrimaryWritten | TEXT | 否 | — | — | 主要书写形式 |
+| PrimaryReading | TEXT | 否 | — | — | 主要读音 |
+| LexicalCategory | TEXT | 否 | — | — | 词汇分类 |
+| VerbClass | TEXT | 否 | — | — | 动词类别 |
+| Transitivity | TEXT | 否 | — | — | 及物性类别 |
+| KanjiUsage | TEXT | 否 | — | CHECK (KanjiUsage IN ('None', 'Common', 'Rare')) | 汉字使用类别 |
+| IsPhrase | INTEGER | 否 | — | CHECK (IsPhrase IN (0, 1)) | 是否短语 |
 
 **表级约束**
 
@@ -800,9 +800,9 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| EntryId | TEXT | 否 | — | — | — |
-| SortIndex | INTEGER | 否 | — | — | — |
-| Value | TEXT | 否 | — | — | — |
+| EntryId | TEXT | 否 | — | — | 日语词条标识 |
+| SortIndex | INTEGER | 否 | — | — | 词性排列序号 |
+| Value | TEXT | 否 | — | — | 词性标记 |
 
 **表级约束**
 
@@ -815,11 +815,11 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| EntryId | TEXT | 否 | — | — | — |
+| EntryId | TEXT | 否 | — | — | 日语词条标识 |
 | Language | TEXT | 否 | — | — | 语言 |
-| GlossIndex | INTEGER | 否 | — | — | — |
-| GlossType | TEXT | 是 | — | — | — |
-| Text | TEXT | 否 | — | — | — |
+| GlossIndex | INTEGER | 否 | — | — | 释义排列序号 |
+| GlossType | TEXT | 是 | — | — | 来源释义类型 |
+| Text | TEXT | 否 | — | — | 来源释义文本 |
 
 **表级约束**
 
@@ -832,9 +832,9 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| EntryId | TEXT | 否 | — | — | — |
-| MeaningIndex | INTEGER | 否 | — | — | — |
-| Text | TEXT | 否 | — | — | — |
+| EntryId | TEXT | 否 | — | — | 日语词条标识 |
+| MeaningIndex | INTEGER | 否 | — | — | 中文释义序号 |
+| Text | TEXT | 否 | — | — | 中文释义文本 |
 | MeaningSource | TEXT | 否 | — | CHECK (MeaningSource = 'Tomoshi') | 释义来源 |
 | MeaningPrecision | TEXT | 否 | — | CHECK (MeaningPrecision = 'Exact') | 释义精度 |
 
@@ -849,15 +849,15 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| FormId | INTEGER | 否 | — | PRIMARY KEY | — |
-| EntryId | TEXT | 否 | — | — | — |
-| Surface | TEXT | 否 | — | — | — |
-| Reading | TEXT | 否 | — | — | — |
-| FormKind | TEXT | 否 | — | — | — |
-| ScriptKind | TEXT | 否 | — | — | — |
-| LexicalRole | TEXT | 否 | — | — | — |
-| IsCommon | INTEGER | 否 | — | CHECK (IsCommon IN (0, 1)) | — |
-| IsPrimary | INTEGER | 否 | — | CHECK (IsPrimary IN (0, 1)) | — |
+| FormId | INTEGER | 否 | — | PRIMARY KEY | 词形标识 |
+| EntryId | TEXT | 否 | — | — | 日语词条标识 |
+| Surface | TEXT | 否 | — | — | 词形表面文本 |
+| Reading | TEXT | 否 | — | — | 词形读音 |
+| FormKind | TEXT | 否 | — | — | 词形类别 |
+| ScriptKind | TEXT | 否 | — | — | 文字类别 |
+| LexicalRole | TEXT | 否 | — | — | 词汇角色 |
+| IsCommon | INTEGER | 否 | — | CHECK (IsCommon IN (0, 1)) | 是否常用词形 |
+| IsPrimary | INTEGER | 否 | — | CHECK (IsPrimary IN (0, 1)) | 是否主要词形 |
 
 **表级约束**
 
@@ -881,18 +881,18 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| Key | TEXT | 否 | — | PRIMARY KEY | — |
-| Value | TEXT | 否 | — | — | — |
+| Key | TEXT | 否 | — | PRIMARY KEY | 构建元数据键 |
+| Value | TEXT | 否 | — | — | 构建元数据值 |
 
 ### Lexemes
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| LexemeId | TEXT | 否 | — | PRIMARY KEY | — |
-| Lemma | TEXT | 否 | — | — | — |
-| SourceEntryKey | TEXT | 否 | — | — | — |
-| PartOfSpeech | TEXT | 否 | — | — | — |
-| IsPhrase | INTEGER | 否 | — | CHECK (IsPhrase IN (0, 1)) | — |
+| LexemeId | TEXT | 否 | — | PRIMARY KEY | 英语词元标识 |
+| Lemma | TEXT | 否 | — | — | 词元基本形式 |
+| SourceEntryKey | TEXT | 否 | — | — | 来源条目键 |
+| PartOfSpeech | TEXT | 否 | — | — | 词性类别 |
+| IsPhrase | INTEGER | 否 | — | CHECK (IsPhrase IN (0, 1)) | 是否短语 |
 
 **表级约束**
 
@@ -904,18 +904,18 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| SynsetId | TEXT | 否 | — | PRIMARY KEY | — |
-| PartOfSpeech | TEXT | 否 | — | — | — |
-| Ili | TEXT | 是 | — | — | — |
+| SynsetId | TEXT | 否 | — | PRIMARY KEY | 同义词集标识 |
+| PartOfSpeech | TEXT | 否 | — | — | 同义词集词性 |
+| Ili | TEXT | 是 | — | — | 跨语言词汇索引标识 |
 
 ### Senses
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| SenseId | TEXT | 否 | — | PRIMARY KEY | — |
-| LexemeId | TEXT | 否 | — | — | — |
-| SynsetId | TEXT | 否 | — | — | — |
-| SenseOrder | INTEGER | 否 | — | — | — |
+| SenseId | TEXT | 否 | — | PRIMARY KEY | 词义标识 |
+| LexemeId | TEXT | 否 | — | — | 英语词元标识 |
+| SynsetId | TEXT | 否 | — | — | 同义词集标识 |
+| SenseOrder | INTEGER | 否 | — | — | 词义排序序号 |
 
 **表级约束**
 
@@ -928,9 +928,9 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| SynsetId | TEXT | 否 | — | — | — |
-| DefinitionIndex | INTEGER | 否 | — | — | — |
-| Text | TEXT | 否 | — | — | — |
+| SynsetId | TEXT | 否 | — | — | 同义词集标识 |
+| DefinitionIndex | INTEGER | 否 | — | — | 定义序号 |
+| Text | TEXT | 否 | — | — | 定义文本 |
 
 **表级约束**
 
@@ -943,9 +943,9 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| SynsetId | TEXT | 否 | — | — | — |
-| ExampleIndex | INTEGER | 否 | — | — | — |
-| Text | TEXT | 否 | — | — | — |
+| SynsetId | TEXT | 否 | — | — | 同义词集标识 |
+| ExampleIndex | INTEGER | 否 | — | — | 例句序号 |
+| Text | TEXT | 否 | — | — | 例句文本 |
 
 **表级约束**
 
@@ -958,11 +958,11 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| FormId | INTEGER | 否 | — | PRIMARY KEY | — |
-| LexemeId | TEXT | 否 | — | — | — |
-| Surface | TEXT | 否 | — | — | — |
-| FormKind | TEXT | 否 | — | — | — |
-| FormSourceKind | TEXT | 否 | — | — | — |
+| FormId | INTEGER | 否 | — | PRIMARY KEY | 词形标识 |
+| LexemeId | TEXT | 否 | — | — | 英语词元标识 |
+| Surface | TEXT | 否 | — | — | 词形表面文本 |
+| FormKind | TEXT | 否 | — | — | 词形类别 |
+| FormSourceKind | TEXT | 否 | — | — | 词形来源类别 |
 
 **表级约束**
 
@@ -975,8 +975,8 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| SourceSenseId | TEXT | 否 | — | — | — |
-| TargetSenseId | TEXT | 否 | — | — | — |
+| SourceSenseId | TEXT | 否 | — | — | 派生来源词义标识 |
+| TargetSenseId | TEXT | 否 | — | — | 派生目标词义标识 |
 
 **表级约束**
 
@@ -990,21 +990,21 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| LearningSenseId | TEXT | 否 | — | PRIMARY KEY | — |
-| SourceLexemeId | TEXT | 否 | — | — | — |
-| Headword | TEXT | 否 | — | — | — |
-| PartOfSpeech | TEXT | 否 | — | — | — |
-| IsPhrase | INTEGER | 否 | — | CHECK (IsPhrase IN (0, 1)) | — |
+| LearningSenseId | TEXT | 否 | — | PRIMARY KEY | 学习词义标识 |
+| SourceLexemeId | TEXT | 否 | — | — | 来源英语词元标识 |
+| Headword | TEXT | 否 | — | — | 学习词条词头 |
+| PartOfSpeech | TEXT | 否 | — | — | 学习词条词性 |
+| IsPhrase | INTEGER | 否 | — | CHECK (IsPhrase IN (0, 1)) | 是否短语 |
 | MeaningSource | TEXT | 否 | — | CHECK (MeaningSource IN ('ChineseOpenWordNet', 'Ecdict', 'Missing')) | 释义来源 |
 | MeaningPrecision | TEXT | 否 | — | CHECK (MeaningPrecision IN ('Exact', 'Broad', 'Missing')) | 释义精度 |
-| SortOrder | INTEGER | 否 | — | — | — |
+| SortOrder | INTEGER | 否 | — | — | 学习词义排列序号 |
 
 ### LearningSenseSources
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| LearningSenseId | TEXT | 否 | — | — | — |
-| SenseId | TEXT | 否 | — | — | — |
+| LearningSenseId | TEXT | 否 | — | — | 学习词义标识 |
+| SenseId | TEXT | 否 | — | — | 来源词义标识 |
 
 **表级约束**
 
@@ -1018,9 +1018,9 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 
 | 字段 | 类型 | 可空 | 默认值 | 键与约束 | 注释 |
 |---|---|---|---|---|---|
-| LearningSenseId | TEXT | 否 | — | — | — |
-| MeaningIndex | INTEGER | 否 | — | — | — |
-| Text | TEXT | 否 | — | — | — |
+| LearningSenseId | TEXT | 否 | — | — | 学习词义标识 |
+| MeaningIndex | INTEGER | 否 | — | — | 学习释义序号 |
+| Text | TEXT | 否 | — | — | 学习释义文本 |
 
 **表级约束**
 
