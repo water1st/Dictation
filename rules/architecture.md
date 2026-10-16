@@ -14,7 +14,7 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 - `Dictation.TtsHost/`：提供 TTS 支持进程。
 - `Dictation.Updater/`：独立更新器，通过受批准的 Core 服务边界使用能力。
 - `Dictation.LexiconBuilder/`：词库构建工具。
-- `Dictation.Tests/`：**直接采用仓库既有的 xUnit v3 测试项目**；测试 Runner 使用 Microsoft.Testing.Platform，不额外创建第二套单元测试工程。
+- `Dictation.Tests/`：xUnit v3 + Microsoft.Testing.Platform 测试项目。
 - `docs/requirements/RefactorSpecification.md`：项目正式需求；实际能力和实现状态以当前仓库代码为准。
 
 ## Layer Dependencies and Design
