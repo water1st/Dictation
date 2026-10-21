@@ -2,6 +2,13 @@
 
 > 工具选择服从 `AGENTS.md`、Task 授权和已确认的技术架构，不让工具自行改变项目边界。
 
+## 项目资源与工具绑定
+
+- **唯一目标 GitHub 仓库**：`water1st/Dictation`；PR 基准分支为 `master`。GitHub 仓库、分支、Issue、PR、Commit 与文件操作均先确认归属本仓库；调用 GitHub 工具时以完整仓库名 `water1st/Dictation` 为目标，不根据聊天上下文推测或切换其它仓库。
+- **唯一目标 Trello 看板**：`Development Hub`。先通过已授权 Trello 连接准确定位该看板，取得本次会话中的实际看板标识；随后将任务搜索、卡片读取、清单与状态操作限定在该看板。若同名看板不唯一、标识无法核验或 Task 不属于该看板，停止写入并报告。
+- **项目身份核验**：读取 `ProjectInfo.json` 的 `projectName`、`githubRepository`、`prBaseBranch`、`trello.boardName` 和项目标签配置；对照当前 GitHub 仓库、PR 和 Trello 卡片中的完整 Task ID、项目、看板及项目标签。查询得到的实际资源标识用于本次操作，不把它们硬编码到公开仓库。
+- GitHub 的分支、提交、PR 操作遵守 `rules/workflow.md`；Trello 列表、Checklist 与 Task 状态遵守 `rules/project-management.md`。找不到匹配资源时不自行创建替代资源，也不跨项目操作。
+
 ## .NET and SDK Compatibility
 
 - 当前项目使用 .NET 10 / C# / WPF；`TargetFramework` 描述目标 API/运行时兼容性，**不等于必须安装某个精确 SDK 补丁号**。
@@ -13,7 +20,7 @@
 
 ## Verification Tools
 
-- 验证命令见 AGENTS.md「开发环境与命令」。
+- 验证命令见 `rules/workflow.md` 的「环境与验证命令」。
 - 测试项目为 `Dictation.Tests`（xUnit v3 + Microsoft.Testing.Platform）。
 - 检查真实输出，不声称未运行验证通过。数据 Schema 仅引用真实迁移、项目源码和验证事实，不推测表字段。
 

@@ -6,7 +6,7 @@
 
 - 类型、接口以 PascalCase 命名；接口名前缀 I；方法、属性、事件名称使用 PascalCase。局部变量和私有字段按现有 camelCase 约定；常量按有意义的标准 C# 命名。
 - **每个手写类型独立一个同名 .cs 文件**，包括 class、interface、struct、enum、record 和 delegate，即使类型只占数行代码。禁止在一个源文件声明多个手写类型、通过私有嵌套辅助类型规避或以节省文件数为理由合并。
-- 框架自动生成的 XAML/Designer 代码不机械手改；必要的 partial 类型可跨文件声明，但一个手写文件不得捆绑其他类型。
+- XAML、资源字典以及其他项目文本文件可以直接编辑；必要的 partial 类型可跨文件声明，但一个手写文件不得捆绑其他类型。
 - 使用 4 空格缩进、Allman 大括号、传统块级 namespace，启用可空引用，正确处理 null。
 - **禁止 Primary Constructors 和 Top-Level Statements**。每个程序入口显式 `Program.Main`，WPF 遵从其应用入口和 STA 要求。构造函数显式声明，依赖存储在明确定义的 readonly 字段，逐项赋值。
 - 反对为缩短行数而使用复杂表达式体、隐式/位置参数生成成员、难以阅读的嵌套三元表达式和复杂链式语法；合理简单语法不做无依据的全面禁用。

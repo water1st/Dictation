@@ -2,6 +2,11 @@
 
 > Task 管理和版本批次见 `rules/project-management.md`。正式文档规范见 `rules/design-documents.md`。
 
+## 必须遵守的执行顺序
+
+- 每个 Task 都必须按本文件与 `rules/project-management.md` 中适用的前置条件、开发、验证、PR 和完成步骤依次执行；各阶段的状态同步与准入检查不得自行省略、倒置或以口头判断代替。纯文档或规则 Task 使用其对应验证要求，不套用无关代码阶段。
+- 某一步骤无法执行或验证失败时，停止进入下一阶段，记录具体障碍；只有用户明确批准调整该步骤后才能改变既定流程，不能自行宣布通过。
+
 ## Authorization and Scope
 
 - 开始修改前读取真实 Task、引用的权威资料、实际 Git 状态，确认用户已批准执行。
@@ -21,7 +26,7 @@
 - RED 必须成功编译并执行预期测试，因行为断言失败；编译失败、零测试或环境错误不算 RED。
 - RED 前冻结正确测试；API 变更所需的测试编译适配须在冻结前完成，不得在 GREEN 阶段修改期望值迎合实现。若测试本身错误，作废本轮证据，修正测试并重新冻结后重新执行 RED→GREEN。
 - 每个业务垂直切片严格执行两次中文提交：先在可编译的最小生产骨架上冻结测试并运行行为断言失败的 RED，再仅修改生产实现使同一批测试 GREEN，首次提交；随后贯通 WPF/ViewModel、Service、DTO/Mapper、DataAccessor/PO 与数据库或外部 Provider，相关构建、测试及冒烟通过后第二次提交。单个切片约 2–3 人/小时，每次提交只包含一个可验证工作单元，任何提交不得保留临时 RED。
-- 验证命令与测试基线见 AGENTS.md「开发环境与命令」。
+- 验证命令与测试基线见本文件「环境与验证命令」。
 - 单纯 Rules、文档、Skills、配置、注释及不改变行为的纯文件移动不制造 RED 测试；采用静态检查、内容与引用核对、适用构建及前后回归。映射、DI 边界及业务状态变化仍须真实行为断言验证。
 
 ## Task Execution Rules
@@ -38,18 +43,28 @@
 - `開發中` 转 `測試中` 前，所有原生 Checklist 具体单元及逐项验收必须真实完成，开发阶段适用检查均已通过；父子组先验证子 Task 及父任务自身交付，再验收父任务集成结果。
 - `測試中` 根据 Expected Result 与 Acceptance Criteria 做最终验证；失败时先同步返回 `開發中` 再修复。
 - **Code Task Gate**：适用 TDD、.NET 构建、xUnit、针对性冒烟；涉及 UI 变更附前后截图。未运行的检查不得声称通过。
-- **Document and Rule Task Gate**：审阅完整 diff，确认只修改授权文件和章节，核对受影响术语及引用；不得加入无依据的新规则，不得让 Task 内容或聊天讨论以原文或改写形式泄漏进正式文档。
+- **Document and Rule Task Gate**：审阅完整 diff，确认只修改授权文件和章节，核对受影响术语及引用；不得加入无依据的新规则，不得让 Task 内容或聊天讨论以原文或改写形式泄漏进正式文档。Skills 修改另需检查相对引用、许可证、依赖及实际调用可用性。
 
 ## PR Gate
 
-- 最终验证通过且卡片同步至 `PR` 后进行 PR 审阅；PR 描述写明修改范围、实际执行过的验证命令、未验证项和限制。
+- 最终验证通过且卡片同步至 `PR` 后交付 PR 审阅；PR 描述写明修改范围、实际执行过的验证命令、未验证项和限制。只有对应 PR 实际合并，普通及父 Task 才能进入 `已完成`；子任务按父子组规则处理。
 - 来源于 GitHub Issue 的 Fix Task 必须在 Task 记录 `Issue: #<issue-number>`，PR 描述包含对应的 `Fixes #<issue-number>`。
 - 代码 Task 的 `ProjectInfo.json.programVersion` 必须等于该 Task 的 Target Program Version。
 - 评审要求返工时先将卡片同步回 `開發中`，完成开发和最终验收后再回到 `PR`。
 
-## Verification
+## 环境与验证命令
 
-- 实际可运行时执行相应 .NET 构建、xUnit 测试及冒烟；对更名符号和变更 API 做定向检索，提交前审阅完整 diff，记录不能运行的检查。未执行不得宣称通过。
+开发基线为 Windows 11、稳定版 Visual Studio 2026 与 .NET 10；允许使用实际兼容的较新稳定 SDK，具体规则见 `rules/tooling.md`。
+
+```powershell
+dotnet restore Dictation.sln
+dotnet build Dictation.sln --configuration Debug --no-restore
+dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 2108 --max-threads 4
+dotnet run --project Dictation.Presentation/Dictation.Presentation.csproj
+```
+
+`Dictation.Tests` 使用 xUnit v3 与 Microsoft.Testing.Platform；测试命名为 `行为_场景_预期`。聚焦测试使用 `--filter-class` 或 `--filter-method`，并设置适用的 `--minimum-expected-tests`；零测试不算通过。全量测试的基线为 2108 项，不得随意降低；有意删除失效测试须说明原因及数量变化。实际运行时执行适用的构建、测试、冒烟与定向检索；提交前审阅完整 diff，不能运行的检查如实报告。
+
 
 ## Final Response
 
@@ -61,21 +76,3 @@
 - 确认当前变更已安全保存、Trello `掛起` 状态同步成功，才在**原目录**切换另一个任务分支。
 - 不擅自调用 `git reset --hard`、`git clean` 或删除未跟踪文件。发现文件被其他任务修改，先核对来源，不覆盖。
 - 恢复时读取 Task、Checkpoint、分支和实际 Commit，结合未提交 Diff 判断真实进度；Checklist 不是代码事实的替代品。
-
-## Task 验证与状态边界
-
-- 开始实际修改前 Task 必须处于已同步的 `開發中`。代码开发的适用 RED/GREEN、构建与测试以及文档源一致性检查属于此阶段。
-- 交付项实现完毕并通过开发阶段检查后才进入 `測試中`。在 `測試中` 对 Expected Result 和 Acceptance Criteria 作最终验证，失败则先同步返回 `開發中` 再修复。
-- 最终验收完成，确认没有尚未修复的阻碍后才进入 `PR` 并交付审查。评审需要修改时，先同步返回 `開發中`。
-- 普通 Task 和父 Task 只在对应 PR 实际合并后进入 `已完成`；已完成的子任务可按父子任务规则例外处理。
-- Task Checklist 只记录特有交付成果；通用流程步骤不纳入 Checklist 进度。未验证项按实报告，不能假称通过。
-- 正式发布需要用户明确单独授权；普通 PR、push 与 merge 均不创建 Release 或发行资源。
-
-## Verification, PR and Completion
-
-- 业务开发完成适用的测试、构建、冒烟后移入 `測試中`，最终验收通过后进入 `PR`，提交带证据的待审查 PR。
-- 正式文档：核验语义和约束、最终状态、关联引用、文档版本以及变更范围。
-- Skills：检查相对文件引用、许可证、依赖和实际调用可用性；无法验证不得声称完整。
-- PR 明确变更范围、真实执行的验证命令、未验证项目和限制。涉及 UI 行为时按实际要求提供截图。
-- 合并成功才完成父 Task（子 Task 的内部完成遵守父子组规则）；不得把 PR 创建或关闭当成合并。
-- 自动化应确认真实合并、仓库、目标分支、完整 Task ID、唯一卡片及合法状态；有异常则不变更任何卡片。
