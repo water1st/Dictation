@@ -92,34 +92,11 @@ function uniqueBy(records, field, value, description) {
   return matches[0];
 }
 
-function verifyCardMetadata(description, info) {
-  if (typeof description !== "string") {
-    throw new Error("Task 缺少描述和项目归属");
-  }
-  for (const [key, expected] of [
-    ["TASK_ID", info.taskId],
-    ["PROJECT", info.projectName],
-    ["GITHUB_REPOSITORY", info.githubRepository],
-    ["TRELLO_BOARD", info.trello.boardName],
-  ]) {
-    const lines = description.split(/\r?\n/).filter((line) => line.startsWith(key + ":"));
-    if (lines.length !== 1 || lines[0].slice(key.length + 1).trim() !== expected) {
-      throw new Error("Task 的 " + key + " 项目归属不符合配置");
-    }
-  }
-}
-
-/** 严格校验所有身份和状态，只在 PR → 已完成时发出 PUT。 */
+/** 使用合并 PR 的唯一完整 Task ID 匹配卡片；仅在 PR → 已完成时发出 PUT。 */
 export async function completeMergedTask({ event, projectInfo, env, fetchImpl = fetch }) {
   const taskId = validateMergeEvent(event, projectInfo);
-  const labelInfo = projectInfo?.trello?.projectLabel;
-  if (
-    !projectInfo?.trello?.boardName ||
-    labelInfo?.name !== projectInfo.projectName ||
-    typeof labelInfo?.color !== "string" ||
-    labelInfo.color.length === 0
-  ) {
-    throw new Error("ProjectInfo 的看板或项目标签配置不完整");
+  if (!projectInfo?.trello?.boardName) {
+    throw new Error("ProjectInfo 的看板配置不完整");
   }
   const boardId = env?.BOARD_ID;
   if (!TRELLO_ID_PATTERN.test(boardId ?? "")) {
@@ -145,21 +122,9 @@ export async function completeMergedTask({ event, projectInfo, env, fetchImpl = 
     throw new Error("Trello 生命周期列表 ID 不合法");
   }
 
-  const labels = await get("boards/" + boardId + "/labels", "获取项目标签", {
-    limit: "1000",
-    fields: "id,name,color",
-  });
-  if (!Array.isArray(labels) || labels.length >= 1000) {
-    throw new Error("Trello 标签数据无法完整验证");
-  }
-  const projectLabel = uniqueBy(labels, "name", labelInfo.name, "项目标签");
-  if (!TRELLO_ID_PATTERN.test(projectLabel.id) || projectLabel.color !== labelInfo.color) {
-    throw new Error("Trello 项目标签颜色与 ProjectInfo 不一致");
-  }
-
   const cards = await get("boards/" + boardId + "/cards", "获取 Task 卡片", {
     filter: "all",
-    fields: "id,name,idList,idLabels,closed,desc,dueComplete",
+    fields: "id,name,idList,closed,dueComplete",
   });
   if (!Array.isArray(cards)) {
     throw new Error("Trello 卡片数据不是数组");
@@ -172,16 +137,6 @@ export async function completeMergedTask({ event, projectInfo, env, fetchImpl = 
   if (!TRELLO_ID_PATTERN.test(card.id) || card.closed) {
     throw new Error("Task 卡片已归档或 ID 不合法");
   }
-  verifyCardMetadata(card.desc, { ...projectInfo, taskId });
-  if (
-    !Array.isArray(card.idLabels) ||
-    !card.idLabels.includes(projectLabel.id) ||
-    labels.filter((label) => card.idLabels.includes(label.id) && label.name &&
-      label.name !== "Blocked" && label.name !== "Delayed").length !== 1
-  ) {
-    throw new Error("Task 卡片必须包含唯一正确的项目标签");
-  }
-
   if (card.idList === doneList.id && card.dueComplete === true) {
     return { taskId, status: "already-complete" };
   }
