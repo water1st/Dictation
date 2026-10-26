@@ -46,4 +46,9 @@ jobs:
       - name: Check JavaScript syntax
         run: node --check .github/scripts/trello-pr-completion.mjs
       - name: Complete matching merged Trello Task
+        continue-on-error: true
         run: node .github/scripts/trello-pr-completion.mjs
+      - name: Resume dependent Trello Tasks
+        if: ${{ always() }}
+        continue-on-error: true
+        run: node .github/scripts/trello-dependent-resume.mjs
