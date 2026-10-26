@@ -29,7 +29,7 @@ namespace Dictation.Tests.Presentation
             var home = provider.GetRequiredService<HomeViewModel>();
             await home.InitializeAsync(token);
             var navigation = provider.GetRequiredService<NavigationService>();
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             var capability = provider.GetRequiredService<IStatisticsNavigation>();
             await capability.OpenStatisticsAsync(LearningLanguage.Japanese, token);
             var page = Assert.IsType<StatisticsViewModel>(navigation.CurrentPage);

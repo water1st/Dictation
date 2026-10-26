@@ -34,7 +34,7 @@ namespace Dictation.Tests.Presentation
             var home = provider.GetRequiredService<HomeViewModel>();
             await home.InitializeAsync(TestContext.Current.CancellationToken);
             await home.SelectLanguageAsync(LearningLanguage.English, TestContext.Current.CancellationToken);
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             var reachedPage = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
             navigation.TransitionRequested += (_, args) => reachedPage.TrySetResult(args.CurrentPage);
 
@@ -76,7 +76,7 @@ namespace Dictation.Tests.Presentation
             var navigation = provider.GetRequiredService<NavigationService>();
             var home = provider.GetRequiredService<HomeViewModel>();
             await home.InitializeAsync(TestContext.Current.CancellationToken);
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             await navigation.OpenLearningPlanAsync(
                 LearningLanguage.Japanese, TestContext.Current.CancellationToken);
             navigation.CompleteTransition();
@@ -121,7 +121,7 @@ namespace Dictation.Tests.Presentation
             var navigation = provider.GetRequiredService<NavigationService>();
             var home = provider.GetRequiredService<HomeViewModel>();
             await home.InitializeAsync(TestContext.Current.CancellationToken);
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
 
             await home.OpenLearningAsync(TestContext.Current.CancellationToken);
 
@@ -179,7 +179,7 @@ namespace Dictation.Tests.Presentation
             var navigation = provider.GetRequiredService<NavigationService>();
             var home = provider.GetRequiredService<HomeViewModel>();
             await home.InitializeAsync(TestContext.Current.CancellationToken);
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
 
             await home.OpenLearningAsync(TestContext.Current.CancellationToken);
 
@@ -196,7 +196,7 @@ namespace Dictation.Tests.Presentation
             var navigation = provider.GetRequiredService<NavigationService>();
             var home = provider.GetRequiredService<HomeViewModel>();
             await home.InitializeAsync(TestContext.Current.CancellationToken);
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             Assert.Equal("学习 0/20", home.LearningProgressLabel);
             await navigation.OpenLearningPlanAsync(LearningLanguage.Japanese, TestContext.Current.CancellationToken);
             navigation.CompleteTransition();
@@ -221,7 +221,7 @@ namespace Dictation.Tests.Presentation
         {
             RunOnSta(() =>
             {
-                var page = new HomePage { DataContext = new { LearningProgressLabel = "学习 3/7" } };
+                var page = new LanguageWorkspacePage { DataContext = new { LearningProgressLabel = "学习 3/7" } };
                 RenderControl(page);
                 var label = Assert.Single(FindVisualChildren<TextBlock>(page),
                     item => item.Name == "LearningProgressText");

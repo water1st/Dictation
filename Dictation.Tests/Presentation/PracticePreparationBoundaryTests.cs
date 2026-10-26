@@ -36,7 +36,7 @@ namespace Dictation.Tests.Presentation
             await ReviewPlanPresentationTestHost.ImportAsync(provider);
             var home = provider.GetRequiredService<HomeViewModel>();
             var navigation = provider.GetRequiredService<NavigationService>();
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             var opening = home.OpenReviewSessionAsync(Token);
             await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
             var vm = Assert.IsType<PracticeSessionViewModel>(navigation.CurrentPage);

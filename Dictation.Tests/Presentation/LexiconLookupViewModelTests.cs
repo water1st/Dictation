@@ -400,7 +400,7 @@ namespace Dictation.Tests.Presentation
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
                 new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             await navigation.OpenLexiconLookupAsync(
                 LearningLanguage.English,
                 TestContext.Current.CancellationToken);

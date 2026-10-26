@@ -19,12 +19,12 @@ namespace Dictation.Presentation.Shell
         /// </summary>
         /// <param name="navigationHost">提供导航状态和转场生命周期的宿主能力。</param>
         /// <param name="overlayHost">提供弹层显示状态和完成操作的宿主能力。</param>
-        /// <param name="settingsNavigation">仅进入AI设置的导航能力。</param>
-        /// <param name="statisticsNavigation">仅从当前首页进入固定语言统计的能力。</param>
+        /// <param name="settingsNavigation">从首页或语言工作页进入设置的导航能力。</param>
+        /// <param name="statisticsNavigation">从当前语言工作页进入统计的能力。</param>
         public ShellViewModel(
             INavigationHost navigationHost,
             IOverlayHost overlayHost,
-            IMcpSettingsNavigation settingsNavigation,
+            ISettingsNavigation settingsNavigation,
             IStatisticsNavigation statisticsNavigation)
         {
             this.navigationHost = navigationHost
@@ -40,9 +40,9 @@ namespace Dictation.Presentation.Shell
             AcceptOverlayCommand = new RelayCommand(this.overlayHost.Accept);
             CancelOverlayCommand = new RelayCommand(this.overlayHost.Cancel);
             DismissOverlayCommand = new RelayCommand(this.overlayHost.Dismiss);
-            OpenMcpSettingsCommand = new AsyncCommand(() => settingsNavigation.OpenMcpSettingsAsync());
+            OpenSettingsCommand = new AsyncCommand(() => settingsNavigation.OpenSettingsAsync());
             OpenStatisticsCommand = new AsyncCommand(() => statisticsNavigation.OpenStatisticsAsync(
-                this.navigationHost.CurrentPage is HomeViewModel home ? home.SelectedLanguage : throw new InvalidOperationException("请从首页进入统计。")));
+                this.navigationHost.CurrentPage is HomeViewModel home ? home.SelectedLanguage : throw new InvalidOperationException("请从语言工作页进入统计。")));
             this.navigationHost.PropertyChanged += OnNavigationPropertyChanged;
             this.overlayHost.PropertyChanged += OnOverlayPropertyChanged;
         }
@@ -61,6 +61,9 @@ namespace Dictation.Presentation.Shell
 
         public bool CanGoBack => navigationHost.CanGoBack;
 
+        public bool IsBackButtonVisible => CurrentPage is not null and not LandingViewModel;
+        public bool IsSettingsButtonVisible => CurrentPage is LandingViewModel or HomeViewModel;
+
         public OverlayRequest? CurrentOverlay => overlayHost.CurrentRequest;
 
         public bool IsOverlayVisible => overlayHost.IsVisible;
@@ -70,7 +73,7 @@ namespace Dictation.Presentation.Shell
         public bool IsOverlayConfirmation => overlayHost.IsConfirmation;
 
         public ICommand GoBackCommand { get; }
-        public ICommand OpenMcpSettingsCommand { get; }
+        public ICommand OpenSettingsCommand { get; }
         public ICommand OpenStatisticsCommand { get; }
 
         public ICommand AcceptOverlayCommand { get; }
@@ -90,6 +93,11 @@ namespace Dictation.Presentation.Shell
         private void OnNavigationPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             OnPropertyChanged(e.PropertyName);
+            if (e.PropertyName == nameof(INavigationHost.CurrentPage))
+            {
+                OnPropertyChanged(nameof(IsBackButtonVisible));
+                OnPropertyChanged(nameof(IsSettingsButtonVisible));
+            }
         }
 
         private void OnOverlayPropertyChanged(object? sender, PropertyChangedEventArgs e)

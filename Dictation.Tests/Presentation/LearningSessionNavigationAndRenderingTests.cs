@@ -63,7 +63,7 @@ namespace Dictation.Tests.Presentation
             await home.SelectLanguageAsync(
                 LearningLanguage.English,
                 TestContext.Current.CancellationToken);
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
 
             await home.OpenLearningAsync(TestContext.Current.CancellationToken);
 
@@ -93,7 +93,7 @@ namespace Dictation.Tests.Presentation
             var navigation = provider.GetRequiredService<NavigationService>();
             var home = provider.GetRequiredService<HomeViewModel>();
             await home.InitializeAsync(TestContext.Current.CancellationToken);
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             Assert.Equal("学习 0/20", home.LearningProgressLabel);
             await home.OpenLearningAsync(TestContext.Current.CancellationToken);
             navigation.CompleteTransition();
@@ -123,7 +123,7 @@ namespace Dictation.Tests.Presentation
             using var provider = CreateProvider(environment);
             var navigation = provider.GetRequiredService<NavigationService>();
             var home = provider.GetRequiredService<HomeViewModel>();
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
                 TestContext.Current.CancellationToken);
             var opening = home.OpenLearningAsync(cancellation.Token);
@@ -171,7 +171,7 @@ namespace Dictation.Tests.Presentation
             using var provider = CreateProvider(environment);
             var navigation = provider.GetRequiredService<NavigationService>();
             var home = provider.GetRequiredService<HomeViewModel>();
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
                 TestContext.Current.CancellationToken);
             var opening = home.OpenLearningAsync(cancellation.Token);

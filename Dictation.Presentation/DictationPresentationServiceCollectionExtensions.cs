@@ -28,7 +28,11 @@ namespace Dictation.Presentation
 
             services.AddSingleton<App>();
             services.AddSingleton<HomeViewModel>();
+            services.AddSingleton<LandingViewModel>();
+            services.AddScoped<SettingsViewModel>();
             services.AddSingleton<NavigationService>();
+            services.AddSingleton<IWorkspaceNavigation>(provider => provider.GetRequiredService<NavigationService>());
+            services.AddSingleton<ISettingsNavigation>(provider => provider.GetRequiredService<NavigationService>());
             services.AddSingleton<IMcpSettingsNavigation>(provider => provider.GetRequiredService<NavigationService>());
             services.AddSingleton<IStatisticsNavigation>(provider => provider.GetRequiredService<NavigationService>());
             services.AddScoped<StatisticsViewModel>();

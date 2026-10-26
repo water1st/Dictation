@@ -36,7 +36,7 @@ namespace Dictation.Tests.Presentation
             }
             var home = provider.GetRequiredService<HomeViewModel>();
             await home.InitializeAsync(token);
-            var page = new HomePage { DataContext = home };
+            var page = new LanguageWorkspacePage { DataContext = home };
             ThemePalette.Apply(page.Resources, theme);
             page.Measure(new Size(900, 1100)); page.Arrange(new Rect(0, 0, 900, 1100)); page.UpdateLayout();
             Assert.Contains("已打卡", Assert.IsType<TextBlock>(page.FindName("TodayCheckInStatus")).Text);

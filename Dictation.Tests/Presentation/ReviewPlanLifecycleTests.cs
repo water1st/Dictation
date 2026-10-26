@@ -128,7 +128,7 @@ namespace Dictation.Tests.Presentation
             var query = Assert.IsType<ControlledQuery>(provider.GetRequiredService<IReviewLibraryQuery>());
             var navigation = provider.GetRequiredService<NavigationService>();
             var home = provider.GetRequiredService<HomeViewModel>();
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             var open = navigation.OpenReviewPlanAsync(LearningLanguage.Japanese, TestContext.Current.CancellationToken);
             var vm = Assert.IsType<ReviewPlanViewModel>(navigation.CurrentPage);
             try

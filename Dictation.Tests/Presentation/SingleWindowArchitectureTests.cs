@@ -98,7 +98,7 @@ namespace Dictation.Tests.Presentation
                     new StubLearningPlanReader(),
                     new StubLearningSessionReader(),
                     new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
-                navigation.InitializeHome(homeViewModel);
+                navigation.InitializeWorkspace(homeViewModel);
                 var shell = new ShellViewModel(navigation, overlay, navigation, navigation);
                 var homeWindow = new HomeWindow(shell, provider.GetRequiredService<UpdateViewModel>(), provider.GetRequiredService<IUpdateStartupNotifier>());
 
@@ -219,7 +219,7 @@ namespace Dictation.Tests.Presentation
                     new StubLearningPlanReader(),
                     new StubLearningSessionReader(),
                     new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
-                navigation.InitializeHome(homeViewModel);
+                navigation.InitializeWorkspace(homeViewModel);
                 var shell = new ShellViewModel(navigation, overlay, navigation, navigation);
                 var homeWindow = new HomeWindow(shell, provider.GetRequiredService<UpdateViewModel>(), provider.GetRequiredService<IUpdateStartupNotifier>());
 

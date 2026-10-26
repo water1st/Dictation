@@ -562,6 +562,7 @@ namespace Dictation.Presentation.ViewModels
             {
                 if (language == selectedLanguage && themeMode == selectedThemeMode)
                 {
+                    ErrorMessage = null;
                     return;
                 }
 

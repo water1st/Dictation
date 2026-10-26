@@ -224,14 +224,18 @@ namespace Dictation.Tests.Presentation
         public Task Home_OpensCurrentLanguagePlanInSameNavigationAndDisposesOnReturn() => RunStaAsync(async () =>
         {
             using var directory = new TemporaryDirectory();
-            using var provider = await ReviewPlanPresentationTestHost.CreateAsync(directory.Path);
+            using var provider = await WorkspaceSettingsNavigationTests.CreateProviderAsync(directory.Path);
             var home = provider.GetRequiredService<HomeViewModel>();
             var navigation = provider.GetRequiredService<NavigationService>();
             await home.SelectLanguageAsync(LearningLanguage.English, TestContext.Current.CancellationToken);
-            navigation.InitializeHome(home);
-            var page = new HomePage { DataContext = home, Width = 900, Height = 1000 };
+            navigation.InitializeWorkspace(home);
+            await navigation.OpenSettingsAsync(TestContext.Current.CancellationToken);
+            navigation.CompleteTransition();
+            var settings = Assert.IsType<SettingsViewModel>(navigation.CurrentPage);
+            await settings.SelectSectionAsync(SettingsSection.LearningReview, TestContext.Current.CancellationToken);
+            var page = new SettingsPage { DataContext = settings, Width = 900, Height = 1000 };
             page.Measure(new Size(900, 1000)); page.Arrange(new Rect(0, 0, 900, 1000)); page.UpdateLayout();
-            Assert.Contains(Children<Button>(page), button => ReferenceEquals(button.Command, home.OpenReviewPlanCommand));
+            Assert.Contains(Children<Button>(page), button => ReferenceEquals(button.Command, settings.OpenReviewPlanCommand));
             await home.OpenReviewPlanAsync(TestContext.Current.CancellationToken);
             var vm = Assert.IsType<ReviewPlanViewModel>(navigation.CurrentPage);
             Assert.Equal(LearningLanguage.English, vm.SelectedLanguage);
@@ -239,7 +243,7 @@ namespace Dictation.Tests.Presentation
             navigation.CompleteTransition();
             await navigation.GoBackAsync(TestContext.Current.CancellationToken);
             navigation.CompleteTransition();
-            Assert.Same(home, navigation.CurrentPage);
+            Assert.Same(settings, navigation.CurrentPage);
             await Assert.ThrowsAsync<ObjectDisposedException>(() => vm.RefreshAsync(TestContext.Current.CancellationToken));
         });
 

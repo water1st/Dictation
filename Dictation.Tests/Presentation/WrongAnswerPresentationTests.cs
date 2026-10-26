@@ -37,7 +37,7 @@ namespace Dictation.Tests.Presentation
             var home = provider.GetRequiredService<HomeViewModel>();
             var navigation = provider.GetRequiredService<NavigationService>();
             await home.SelectLanguageAsync(language, Token);
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             await home.OpenWrongAnswersAsync(Token);
             var list = Assert.IsType<WrongAnswerListViewModel>(navigation.CurrentPage);
             var item = Assert.Single(list.Items);
@@ -103,7 +103,7 @@ namespace Dictation.Tests.Presentation
             var pending = Assert.IsType<PracticeQuestionDto>((await sessions.SubmitAnswerAsync(new(session.SessionId, first.QuestionId, "错误"), Token)).NextQuestion);
             var navigation = provider.GetRequiredService<NavigationService>();
             var home = provider.GetRequiredService<HomeViewModel>();
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             await home.OpenWrongAnswersAsync(Token);
             var list = Assert.IsType<WrongAnswerListViewModel>(navigation.CurrentPage);
             list.SelectedItem = Assert.Single(list.Items);
@@ -129,7 +129,7 @@ namespace Dictation.Tests.Presentation
             var home = provider.GetRequiredService<HomeViewModel>();
             await home.SelectLanguageAsync(LearningLanguage.English, Token);
             var navigation = provider.GetRequiredService<NavigationService>();
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             await home.OpenWrongAnswersAsync(Token);
             var vm = Assert.IsType<WrongAnswerListViewModel>(navigation.CurrentPage);
             Assert.Empty(vm.Items);
