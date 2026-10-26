@@ -10,8 +10,7 @@
         </Style>
         <Style TargetType="CheckBox"><Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" /></Style>
     </UserControl.Resources>
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="42,26" MaxWidth="880">
+        <StackPanel MaxWidth="880">
             <TextBlock Text="AI 导入设置" FontSize="30" FontWeight="SemiBold" />
             <TextBlock Margin="0,8,0,24" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}"
                        Text="让Agent帮你查词和准备导入。导入只进入收件箱，学习或复习仍由你确认。" />
@@ -46,5 +45,4 @@
             <TextBlock Margin="0,16,0,0" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
             <TextBlock x:Name="ErrorOutput" Margin="0,8,0,0" Text="{Binding ErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
         </StackPanel>
-    </ScrollViewer>
 </UserControl>

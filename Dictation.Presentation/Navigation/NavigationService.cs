@@ -13,6 +13,8 @@ namespace Dictation.Presentation.Navigation
     /// </summary>
     internal sealed class NavigationService :
         IHomeNavigation,
+        IWorkspaceNavigation,
+        ISettingsNavigation,
         IMcpSettingsNavigation,
         IStatisticsNavigation,
         IKanaSessionNavigation,
@@ -62,7 +64,7 @@ namespace Dictation.Presentation.Navigation
         /// 设置首页状态；首页由应用级单例提供，不创建页面作用域。
         /// </summary>
         /// <param name="homeViewModel">应用级首页模型。</param>
-        public void InitializeHome(HomeViewModel homeViewModel)
+        public void InitializeHome(LandingViewModel homeViewModel)
         {
             ObjectDisposedException.ThrowIf(isDisposed, this);
             ArgumentNullException.ThrowIfNull(homeViewModel);
@@ -72,7 +74,7 @@ namespace Dictation.Presentation.Navigation
             }
 
             currentEntry = new NavigationEntry(
-                homeViewModel, "首页", null, null, homeViewModel.RefreshDailyProgressAsync);
+                homeViewModel, "首页", null, null, null);
             isInitialized = true;
             OnPropertyChanged(nameof(CurrentPage));
             OnPropertyChanged(nameof(PageTitle));
@@ -81,11 +83,48 @@ namespace Dictation.Presentation.Navigation
         }
 
         /// <inheritdoc />
+        public Task OpenLanguageWorkspaceAsync(LearningLanguage language, CancellationToken cancellationToken = default)
+        {
+            ValidateLanguage(language);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (currentEntry?.ViewModel is not LandingViewModel landing || landing.Home.SelectedLanguage != language)
+                throw new InvalidOperationException("请从首页选择并保存对应语言后进入工作页。");
+            if (!TryPrepareForwardNavigation()) return Task.CompletedTask;
+            var home = landing.Home;
+            NavigateForward(new NavigationEntry(home, language == LearningLanguage.Japanese ? "日语学习" : "英语学习",
+                language, null, home.RefreshDailyProgressAsync));
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc />
+        public Task OpenSettingsAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (transitionPending) return Task.CompletedTask;
+            if (currentEntry?.ViewModel is LandingViewModel { IsSelecting: true }) return Task.CompletedTask;
+            if (currentEntry?.ViewModel is not (LandingViewModel or HomeViewModel))
+                throw new InvalidOperationException("请从首页或语言工作页进入设置。");
+            if (!TryPrepareForwardNavigation()) return Task.CompletedTask;
+            var scope = scopeFactory.CreateScope();
+            try
+            {
+                var settings = scope.ServiceProvider.GetRequiredService<SettingsViewModel>();
+                NavigateForward(new NavigationEntry(settings, "设置", null, scope, null));
+            }
+            catch
+            {
+                if (!ReferenceEquals(currentEntry?.Scope, scope)) scope.Dispose();
+                throw;
+            }
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc />
         public async Task OpenStatisticsAsync(LearningLanguage language, CancellationToken cancellationToken = default)
         {
             ValidateLanguage(language);
             cancellationToken.ThrowIfCancellationRequested();
-            if (currentEntry?.ViewModel is not HomeViewModel home || home.SelectedLanguage != language)
+            if (currentEntry?.ViewModel is not HomeViewModel home || home.SelectedLanguage != language || currentEntry.Language != language)
                 throw new InvalidOperationException("请从当前语言首页进入统计。");
             if (!TryPrepareForwardNavigation()) return;
             var scope = scopeFactory.CreateScope();
@@ -160,7 +199,7 @@ namespace Dictation.Presentation.Navigation
         {
             ValidateLanguage(language);
             cancellationToken.ThrowIfCancellationRequested();
-            if (language != LearningLanguage.Japanese || currentEntry?.ViewModel is not HomeViewModel home || !home.IsJapaneseSelected)
+            if (language != LearningLanguage.Japanese || currentEntry?.ViewModel is not HomeViewModel home || !home.IsJapaneseSelected || currentEntry.Language != language)
                 throw new InvalidOperationException("五十音只能从日语首页打开。");
             if (!TryPrepareForwardNavigation()) return;
             var scope = scopeFactory.CreateScope();
@@ -547,6 +586,7 @@ namespace Dictation.Presentation.Navigation
             }
             if (currentEntry?.ViewModel is KanaPlanViewModel kanaPlan) kanaPlan.CancelOperation();
             if (currentEntry?.ViewModel is McpSettingsViewModel mcpSettings) mcpSettings.CancelOperation();
+            if (currentEntry?.ViewModel is SettingsViewModel settings) settings.CancelOperation();
             if (currentEntry?.ViewModel is KanaSessionViewModel kanaSession) kanaSession.CancelOperation(leavingPage: true);
             navigationOperationPending = true;
             OnPropertyChanged(nameof(CanGoBack));
@@ -629,6 +669,7 @@ namespace Dictation.Presentation.Navigation
             EnsureTransitionCompleted();
             var previousEntry = currentEntry
                 ?? throw new InvalidOperationException("首页尚未初始化。");
+            if (previousEntry.ViewModel is SettingsViewModel settings) settings.CancelOperation();
             backStack.Add(previousEntry);
             currentEntry = nextEntry;
             LastDirection = NavigationDirection.Forward;

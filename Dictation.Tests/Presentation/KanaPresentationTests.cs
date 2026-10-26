@@ -30,7 +30,7 @@ namespace Dictation.Tests.Presentation
             using var provider = await CreateAsync(directory.Path, tts, audio);
             var navigation = provider.GetRequiredService<NavigationService>();
             var home = provider.GetRequiredService<HomeViewModel>();
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             await home.OpenKanaAsync(Token);
             var plan = Assert.IsType<KanaPlanViewModel>(navigation.CurrentPage);
             plan.Enabled = true;
@@ -134,9 +134,9 @@ namespace Dictation.Tests.Presentation
             using var provider = await CreateAsync(directory.Path);
             var home = provider.GetRequiredService<HomeViewModel>();
             var nav = provider.GetRequiredService<NavigationService>();
-            nav.InitializeHome(home);
+            nav.InitializeWorkspace(home);
             await home.SelectLanguageAsync(LearningLanguage.English, Token);
-            var page = new HomePage { DataContext = home, Width = 960, Height = 720 };
+            var page = new LanguageWorkspacePage { DataContext = home, Width = 960, Height = 720 };
             Render(page);
             Assert.Equal(Visibility.Collapsed, Assert.IsType<Button>(page.FindName("KanaButton")).Visibility);
             Assert.False(home.OpenKanaCommand.CanExecute(null));
@@ -188,7 +188,7 @@ namespace Dictation.Tests.Presentation
             await provider.GetRequiredService<IKanaPlanEditor>().SaveAsync(new(true, true, false, true, false, false, false, 1), Token);
             var home = provider.GetRequiredService<HomeViewModel>();
             var nav = provider.GetRequiredService<NavigationService>();
-            nav.InitializeHome(home);
+            nav.InitializeWorkspace(home);
             await home.OpenKanaAsync(Token);
             var plan = Assert.IsType<KanaPlanViewModel>(nav.CurrentPage);
             nav.CompleteTransition();

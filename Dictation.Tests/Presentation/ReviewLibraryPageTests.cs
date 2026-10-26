@@ -73,8 +73,8 @@ namespace Dictation.Tests.Presentation
             var home = provider.GetRequiredService<HomeViewModel>();
             var navigation = provider.GetRequiredService<NavigationService>();
             await home.SelectLanguageAsync(LearningLanguage.English, TestContext.Current.CancellationToken);
-            navigation.InitializeHome(home);
-            var page = new HomePage { DataContext = home };
+            navigation.InitializeWorkspace(home);
+            var page = new LanguageWorkspacePage { DataContext = home };
             Render(page);
             Assert.Contains(Children<Button>(page), button => ReferenceEquals(button.Command, home.OpenReviewLibraryCommand));
             await home.OpenReviewLibraryAsync(TestContext.Current.CancellationToken);
@@ -202,7 +202,7 @@ namespace Dictation.Tests.Presentation
             var blocked = Assert.IsType<BlockingQuery>(provider.GetRequiredService<IReviewLibraryQuery>());
             var navigation = provider.GetRequiredService<NavigationService>();
             var home = provider.GetRequiredService<HomeViewModel>();
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             var open = navigation.OpenReviewLibraryAsync(LearningLanguage.Japanese, TestContext.Current.CancellationToken);
             try
             {

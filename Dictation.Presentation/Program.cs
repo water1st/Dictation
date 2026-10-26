@@ -47,7 +47,7 @@ namespace Dictation.Presentation
                 var viewModel = host.Services.GetRequiredService<ViewModels.HomeViewModel>();
                 viewModel.InitializeAsync().GetAwaiter().GetResult();
                 var navigationService = host.Services.GetRequiredService<Navigation.NavigationService>();
-                navigationService.InitializeHome(viewModel);
+                navigationService.InitializeHome(host.Services.GetRequiredService<ViewModels.LandingViewModel>());
                 homeWindow = host.Services.GetRequiredService<HomeWindow>();
                 activationHandler = homeWindow.RestoreAndActivate;
                 instanceCoordinator.ActivationRequested += activationHandler;

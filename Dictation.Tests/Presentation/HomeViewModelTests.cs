@@ -251,7 +251,7 @@ namespace Dictation.Tests.Presentation
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
                 new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
-            navigation.InitializeHome(viewModel);
+            navigation.InitializeWorkspace(viewModel);
             await viewModel.SelectLanguageAsync(LearningLanguage.English, CancellationToken.None);
             var reachedPage = new TaskCompletionSource<object?>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
@@ -279,7 +279,7 @@ namespace Dictation.Tests.Presentation
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
                 new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
-            navigation.InitializeHome(viewModel);
+            navigation.InitializeWorkspace(viewModel);
             var reachedPage = new TaskCompletionSource<object?>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
             navigation.TransitionRequested += (_, args) => reachedPage.TrySetResult(args.CurrentPage);

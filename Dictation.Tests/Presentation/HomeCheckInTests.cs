@@ -135,8 +135,8 @@ namespace Dictation.Tests.Presentation
             var home = provider.GetRequiredService<HomeViewModel>();
             await home.InitializeAsync(token);
             var navigation = provider.GetRequiredService<NavigationService>();
-            navigation.InitializeHome(home);
-            var page = new HomePage { DataContext = home };
+            navigation.InitializeWorkspace(home);
+            var page = new LanguageWorkspacePage { DataContext = home };
             ThemePalette.Apply(page.Resources, theme);
             page.Measure(new Size(900, 1100)); page.Arrange(new Rect(0, 0, 900, 1100)); page.UpdateLayout();
             var status = Assert.IsType<TextBlock>(page.FindName("TodayCheckInStatus"));

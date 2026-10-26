@@ -149,7 +149,7 @@ namespace Dictation.Tests.Presentation
             var home = provider.GetRequiredService<HomeViewModel>();
             await home.InitializeAsync(TestContext.Current.CancellationToken);
             var navigation = provider.GetRequiredService<NavigationService>();
-            navigation.InitializeHome(home);
+            navigation.InitializeHome(provider.GetRequiredService<LandingViewModel>());
             return navigation;
         }
 

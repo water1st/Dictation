@@ -151,7 +151,7 @@ namespace Dictation.Tests.Presentation
             var home = provider.GetRequiredService<HomeViewModel>();
             await home.InitializeAsync(TestContext.Current.CancellationToken);
             var navigation = provider.GetRequiredService<NavigationService>();
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             var path = Path.Combine(directory.Path, "words.txt");
             await File.WriteAllTextAsync(path, "食前", TestContext.Current.CancellationToken);
             var open = navigation.OpenTextImportAsync(LearningLanguage.Japanese, path, TestContext.Current.CancellationToken);

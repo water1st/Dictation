@@ -20,6 +20,7 @@ namespace Dictation.Presentation.ViewModels
         }
 
         public HomeViewModel Home => home;
+        public bool IsSelecting => isSelecting;
         public ICommand SelectJapaneseCommand { get; }
         public ICommand SelectEnglishCommand { get; }
 

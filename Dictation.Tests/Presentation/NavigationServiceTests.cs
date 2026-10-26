@@ -65,7 +65,7 @@ namespace Dictation.Tests.Presentation
                 new StubLearningPlanReader(),
                 new StubLearningSessionReader(),
                 new StubReviewProgressReader(), new EmptyKanaProgressReader(), new EmptyDailyCheckInReader());
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
 
             var homeNavigation = provider.GetRequiredService<IHomeNavigation>();
             var backNavigation = provider.GetRequiredService<IBackNavigation>();
@@ -93,20 +93,21 @@ namespace Dictation.Tests.Presentation
         {
             using var fixture = new NavigationFixture();
 
-            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            var landing = new LandingViewModel(fixture.HomeViewModel, fixture.Navigation);
+            fixture.Navigation.InitializeHome(landing);
 
-            Assert.Same(fixture.HomeViewModel, fixture.Navigation.CurrentPage);
+            Assert.Same(landing, fixture.Navigation.CurrentPage);
             Assert.False(fixture.Navigation.CanGoBack);
             Assert.Equal("首页", fixture.Navigation.PageTitle);
             Assert.Throws<InvalidOperationException>(() =>
-                fixture.Navigation.InitializeHome(fixture.HomeViewModel));
+                fixture.Navigation.InitializeHome(landing));
         }
 
         [Fact]
         public async Task OpenLexiconLookup_UsesForwardDirectionAndFixedLanguage()
         {
             using var fixture = new NavigationFixture();
-            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            fixture.Navigation.InitializeWorkspace(fixture.HomeViewModel);
             var transitions = new List<NavigationTransitionEventArgs>();
             fixture.Navigation.TransitionRequested += (_, args) => transitions.Add(args);
 
@@ -129,7 +130,7 @@ namespace Dictation.Tests.Presentation
         public async Task GoBackDuringTransition_IsIgnoredUntilTransitionCompletes()
         {
             using var fixture = new NavigationFixture();
-            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            fixture.Navigation.InitializeWorkspace(fixture.HomeViewModel);
 
             await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -159,7 +160,7 @@ namespace Dictation.Tests.Presentation
         public async Task GoBack_UsesBackwardDirectionAndRestoresTheSamePreviousViewModel()
         {
             using var fixture = new NavigationFixture();
-            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            fixture.Navigation.InitializeWorkspace(fixture.HomeViewModel);
             await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
             fixture.Navigation.CompleteTransition();
             var lookup = fixture.Navigation.CurrentPage;
@@ -180,8 +181,8 @@ namespace Dictation.Tests.Presentation
             using var overlay = new OverlayService();
             var shell = new ShellViewModel(fixture.Navigation, overlay, fixture.Navigation, fixture.Navigation);
             var transitions = new List<NavigationTransitionEventArgs>();
+            fixture.Navigation.InitializeWorkspace(fixture.HomeViewModel);
             shell.TransitionRequested += (_, args) => transitions.Add(args);
-            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
 
             await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -206,14 +207,15 @@ namespace Dictation.Tests.Presentation
         public async Task GoBackAtRoot_DoesNotRaiseATransition()
         {
             using var fixture = new NavigationFixture();
-            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            var landing = new LandingViewModel(fixture.HomeViewModel, fixture.Navigation);
+            fixture.Navigation.InitializeHome(landing);
             var transitionCount = 0;
             fixture.Navigation.TransitionRequested += (_, _) => transitionCount++;
 
             await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, transitionCount);
-            Assert.Same(fixture.HomeViewModel, fixture.Navigation.CurrentPage);
+            Assert.Same(landing, fixture.Navigation.CurrentPage);
             Assert.False(fixture.Navigation.CanGoBack);
         }
 
@@ -221,7 +223,7 @@ namespace Dictation.Tests.Presentation
         public async Task GoBack_DisposesPoppedScopeOnlyAfterTransitionCompletes()
         {
             using var fixture = new NavigationFixture();
-            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            fixture.Navigation.InitializeWorkspace(fixture.HomeViewModel);
             await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken);
             fixture.Navigation.CompleteTransition();
             var probe = Assert.Single(fixture.ScopeProbes);
@@ -237,7 +239,7 @@ namespace Dictation.Tests.Presentation
         public async Task ForwardNavigation_DoesNotRetainForwardHistoryAfterGoingBack()
         {
             using var fixture = new NavigationFixture();
-            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            fixture.Navigation.InitializeWorkspace(fixture.HomeViewModel);
             await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
             fixture.Navigation.CompleteTransition();
             await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -256,7 +258,7 @@ namespace Dictation.Tests.Presentation
         public async Task Dispose_ReleasesEveryRetainedPageScope()
         {
             using var fixture = new NavigationFixture();
-            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            fixture.Navigation.InitializeWorkspace(fixture.HomeViewModel);
             await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
             fixture.Navigation.CompleteTransition();
             await fixture.Navigation.OpenImportInboxAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken);
@@ -274,7 +276,7 @@ namespace Dictation.Tests.Presentation
         public async Task Dispose_ReleasesScopePendingCompletion()
         {
             using var fixture = new NavigationFixture();
-            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            fixture.Navigation.InitializeWorkspace(fixture.HomeViewModel);
             await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
             fixture.Navigation.CompleteTransition();
             await fixture.Navigation.GoBackAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -289,7 +291,7 @@ namespace Dictation.Tests.Presentation
         public async Task Navigation_RejectsInvalidLanguageAndCancellationWithoutChangingState()
         {
             using var fixture = new NavigationFixture();
-            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            fixture.Navigation.InitializeWorkspace(fixture.HomeViewModel);
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
 
@@ -308,7 +310,7 @@ namespace Dictation.Tests.Presentation
         public async Task Navigation_RejectsAnotherOperationUntilTransitionCompletes()
         {
             using var fixture = new NavigationFixture();
-            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            fixture.Navigation.InitializeWorkspace(fixture.HomeViewModel);
             await fixture.Navigation.OpenLexiconLookupAsync(LearningLanguage.Japanese, cancellationToken: TestContext.Current.CancellationToken);
 
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
@@ -321,7 +323,7 @@ namespace Dictation.Tests.Presentation
         public async Task PendingInboxLoad_ReservesNavigationUntilItCompletes()
         {
             using var fixture = new NavigationFixture(initializeData: false);
-            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            fixture.Navigation.InitializeWorkspace(fixture.HomeViewModel);
 
             var inboxNavigation = fixture.Navigation.OpenImportInboxAsync(LearningLanguage.English, cancellationToken: TestContext.Current.CancellationToken);
             await WaitForOverlayAsync(fixture.Overlay);
@@ -341,7 +343,7 @@ namespace Dictation.Tests.Presentation
         public async Task InboxDetailBack_RestoresTheSameListAndRefreshesItsDtoState()
         {
             using var fixture = new NavigationFixture();
-            fixture.Navigation.InitializeHome(fixture.HomeViewModel);
+            fixture.Navigation.InitializeWorkspace(fixture.HomeViewModel);
             await fixture.ImportInboxService.StageAsync(
                 new StageImportBatchRequestDto(
                     LearningLanguage.English,

@@ -208,7 +208,7 @@ namespace Dictation.Tests.Presentation
             await home.InitializeAsync(TestContext.Current.CancellationToken);
             await home.SelectLanguageAsync(LearningLanguage.English, TestContext.Current.CancellationToken);
             var navigation = provider.GetRequiredService<NavigationService>();
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             await home.OpenTextImportAsync(TestContext.Current.CancellationToken);
             var vm = Assert.IsType<TextImportViewModel>(navigation.CurrentPage);
             Assert.Equal(LearningLanguage.English, vm.SelectedLanguage);
@@ -227,6 +227,10 @@ namespace Dictation.Tests.Presentation
             navigation.CompleteTransition();
             await navigation.GoBackAsync(TestContext.Current.CancellationToken);
             Assert.Same(home, navigation.CurrentPage);
+            navigation.CompleteTransition();
+            Assert.True(navigation.CanGoBack);
+            await navigation.GoBackAsync(TestContext.Current.CancellationToken);
+            Assert.IsType<LandingViewModel>(navigation.CurrentPage);
             navigation.CompleteTransition();
             Assert.False(navigation.CanGoBack);
         }

@@ -40,7 +40,7 @@ namespace Dictation.Tests.Presentation
             var home = provider.GetRequiredService<HomeViewModel>();
             await home.InitializeAsync(token);
             var navigation = provider.GetRequiredService<NavigationService>();
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             await home.OpenLearningAsync(token);
             var vm = Assert.IsType<PracticeSessionViewModel>(navigation.CurrentPage);
             var page = new PracticeSessionPage { DataContext = vm };

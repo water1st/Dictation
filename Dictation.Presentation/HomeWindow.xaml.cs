@@ -44,6 +44,16 @@ namespace Dictation.Presentation
         /// <summary>工具栏的独立更新组件，不让导航和语言页面互相依赖。</summary>
         public UpdateViewModel Update { get; }
 
+        private void OnMinimizeClick(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void OnCloseClick(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
         /// <summary>
         /// 将主窗口恢复到可见状态并请求前台激活。
         /// </summary>
@@ -112,6 +122,7 @@ namespace Dictation.Presentation
             PreviousPagePresenter.Content = e.PreviousPage;
             CurrentPagePresenter.Content = e.CurrentPage;
             isTransitioning = true;
+            CurrentPagePresenter.IsHitTestVisible = false;
 
             var width = ActualWidth > 0 ? ActualWidth : Width;
             var oldTransform = new TranslateTransform();
@@ -143,6 +154,7 @@ namespace Dictation.Presentation
             }
 
             isTransitioning = false;
+            CurrentPagePresenter.IsHitTestVisible = true;
             PreviousPagePresenter.Content = null;
             PreviousPagePresenter.RenderTransform = null;
             CurrentPagePresenter.RenderTransform = null;

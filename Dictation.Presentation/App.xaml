@@ -10,8 +10,10 @@
         <DataTemplate DataType="{x:Type viewModels:KanaPlanViewModel}"><views:KanaPlanPage /></DataTemplate>
         <DataTemplate DataType="{x:Type viewModels:KanaSessionViewModel}"><views:KanaSessionPage /></DataTemplate>
         <DataTemplate DataType="{x:Type viewModels:HomeViewModel}">
-            <views:HomePage />
+            <views:LanguageWorkspacePage />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:LandingViewModel}"><views:HomePage /></DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:SettingsViewModel}"><views:SettingsPage /></DataTemplate>
         <DataTemplate DataType="{x:Type viewModels:LexiconLookupViewModel}">
             <views:LexiconLookupPage />
         </DataTemplate>

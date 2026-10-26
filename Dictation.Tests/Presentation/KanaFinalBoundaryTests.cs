@@ -67,7 +67,7 @@ namespace Dictation.Tests.Presentation
             await provider.GetRequiredService<IKanaPlanEditor>().SaveAsync(new(true, true, false, true, false, false, false, 1), Token);
             var home = provider.GetRequiredService<HomeViewModel>();
             var nav = provider.GetRequiredService<NavigationService>();
-            nav.InitializeHome(home);
+            nav.InitializeWorkspace(home);
             await home.OpenKanaAsync(Token); nav.CompleteTransition();
             var plan = Assert.IsType<KanaPlanViewModel>(nav.CurrentPage);
             await plan.StartAsync(Token); nav.CompleteTransition();
@@ -123,7 +123,7 @@ namespace Dictation.Tests.Presentation
             using var provider = await CreateAsync(directory.Path);
             var home = provider.GetRequiredService<HomeViewModel>();
             var nav = provider.GetRequiredService<NavigationService>();
-            nav.InitializeHome(home);
+            nav.InitializeWorkspace(home);
             await home.OpenKanaAsync(Token); nav.CompleteTransition();
             var vm = Assert.IsType<KanaPlanViewModel>(nav.CurrentPage);
             vm.Enabled = true;

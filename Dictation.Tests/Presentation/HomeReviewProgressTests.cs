@@ -62,8 +62,8 @@ namespace Dictation.Tests.Presentation
             var home = provider.GetRequiredService<HomeViewModel>();
             var navigation = provider.GetRequiredService<NavigationService>();
             await home.InitializeAsync(Token);
-            navigation.InitializeHome(home);
-            var page = new HomePage { DataContext = home };
+            navigation.InitializeWorkspace(home);
+            var page = new LanguageWorkspacePage { DataContext = home };
             ThemePalette.Apply(page.Resources, ResolvedTheme.Light);
             page.Measure(new Size(900, 1100)); page.Arrange(new Rect(0, 0, 900, 1100)); page.UpdateLayout();
             var label = Assert.IsType<TextBlock>(page.FindName("ReviewDailyProgress"));
@@ -181,7 +181,7 @@ namespace Dictation.Tests.Presentation
             using var provider = await CreateAsync(directory.Path, reader);
             var home = provider.GetRequiredService<HomeViewModel>();
             await home.InitializeAsync(Token);
-            var page = new HomePage { DataContext = home };
+            var page = new LanguageWorkspacePage { DataContext = home };
             ThemePalette.Apply(page.Resources, theme);
             page.Measure(new Size(900, 1100)); page.Arrange(new Rect(0, 0, 900, 1100)); page.UpdateLayout();
             var label = Assert.IsType<TextBlock>(page.FindName("ReviewDailyProgress"));

@@ -34,7 +34,7 @@ namespace Dictation.Tests.Presentation
             var home = provider.GetRequiredService<HomeViewModel>();
             var navigation = provider.GetRequiredService<NavigationService>();
             await home.SelectLanguageAsync(language, Token);
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             await home.OpenReviewSessionAsync(Token);
             var first = Assert.IsType<PracticeSessionViewModel>(navigation.CurrentPage);
             var question = first.Question!;
@@ -64,7 +64,7 @@ namespace Dictation.Tests.Presentation
             await ImportAndPlanAsync(provider, LearningLanguage.Japanese);
             var home = provider.GetRequiredService<HomeViewModel>();
             var navigation = provider.GetRequiredService<NavigationService>();
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             await home.OpenReviewSessionAsync(Token);
             var vm = Assert.IsType<PracticeSessionViewModel>(navigation.CurrentPage);
             vm.AnswerText = "错误";
@@ -180,7 +180,7 @@ namespace Dictation.Tests.Presentation
             Assert.Equal(Visibility.Visible, Assert.IsType<Border>(page.FindName("FeedbackPanel")).Visibility);
             Assert.Equal(Visibility.Visible, Assert.IsType<Button>(page.FindName("ReplayQuestionButton")).Visibility);
             var home = provider.GetRequiredService<HomeViewModel>();
-            var homePage = new HomePage { DataContext = home };
+            var homePage = new LanguageWorkspacePage { DataContext = home };
             Layout(homePage);
             var start = Assert.IsType<Button>(homePage.FindName("StartReviewButton"));
             Assert.Same(home.OpenReviewSessionCommand, start.Command);
@@ -234,7 +234,7 @@ namespace Dictation.Tests.Presentation
         {
             var home = provider.GetRequiredService<HomeViewModel>();
             var navigation = provider.GetRequiredService<NavigationService>();
-            navigation.InitializeHome(home);
+            navigation.InitializeWorkspace(home);
             await home.OpenReviewSessionAsync(Token);
             return Assert.IsType<PracticeSessionViewModel>(navigation.CurrentPage);
         }
