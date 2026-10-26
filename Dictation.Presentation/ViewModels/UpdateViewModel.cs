@@ -35,6 +35,7 @@ namespace Dictation.Presentation.ViewModels
         public bool IsBusy => isBusy;
         public string ButtonText => isBusy ? "正在准备更新…" : $"更新到 {available?.Version}";
         public string StatusMessage => statusMessage;
+        public bool HasError => !string.IsNullOrEmpty(statusMessage);
         public ICommand InstallCommand => installCommand;
         public event PropertyChangedEventHandler? PropertyChanged;
         public event EventHandler? ShutdownRequested;
@@ -44,6 +45,8 @@ namespace Dictation.Presentation.ViewModels
         {
             if (disposed || isChecking) return;
             isChecking = true;
+            statusMessage = string.Empty;
+            NotifyState();
             var token = lifetime.Token;
             try
             {
@@ -105,7 +108,7 @@ namespace Dictation.Presentation.ViewModels
         /// <summary>统一通知同一更新状态的绑定和命令，不依赖具体页面。</summary>
         private void NotifyState()
         {
-            foreach (var name in new[] { nameof(HasUpdate), nameof(IsBusy), nameof(ButtonText), nameof(StatusMessage) })
+            foreach (var name in new[] { nameof(HasUpdate), nameof(IsBusy), nameof(ButtonText), nameof(StatusMessage), nameof(HasError) })
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
             installCommand.NotifyCanExecuteChanged();
         }
