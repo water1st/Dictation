@@ -15,19 +15,19 @@
         </ResourceDictionary>
     </UserControl.Resources>
         <StackPanel MaxWidth="880">
-            <TextBlock Text="AI 导入设置" FontSize="{DynamicResource PageTitleFontSize}" FontWeight="SemiBold" />
-            <TextBlock Margin="0,8,0,24" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}"
+            <TextBlock Style="{DynamicResource HeroTitleTextStyle}" Text="AI 导入设置" />
+            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,8,0,24" TextWrapping="Wrap"
                        Text="让Agent帮你查词和准备导入。导入只进入收件箱，学习或复习仍由你确认。" />
             <Border x:Name="SettingsCard" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="22" Padding="24">
                 <StackPanel>
                     <CheckBox x:Name="McpEnabled" Content="开启本机 MCP 服务（默认关闭）" IsChecked="{Binding Enabled}" />
-                    <TextBlock Margin="0,20,0,6" Text="监听端口 · 1024–65535" />
+                    <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,20,0,6" Text="监听端口 · 1024–65535" />
                     <TextBox x:Name="PortInput" Text="{Binding PortText, UpdateSourceTrigger=PropertyChanged}" Width="140" HorizontalAlignment="Left"
                              Padding="10,6" SpellCheck.IsEnabled="False" Foreground="{DynamicResource ForegroundBrush}" Background="{DynamicResource WindowBackgroundBrush}" />
-                    <TextBlock Margin="0,16,0,6" Text="本机地址 · 可选中复制" />
+                    <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,16,0,6" Text="本机地址 · 可选中复制" />
                     <TextBox x:Name="EndpointOutput" IsReadOnly="True" Text="{Binding EndpointText, Mode=OneWay}" Padding="10,6"
                              Foreground="{DynamicResource ForegroundBrush}" Background="{DynamicResource WindowBackgroundBrush}" />
-                    <TextBlock x:Name="RuntimeStatus" Margin="0,12,0,0" Text="{Binding RuntimeStatusLabel}" Foreground="{DynamicResource AccentBrush}" />
+                    <TextBlock Style="{DynamicResource BodyTextStyle}" x:Name="RuntimeStatus" Margin="0,12,0,0" Text="{Binding RuntimeStatusLabel}" Foreground="{DynamicResource AccentBrush}" />
                     <WrapPanel Margin="0,12,0,0">
                         <Button x:Name="SaveButton" Content="保存并应用" Command="{Binding SaveCommand}" Padding="18,10" Margin="0,0,12,0" />
                         <Button x:Name="RetryButton" Content="重试已保存设置" Command="{Binding RetryCommand}" Padding="18,10" />
@@ -36,17 +36,17 @@
             </Border>
             <Border Margin="0,20,0,0" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="22" Padding="24">
                 <StackPanel>
-                    <TextBlock Text="连接 Codex" FontSize="{DynamicResource SectionTitleFontSize}" FontWeight="SemiBold" />
-                    <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Text="仅点击按钮才会修改客户端配置；注册或注销后请重载客户端配置。修改端口不会自动覆盖旧注册。" />
-                    <TextBlock Margin="0,8,0,0" Text="{Binding ConfigPath}" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}" />
-                    <TextBlock x:Name="RegistrationStatus" Margin="0,12,0,0" Text="{Binding RegistrationMessage}" TextWrapping="Wrap" />
+                    <TextBlock Style="{DynamicResource SectionTitleTextStyle}" Text="连接 Codex" />
+                    <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,8,0,0" TextWrapping="Wrap" Text="仅点击按钮才会修改客户端配置；注册或注销后请重载客户端配置。修改端口不会自动覆盖旧注册。" />
+                    <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,8,0,0" Text="{Binding ConfigPath}" TextWrapping="Wrap" />
+                    <TextBlock Style="{DynamicResource BodyTextStyle}" x:Name="RegistrationStatus" Margin="0,12,0,0" Text="{Binding RegistrationMessage}" TextWrapping="Wrap" />
                     <WrapPanel Margin="0,12,0,0">
                         <Button x:Name="RegisterButton" Content="注册当前端点" Command="{Binding RegisterCommand}" Padding="18,10" Margin="0,0,12,0" />
                         <Button x:Name="UnregisterButton" Content="注销本应用端点" Command="{Binding UnregisterCommand}" Padding="18,10" />
                     </WrapPanel>
                 </StackPanel>
             </Border>
-            <TextBlock Margin="0,16,0,0" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
-            <TextBlock x:Name="ErrorOutput" Margin="0,8,0,0" Text="{Binding ErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
+            <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,16,0,0" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+            <TextBlock Style="{DynamicResource BodyTextStyle}" x:Name="ErrorOutput" Margin="0,8,0,0" Text="{Binding ErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
         </StackPanel>
 </UserControl>

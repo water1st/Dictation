@@ -17,17 +17,17 @@
         <DataTemplate x:Key="SenseTemplate">
             <StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock FontWeight="SemiBold" Text="{Binding Headword}" />
-                    <TextBlock Margin="10,0,0,0" Text="{Binding Reading}" />
-                    <TextBlock Margin="10,0,0,0" Text="{Binding PartOfSpeechLabel}" />
+                    <TextBlock Style="{DynamicResource ListTitleTextStyle}" Text="{Binding Headword}" />
+                    <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="10,0,0,0" Text="{Binding Reading}" />
+                    <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="10,0,0,0" Text="{Binding PartOfSpeechLabel}" />
                 </StackPanel>
                 <ItemsControl ItemsSource="{Binding Meanings}">
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" /></DataTemplate>
+                        <DataTemplate><TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding}" TextWrapping="Wrap" /></DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <TextBlock Text="{Binding AttributeLabel}" FontSize="{DynamicResource CaptionFontSize}" TextWrapping="Wrap" />
-                <TextBlock Text="{Binding SourceSenseId}" FontSize="{DynamicResource CaptionFontSize}" Opacity="0.6" />
+                <TextBlock Style="{DynamicResource CaptionTextStyle}" Text="{Binding AttributeLabel}" TextWrapping="Wrap" />
+                <TextBlock Style="{DynamicResource FinePrintTextStyle}" Text="{Binding SourceSenseId}" Opacity="0.6" />
             </StackPanel>
         </DataTemplate>
         </ResourceDictionary>
@@ -41,14 +41,14 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <StackPanel>
-            <TextBlock Text="{Binding WindowTitle}" FontSize="{DynamicResource PageTitleFontSize}" FontWeight="SemiBold" />
-            <TextBlock Margin="0,6,0,12" Text="粘贴或拖入 UTF-8 TXT，每行一个日文或英文词形；空行和 # 注释会忽略。多义词需选中文义项。"
-                       TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}" />
+            <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" />
+            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,6,0,12" Text="粘贴或拖入 UTF-8 TXT，每行一个日文或英文词形；空行和 # 注释会忽略。多义词需选中文义项。"
+                       TextWrapping="Wrap" />
         </StackPanel>
         <TextBox Grid.Row="1" Height="120" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
                  Text="{Binding SourceText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEdit}"
                  Background="{DynamicResource CardBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
-                 BorderBrush="{DynamicResource BorderBrush}" Padding="12" FontSize="{DynamicResource BodyFontSize}" />
+                 BorderBrush="{DynamicResource BorderBrush}" Padding="12" FontSize="{DynamicResource ControlFontSize}" />
         <StackPanel Grid.Row="2" Margin="0,12,0,12">
             <StackPanel Orientation="Horizontal">
                 <Button Style="{StaticResource ActionButton}" Content="匹配词表" Command="{Binding PrepareCommand}" />
@@ -56,10 +56,10 @@
                 <Button Style="{StaticResource ActionButton}" Content="取消操作" Command="{Binding CancelCommand}" />
                 <CheckBox Content="全选已确认义项" VerticalAlignment="Center"
                           IsChecked="{Binding AreAllSelected}" IsEnabled="{Binding CanEdit}" />
-                <TextBlock Margin="14,0,0,0" VerticalAlignment="Center" Text="{Binding SelectedCount, StringFormat=已选 {0} 项}" />
+                <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="14,0,0,0" VerticalAlignment="Center" Text="{Binding SelectedCount, StringFormat=已选 {0} 项}" />
             </StackPanel>
-            <TextBlock Margin="0,8,0,0" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
-            <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
+            <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,8,0,0" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+            <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding ErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
         </StackPanel>
         <ListBox Grid.Row="3" ItemsSource="{Binding Lines}" IsEnabled="{Binding CanEdit}"
                  Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -79,10 +79,10 @@
                             <CheckBox IsChecked="{Binding IsSelected}" IsEnabled="{Binding CanSelect}" Margin="0,4,14,0" />
                             <StackPanel Grid.Column="1">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{Binding LineNumber, StringFormat=第 {0} 行}" Opacity="0.6" Margin="0,0,10,0" />
-                                    <TextBlock Text="{Binding SourceText}" FontSize="{DynamicResource SectionTitleFontSize}" FontWeight="SemiBold" />
+                                    <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding LineNumber, StringFormat=第 {0} 行}" Opacity="0.6" Margin="0,0,10,0" />
+                                    <TextBlock Style="{DynamicResource ListTitleTextStyle}" Text="{Binding SourceText}" />
                                 </StackPanel>
-                                <TextBlock Text="{Binding MatchLabel}" Margin="0,5,0,5" TextWrapping="Wrap" />
+                                <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding MatchLabel}" Margin="0,5,0,5" TextWrapping="Wrap" />
                                 <ComboBox ItemsSource="{Binding Candidates}" SelectedItem="{Binding SelectedCandidate}"
                                           ItemTemplate="{StaticResource SenseTemplate}" HorizontalContentAlignment="Stretch"
                                           Background="{DynamicResource CardBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}" />
@@ -91,8 +91,8 @@
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" Margin="0,0,12,4">
-                                                <TextBlock Text="{Binding FormLabel}" Opacity="0.7" Margin="0,0,4,0" />
-                                                <TextBlock Text="{Binding Surface}" />
+                                                <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding FormLabel}" Opacity="0.7" Margin="0,0,4,0" />
+                                                <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding Surface}" />
                                             </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>

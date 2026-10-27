@@ -17,7 +17,7 @@
 
         <Style x:Key="LookupComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource FormComboBoxStyle}">
             <Setter Property="Padding" Value="14,10" />
-            <Setter Property="FontSize" Value="{DynamicResource BodyFontSize}" />
+            <Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
             <Setter Property="MaxDropDownHeight" Value="340" />
         </Style>
 
@@ -34,18 +34,15 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock FontSize="{DynamicResource SectionTitleFontSize}"
-                                   FontWeight="SemiBold"
+                        <TextBlock Style="{DynamicResource ListTitleTextStyle}"
                                    Text="{Binding Headword}" />
-                        <TextBlock Margin="0,3,0,0"
-                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,3,0,0"
                                    Text="{Binding Reading}" />
-                        <TextBlock Margin="0,7,0,0"
-                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,7,0,0"
                                    Text="{Binding Meanings[0], FallbackValue=暂无中文释义, TargetNullValue=暂无中文释义}"
                                    TextWrapping="Wrap" />
                     </StackPanel>
-                    <TextBlock Grid.Column="1"
+                    <TextBlock Style="{DynamicResource BodyTextStyle}" Grid.Column="1"
                                Margin="14,0,0,0"
                                VerticalAlignment="Top"
                                Foreground="{DynamicResource AccentBrush}"
@@ -83,25 +80,22 @@
                     Height="54"
                     Background="{DynamicResource AccentSoftBrush}"
                     CornerRadius="27">
-                <TextBlock HorizontalAlignment="Center"
+                <TextBlock Style="{DynamicResource PageIconTextStyle}" HorizontalAlignment="Center"
                            VerticalAlignment="Center"
-                           FontSize="{DynamicResource IconFontSize}"
                            Foreground="{DynamicResource AccentBrush}"
                            Text="⌕" />
             </Border>
             <StackPanel Grid.Column="2" Margin="16,0,0,0">
-                <TextBlock FontSize="{DynamicResource PageTitleFontSize}"
-                           FontWeight="SemiBold"
+                <TextBlock Style="{DynamicResource PageTitleTextStyle}"
                            Text="{Binding WindowTitle}" />
-                <TextBlock Margin="0,4,0,0"
-                           Foreground="{DynamicResource SecondaryForegroundBrush}"
+                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0"
                            Text="输入词形，查看词库中的义项、属性与全部词形。" />
             </StackPanel>
             <Border Grid.Column="3"
                     Padding="13,8"
                     Background="{DynamicResource AccentSoftBrush}"
                     CornerRadius="15">
-                <TextBlock FontWeight="SemiBold"
+                <TextBlock Style="{DynamicResource StrongBodyTextStyle}"
                            Foreground="{DynamicResource AccentBrush}"
                            Text="本地只读词库" />
             </Border>
@@ -121,9 +115,8 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Margin="0,0,16,0"
+                    <TextBlock Style="{DynamicResource FormHeadingTextStyle}" Margin="0,0,16,0"
                                VerticalAlignment="Center"
-                               FontWeight="SemiBold"
                                Text="查询" />
                     <ComboBox Grid.Column="1"
                               HorizontalAlignment="Left"
@@ -144,7 +137,7 @@
                             Content="搜索"
                             Style="{StaticResource LookupButtonStyle}" />
                 </Grid>
-                <TextBlock Margin="0,10,0,0"
+                <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,10,0,0"
                            Foreground="{DynamicResource ErrorBrush}"
                            Text="{Binding ErrorMessage}"
                            TextWrapping="Wrap" />
@@ -169,8 +162,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock FontSize="{DynamicResource SectionTitleFontSize}"
-                               FontWeight="SemiBold"
+                    <TextBlock Style="{DynamicResource SectionTitleTextStyle}"
                                Text="候选结果" />
                     <ListBox Grid.Row="1"
                              x:Name="CandidateResultList"
@@ -180,10 +172,9 @@
                              ItemTemplate="{StaticResource LookupResultTemplate}"
                              ItemsSource="{Binding Results}"
                              SelectedItem="{Binding SelectedResult, Mode=TwoWay}" />
-                    <TextBlock Grid.Row="1"
+                    <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Row="1"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
-                               Foreground="{DynamicResource SecondaryForegroundBrush}"
                                Text="{Binding EmptyStateText}"
                                TextWrapping="Wrap" />
                 </Grid>
@@ -199,17 +190,14 @@
                               HorizontalScrollBarVisibility="Disabled"
                               VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock FontSize="{DynamicResource EmphasisFontSize}"
-                                   FontWeight="SemiBold"
+                        <TextBlock Style="{DynamicResource DetailTitleTextStyle}"
                                    Text="{Binding SelectedResult.Headword}" />
-                        <TextBlock Margin="0,4,0,0"
-                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0"
                                    Text="{Binding SelectedResult.Reading}" />
-                        <TextBlock Margin="0,14,0,0"
+                        <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,14,0,0"
                                    Foreground="{DynamicResource AccentBrush}"
                                    Text="{Binding SelectedResult.PartOfSpeechLabel}" />
-                        <TextBlock Margin="0,4,0,0"
-                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0"
                                    Text="{Binding SelectedResult.AttributeLabel}"
                                    TextWrapping="Wrap" />
 
@@ -219,23 +207,21 @@
                                 Content="加入导入收件箱"
                                 IsEnabled="{Binding CanStageSelected}"
                                 Style="{StaticResource LookupButtonStyle}" />
-                        <TextBlock Margin="0,8,0,0"
+                        <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,8,0,0"
                                    Foreground="{DynamicResource AccentBrush}"
                                    Text="{Binding ImportStatusMessage}"
                                    TextWrapping="Wrap" />
-                        <TextBlock Margin="0,4,0,0"
+                        <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,4,0,0"
                                    Foreground="{DynamicResource ErrorBrush}"
                                    Text="{Binding ImportErrorMessage}"
                                    TextWrapping="Wrap" />
 
-                        <TextBlock Margin="0,24,0,8"
-                                   FontSize="{DynamicResource SectionTitleFontSize}"
-                                   FontWeight="SemiBold"
+                        <TextBlock Style="{DynamicResource SubsectionTitleTextStyle}" Margin="0,24,0,8"
                                    Text="义项" />
                         <ItemsControl ItemsSource="{Binding SelectedResult.Meanings}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Margin="0,3" TextWrapping="Wrap">
+                                    <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,3" TextWrapping="Wrap">
                                         <Run Text="•  " />
                                         <Run Text="{Binding Path=., Mode=OneWay}" />
                                     </TextBlock>
@@ -258,9 +244,7 @@
                             </TextBlock.Style>
                         </TextBlock>
 
-                        <TextBlock Margin="0,24,0,8"
-                                   FontSize="{DynamicResource SectionTitleFontSize}"
-                                   FontWeight="SemiBold"
+                        <TextBlock Style="{DynamicResource SubsectionTitleTextStyle}" Margin="0,24,0,8"
                                    Text="全部词形" />
                         <ItemsControl ItemsSource="{Binding SelectedResult.Forms}">
                             <ItemsControl.ItemTemplate>
@@ -272,15 +256,12 @@
                                             <ColumnDefinition Width="1.2*" />
                                             <ColumnDefinition Width="1.5*" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding Surface}" />
-                                        <TextBlock Grid.Column="1"
-                                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                        <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding Surface}" />
+                                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Column="1"
                                                    Text="{Binding Reading}" />
-                                        <TextBlock Grid.Column="2"
-                                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Column="2"
                                                    Text="{Binding FormLabel}" />
-                                        <TextBlock Grid.Column="3"
-                                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Column="3"
                                                    Text="{Binding DetailLabel}"
                                                    TextWrapping="Wrap" />
                                     </Grid>

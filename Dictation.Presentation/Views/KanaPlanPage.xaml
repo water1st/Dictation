@@ -23,24 +23,24 @@
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="42,26" MaxWidth="880" HorizontalAlignment="Stretch">
-            <TextBlock Text="假名小练习" FontSize="{DynamicResource PageTitleFontSize}" FontWeight="SemiBold" />
-            <TextBlock Margin="0,8,0,20" Foreground="{DynamicResource SecondaryForegroundBrush}"
+            <TextBlock Style="{DynamicResource HeroTitleTextStyle}" Text="假名小练习" />
+            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,8,0,20"
                        Text="不混入词汇表。先听发音，再写出指定字形；错项稍后重练。" TextWrapping="Wrap" />
             <Border Padding="24" CornerRadius="22" Background="{DynamicResource CardBackgroundBrush}">
                 <StackPanel>
                     <CheckBox Content="启用五十音每日计划" IsChecked="{Binding Enabled}" />
-                    <TextBlock Margin="0,16,0,0" Text="书写字形 · 至少选择一种" FontWeight="SemiBold" />
+                    <TextBlock Style="{DynamicResource FormHeadingTextStyle}" Margin="0,16,0,0" Text="书写字形 · 至少选择一种" />
                     <WrapPanel>
                         <CheckBox x:Name="HiraganaChoice" Content="平假名" IsChecked="{Binding Hiragana}" IsEnabled="{Binding CanToggleHiragana}" />
                         <CheckBox x:Name="KatakanaChoice" Content="片假名" IsChecked="{Binding Katakana}" IsEnabled="{Binding CanToggleKatakana}" />
                     </WrapPanel>
-                    <TextBlock Margin="0,16,0,0" Text="发音范围 · 至少选择一项" FontWeight="SemiBold" />
+                    <TextBlock Style="{DynamicResource FormHeadingTextStyle}" Margin="0,16,0,0" Text="发音范围 · 至少选择一项" />
                     <WrapPanel>
                         <CheckBox x:Name="ClearChoice" Content="清音" IsChecked="{Binding Clear}" IsEnabled="{Binding CanToggleClear}" />
                         <CheckBox Content="浊音与半浊音" IsChecked="{Binding Voiced}" IsEnabled="{Binding CanToggleVoiced}" />
                         <CheckBox Content="拗音" IsChecked="{Binding Contracted}" IsEnabled="{Binding CanToggleContracted}" />
                     </WrapPanel>
-                    <TextBlock Margin="0,16,0,0" Text="每日练习量" FontWeight="SemiBold" />
+                    <TextBlock Style="{DynamicResource FormHeadingTextStyle}" Margin="0,16,0,0" Text="每日练习量" />
                     <WrapPanel VerticalAlignment="Center">
                         <RadioButton GroupName="Quantity" Content="全部复习" IsChecked="{Binding ReviewAll}" />
                         <RadioButton GroupName="Quantity" Content="每天复习" IsChecked="{Binding ReviewDaily}" />
@@ -48,22 +48,22 @@
                                  IsEnabled="{Binding IsDailyTargetEnabled}" Text="{Binding DailyTargetText, UpdateSourceTrigger=PropertyChanged}"
                                  Foreground="{DynamicResource ForegroundBrush}" Background="{DynamicResource WindowBackgroundBrush}"
                                  SpellCheck.IsEnabled="False" />
-                        <TextBlock Text="项" VerticalAlignment="Center" />
+                        <TextBlock Style="{DynamicResource ControlLabelTextStyle}" Text="项" VerticalAlignment="Center" />
                     </WrapPanel>
-                    <TextBlock Margin="0,10,0,0" Text="{Binding RangeLabel}" Foreground="{DynamicResource AccentBrush}" />
-                    <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}"
+                    <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,10,0,0" Text="{Binding RangeLabel}" Foreground="{DynamicResource AccentBrush}" />
+                    <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,8,0,0" TextWrapping="Wrap"
                                Text="全量：每项首次正确即完成；有过错误的项目需连续两次正确。每日数量：优先未测及到期项，不提前抽未来项凑数。最后一项不可取消，请先选另一项再替换。" />
                 </StackPanel>
             </Border>
-            <TextBlock Margin="0,20,0,4" FontSize="{DynamicResource SectionTitleFontSize}" FontWeight="SemiBold" Text="{Binding ProgressLabel}" />
+            <TextBlock Style="{DynamicResource SectionTitleTextStyle}" Margin="0,20,0,4" Text="{Binding ProgressLabel}" />
             <WrapPanel>
                 <Button Content="保存计划" Command="{Binding SaveCommand}" />
                 <Button Content="开始／继续听写" Command="{Binding StartCommand}" />
                 <Button Content="刷新" Command="{Binding RefreshCommand}" />
                 <Button Content="取消操作" Command="{Binding CancelCommand}" />
             </WrapPanel>
-            <TextBlock Margin="0,12,0,0" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
-            <TextBlock Margin="0,8,0,0" Text="{Binding ErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
+            <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,12,0,0" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+            <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,8,0,0" Text="{Binding ErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
         </StackPanel>
     </ScrollViewer>
 </UserControl>

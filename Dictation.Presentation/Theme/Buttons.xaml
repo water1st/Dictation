@@ -9,7 +9,7 @@
         </Border>
     </ControlTemplate>
     <Style x:Key="SecondaryActionButtonStyle" TargetType="Button">
-        <Setter Property="FontSize" Value="{DynamicResource BodyFontSize}" />
+        <Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
         <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />

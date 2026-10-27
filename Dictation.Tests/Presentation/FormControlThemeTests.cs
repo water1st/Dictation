@@ -262,8 +262,8 @@ namespace Dictation.Tests.Presentation
             host.Children.Add(radio);
             ThemePalette.Apply(host.Resources, ResolvedTheme.Light);
             Layout(host);
-            Assert.Equal(14d, checkbox.FontSize);
-            Assert.Equal(14d, radio.FontSize);
+            Assert.Equal(16d, checkbox.FontSize);
+            Assert.Equal(16d, radio.FontSize);
             return Task.CompletedTask;
         });
 

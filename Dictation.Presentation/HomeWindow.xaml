@@ -61,7 +61,7 @@
                 <Button x:Name="BackButton" Style="{StaticResource TopBarButtonStyle}" Command="{Binding GoBackCommand}" Content="‹"
                         ToolTip="返回" AutomationProperties.Name="返回" IsEnabled="{Binding CanGoBack}"
                         Visibility="{Binding IsBackButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                <TextBlock Grid.Column="1" Margin="12,0" VerticalAlignment="Center" FontSize="{DynamicResource SectionTitleFontSize}" FontWeight="SemiBold"
+                <TextBlock Style="{DynamicResource WindowTitleTextStyle}" Grid.Column="1" Margin="12,0" VerticalAlignment="Center"
                            Text="{Binding PageTitle}" TextTrimming="CharacterEllipsis" />
                 <Grid Grid.Column="2" VerticalAlignment="Center" shell:WindowChrome.IsHitTestVisibleInChrome="True"
                       DataContext="{Binding Update, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
@@ -79,12 +79,12 @@
                                 </Style.Triggers>
                             </Style>
                         </Button.Style>
-                    <TextBlock x:Name="UpdateStatusText" MaxWidth="130" Focusable="True" KeyboardNavigation.IsTabStop="False"
+                    <TextBlock Style="{DynamicResource MetadataTextStyle}" x:Name="UpdateStatusText" MaxWidth="130" Focusable="True" KeyboardNavigation.IsTabStop="False"
                                Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}"
-                               VerticalAlignment="Center" FontSize="{DynamicResource CaptionFontSize}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                               VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
                                ToolTip="{Binding StatusMessage}" Foreground="{DynamicResource ErrorBrush}" Text="{Binding ErrorSummary}" />
                     </Button>
-                    <Button x:Name="UpdateButton" Grid.Column="1" Style="{StaticResource TopBarButtonStyle}" Width="Auto" Padding="10,0" FontSize="{DynamicResource BodyFontSize}"
+                    <Button x:Name="UpdateButton" Grid.Column="1" Style="{StaticResource TopBarButtonStyle}" Width="Auto" Padding="10,0" FontSize="{DynamicResource CaptionFontSize}"
                             Content="{Binding ButtonText}" Command="{Binding InstallCommand}"
                             Visibility="{Binding HasUpdate, Converter={StaticResource BooleanToVisibilityConverter}}" />
                 </Grid>
@@ -120,10 +120,9 @@
                         BorderThickness="1"
                         CornerRadius="18">
                     <StackPanel>
-                        <TextBlock FontSize="{DynamicResource SectionTitleFontSize}"
-                                   FontWeight="SemiBold"
+                        <TextBlock Style="{DynamicResource WindowTitleTextStyle}"
                                    Text="{Binding CurrentOverlay.Title}" />
-                        <TextBlock Margin="0,12,0,0"
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,12,0,0"
                                    Foreground="{DynamicResource SecondaryForegroundBrush}"
                                    Text="{Binding CurrentOverlay.Message}"
                                    TextWrapping="Wrap" />

@@ -8,23 +8,23 @@ namespace Dictation.Tests.Presentation
     public sealed class TypographyPageTests
     {
         [Theory]
-        [InlineData(typeof(HomePage), "今天想练什么？")]
-        [InlineData(typeof(KanaPlanPage), "假名小练习")]
-        [InlineData(typeof(KanaSessionPage), "五十音听写")]
-        [InlineData(typeof(McpSettingsPage), "AI 导入设置")]
-        [InlineData(typeof(SettingsPage), "外观与主题")]
-        [InlineData(typeof(TextImportPage), "")]
-        [InlineData(typeof(LearningPlanPage), "")]
-        [InlineData(typeof(ReviewPlanPage), "")]
-        [InlineData(typeof(ReviewLibraryPage), "")]
-        [InlineData(typeof(ImportInboxListPage), "")]
-        [InlineData(typeof(ImportInboxDetailPage), "")]
-        [InlineData(typeof(LexiconLookupPage), "")]
-        [InlineData(typeof(WrongAnswerListPage), "")]
-        [InlineData(typeof(PracticeSessionPage), "")]
-        [InlineData(typeof(StatisticsPage), "")]
-        [InlineData(typeof(LanguageWorkspacePage), "")]
-        public Task Page_TextRoles_UseSharedBodyTitleAndButtonSizes(Type pageType, string title) => ReviewPlanPageTests.RunStaAsync(() =>
+        [InlineData(typeof(HomePage), "今天想练什么？", 30)]
+        [InlineData(typeof(KanaPlanPage), "假名小练习", 30)]
+        [InlineData(typeof(KanaSessionPage), "五十音听写", 30)]
+        [InlineData(typeof(McpSettingsPage), "AI 导入设置", 30)]
+        [InlineData(typeof(SettingsPage), "外观与主题", 24)]
+        [InlineData(typeof(TextImportPage), "", 28)]
+        [InlineData(typeof(LearningPlanPage), "", 28)]
+        [InlineData(typeof(ReviewPlanPage), "", 28)]
+        [InlineData(typeof(ReviewLibraryPage), "", 28)]
+        [InlineData(typeof(ImportInboxListPage), "", 28)]
+        [InlineData(typeof(ImportInboxDetailPage), "", 28)]
+        [InlineData(typeof(LexiconLookupPage), "", 28)]
+        [InlineData(typeof(WrongAnswerListPage), "", 28)]
+        [InlineData(typeof(PracticeSessionPage), "", 28)]
+        [InlineData(typeof(StatisticsPage), "", 28)]
+        [InlineData(typeof(LanguageWorkspacePage), "", 23)]
+        public Task Page_TextRoles_PreserveOriginalHeadingHierarchy(Type pageType, string title, double titleSize) => ReviewPlanPageTests.RunStaAsync(() =>
         {
             var page = (UserControl)Activator.CreateInstance(pageType)!;
             var host = FormControlThemeTests.CreateHost(page);
@@ -36,12 +36,13 @@ namespace Dictation.Tests.Presentation
                     : text.GetBindingExpression(TextBlock.TextProperty)?.ParentBinding.Path?.Path ==
                         (pageType == typeof(ImportInboxDetailPage) ? "SourceText" :
                             pageType == typeof(LanguageWorkspacePage) ? "CurrentLanguageLabel" : "WindowTitle"));
-            Assert.Equal(28d, heading.FontSize);
+            Assert.Equal(titleSize, heading.FontSize);
+            Assert.Equal(FontWeights.SemiBold, heading.FontWeight);
             foreach (var button in FormControlThemeTests.Children<Button>(page))
             {
                 if (button.Content is string label)
                 {
-                    Assert.Equal(label == "🔊" ? 24d : 14d, button.FontSize);
+                    Assert.Equal(label == "🔊" ? 24d : 16d, button.FontSize);
                 }
             }
             return Task.CompletedTask;
@@ -51,14 +52,14 @@ namespace Dictation.Tests.Presentation
         [InlineData(typeof(KanaPlanPage))]
         [InlineData(typeof(McpSettingsPage))]
         [InlineData(typeof(ReviewPlanPage))]
-        public Task SharedBodySize_ChangesOnce_UpdatesLocalPageAndControlStyles(Type pageType) => ReviewPlanPageTests.RunStaAsync(() =>
+        public Task SharedControlSize_ChangesOnce_UpdatesPeerControlsWithoutFlatteningHeadings(Type pageType) => ReviewPlanPageTests.RunStaAsync(() =>
         {
             var page = (UserControl)Activator.CreateInstance(pageType)!;
             var host = FormControlThemeTests.CreateHost(page);
             FormControlThemeTests.Layout(host);
-            host.Resources["BodyFontSize"] = 17d;
+            host.Resources["ControlFontSize"] = 17d;
             FormControlThemeTests.Layout(host);
-            Assert.Equal(17d, page.FontSize);
+            Assert.Equal(14d, page.FontSize);
             var choices = FormControlThemeTests.Children<Control>(page)
                 .Where(control => control is CheckBox or RadioButton).ToArray();
             Assert.NotEmpty(choices);
@@ -122,7 +123,105 @@ namespace Dictation.Tests.Presentation
             FormControlThemeTests.Layout(host);
             var heading = Assert.Single(FormControlThemeTests.Children<TextBlock>(row),
                 text => text.GetBindingExpression(TextBlock.TextProperty)?.ParentBinding.Path?.Path == "Details.HeadwordLabel");
-            Assert.Equal(18d, heading.FontSize);
+            Assert.Equal(20d, heading.FontSize);
+            return Task.CompletedTask;
+        });
+
+        [Fact]
+        public Task Navigation_TextLevels_KeepLanguageEntriesLargerThanFeatureEntries() => ReviewPlanPageTests.RunStaAsync(() =>
+        {
+            var home = new HomePage();
+            var workspace = new LanguageWorkspacePage();
+            var host = FormControlThemeTests.CreateHost(home);
+            host.Children.Add(workspace);
+            FormControlThemeTests.Layout(host);
+            var languageTitles = FormControlThemeTests.Children<TextBlock>(home)
+                .Where(text => text.Text is "英语" or "日语").ToArray();
+            Assert.Equal(2, languageTitles.Length);
+            Assert.All(languageTitles, text =>
+            {
+                Assert.Equal(25d, text.FontSize);
+                Assert.Equal(FontWeights.SemiBold, text.FontWeight);
+            });
+            var feature = Assert.Single(FormControlThemeTests.Children<TextBlock>(workspace), text => text.Text == "开始学习");
+            Assert.Equal(18d, feature.FontSize);
+            host.Resources["LanguageEntryTitleFontSize"] = 27d;
+            FormControlThemeTests.Layout(host);
+            Assert.All(languageTitles, text => Assert.Equal(27d, text.FontSize));
+            Assert.Equal(18d, feature.FontSize);
+            Assert.Equal(14d, home.FontSize);
+            return Task.CompletedTask;
+        });
+
+        [Theory]
+        [InlineData(typeof(KanaPlanPage))]
+        [InlineData(typeof(LearningPlanPage))]
+        [InlineData(typeof(ReviewPlanPage))]
+        [InlineData(typeof(McpSettingsPage))]
+        [InlineData(typeof(LexiconLookupPage))]
+        [InlineData(typeof(ImportInboxListPage))]
+        public Task Form_PeerControlTypes_UseOneReadableTextSize(Type pageType) => ReviewPlanPageTests.RunStaAsync(() =>
+        {
+            var page = (UserControl)Activator.CreateInstance(pageType)!;
+            var host = FormControlThemeTests.CreateHost(page);
+            FormControlThemeTests.Layout(host);
+            var peers = FormControlThemeTests.Children<Control>(page)
+                .Where(control => control is CheckBox or RadioButton or TextBox or ComboBox or Button)
+                .Where(control => control.TemplatedParent is null).ToArray();
+            Assert.NotEmpty(peers);
+            Assert.All(peers, control => Assert.Equal(16d, control.FontSize));
+            return Task.CompletedTask;
+        });
+
+        [Theory]
+        [InlineData(typeof(KanaSessionPage))]
+        [InlineData(typeof(PracticeSessionPage))]
+        public Task Practice_AnswerInput_IsLargerThanOrdinaryFormControls(Type pageType) => ReviewPlanPageTests.RunStaAsync(() =>
+        {
+            var page = (UserControl)Activator.CreateInstance(pageType)!;
+            var host = FormControlThemeTests.CreateHost(page);
+            FormControlThemeTests.Layout(host);
+            var answer = Assert.Single(FormControlThemeTests.Children<TextBox>(page), input =>
+                input.GetBindingExpression(TextBox.TextProperty)?.ParentBinding.Path?.Path == "AnswerText");
+            Assert.Equal(28d, answer.FontSize);
+            var button = FormControlThemeTests.Children<Button>(page).First(action => action.Content is string label && label != "🔊");
+            Assert.Equal(16d, button.FontSize);
+            return Task.CompletedTask;
+        });
+
+        [Theory]
+        [InlineData(typeof(TextImportPage), "SenseTemplate", "Headword", 18)]
+        [InlineData(typeof(LexiconLookupPage), "LookupResultTemplate", "Headword", 18)]
+        [InlineData(typeof(ImportInboxDetailPage), "MemberTemplate", "Headword", 22)]
+        public Task ItemTemplate_HeadingAndSupportingText_PreserveDistinctRoles(Type pageType, string templateKey, string bindingPath, double headingSize) => ReviewPlanPageTests.RunStaAsync(() =>
+        {
+            var page = (UserControl)Activator.CreateInstance(pageType)!;
+            var row = (FrameworkElement)((DataTemplate)page.Resources[templateKey]).LoadContent();
+            var host = FormControlThemeTests.CreateHost(row);
+            FormControlThemeTests.Layout(host);
+            var heading = Assert.Single(FormControlThemeTests.Children<TextBlock>(row), text =>
+                text.GetBindingExpression(TextBlock.TextProperty)?.ParentBinding.Path?.Path == bindingPath);
+            Assert.Equal(headingSize, heading.FontSize);
+            Assert.Equal(FontWeights.SemiBold, heading.FontWeight);
+            Assert.Contains(FormControlThemeTests.Children<TextBlock>(row), text => text.FontSize < heading.FontSize);
+            return Task.CompletedTask;
+        });
+
+        [Fact]
+        public Task BodyRole_ChangesOnce_UpdatesDescriptionsAndEmphasisWithoutChangingNavigation() => ReviewPlanPageTests.RunStaAsync(() =>
+        {
+            var page = new LanguageWorkspacePage();
+            var host = FormControlThemeTests.CreateHost(page);
+            FormControlThemeTests.Layout(host);
+            host.Resources["BodyFontSize"] = 15d;
+            FormControlThemeTests.Layout(host);
+            var description = Assert.Single(FormControlThemeTests.Children<TextBlock>(page), text => text.Text == "继续当前一轮，或开始新一轮");
+            var progress = (TextBlock)page.FindName("LearningProgressText");
+            Assert.Equal(15d, description.FontSize);
+            Assert.Equal(15d, progress.FontSize);
+            Assert.Equal(FontWeights.Normal, description.FontWeight);
+            Assert.Equal(FontWeights.SemiBold, progress.FontWeight);
+            Assert.Equal(18d, Assert.Single(FormControlThemeTests.Children<TextBlock>(page), text => text.Text == "开始学习").FontSize);
             return Task.CompletedTask;
         });
     }

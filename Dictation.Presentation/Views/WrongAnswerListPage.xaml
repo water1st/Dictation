@@ -33,19 +33,17 @@
     <Grid Margin="24">
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
         <StackPanel>
-            <TextBlock FontSize="{DynamicResource PageTitleFontSize}" FontWeight="SemiBold" Text="{Binding WindowTitle}" />
-            <TextBlock Margin="0,8,0,0" Text="历史错误不会因重试答对而消失；自动复习仍按记忆安排。" TextWrapping="Wrap"
-                       Foreground="{DynamicResource SecondaryForegroundBrush}" />
+            <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" />
+            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,8,0,0" Text="历史错误不会因重试答对而消失；自动复习仍按记忆安排。" TextWrapping="Wrap" />
             <WrapPanel Margin="0,16,0,0">
                 <Button x:Name="RepracticeButton" Content="重练选中复习错题" Command="{Binding RepracticeCommand}" />
                 <Button Content="继续原学习" Command="{Binding ContinueLearningCommand}" />
                 <Button Content="刷新" Command="{Binding RefreshCommand}" />
                 <Button Content="取消" Command="{Binding CancelCommand}" />
             </WrapPanel>
-            <TextBlock Margin="0,10,0,0" Text="有未完成复习时会先恢复原轮次，不丢弃进度。"
-                       Foreground="{DynamicResource SecondaryForegroundBrush}" TextWrapping="Wrap" />
-            <TextBlock Margin="0,8,0,0" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
-            <TextBlock Margin="0,6,0,0" Text="{Binding ErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
+            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,10,0,0" Text="有未完成复习时会先恢复原轮次，不丢弃进度。" TextWrapping="Wrap" />
+            <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,8,0,0" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+            <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,6,0,0" Text="{Binding ErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
         </StackPanel>
         <Grid Grid.Row="1" Margin="0,18,0,0">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="20" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
@@ -58,12 +56,11 @@
                         <DockPanel>
                             <CheckBox IsChecked="{Binding IsSelected,Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,12,0" />
                             <StackPanel>
-                                <TextBlock FontSize="{DynamicResource SectionTitleFontSize}" FontWeight="SemiBold" Text="{Binding Heading}" TextWrapping="Wrap" />
-                                <TextBlock Margin="0,6,0,0" Text="{Binding Item.Meanings}" TextWrapping="Wrap" />
-                                <TextBlock Margin="0,6,0,0" Text="{Binding HistoryLabel}" Foreground="{DynamicResource ErrorBrush}" />
-                                <TextBlock Margin="0,4,0,0" Text="{Binding PlacementLabel}" Foreground="{DynamicResource SecondaryForegroundBrush}" />
-                                <TextBlock Margin="0,4,0,0" Text="{Binding NextReviewLabel}" TextWrapping="Wrap"
-                                           Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                                <TextBlock Style="{DynamicResource ListTitleTextStyle}" Text="{Binding Heading}" TextWrapping="Wrap" />
+                                <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,6,0,0" Text="{Binding Item.Meanings}" TextWrapping="Wrap" />
+                                <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,6,0,0" Text="{Binding HistoryLabel}" Foreground="{DynamicResource ErrorBrush}" />
+                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0" Text="{Binding PlacementLabel}" />
+                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0" Text="{Binding NextReviewLabel}" TextWrapping="Wrap" />
                             </StackPanel>
                         </DockPanel>
                     </DataTemplate></ListBox.ItemTemplate>
@@ -76,20 +73,20 @@
                 </Style></Border.Style>
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top">
-                        <TextBlock FontSize="{DynamicResource EmphasisFontSize}" FontWeight="SemiBold" Text="{Binding SelectedItem.Heading}" TextWrapping="Wrap" />
-                        <TextBlock x:Name="DetailMeanings" Margin="0,10,0,0" Text="{Binding SelectedItem.Item.Meanings}" TextWrapping="Wrap"
+                        <TextBlock Style="{DynamicResource DetailTitleTextStyle}" Text="{Binding SelectedItem.Heading}" TextWrapping="Wrap" />
+                        <TextBlock Style="{DynamicResource BodyTextStyle}" x:Name="DetailMeanings" Margin="0,10,0,0" Text="{Binding SelectedItem.Item.Meanings}" TextWrapping="Wrap"
                                    Foreground="{DynamicResource ForegroundBrush}" />
                         <Button x:Name="DetailSpeakerButton" Content="🔊" ToolTip="播放对应词形" AutomationProperties.Name="播放对应词形"
                                 FontSize="{DynamicResource IconFontSize}"
                                 HorizontalAlignment="Left" Margin="0,12,0,12" Command="{Binding PlayDetailCommand}" />
-                        <TextBlock Text="原始错误记录" FontWeight="SemiBold" Margin="0,0,0,12" />
+                        <TextBlock Style="{DynamicResource StrongBodyTextStyle}" Text="原始错误记录" Margin="0,0,0,12" />
                     </StackPanel>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <ItemsControl ItemsSource="{Binding SelectedItem.Item.Attempts}">
                             <ItemsControl.ItemTemplate><DataTemplate>
                                 <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="12" Padding="12" Margin="0,0,0,10">
                                     <StackPanel>
-                                        <TextBlock Text="{Binding AnsweredAtUtc,StringFormat={}{0:yyyy-MM-dd HH:mm}}" />
+                                        <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding AnsweredAtUtc,StringFormat={}{0:yyyy-MM-dd HH:mm}}" />
                                         <WrapPanel Margin="0,6,0,0">
                                             <TextBlock Margin="0,0,8,0"><TextBlock.Style><Style TargetType="TextBlock">
                                                 <Setter Property="Text" Value="看义默写" /><Style.Triggers>
@@ -101,8 +98,8 @@
                                                     <DataTrigger Binding="{Binding OutputMode}" Value="{x:Static learning:LearningOutputMode.Kanji}"><Setter Property="Text" Value="汉字" /></DataTrigger>
                                                 </Style.Triggers></Style></TextBlock.Style></TextBlock>
                                         </WrapPanel>
-                                        <TextBlock Margin="0,6,0,0" TextWrapping="Wrap"><Run Text="当时作答：" /><Run Text="{Binding SubmittedText}" /></TextBlock>
-                                        <TextBlock Margin="0,6,0,0" TextWrapping="Wrap"><Run Text="正确答案：" /><Run Text="{Binding ExpectedAnswer}" /></TextBlock>
+                                        <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,6,0,0" TextWrapping="Wrap"><Run Text="当时作答：" /><Run Text="{Binding SubmittedText}" /></TextBlock>
+                                        <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,6,0,0" TextWrapping="Wrap"><Run Text="正确答案：" /><Run Text="{Binding ExpectedAnswer}" /></TextBlock>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate></ItemsControl.ItemTemplate>

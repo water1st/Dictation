@@ -16,27 +16,26 @@
     </UserControl.Resources>
     <Grid Margin="46,32">
         <StackPanel VerticalAlignment="Center">
-            <TextBlock Text="今天想练什么？" FontSize="{DynamicResource PageTitleFontSize}" FontWeight="SemiBold" />
-            <TextBlock Text="选择一种语言，开始今天的学习与复习。" Margin="0,10,0,30" FontSize="{DynamicResource BodyFontSize}"
-                       Foreground="{DynamicResource SecondaryForegroundBrush}" />
+            <TextBlock Style="{DynamicResource HeroTitleTextStyle}" Text="今天想练什么？" />
+            <TextBlock Style="{DynamicResource IntroTextStyle}" Text="选择一种语言，开始今天的学习与复习。" Margin="0,10,0,30" />
             <Grid Height="220">
                 <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
                 <Button Command="{Binding SelectJapaneseCommand}" Style="{StaticResource CardButtonStyle}" Margin="0,0,10,0" AutomationProperties.Name="日语">
                     <StackPanel>
                         <views:LanguageBadge SourceLanguage="Japanese" IsActive="True" HorizontalAlignment="Left" />
-                        <TextBlock Text="日语" FontSize="{DynamicResource SectionTitleFontSize}" FontWeight="SemiBold" Margin="0,18,0,8" />
-                        <TextBlock Text="假名、汉字与听写练习" Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                        <TextBlock Style="{DynamicResource LanguageEntryTitleTextStyle}" Text="日语" Margin="0,18,0,8" />
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="假名、汉字与听写练习" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="1" Command="{Binding SelectEnglishCommand}" Style="{StaticResource CardButtonStyle}" Margin="10,0,0,0" AutomationProperties.Name="英语">
                     <StackPanel>
                         <views:LanguageBadge SourceLanguage="English" IsActive="True" HorizontalAlignment="Left" />
-                        <TextBlock Text="英语" FontSize="{DynamicResource SectionTitleFontSize}" FontWeight="SemiBold" Margin="0,18,0,8" />
-                        <TextBlock Text="词形变化与键盘听写" Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                        <TextBlock Style="{DynamicResource LanguageEntryTitleTextStyle}" Text="英语" Margin="0,18,0,8" />
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="词形变化与键盘听写" />
                     </StackPanel>
                 </Button>
             </Grid>
-            <TextBlock Text="{Binding Home.ErrorMessage}" TextWrapping="Wrap" Foreground="{DynamicResource ErrorBrush}" Margin="0,20,0,0" />
+            <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding Home.ErrorMessage}" TextWrapping="Wrap" Foreground="{DynamicResource ErrorBrush}" Margin="0,20,0,0" />
         </StackPanel>
     </Grid>
 </UserControl>

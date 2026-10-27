@@ -1,12 +1,175 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:system="clr-namespace:System;assembly=mscorlib">
-    <system:Double x:Key="CaptionFontSize">12</system:Double>
+    <!-- 字号与文字样式按信息职责集中定义，页面只保留布局及状态覆盖。 -->
     <system:Double x:Key="BodyFontSize">14</system:Double>
-    <system:Double x:Key="SectionTitleFontSize">18</system:Double>
-    <system:Double x:Key="EmphasisFontSize">24</system:Double>
+    <system:Double x:Key="IntroFontSize">15</system:Double>
+    <system:Double x:Key="CaptionFontSize">12</system:Double>
+    <system:Double x:Key="MetadataFontSize">11</system:Double>
+    <system:Double x:Key="FinePrintFontSize">10</system:Double>
+    <system:Double x:Key="BadgeFontSize">13</system:Double>
+    <system:Double x:Key="HeroTitleFontSize">30</system:Double>
     <system:Double x:Key="PageTitleFontSize">28</system:Double>
+    <system:Double x:Key="LanguageEntryTitleFontSize">25</system:Double>
+    <system:Double x:Key="WorkspaceTitleFontSize">23</system:Double>
+    <system:Double x:Key="NavigationTitleFontSize">18</system:Double>
+    <system:Double x:Key="PanelTitleFontSize">24</system:Double>
+    <system:Double x:Key="WindowTitleFontSize">20</system:Double>
+    <system:Double x:Key="SectionTitleFontSize">20</system:Double>
+    <system:Double x:Key="SubsectionTitleFontSize">16</system:Double>
+    <system:Double x:Key="ListTitleFontSize">18</system:Double>
+    <system:Double x:Key="GroupTitleFontSize">20</system:Double>
+    <system:Double x:Key="GroupHeadwordFontSize">22</system:Double>
+    <system:Double x:Key="DetailTitleFontSize">24</system:Double>
+    <system:Double x:Key="CalendarTitleFontSize">22</system:Double>
+    <system:Double x:Key="StatisticValueFontSize">28</system:Double>
+    <system:Double x:Key="CheckInStatusFontSize">17</system:Double>
+    <system:Double x:Key="SessionProgressFontSize">18</system:Double>
+    <system:Double x:Key="QuestionPromptFontSize">24</system:Double>
+    <system:Double x:Key="QuestionContentFontSize">30</system:Double>
+    <system:Double x:Key="FeedbackFontSize">20</system:Double>
+    <system:Double x:Key="CompletionTitleFontSize">28</system:Double>
     <system:Double x:Key="AnswerRevealFontSize">36</system:Double>
     <system:Double x:Key="IconFontSize">24</system:Double>
-    <system:Double x:Key="WindowIconFontSize">18</system:Double>
+    <system:Double x:Key="PageIconFontSize">27</system:Double>
+    <system:Double x:Key="ControlFontSize">16</system:Double>
+    <system:Double x:Key="AnswerInputFontSize">28</system:Double>
+    <system:Double x:Key="WindowIconFontSize">17</system:Double>
+
+    <Style x:Key="BodyTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{DynamicResource BodyFontSize}" />
+        <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+    <Style x:Key="StrongBodyTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="SecondaryBodyTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryForegroundBrush}" />
+    </Style>
+    <Style x:Key="IntroTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource IntroFontSize}" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryForegroundBrush}" />
+    </Style>
+    <Style x:Key="CaptionTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource CaptionFontSize}" />
+        <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+    <Style x:Key="MetadataTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource MetadataFontSize}" />
+        <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+    <Style x:Key="FinePrintTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource FinePrintFontSize}" />
+        <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+    <Style x:Key="BadgeTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource BadgeFontSize}" />
+        <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+    <Style x:Key="ControlLabelTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+        <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+    <Style x:Key="FormHeadingTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="HeroTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource HeroTitleFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="PageTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource PageTitleFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="LanguageEntryTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource LanguageEntryTitleFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="WorkspaceTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource WorkspaceTitleFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="NavigationTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource NavigationTitleFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="PanelTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource PanelTitleFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="WindowTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource WindowTitleFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="SectionTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource SectionTitleFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="SubsectionTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource SubsectionTitleFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="ListTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource ListTitleFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="GroupTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource GroupTitleFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="GroupHeadwordTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource GroupHeadwordFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="DetailTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource DetailTitleFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="CalendarTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource CalendarTitleFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="StatisticValueTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource StatisticValueFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="CheckInStatusTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource CheckInStatusFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="SessionProgressTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource SessionProgressFontSize}" />
+        <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+    <Style x:Key="QuestionPromptTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource QuestionPromptFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="QuestionContentTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource QuestionContentFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="FeedbackTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource FeedbackFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="CompletionTitleTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource CompletionTitleFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="AnswerRevealTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource AnswerRevealFontSize}" />
+        <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+    <Style x:Key="IconTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource IconFontSize}" />
+        <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+    <Style x:Key="PageIconTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+        <Setter Property="FontSize" Value="{DynamicResource PageIconFontSize}" />
+        <Setter Property="FontWeight" Value="Normal" />
+    </Style>
 </ResourceDictionary>
