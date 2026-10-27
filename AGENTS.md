@@ -11,6 +11,7 @@
 | Git 分支、TDD、开发步骤、验证、PR、状态流转 | `rules/workflow.md` |
 | Trello Task、身份、Checklist、任务生命周期与版本 | `rules/project-management.md` |
 | 需求和设计文档、最终状态、文档版本 | `rules/design-documents.md` |
+| 仓库永久文件准入、临时目录和清理审批 | `rules/repository-hygiene.md` |
 | GitHub/Trello 资源定位、开发环境、SDK、工具与工作区 | `rules/tooling.md` |
 
 项目身份及版本配置以 `ProjectInfo.json` 为准。项目 Skills 位于 `.agents/skills/`，其适用条件由相应规则指定。
