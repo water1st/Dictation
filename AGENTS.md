@@ -7,6 +7,7 @@
 | 适用内容 | 规则文件 |
 |---|---|
 | 系统架构、模块依赖、核心算法、SQLite 数据结构 | `rules/architecture.md` |
+| 第三方词库与语音资源来源、版本、哈希、运行布局及许可归属 | `rules/resources.md` |
 | C# 命名、文件组织、类型及注释规范 | `rules/code-style.md` |
 | Git 分支、TDD、开发步骤、验证、PR、状态流转 | `rules/workflow.md` |
 | Trello Task、身份、Checklist、任务生命周期与版本 | `rules/project-management.md` |

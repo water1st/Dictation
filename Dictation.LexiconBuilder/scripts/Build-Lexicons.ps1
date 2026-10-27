@@ -180,7 +180,7 @@ if ($cowUniqueIliCount -ne 42300) {
 }
 Write-Output "gate_passed name=cow_unique_ili value=$cowUniqueIliCount"
 
-$repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $builderProject = Join-Path $repositoryRoot 'Dictation.LexiconBuilder\Dictation.LexiconBuilder.csproj'
 $builderDll = Join-Path $repositoryRoot 'Dictation.LexiconBuilder\bin\Release\net10.0\Dictation.LexiconBuilder.dll'
 Invoke-Checked $dotnet.Source @('build', $builderProject, '--configuration', 'Release', '--no-restore') '编译词库构建器失败。'

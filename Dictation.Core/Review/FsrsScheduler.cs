@@ -3,7 +3,7 @@ namespace Dictation.Core.Review
     /// <summary>以官方 FSRS 6 默认参数计算客观 Good／Again 的下次到期和预计保持率。</summary>
     internal sealed class FsrsScheduler
     {
-        // 数值移植自 Open Spaced Repetition py-fsrs；固定来源与 MIT 归属见 FsrsReference.md 及随包许可证。
+        // 数值移植自 Open Spaced Repetition py-fsrs；固定来源与 MIT 归属见 rules/architecture.md 的“FSRS 数值来源与验证”及随包许可证。
         private static readonly double[] weights =
         {
             0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194,

@@ -13,9 +13,8 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 - `Dictation.DataAccess/`：SQLite 数据访问、Dapper SQL、连接、事务及 Schema Migration，不管理 UI 或业务规则。
 - `Dictation.TtsHost/`：提供 TTS 支持进程。
 - `Dictation.Updater/`：独立更新器，通过受批准的 Core 服务边界使用能力。
-- `Dictation.LexiconBuilder/`：词库构建工具。
+- `Dictation.LexiconBuilder/`：词库构建工具，使用 `Dictation.LexiconBuilder/scripts/Build-Lexicons.ps1` 校验输入并生成只读词库；固定资源来源、哈希、运行布局与许可归属见[第三方资源规范](resources.md)。
 - `Dictation.Tests/`：xUnit v3 + Microsoft.Testing.Platform 测试项目。
-- `docs/requirements/RefactorSpecification.md`：项目正式需求；实际能力和实现状态以当前仓库代码为准。
 
 ## Layer Dependencies and Design
 
@@ -44,6 +43,28 @@ Dictation 是用于单词学习、听写与练习的 Windows 桌面应用。当�
 - **答案判定**：`AnswerEvaluationService` 对输入和可接受答案去除首尾空白并作 Unicode NFC 规范化；英语比较忽略大小写，日语精确匹配。答题状态与词形进度由会话服务结合调度器及数据访问层处理。参见 `Dictation.Core/Learning/AnswerEvaluationService.cs`。
 - **复习选组与间隔安排**：`ReviewSessionSelectionPlanner` 仅选择复习计划启用、形式与输出适用且未建立记忆或已经到期的词形；候选优先包含未建立记忆的词组，然后按预计保持率由低到高、到期时间及创建时间排序，并受每日剩余额度和单次组数限制。`ReviewMemoryUpdatePlanner` 通过 `FsrsScheduler` 的 FSRS 6 参数模型更新稳定度、难度与下次日期；整次评价从未出错记 Good，否则记 Again。参见 `Dictation.Core/Review/ReviewSessionSelectionPlanner.cs`、`Dictation.Core/Review/ReviewMemoryUpdatePlanner.cs`、`Dictation.Core/Review/FsrsScheduler.cs`。
 - **五十音练习**：`KanaSessionPlanner` 根据配置筛选后的项目状态排题；首次答对即完成，曾答错的项目需连续答对两次。常规重练在后续 4～8 题，队列不足时选最早可再练的未完成项目。参见 `Dictation.Core/Kana/KanaSessionPlanner.cs`。
+
+### FSRS 数值来源与验证
+
+复习内核参考 [Open Spaced Repetition 官方 py-fsrs](https://github.com/open-spaced-repetition/py-fsrs/tree/9446cb06605c597a063aeee49f7d188d42e34dc2)，固定 commit `9446cb06605c597a063aeee49f7d188d42e34dc2`，MIT 许可证。使用 FSRS 6 默认 21 个参数，不自行拟合或声称适合每个人的最佳参数。
+
+目标保持率为 0.9，只接受程序根据作答得出的 Good（3）／Again（1）。会话内重复练习由学习／复习流程处理，因此数值对照使用 `Scheduler(desired_retention=0.9, learning_steps=(), relearning_steps=(), enable_fuzzing=False)`。间隔为 1–36500 整天，采用 Python 银行家舍入；遗忘概率使用经过的完整天数，同日更新使用短期稳定度公式。仅出题顺序随机，不对到期日期加 fuzz。
+
+以下黄金向量由固定版本未修改的 `rating/state/card/review_log/scheduler.py` 调用官方 Scheduler 生成，对应回归测试为 `Dictation.Tests/Core/FsrsSchedulerTests.cs`。产品和普通单元测试不依赖 Python、网络或官方源码文件。
+
+| 作答序列（从首次评价起的天数） | 最终稳定度 | 最终难度 | 最终间隔（天） |
+| --- | --- | --- | --- |
+| 0 天 Good | 2.3065 | 2.118103970459016 | 2 |
+| 0 天 Again | 0.212 | 6.4133 | 1 |
+| 0 天 Good；2 天 Good | 10.964332335820698 | 2.111214235785395 | 11 |
+| 0 天 Good；7 天 Again | 0.7178527669042931 | 7.394502741279718 | 1 |
+| 0 天 Good；0.5 天 Again | 0.7750839828558984 | 7.394502741279718 | 1 |
+| 0 天 Again；0.5 天 Good | 0.24668918777567272 | 6.402115069296838 | 1 |
+| 0 天 Good；2 天 Good；8 天 Good；30 天 Again | 2.452929475623042 | 7.389975788014609 | 2 |
+
+首次 Good 后第 2 天、第 7 天的预计保持率分别为 `0.9094932559773545`、`0.8083099402375552`，同日为 `1.0`；没有状态的旧词为待测，不提供虚构保持率。公式依据可核对[官方算法说明](https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-Algorithm)，实现对照以固定 commit 为准。
+
+实现位于 `Dictation.Core/Review/FsrsScheduler.cs`，随包许可证为 `LICENSES/py-fsrs.txt`。这是最小数值移植，不包含参数优化器、Hard/Easy 自评或新的通用调度框架。
 
 ## SQLite User Database Tables
 
