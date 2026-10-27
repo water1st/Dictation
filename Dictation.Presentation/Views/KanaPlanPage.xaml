@@ -3,12 +3,16 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}">
     <UserControl.Resources>
-        <Style TargetType="CheckBox">
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/FormControls.xaml" />
+        </ResourceDictionary.MergedDictionaries>
+        <Style TargetType="CheckBox" BasedOn="{StaticResource FormCheckBoxStyle}">
             <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
             <Setter Property="FontSize" Value="16" />
             <Setter Property="Margin" Value="0,8,24,8" />
         </Style>
-        <Style TargetType="RadioButton">
+        <Style TargetType="RadioButton" BasedOn="{StaticResource FormRadioButtonStyle}">
             <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
             <Setter Property="Margin" Value="0,10,24,10" />
         </Style>
@@ -18,6 +22,7 @@
             <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
             <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
         </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="42,26" MaxWidth="880" HorizontalAlignment="Stretch">

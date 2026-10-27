@@ -5,6 +5,10 @@
              Background="{DynamicResource WindowBackgroundBrush}"
              Foreground="{DynamicResource ForegroundBrush}">
     <UserControl.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/FormControls.xaml" />
+        </ResourceDictionary.MergedDictionaries>
         <Style x:Key="LookupButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
@@ -28,103 +32,10 @@
             </Setter>
         </Style>
 
-        <Style x:Key="LookupComboBoxItemStyle" TargetType="ComboBoxItem">
-            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-            <Setter Property="Padding" Value="12,8" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBoxItem">
-                        <Border x:Name="ItemBorder"
-                                Padding="{TemplateBinding Padding}"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="10">
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="ItemBorder"
-                                        Property="Background"
-                                        Value="{DynamicResource AccentSoftBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="ItemBorder"
-                                        Property="Background"
-                                        Value="{DynamicResource AccentSoftBrush}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <ControlTemplate x:Key="ThemedEditableComboBoxTemplate" TargetType="ComboBox">
-            <Grid>
-                <Border Background="{DynamicResource CardBackgroundBrush}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="14">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="38" />
-                        </Grid.ColumnDefinitions>
-                        <TextBox x:Name="PART_EditableTextBox"
-                                 Grid.Column="0"
-                                 Background="{DynamicResource CardBackgroundBrush}"
-                                 BorderThickness="0"
-                                 CaretBrush="{DynamicResource AccentBrush}"
-                                 Foreground="{DynamicResource ForegroundBrush}"
-                                 HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                 IsReadOnly="{TemplateBinding IsReadOnly}"
-                                 Padding="{TemplateBinding Padding}"
-                                 VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
-                        <ToggleButton x:Name="PART_DropDownToggle"
-                                      Grid.Column="1"
-                                      Background="Transparent"
-                                      BorderThickness="0"
-                                      Focusable="False"
-                                      IsChecked="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IsDropDownOpen, Mode=TwoWay}">
-                            <Path Data="M 0 0 L 8 0 L 4 5 Z"
-                                  Fill="{DynamicResource AccentBrush}"
-                                  HorizontalAlignment="Center"
-                                  VerticalAlignment="Center" />
-                        </ToggleButton>
-                    </Grid>
-                </Border>
-                <Popup x:Name="PART_Popup"
-                       AllowsTransparency="True"
-                       Focusable="False"
-                       IsOpen="{TemplateBinding IsDropDownOpen}"
-                       Placement="Bottom"
-                       PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}">
-                    <Border Width="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=ActualWidth}"
-                            MaxHeight="340"
-                            Padding="6"
-                            Background="{DynamicResource CardBackgroundBrush}"
-                            BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="14">
-                        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                                      VerticalScrollBarVisibility="Auto">
-                            <ItemsPresenter />
-                        </ScrollViewer>
-                    </Border>
-                </Popup>
-            </Grid>
-        </ControlTemplate>
-
-        <Style x:Key="LookupComboBoxStyle" TargetType="ComboBox">
-            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="ItemContainerStyle" Value="{StaticResource LookupComboBoxItemStyle}" />
+        <Style x:Key="LookupComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource FormComboBoxStyle}">
             <Setter Property="Padding" Value="14,10" />
             <Setter Property="FontSize" Value="16" />
-            <Setter Property="Template" Value="{StaticResource ThemedEditableComboBoxTemplate}" />
+            <Setter Property="MaxDropDownHeight" Value="340" />
         </Style>
 
         <DataTemplate x:Key="LookupResultTemplate">
@@ -159,6 +70,7 @@
                 </Grid>
             </Border>
         </DataTemplate>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid Margin="38,30">

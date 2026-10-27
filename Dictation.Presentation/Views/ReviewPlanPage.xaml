@@ -3,6 +3,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}">
     <UserControl.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/FormControls.xaml" />
+        </ResourceDictionary.MergedDictionaries>
         <BooleanToVisibilityConverter x:Key="BoolVisibility" />
         <Style TargetType="Button">
             <Setter Property="Padding" Value="16,10" />
@@ -26,11 +30,11 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style TargetType="CheckBox">
+        <Style TargetType="CheckBox" BasedOn="{StaticResource FormCheckBoxStyle}">
             <Setter Property="Margin" Value="0,0,20,10" />
             <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
         </Style>
-        <Style TargetType="RadioButton">
+        <Style TargetType="RadioButton" BasedOn="{StaticResource FormRadioButtonStyle}">
             <Setter Property="Margin" Value="0,0,20,10" />
             <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
         </Style>
@@ -67,6 +71,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
     <Grid Margin="28,22">
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>

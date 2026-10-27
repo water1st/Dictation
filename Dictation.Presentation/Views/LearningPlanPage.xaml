@@ -4,6 +4,10 @@
              Background="{DynamicResource WindowBackgroundBrush}"
              Foreground="{DynamicResource ForegroundBrush}">
     <UserControl.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/FormControls.xaml" />
+        </ResourceDictionary.MergedDictionaries>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <Style x:Key="PlanButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
@@ -27,7 +31,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="OptionCheckStyle" TargetType="CheckBox">
+        <Style x:Key="OptionCheckStyle" TargetType="CheckBox" BasedOn="{StaticResource FormCheckBoxStyle}">
             <Setter Property="Margin" Value="0,0,14,9" />
             <Setter Property="FontSize" Value="14" />
         </Style>
@@ -74,6 +78,7 @@
                 </Grid>
             </Border>
         </DataTemplate>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid Margin="34,28">

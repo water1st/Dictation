@@ -14,7 +14,7 @@ namespace Dictation.Tests.Presentation
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
-        public Task 选项_主题切换与三态_标记和文字保持可读(bool radio) => ReviewPlanPageTests.RunStaAsync(() =>
+        public Task Choice_ThemeChangesAndThreeStates_KeepMarksAndTextReadable(bool radio) => ReviewPlanPageTests.RunStaAsync(() =>
         {
             ToggleButton choice = radio ? new RadioButton() : new CheckBox { IsThreeState = true };
             choice.Content = "测试选项";
@@ -47,7 +47,7 @@ namespace Dictation.Tests.Presentation
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
-        public Task 文本框_编辑只读和错误_保留输入宿主与主题(bool multiline) => ReviewPlanPageTests.RunStaAsync(() =>
+        public Task TextBox_EditingReadOnlyAndValidation_PreserveInputHostAndTheme(bool multiline) => ReviewPlanPageTests.RunStaAsync(() =>
         {
             var source = new TextBox { Text = "初始文本" };
             var input = new TextBox { AcceptsReturn = multiline, Height = multiline ? 100 : 40 };
@@ -79,7 +79,7 @@ namespace Dictation.Tests.Presentation
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
-        public Task 下拉框_编辑与选择_保留弹出宿主及主题项(bool editable) => ReviewPlanPageTests.RunStaAsync(() =>
+        public Task ComboBox_EditingAndSelection_PreservePopupAndThemedItems(bool editable) => ReviewPlanPageTests.RunStaAsync(() =>
         {
             var combo = new ComboBox { IsEditable = editable, ItemsSource = new[] { "日本語", "English" }, SelectedIndex = 0 };
             var host = CreateHost(combo);
