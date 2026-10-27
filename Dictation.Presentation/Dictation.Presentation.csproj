@@ -19,6 +19,7 @@
   <ItemGroup>
     <Content Include="pen.ico" />
     <Content Include="Samples\*.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\Resources\**\*" Link="Resources\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\LICENSES\py-fsrs.txt" Link="LICENSES\py-fsrs.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\LICENSES\mcp-sdk.txt" Link="LICENSES\mcp-sdk.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\LICENSES\tomlyn.txt" Link="LICENSES\tomlyn.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
