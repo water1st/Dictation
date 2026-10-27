@@ -24,7 +24,7 @@ namespace Dictation.Tests.Presentation
         [InlineData("检查")]
         [InlineData("准备")]
         [InlineData("启动")]
-        public async Task 错误日志_更新异常_保存操作时间和完整异常且只关联最新文件(string operation)
+        public async Task ErrorLog_UpdateThrows_SavesOperationTimeAndExceptionForLatestFileOnly(string operation)
         {
             var query = new Query { Failure = new HttpRequestException("错误 A", new IOException("内部原因")) };
             var preparation = new Preparation();
@@ -72,7 +72,7 @@ namespace Dictation.Tests.Presentation
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public async Task 错误日志_重新检查或更新_操作开始立即清除旧关联(bool check)
+        public async Task ErrorLog_NewCheckOrUpdate_ClearsPreviousAssociationOnStart(bool check)
         {
             var query = new Query();
             var preparation = new Preparation { Failure = new IOException("下载失败") };
@@ -96,7 +96,7 @@ namespace Dictation.Tests.Presentation
         }
 
         [Fact]
-        public async Task 错误日志_日志目录不可写_保留原错误且不关联无效文件()
+        public async Task ErrorLog_UnwritableDirectory_PreservesOriginalErrorWithoutInvalidAssociation()
         {
             File.WriteAllText(Path.Combine(directory.Path, "LOGS"), "阻止创建目录");
             using var viewModel = CreateViewModel(new Query { Failure = new IOException("连接失败") }, new Preparation(), new Launcher());
@@ -156,7 +156,7 @@ namespace Dictation.Tests.Presentation
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public async Task 更新检查_长错误后重新检查_立即清除错误并通知绑定(bool hasUpdate)
+        public async Task UpdateCheck_RecheckAfterLongError_ClearsErrorAndNotifiesBinding(bool hasUpdate)
         {
             var query = new Query { Failure = new HttpRequestException(new string('错', 2048)) };
             using var viewModel = CreateViewModel(query, new Preparation(), new Launcher());
@@ -182,7 +182,7 @@ namespace Dictation.Tests.Presentation
         }
 
         [Fact]
-        public async Task 更新准备_失败后重试_准备期间清除旧错误()
+        public async Task UpdatePreparation_RetryAfterFailure_ClearsPreviousErrorDuringPreparation()
         {
             var preparation = new Preparation { Failure = new InvalidDataException("校验失败") };
             using var viewModel = CreateViewModel(new Query(), preparation, new Launcher());

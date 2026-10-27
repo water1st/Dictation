@@ -13,7 +13,7 @@ namespace Dictation.Tests.DataAccess
     public sealed class WordGroupMemberSnapshotReaderTests
     {
         [Fact]
-        public async Task ReadAsync_多成员多义项多词形_保留完整字段和持久化顺序()
+        public async Task ReadAsync_MultipleMembersMeaningsAndForms_PreservesFieldsAndPersistenceOrder()
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = await CreateEnvironmentAsync(temporaryDirectory);
@@ -59,7 +59,7 @@ namespace Dictation.Tests.DataAccess
         }
 
         [Fact]
-        public async Task ReadAsync_空词组或无成员_直接返回空映射()
+        public async Task ReadAsync_EmptyGroupsOrNoMembers_ReturnsEmptyMapping()
         {
             await using var unopenedConnection = new SqliteConnection();
             var reader = new WordGroupMemberSnapshotReader();
@@ -87,7 +87,7 @@ namespace Dictation.Tests.DataAccess
         }
 
         [Fact]
-        public async Task ReadAsync_预取消令牌_传播取消且不访问连接()
+        public async Task ReadAsync_PreCanceledToken_PropagatesCancellationWithoutOpeningConnection()
         {
             await using var unopenedConnection = new SqliteConnection();
             using var cancellation = new CancellationTokenSource();
@@ -102,7 +102,7 @@ namespace Dictation.Tests.DataAccess
         }
 
         [Fact]
-        public async Task ReadAsync_数据库缺少表_传播原始数据库异常()
+        public async Task ReadAsync_MissingDatabaseTable_PropagatesOriginalDatabaseException()
         {
             await using var connection = new SqliteConnection("Data Source=:memory:");
             await connection.OpenAsync(TestContext.Current.CancellationToken);
@@ -118,7 +118,7 @@ namespace Dictation.Tests.DataAccess
         }
 
         [Fact]
-        public async Task ReadAsync_调用方事务内读取_不提交且回滚后快照消失()
+        public async Task ReadAsync_CallerTransaction_DoesNotCommitAndRollbackRemovesSnapshot()
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = await CreateEnvironmentAsync(temporaryDirectory);

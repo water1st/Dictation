@@ -220,7 +220,7 @@ namespace Dictation.Tests.DataAccess
         }
 
         [Fact]
-        public async Task GetLearningLibraryPageAsync_共享快照读取失败_包装中文数据访问异常()
+        public async Task GetLearningLibraryPageAsync_SharedSnapshotReadFails_WrapsChineseDataAccessException()
         {
             using var temporaryDirectory = new TemporaryDirectory();
             var paths = await CreateEnvironmentAsync(temporaryDirectory);

@@ -22,7 +22,7 @@ namespace Dictation.Tests.Presentation
         [Theory]
         [InlineData(ResolvedTheme.Light)]
         [InlineData(ResolvedTheme.Dark)]
-        public Task 首页_固定视口_仅显示两个语言入口且无滚动(ResolvedTheme theme) => ReviewPlanPageTests.RunStaAsync(async () =>
+        public Task Home_FixedViewport_ShowsOnlyLanguageEntriesWithoutScrolling(ResolvedTheme theme) => ReviewPlanPageTests.RunStaAsync(async () =>
         {
             using var directory = new TemporaryDirectory();
             using var provider = await WorkspaceSettingsNavigationTests.CreateProviderAsync(directory.Path);
@@ -40,7 +40,7 @@ namespace Dictation.Tests.Presentation
         [Theory]
         [InlineData(LearningLanguage.Japanese)]
         [InlineData(LearningLanguage.English)]
-        public Task 工作页_保留业务入口和进度_设置入口迁出(LearningLanguage language) => ReviewPlanPageTests.RunStaAsync(async () =>
+        public Task Workspace_ActionsAndProgress_KeepsSettingsEntrySeparate(LearningLanguage language) => ReviewPlanPageTests.RunStaAsync(async () =>
         {
             using var directory = new TemporaryDirectory();
             using var provider = await WorkspaceSettingsNavigationTests.CreateProviderAsync(directory.Path);
@@ -62,7 +62,7 @@ namespace Dictation.Tests.Presentation
         });
 
         [Fact]
-        public Task 设置_分类切换_单一右侧滚动并显示明确目标语言() => ReviewPlanPageTests.RunStaAsync(async () =>
+        public Task Settings_SwitchSections_UsesSingleRightScrollAndExplicitTargetLanguage() => ReviewPlanPageTests.RunStaAsync(async () =>
         {
             using var directory = new TemporaryDirectory();
             using var provider = await WorkspaceSettingsNavigationTests.CreateProviderAsync(directory.Path);
@@ -84,7 +84,7 @@ namespace Dictation.Tests.Presentation
         });
 
         [Fact]
-        public async Task 壳导航_转场禁用返回时_可见性仍由页面层次决定()
+        public async Task ShellNavigation_BackDisabledDuringTransition_VisibilityFollowsPageHierarchy()
         {
             using var directory = new TemporaryDirectory();
             using var provider = await WorkspaceSettingsNavigationTests.CreateProviderAsync(directory.Path);
@@ -109,7 +109,7 @@ namespace Dictation.Tests.Presentation
         }
 
         [Fact]
-        public Task 窗口转场_旧页和入场页_阻止动画期间再次点击() => ReviewPlanPageTests.RunStaAsync(async () =>
+        public Task WindowTransition_OutgoingAndIncomingPages_BlockClicksDuringAnimation() => ReviewPlanPageTests.RunStaAsync(async () =>
         {
             using var directory = new TemporaryDirectory();
             using var provider = await WorkspaceSettingsNavigationTests.CreateProviderAsync(directory.Path);
@@ -138,7 +138,7 @@ namespace Dictation.Tests.Presentation
         [Theory]
         [InlineData(ResolvedTheme.Light)]
         [InlineData(ResolvedTheme.Dark)]
-        public Task 窗口布局_固定尺寸和主题_标题栏与根内容完整渲染(ResolvedTheme theme) => ReviewPlanPageTests.RunStaAsync(async () =>
+        public Task WindowLayout_FixedSizeAndTheme_RendersTitleBarAndRootContent(ResolvedTheme theme) => ReviewPlanPageTests.RunStaAsync(async () =>
         {
             using var directory = new TemporaryDirectory();
             using var provider = await WorkspaceSettingsNavigationTests.CreateProviderAsync(directory.Path);
