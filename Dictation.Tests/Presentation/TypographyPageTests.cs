@@ -67,6 +67,48 @@ namespace Dictation.Tests.Presentation
             return Task.CompletedTask;
         });
 
+        [Theory]
+        [InlineData(typeof(KanaPlanPage))]
+        [InlineData(typeof(KanaSessionPage))]
+        [InlineData(typeof(McpSettingsPage))]
+        [InlineData(typeof(LearningPlanPage))]
+        [InlineData(typeof(ReviewPlanPage))]
+        [InlineData(typeof(ReviewLibraryPage))]
+        [InlineData(typeof(PracticeSessionPage))]
+        [InlineData(typeof(TextImportPage))]
+        [InlineData(typeof(LexiconLookupPage))]
+        [InlineData(typeof(WrongAnswerListPage))]
+        [InlineData(typeof(StatisticsPage))]
+        public Task Page_OrdinaryActions_ReuseSharedRoundedTemplate(Type pageType) => ReviewPlanPageTests.RunStaAsync(() =>
+        {
+            var page = (UserControl)Activator.CreateInstance(pageType)!;
+            var host = FormControlThemeTests.CreateHost(page);
+            FormControlThemeTests.Layout(host);
+            var buttons = FormControlThemeTests.Children<Button>(page).ToArray();
+            Assert.NotEmpty(buttons);
+            foreach (var button in buttons)
+            {
+                button.ApplyTemplate();
+                var border = FormControlThemeTests.Children<Border>(button).FirstOrDefault();
+                Assert.NotNull(border);
+                Assert.Equal(new CornerRadius(14), border.CornerRadius);
+            }
+            return Task.CompletedTask;
+        });
+
+        [Fact]
+        public Task IconAction_FixedButtonSize_PreservesRoomForGlyph() => ReviewPlanPageTests.RunStaAsync(() =>
+        {
+            var icon = new Button { Width = 40, Height = 40, Content = "🔊" };
+            var host = FormControlThemeTests.CreateHost(icon);
+            icon.Style = (Style)host.Resources["IconActionButtonStyle"];
+            FormControlThemeTests.Layout(host);
+            var presenter = Assert.Single(FormControlThemeTests.Children<ContentPresenter>(icon));
+            Assert.True(presenter.ActualWidth >= 24, $"图标可用宽度仅 {presenter.ActualWidth} DIP。");
+            Assert.True(presenter.ActualHeight >= 24, $"图标可用高度仅 {presenter.ActualHeight} DIP。");
+            return Task.CompletedTask;
+        });
+
         [Fact]
         public Task ReviewPlan_GroupTemplate_UsesSharedListHeadingSize() => ReviewPlanPageTests.RunStaAsync(() =>
         {

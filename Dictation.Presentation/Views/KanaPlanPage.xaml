@@ -6,6 +6,7 @@
     <UserControl.Resources>
         <ResourceDictionary>
         <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/Buttons.xaml" />
             <ResourceDictionary Source="/Dictation.Presentation;component/Theme/FormControls.xaml" />
         </ResourceDictionary.MergedDictionaries>
         <Style TargetType="CheckBox" BasedOn="{StaticResource FormCheckBoxStyle}">
@@ -14,11 +15,9 @@
         <Style TargetType="RadioButton" BasedOn="{StaticResource FormRadioButtonStyle}">
             <Setter Property="Margin" Value="0,10,24,10" />
         </Style>
-        <Style TargetType="Button">
+        <Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
             <Setter Property="Padding" Value="18,10" />
             <Setter Property="Margin" Value="0,8,12,0" />
-            <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
-            <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
         </Style>
         </ResourceDictionary>
     </UserControl.Resources>

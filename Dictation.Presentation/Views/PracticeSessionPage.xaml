@@ -5,22 +5,19 @@
              Foreground="{DynamicResource ForegroundBrush}"
              FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/Buttons.xaml" />
+        </ResourceDictionary.MergedDictionaries>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-        <Style x:Key="ActionButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+        <Style x:Key="ActionButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryActionButtonStyle}">
             <Setter Property="Padding" Value="16,9" />
         </Style>
-        <Style x:Key="IconButtonStyle" TargetType="Button">
+        <Style x:Key="IconButtonStyle" TargetType="Button" BasedOn="{StaticResource IconActionButtonStyle}">
             <Setter Property="Width" Value="40" />
             <Setter Property="Height" Value="40" />
-            <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="FontSize" Value="{DynamicResource IconFontSize}" />
         </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid Margin="42,30">

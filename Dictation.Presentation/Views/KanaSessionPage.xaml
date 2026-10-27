@@ -4,11 +4,13 @@
              Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
              FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
-        <Style TargetType="Button">
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/Buttons.xaml" />
+        </ResourceDictionary.MergedDictionaries>
+        <Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
             <Setter Property="Padding" Value="20,12" />
             <Setter Property="Margin" Value="0,8,12,0" />
-            <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
-            <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
         </Style>
         <Style x:Key="FeedbackVisibility" TargetType="StackPanel">
             <Setter Property="Visibility" Value="Collapsed" />
@@ -22,6 +24,7 @@
                 <DataTrigger Binding="{Binding IsCompleted}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger>
             </Style.Triggers>
         </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="42,28" MaxWidth="880">

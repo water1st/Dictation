@@ -8,6 +8,7 @@
     <UserControl.Resources>
         <ResourceDictionary>
         <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/Buttons.xaml" />
             <ResourceDictionary Source="/Dictation.Presentation;component/Theme/NavigationCards.xaml" />
         </ResourceDictionary.MergedDictionaries>
         <Style x:Key="CardButtonStyle" TargetType="Button" BasedOn="{StaticResource NavigationCardButtonStyle}" />

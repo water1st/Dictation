@@ -6,21 +6,13 @@
              AllowDrop="True" PreviewDragOver="PreviewFileDragOver" Drop="FileDrop"
              FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
-        <Style x:Key="ActionButton" TargetType="Button">
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/Buttons.xaml" />
+        </ResourceDictionary.MergedDictionaries>
+        <Style x:Key="ActionButton" TargetType="Button" BasedOn="{StaticResource PrimaryActionButtonStyle}">
             <Setter Property="Padding" Value="16,9" />
             <Setter Property="Margin" Value="0,0,12,0" />
-            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="14" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
         <DataTemplate x:Key="SenseTemplate">
             <StackPanel>
@@ -38,6 +30,7 @@
                 <TextBlock Text="{Binding SourceSenseId}" FontSize="{DynamicResource CaptionFontSize}" Opacity="0.6" />
             </StackPanel>
         </DataTemplate>
+        </ResourceDictionary>
     </UserControl.Resources>
     <Grid Margin="30,20">
         <Grid.RowDefinitions>

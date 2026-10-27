@@ -17,6 +17,10 @@
                             CornerRadius="0" UseAeroCaptionButtons="False" NonClientFrameEdges="None" />
     </shell:WindowChrome.WindowChrome>
     <Window.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/Buttons.xaml" />
+        </ResourceDictionary.MergedDictionaries>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <Style x:Key="TopBarButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="38" /><Setter Property="Height" Value="36" />
@@ -39,6 +43,7 @@
                 <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.4" /></Trigger>
             </Style.Triggers>
         </Style>
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid>
@@ -140,7 +145,7 @@
                                     Content="知道了"
                                     Padding="16,8">
                                 <Button.Style>
-                                    <Style TargetType="Button">
+                                    <Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
                                         <Setter Property="Visibility" Value="Visible" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsOverlayConfirmation}" Value="True">

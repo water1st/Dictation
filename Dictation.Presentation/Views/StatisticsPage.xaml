@@ -6,7 +6,12 @@
              Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
              FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
-        <Style TargetType="Button"><Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" /><Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" /><Setter Property="BorderThickness" Value="0" /><Setter Property="Padding" Value="14,9" /><Setter Property="Margin" Value="4,0" /></Style>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/Buttons.xaml" />
+        </ResourceDictionary.MergedDictionaries>
+        <Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}"><Setter Property="Padding" Value="14,9" /><Setter Property="Margin" Value="4,0" /></Style>
+        </ResourceDictionary>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="36,24" MaxWidth="900">

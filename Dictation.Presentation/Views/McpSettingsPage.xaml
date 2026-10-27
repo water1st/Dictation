@@ -6,12 +6,10 @@
     <UserControl.Resources>
         <ResourceDictionary>
         <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/Buttons.xaml" />
             <ResourceDictionary Source="/Dictation.Presentation;component/Theme/FormControls.xaml" />
         </ResourceDictionary.MergedDictionaries>
-        <Style TargetType="Button">
-            <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
-            <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        <Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
         </Style>
         <Style TargetType="CheckBox" BasedOn="{StaticResource FormCheckBoxStyle}"></Style>
         </ResourceDictionary>
