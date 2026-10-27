@@ -13,7 +13,7 @@ namespace Dictation.Tests.Presentation
         [Theory]
         [InlineData(LearningLanguage.Japanese)]
         [InlineData(LearningLanguage.English)]
-        public async Task 选择语言_保存成功_携带相同语言导航(LearningLanguage language)
+        public async Task SelectLanguage_SaveSucceeds_NavigatesWithSameLanguage(LearningLanguage language)
         {
             using var directory = new TemporaryDirectory();
             using var provider = await ReviewPlanPresentationTestHost.CreateAsync(directory.Path);
@@ -27,7 +27,7 @@ namespace Dictation.Tests.Presentation
         }
 
         [Fact]
-        public async Task 选择语言_保存失败再选择原语言_显示错误后可恢复导航()
+        public async Task SelectLanguage_SaveFailsThenRetry_ShowsErrorAndCanNavigate()
         {
             using var directory = new TemporaryDirectory();
             using var provider = await ReviewPlanPresentationTestHost.CreateAsync(directory.Path);
@@ -47,7 +47,7 @@ namespace Dictation.Tests.Presentation
         }
 
         [Fact]
-        public async Task 选择语言_非法语言或取消_拒绝且不导航()
+        public async Task SelectLanguage_InvalidLanguageOrCancellation_DoesNotNavigate()
         {
             using var directory = new TemporaryDirectory();
             using var provider = await ReviewPlanPresentationTestHost.CreateAsync(directory.Path);
@@ -59,7 +59,7 @@ namespace Dictation.Tests.Presentation
         }
 
         [Fact]
-        public async Task 选择语言_两个命令同时触发_仅首次进入且全部命令暂时禁用()
+        public async Task SelectLanguage_ConcurrentCommands_OnlyFirstNavigatesAndTemporarilyDisablesCommands()
         {
             using var directory = new TemporaryDirectory();
             using var provider = await ReviewPlanPresentationTestHost.CreateAsync(directory.Path);

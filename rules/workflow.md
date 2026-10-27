@@ -63,7 +63,7 @@ dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-bu
 dotnet run --project Dictation.Presentation/Dictation.Presentation.csproj
 ```
 
-`Dictation.Tests` 使用 xUnit v3 与 Microsoft.Testing.Platform；测试命名为 `行为_场景_预期`。聚焦测试使用 `--filter-class` 或 `--filter-method`，并设置适用的 `--minimum-expected-tests`；零测试不算通过。全量测试的基线为 2108 项，不得随意降低；有意删除失效测试须说明原因及数量变化。实际运行时执行适用的构建、测试、冒烟与定向检索；提交前审阅完整 diff，不能运行的检查如实报告。
+`Dictation.Tests` 使用 xUnit v3 与 Microsoft.Testing.Platform；测试方法使用英文 `Behavior_Scenario_Expected` 语义结构命名，并遵守 `rules/code-style.md` 的英文标识符要求。聚焦测试使用 `--filter-class` 或 `--filter-method`，并设置适用的 `--minimum-expected-tests`；零测试不算通过。全量测试的基线为 2108 项，不得随意降低；有意删除失效测试须说明原因及数量变化。实际运行时执行适用的构建、测试、冒烟与定向检索；提交前审阅完整 diff，不能运行的检查如实报告。
 
 
 ## Final Response

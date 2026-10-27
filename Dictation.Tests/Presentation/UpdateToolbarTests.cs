@@ -24,7 +24,7 @@ namespace Dictation.Tests.Presentation
     public sealed class UpdateToolbarTests
     {
         [Fact]
-        public Task 错误日志入口_写入失败_仍可聚焦读取完整错误且点击无动作() => ReviewPlanPageTests.RunStaAsync(async () =>
+        public Task ErrorLogEntry_WriteFails_RemainsFocusableWithFullErrorAndNoClickAction() => ReviewPlanPageTests.RunStaAsync(async () =>
         {
             using var fixture = new ToolbarFixture();
             File.WriteAllText(Path.Combine(fixture.Root, "LOGS"), "阻止日志目录创建");
@@ -56,7 +56,7 @@ namespace Dictation.Tests.Presentation
         [Theory]
         [InlineData(ResolvedTheme.Light)]
         [InlineData(ResolvedTheme.Dark)]
-        public Task 错误日志入口_无错误及日志丢失_不启动且保留原错误反馈(ResolvedTheme theme) => ReviewPlanPageTests.RunStaAsync(async () =>
+        public Task ErrorLogEntry_NoErrorOrMissingLog_DoesNotLaunchAndRetainsFeedback(ResolvedTheme theme) => ReviewPlanPageTests.RunStaAsync(async () =>
         {
             using var fixture = new ToolbarFixture();
             using var services = fixture.Build();
@@ -100,7 +100,7 @@ namespace Dictation.Tests.Presentation
         });
 
         [Fact]
-        public void 错误日志入口_包含空格和中文路径_只向记事本传递单个绝对路径()
+        public void ErrorLogEntry_SpacesAndChinesePath_PassesSingleAbsolutePathToNotepad()
         {
             var path = Path.Combine(Path.GetTempPath(), "更新 诊断 & 参数", "错误 A.log");
             var info = HomeWindow.CreateErrorLogStartInfo(path);
@@ -172,7 +172,7 @@ namespace Dictation.Tests.Presentation
         [InlineData(ResolvedTheme.Dark, "HttpRequestException: TLS handshake failed at UpdatePreparation.PrepareAsync() ")]
         [InlineData(ResolvedTheme.Light, "连接失败\r\n详细原因\n重试失败\r服务器不可用")]
         [InlineData(ResolvedTheme.Dark, "连接失败\r\n详细原因\n重试失败\r服务器不可用")]
-        public Task 更新错误_固定窗口长文本_仅占按钮左侧且不移动操作区(ResolvedTheme theme, string message) => ReviewPlanPageTests.RunStaAsync(async () =>
+        public Task UpdateError_FixedWindowLongText_OccupiesOnlyLeftOfButtonWithoutMovingControls(ResolvedTheme theme, string message) => ReviewPlanPageTests.RunStaAsync(async () =>
         {
             using var fixture = new ToolbarFixture();
             fixture.Preparation.Message = string.Concat(Enumerable.Repeat(message, 30));
