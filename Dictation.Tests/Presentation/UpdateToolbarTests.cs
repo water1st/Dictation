@@ -1,4 +1,7 @@
 using System.Text.Json;
+using System.Windows.Automation;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -20,6 +23,94 @@ namespace Dictation.Tests.Presentation
     /// <summary>用真实单窗口、绑定、DI和Core就绪通知验证非模态入口，不访问公网。</summary>
     public sealed class UpdateToolbarTests
     {
+        [Fact]
+        public Task 错误日志入口_写入失败_仍可聚焦读取完整错误且点击无动作() => ReviewPlanPageTests.RunStaAsync(async () =>
+        {
+            using var fixture = new ToolbarFixture();
+            File.WriteAllText(Path.Combine(fixture.Root, "LOGS"), "阻止日志目录创建");
+            using var services = fixture.Build();
+            var window = services.GetRequiredService<HomeWindow>();
+            window.ShowActivated = false;
+            try
+            {
+                window.Show();
+                await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                await window.Update.InstallAsync();
+                await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                var button = Assert.IsType<Button>(window.FindName("UpdateErrorButton"));
+                Assert.Equal(Visibility.Visible, button.Visibility);
+                Assert.True(button.IsEnabled);
+                Assert.True(button.Focusable);
+                Assert.True(button.IsTabStop);
+                Assert.Null(window.Update.CurrentErrorLogPath);
+                Assert.Contains("无法保存错误日志", window.Update.StatusMessage);
+                Assert.Equal(window.Update.StatusMessage, AutomationProperties.GetHelpText(button));
+                Assert.Equal(window.Update.StatusMessage, button.ToolTip);
+                var originalMessage = window.Update.StatusMessage;
+                button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Assert.Equal(originalMessage, window.Update.StatusMessage);
+            }
+            finally { window.Close(); }
+        });
+
+        [Theory]
+        [InlineData(ResolvedTheme.Light)]
+        [InlineData(ResolvedTheme.Dark)]
+        public Task 错误日志入口_无错误及日志丢失_不启动且保留原错误反馈(ResolvedTheme theme) => ReviewPlanPageTests.RunStaAsync(async () =>
+        {
+            using var fixture = new ToolbarFixture();
+            using var services = fixture.Build();
+            var window = services.GetRequiredService<HomeWindow>();
+            window.ShowActivated = false;
+            ThemePalette.Apply(window.Resources, theme);
+            try
+            {
+                window.Show();
+                await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                var button = Assert.IsType<Button>(window.FindName("UpdateErrorButton"));
+                Assert.Equal(Visibility.Collapsed, button.Visibility);
+                Assert.False(button.IsEnabled);
+                button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Assert.Empty(window.Update.StatusMessage);
+
+                await window.Update.InstallAsync();
+                await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                Assert.True(button.IsEnabled);
+                Assert.Equal(Visibility.Visible, button.Visibility);
+                Assert.True(button.Focusable);
+                Assert.True(button.IsTabStop);
+                Assert.Contains("日志", AutomationProperties.GetName(button));
+                var path = Assert.IsType<string>(window.Update.CurrentErrorLogPath);
+                Assert.True(File.Exists(path));
+                File.Delete(path);
+                var peer = new ButtonAutomationPeer(button);
+                Assert.IsAssignableFrom<IInvokeProvider>(peer.GetPattern(PatternInterface.Invoke)).Invoke();
+                await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                Assert.True(window.IsVisible);
+                Assert.Contains("校验失败", window.Update.StatusMessage);
+                Assert.Contains("无法打开错误日志", window.Update.StatusMessage);
+                Assert.Equal(path, window.Update.CurrentErrorLogPath);
+
+                await window.Update.CheckAsync();
+                await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.DataBind);
+                Assert.Equal(Visibility.Collapsed, button.Visibility);
+                Assert.False(button.IsEnabled);
+            }
+            finally { window.Close(); }
+        });
+
+        [Fact]
+        public void 错误日志入口_包含空格和中文路径_只向记事本传递单个绝对路径()
+        {
+            var path = Path.Combine(Path.GetTempPath(), "更新 诊断 & 参数", "错误 A.log");
+            var info = HomeWindow.CreateErrorLogStartInfo(path);
+            Assert.Equal("notepad.exe", Path.GetFileName(info.FileName));
+            Assert.True(Path.IsPathFullyQualified(info.FileName));
+            Assert.False(info.UseShellExecute);
+            Assert.Empty(info.Arguments);
+            Assert.Equal(new[] { path }, info.ArgumentList);
+        }
+
         [Fact]
         public Task Loaded_ShowsAvailableButtonWithoutDownloadAndWritesOwnedReadySignal() => ReviewPlanPageTests.RunStaAsync(async () =>
         {

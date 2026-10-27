@@ -1,4 +1,6 @@
 using System.Windows;
+using System.Diagnostics;
+using System.ComponentModel;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
@@ -43,6 +45,32 @@ namespace Dictation.Presentation
 
         /// <summary>工具栏的独立更新组件，不让导航和语言页面互相依赖。</summary>
         public UpdateViewModel Update { get; }
+
+        /// <summary>为本次错误创建独立参数列表，不通过命令行拼接路径。</summary>
+        internal static ProcessStartInfo CreateErrorLogStartInfo(string path)
+        {
+            var info = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "notepad.exe"))
+            {
+                UseShellExecute = false
+            };
+            info.ArgumentList.Add(path);
+            return info;
+        }
+
+        private void OnUpdateErrorClick(object sender, RoutedEventArgs e)
+        {
+            if (!Update.CanOpenErrorLog || Update.CurrentErrorLogPath is not { } path) return;
+            try
+            {
+                if (!File.Exists(path)) throw new FileNotFoundException("对应日志文件不存在。", path);
+                using var process = Process.Start(CreateErrorLogStartInfo(path));
+                if (process is null) throw new InvalidOperationException("记事本未能启动。");
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or Win32Exception or InvalidOperationException)
+            {
+                Update.ReportLogOpenFailure(exception);
+            }
+        }
 
         private void OnMinimizeClick(object sender, RoutedEventArgs e)
         {

@@ -60,10 +60,24 @@
                 <Grid Grid.Column="2" VerticalAlignment="Center" shell:WindowChrome.IsHitTestVisibleInChrome="True"
                       DataContext="{Binding Update, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                    <TextBlock x:Name="UpdateStatusText" Margin="6,0" MaxWidth="130" Focusable="True"
+                    <Button x:Name="UpdateErrorButton" Width="Auto" MaxWidth="142"
+                            Margin="0" Padding="6,0" Click="OnUpdateErrorClick" IsEnabled="{Binding HasError}"
+                            Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            AutomationProperties.Name="打开本次更新错误日志" AutomationProperties.HelpText="{Binding StatusMessage}"
+                            ToolTip="{Binding StatusMessage}" KeyboardNavigation.TabNavigation="None">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource TopBarButtonStyle}">
+                                <Setter Property="Cursor" Value="Arrow" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CanOpenErrorLog}" Value="True"><Setter Property="Cursor" Value="Hand" /></DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    <TextBlock x:Name="UpdateStatusText" MaxWidth="130" Focusable="True" KeyboardNavigation.IsTabStop="False"
                                Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}"
                                VerticalAlignment="Center" FontSize="11" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
                                ToolTip="{Binding StatusMessage}" Foreground="{DynamicResource ErrorBrush}" Text="{Binding ErrorSummary}" />
+                    </Button>
                     <Button x:Name="UpdateButton" Grid.Column="1" Style="{StaticResource TopBarButtonStyle}" Width="Auto" Padding="10,0" FontSize="12"
                             Content="{Binding ButtonText}" Command="{Binding InstallCommand}"
                             Visibility="{Binding HasUpdate, Converter={StaticResource BooleanToVisibilityConverter}}" />
