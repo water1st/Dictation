@@ -3,30 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:behaviors="clr-namespace:Dictation.Presentation.Behaviors"
              Background="{DynamicResource WindowBackgroundBrush}"
-             Foreground="{DynamicResource ForegroundBrush}">
+             Foreground="{DynamicResource ForegroundBrush}"
+             FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
-        <Style x:Key="DetailSaveButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Padding" Value="16,9" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="14"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/Buttons.xaml" />
+        </ResourceDictionary.MergedDictionaries>
+        <Style x:Key="DetailSaveButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryActionButtonStyle}" />
 
         <Style x:Key="DetailBadgeStyle" TargetType="Border">
             <Setter Property="Margin" Value="0,0,8,8" />
@@ -49,7 +33,7 @@
                         <Run Text="{Binding Surface, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock Margin="0,2,0,0"
-                               FontSize="12"
+                               FontSize="{DynamicResource CaptionFontSize}"
                                Foreground="{DynamicResource SecondaryForegroundBrush}"
                                Text="{Binding DetailLabel}" />
                 </StackPanel>
@@ -70,7 +54,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock FontSize="22"
+                            <TextBlock FontSize="{DynamicResource EmphasisFontSize}"
                                        FontWeight="SemiBold"
                                        Text="{Binding Headword}" />
                             <TextBlock Margin="10,5,0,0"
@@ -146,6 +130,7 @@
                 </StackPanel>
             </Border>
         </DataTemplate>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid Margin="34,28">
@@ -166,12 +151,12 @@
                     CornerRadius="27">
                 <TextBlock HorizontalAlignment="Center"
                            VerticalAlignment="Center"
-                           FontSize="25"
+                           FontSize="{DynamicResource IconFontSize}"
                            Foreground="{DynamicResource AccentBrush}"
                            Text="◎" />
             </Border>
             <StackPanel Grid.Column="1" Margin="16,0,0,0">
-                <TextBlock FontSize="28"
+                <TextBlock FontSize="{DynamicResource PageTitleFontSize}"
                            FontWeight="SemiBold"
                            Text="{Binding SourceText}" />
                 <TextBlock Margin="0,4,0,0"

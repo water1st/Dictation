@@ -2,7 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:learning="clr-namespace:Dictation.Core.Learning;assembly=Dictation.Core"
-             Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}">
+             Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
+             FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
         <Style TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
@@ -46,7 +47,7 @@
     <Grid Margin="24">
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
         <StackPanel>
-            <TextBlock FontSize="28" FontWeight="SemiBold" Text="{Binding WindowTitle}" />
+            <TextBlock FontSize="{DynamicResource PageTitleFontSize}" FontWeight="SemiBold" Text="{Binding WindowTitle}" />
             <TextBlock Margin="0,8,0,0" Text="历史错误不会因重试答对而消失；自动复习仍按记忆安排。" TextWrapping="Wrap"
                        Foreground="{DynamicResource SecondaryForegroundBrush}" />
             <WrapPanel Margin="0,16,0,0">
@@ -71,7 +72,7 @@
                         <DockPanel>
                             <CheckBox IsChecked="{Binding IsSelected,Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,12,0" />
                             <StackPanel>
-                                <TextBlock FontSize="18" FontWeight="SemiBold" Text="{Binding Heading}" TextWrapping="Wrap" />
+                                <TextBlock FontSize="{DynamicResource SectionTitleFontSize}" FontWeight="SemiBold" Text="{Binding Heading}" TextWrapping="Wrap" />
                                 <TextBlock Margin="0,6,0,0" Text="{Binding Item.Meanings}" TextWrapping="Wrap" />
                                 <TextBlock Margin="0,6,0,0" Text="{Binding HistoryLabel}" Foreground="{DynamicResource ErrorBrush}" />
                                 <TextBlock Margin="0,4,0,0" Text="{Binding PlacementLabel}" Foreground="{DynamicResource SecondaryForegroundBrush}" />
@@ -89,10 +90,11 @@
                 </Style></Border.Style>
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top">
-                        <TextBlock FontSize="21" FontWeight="SemiBold" Text="{Binding SelectedItem.Heading}" TextWrapping="Wrap" />
+                        <TextBlock FontSize="{DynamicResource EmphasisFontSize}" FontWeight="SemiBold" Text="{Binding SelectedItem.Heading}" TextWrapping="Wrap" />
                         <TextBlock x:Name="DetailMeanings" Margin="0,10,0,0" Text="{Binding SelectedItem.Item.Meanings}" TextWrapping="Wrap"
                                    Foreground="{DynamicResource ForegroundBrush}" />
                         <Button x:Name="DetailSpeakerButton" Content="🔊" ToolTip="播放对应词形" AutomationProperties.Name="播放对应词形"
+                                FontSize="{DynamicResource IconFontSize}"
                                 HorizontalAlignment="Left" Margin="0,12,0,12" Command="{Binding PlayDetailCommand}" />
                         <TextBlock Text="原始错误记录" FontWeight="SemiBold" Margin="0,0,0,12" />
                     </StackPanel>

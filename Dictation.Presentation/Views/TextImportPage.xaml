@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="{DynamicResource WindowBackgroundBrush}"
              Foreground="{DynamicResource ForegroundBrush}"
-             AllowDrop="True" PreviewDragOver="PreviewFileDragOver" Drop="FileDrop">
+             AllowDrop="True" PreviewDragOver="PreviewFileDragOver" Drop="FileDrop"
+             FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
         <Style x:Key="ActionButton" TargetType="Button">
             <Setter Property="Padding" Value="16,9" />
@@ -33,8 +34,8 @@
                         <DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" /></DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <TextBlock Text="{Binding AttributeLabel}" FontSize="12" TextWrapping="Wrap" />
-                <TextBlock Text="{Binding SourceSenseId}" FontSize="10" Opacity="0.6" />
+                <TextBlock Text="{Binding AttributeLabel}" FontSize="{DynamicResource CaptionFontSize}" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding SourceSenseId}" FontSize="{DynamicResource CaptionFontSize}" Opacity="0.6" />
             </StackPanel>
         </DataTemplate>
     </UserControl.Resources>
@@ -47,14 +48,14 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <StackPanel>
-            <TextBlock Text="{Binding WindowTitle}" FontSize="25" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding WindowTitle}" FontSize="{DynamicResource PageTitleFontSize}" FontWeight="SemiBold" />
             <TextBlock Margin="0,6,0,12" Text="粘贴或拖入 UTF-8 TXT，每行一个日文或英文词形；空行和 # 注释会忽略。多义词需选中文义项。"
                        TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}" />
         </StackPanel>
         <TextBox Grid.Row="1" Height="120" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
                  Text="{Binding SourceText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEdit}"
                  Background="{DynamicResource CardBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
-                 BorderBrush="{DynamicResource BorderBrush}" Padding="12" FontSize="16" />
+                 BorderBrush="{DynamicResource BorderBrush}" Padding="12" FontSize="{DynamicResource BodyFontSize}" />
         <StackPanel Grid.Row="2" Margin="0,12,0,12">
             <StackPanel Orientation="Horizontal">
                 <Button Style="{StaticResource ActionButton}" Content="匹配词表" Command="{Binding PrepareCommand}" />
@@ -86,7 +87,7 @@
                             <StackPanel Grid.Column="1">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{Binding LineNumber, StringFormat=第 {0} 行}" Opacity="0.6" Margin="0,0,10,0" />
-                                    <TextBlock Text="{Binding SourceText}" FontSize="17" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding SourceText}" FontSize="{DynamicResource SectionTitleFontSize}" FontWeight="SemiBold" />
                                 </StackPanel>
                                 <TextBlock Text="{Binding MatchLabel}" Margin="0,5,0,5" TextWrapping="Wrap" />
                                 <ComboBox ItemsSource="{Binding Candidates}" SelectedItem="{Binding SelectedCandidate}"

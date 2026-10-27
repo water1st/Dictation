@@ -3,30 +3,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:behaviors="clr-namespace:Dictation.Presentation.Behaviors"
              Background="{DynamicResource WindowBackgroundBrush}"
-             Foreground="{DynamicResource ForegroundBrush}">
+             Foreground="{DynamicResource ForegroundBrush}"
+             FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
-        <Style x:Key="InboxButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Padding" Value="16,9" />
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/Buttons.xaml" />
+        </ResourceDictionary.MergedDictionaries>
+        <Style x:Key="InboxButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryActionButtonStyle}">
             <Setter Property="Margin" Value="0,0,10,0" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="14"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
         <Style x:Key="InboxListItemStyle" TargetType="ListBoxItem">
@@ -88,7 +73,7 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock FontSize="17"
+                        <TextBlock FontSize="{DynamicResource SectionTitleFontSize}"
                                    FontWeight="SemiBold"
                                    Text="{Binding SourceText}" />
                         <TextBlock Grid.Column="1"
@@ -146,6 +131,7 @@
                 </StackPanel>
             </Grid>
         </DataTemplate>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid Margin="34,28">
@@ -168,12 +154,12 @@
                     CornerRadius="27">
                 <TextBlock HorizontalAlignment="Center"
                            VerticalAlignment="Center"
-                           FontSize="25"
+                           FontSize="{DynamicResource IconFontSize}"
                            Foreground="{DynamicResource AccentBrush}"
                            Text="▣" />
             </Border>
             <StackPanel Grid.Column="1" Margin="16,0,0,0">
-                <TextBlock FontSize="28"
+                <TextBlock FontSize="{DynamicResource PageTitleFontSize}"
                            FontWeight="SemiBold"
                            Text="{Binding WindowTitle}" />
                 <TextBlock Margin="0,4,0,0"
@@ -199,7 +185,7 @@
                      Background="{DynamicResource CardBackgroundBrush}"
                      BorderBrush="{DynamicResource BorderBrush}"
                      BorderThickness="1"
-                     FontSize="16"
+                     FontSize="{DynamicResource BodyFontSize}"
                      Text="{Binding FilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      ToolTip="筛选当前批次项目" />
             <Button Grid.Column="1"
@@ -227,7 +213,7 @@
                         BorderThickness="1"
                         CornerRadius="18">
                     <StackPanel>
-                        <TextBlock FontSize="17"
+                        <TextBlock FontSize="{DynamicResource SectionTitleFontSize}"
                                    FontWeight="SemiBold"
                                    Text="待确认批次" />
                         <ListBox Margin="0,12,0,0"
@@ -254,7 +240,7 @@
                         <CheckBox Content="全选"
                                   IsThreeState="False"
                                   IsChecked="{Binding IsAllSelected, Mode=TwoWay}"
-                                  FontSize="16"
+                                  FontSize="{DynamicResource BodyFontSize}"
                                   FontWeight="SemiBold" />
                         <ListBox Grid.Row="1"
                                  Margin="0,12,0,0"

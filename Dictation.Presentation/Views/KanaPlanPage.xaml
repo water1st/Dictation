@@ -1,19 +1,17 @@
 <UserControl x:Class="Dictation.Presentation.Views.KanaPlanPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}">
+             Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
+             FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
         <ResourceDictionary>
         <ResourceDictionary.MergedDictionaries>
             <ResourceDictionary Source="/Dictation.Presentation;component/Theme/FormControls.xaml" />
         </ResourceDictionary.MergedDictionaries>
         <Style TargetType="CheckBox" BasedOn="{StaticResource FormCheckBoxStyle}">
-            <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
-            <Setter Property="FontSize" Value="16" />
             <Setter Property="Margin" Value="0,8,24,8" />
         </Style>
         <Style TargetType="RadioButton" BasedOn="{StaticResource FormRadioButtonStyle}">
-            <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
             <Setter Property="Margin" Value="0,10,24,10" />
         </Style>
         <Style TargetType="Button">
@@ -26,7 +24,7 @@
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="42,26" MaxWidth="880" HorizontalAlignment="Stretch">
-            <TextBlock Text="假名小练习" FontSize="30" FontWeight="SemiBold" />
+            <TextBlock Text="假名小练习" FontSize="{DynamicResource PageTitleFontSize}" FontWeight="SemiBold" />
             <TextBlock Margin="0,8,0,20" Foreground="{DynamicResource SecondaryForegroundBrush}"
                        Text="不混入词汇表。先听发音，再写出指定字形；错项稍后重练。" TextWrapping="Wrap" />
             <Border Padding="24" CornerRadius="22" Background="{DynamicResource CardBackgroundBrush}">
@@ -58,7 +56,7 @@
                                Text="全量：每项首次正确即完成；有过错误的项目需连续两次正确。每日数量：优先未测及到期项，不提前抽未来项凑数。最后一项不可取消，请先选另一项再替换。" />
                 </StackPanel>
             </Border>
-            <TextBlock Margin="0,20,0,4" FontSize="20" FontWeight="SemiBold" Text="{Binding ProgressLabel}" />
+            <TextBlock Margin="0,20,0,4" FontSize="{DynamicResource SectionTitleFontSize}" FontWeight="SemiBold" Text="{Binding ProgressLabel}" />
             <WrapPanel>
                 <Button Content="保存计划" Command="{Binding SaveCommand}" />
                 <Button Content="开始／继续听写" Command="{Binding StartCommand}" />

@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:behaviors="clr-namespace:Dictation.Presentation.Behaviors"
              Background="{DynamicResource WindowBackgroundBrush}"
-             Foreground="{DynamicResource ForegroundBrush}">
+             Foreground="{DynamicResource ForegroundBrush}"
+             FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
         <ResourceDictionary>
         <ResourceDictionary.MergedDictionaries>
@@ -14,7 +15,7 @@
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="Padding" Value="22,11" />
-            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontSize" Value="{DynamicResource BodyFontSize}" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Template">
                 <Setter.Value>
@@ -34,7 +35,7 @@
 
         <Style x:Key="LookupComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource FormComboBoxStyle}">
             <Setter Property="Padding" Value="14,10" />
-            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontSize" Value="{DynamicResource BodyFontSize}" />
             <Setter Property="MaxDropDownHeight" Value="340" />
         </Style>
 
@@ -51,7 +52,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock FontSize="17"
+                        <TextBlock FontSize="{DynamicResource SectionTitleFontSize}"
                                    FontWeight="SemiBold"
                                    Text="{Binding Headword}" />
                         <TextBlock Margin="0,3,0,0"
@@ -102,12 +103,12 @@
                     CornerRadius="27">
                 <TextBlock HorizontalAlignment="Center"
                            VerticalAlignment="Center"
-                           FontSize="27"
+                           FontSize="{DynamicResource IconFontSize}"
                            Foreground="{DynamicResource AccentBrush}"
                            Text="⌕" />
             </Border>
             <StackPanel Grid.Column="2" Margin="16,0,0,0">
-                <TextBlock FontSize="29"
+                <TextBlock FontSize="{DynamicResource PageTitleFontSize}"
                            FontWeight="SemiBold"
                            Text="{Binding WindowTitle}" />
                 <TextBlock Margin="0,4,0,0"
@@ -186,7 +187,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock FontSize="17"
+                    <TextBlock FontSize="{DynamicResource SectionTitleFontSize}"
                                FontWeight="SemiBold"
                                Text="候选结果" />
                     <ListBox Grid.Row="1"
@@ -216,7 +217,7 @@
                               HorizontalScrollBarVisibility="Disabled"
                               VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock FontSize="24"
+                        <TextBlock FontSize="{DynamicResource EmphasisFontSize}"
                                    FontWeight="SemiBold"
                                    Text="{Binding SelectedResult.Headword}" />
                         <TextBlock Margin="0,4,0,0"
@@ -246,7 +247,7 @@
                                    TextWrapping="Wrap" />
 
                         <TextBlock Margin="0,24,0,8"
-                                   FontSize="16"
+                                   FontSize="{DynamicResource SectionTitleFontSize}"
                                    FontWeight="SemiBold"
                                    Text="义项" />
                         <ItemsControl ItemsSource="{Binding SelectedResult.Meanings}">
@@ -276,7 +277,7 @@
                         </TextBlock>
 
                         <TextBlock Margin="0,24,0,8"
-                                   FontSize="16"
+                                   FontSize="{DynamicResource SectionTitleFontSize}"
                                    FontWeight="SemiBold"
                                    Text="全部词形" />
                         <ItemsControl ItemsSource="{Binding SelectedResult.Forms}">

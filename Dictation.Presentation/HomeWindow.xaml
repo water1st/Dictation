@@ -10,7 +10,8 @@
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource WindowBackgroundBrush}"
         Foreground="{DynamicResource ForegroundBrush}"
-        Closed="OnClosed">
+        Closed="OnClosed"
+             FontSize="{DynamicResource BodyFontSize}">
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="64" ResizeBorderThickness="0" GlassFrameThickness="0"
                             CornerRadius="0" UseAeroCaptionButtons="False" NonClientFrameEdges="None" />
@@ -19,7 +20,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <Style x:Key="TopBarButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="38" /><Setter Property="Height" Value="36" />
-            <Setter Property="Margin" Value="3,0" /><Setter Property="FontSize" Value="17" />
+            <Setter Property="Margin" Value="3,0" /><Setter Property="FontSize" Value="{DynamicResource WindowIconFontSize}" />
             <Setter Property="Background" Value="Transparent" /><Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" /><Setter Property="BorderThickness" Value="1" />
             <Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome" Value="True" />
@@ -55,7 +56,7 @@
                 <Button x:Name="BackButton" Style="{StaticResource TopBarButtonStyle}" Command="{Binding GoBackCommand}" Content="‹"
                         ToolTip="返回" AutomationProperties.Name="返回" IsEnabled="{Binding CanGoBack}"
                         Visibility="{Binding IsBackButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                <TextBlock Grid.Column="1" Margin="12,0" VerticalAlignment="Center" FontSize="20" FontWeight="SemiBold"
+                <TextBlock Grid.Column="1" Margin="12,0" VerticalAlignment="Center" FontSize="{DynamicResource SectionTitleFontSize}" FontWeight="SemiBold"
                            Text="{Binding PageTitle}" TextTrimming="CharacterEllipsis" />
                 <Grid Grid.Column="2" VerticalAlignment="Center" shell:WindowChrome.IsHitTestVisibleInChrome="True"
                       DataContext="{Binding Update, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
@@ -75,10 +76,10 @@
                         </Button.Style>
                     <TextBlock x:Name="UpdateStatusText" MaxWidth="130" Focusable="True" KeyboardNavigation.IsTabStop="False"
                                Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}"
-                               VerticalAlignment="Center" FontSize="11" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                               VerticalAlignment="Center" FontSize="{DynamicResource CaptionFontSize}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
                                ToolTip="{Binding StatusMessage}" Foreground="{DynamicResource ErrorBrush}" Text="{Binding ErrorSummary}" />
                     </Button>
-                    <Button x:Name="UpdateButton" Grid.Column="1" Style="{StaticResource TopBarButtonStyle}" Width="Auto" Padding="10,0" FontSize="12"
+                    <Button x:Name="UpdateButton" Grid.Column="1" Style="{StaticResource TopBarButtonStyle}" Width="Auto" Padding="10,0" FontSize="{DynamicResource BodyFontSize}"
                             Content="{Binding ButtonText}" Command="{Binding InstallCommand}"
                             Visibility="{Binding HasUpdate, Converter={StaticResource BooleanToVisibilityConverter}}" />
                 </Grid>
@@ -114,7 +115,7 @@
                         BorderThickness="1"
                         CornerRadius="18">
                     <StackPanel>
-                        <TextBlock FontSize="20"
+                        <TextBlock FontSize="{DynamicResource SectionTitleFontSize}"
                                    FontWeight="SemiBold"
                                    Text="{Binding CurrentOverlay.Title}" />
                         <TextBlock Margin="0,12,0,0"

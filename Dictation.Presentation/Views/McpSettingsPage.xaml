@@ -1,7 +1,8 @@
 <UserControl x:Class="Dictation.Presentation.Views.McpSettingsPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Foreground="{DynamicResource ForegroundBrush}">
+             Foreground="{DynamicResource ForegroundBrush}"
+             FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
         <ResourceDictionary>
         <ResourceDictionary.MergedDictionaries>
@@ -12,11 +13,11 @@
             <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
         </Style>
-        <Style TargetType="CheckBox" BasedOn="{StaticResource FormCheckBoxStyle}"><Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" /></Style>
+        <Style TargetType="CheckBox" BasedOn="{StaticResource FormCheckBoxStyle}"></Style>
         </ResourceDictionary>
     </UserControl.Resources>
         <StackPanel MaxWidth="880">
-            <TextBlock Text="AI 导入设置" FontSize="30" FontWeight="SemiBold" />
+            <TextBlock Text="AI 导入设置" FontSize="{DynamicResource PageTitleFontSize}" FontWeight="SemiBold" />
             <TextBlock Margin="0,8,0,24" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}"
                        Text="让Agent帮你查词和准备导入。导入只进入收件箱，学习或复习仍由你确认。" />
             <Border x:Name="SettingsCard" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="22" Padding="24">
@@ -37,7 +38,7 @@
             </Border>
             <Border Margin="0,20,0,0" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="22" Padding="24">
                 <StackPanel>
-                    <TextBlock Text="连接 Codex" FontSize="20" FontWeight="SemiBold" />
+                    <TextBlock Text="连接 Codex" FontSize="{DynamicResource SectionTitleFontSize}" FontWeight="SemiBold" />
                     <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Text="仅点击按钮才会修改客户端配置；注册或注销后请重载客户端配置。修改端口不会自动覆盖旧注册。" />
                     <TextBlock Margin="0,8,0,0" Text="{Binding ConfigPath}" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}" />
                     <TextBlock x:Name="RegistrationStatus" Margin="0,12,0,0" Text="{Binding RegistrationMessage}" TextWrapping="Wrap" />

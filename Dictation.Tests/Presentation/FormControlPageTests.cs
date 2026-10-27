@@ -45,6 +45,7 @@ namespace Dictation.Tests.Presentation
                 if (control is ToggleButton)
                 {
                     Assert.NotNull(control.Template.FindName("CheckedMark", control));
+                    Assert.Equal(14d, control.FontSize);
                 }
                 else
                 {
