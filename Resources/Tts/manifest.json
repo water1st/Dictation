@@ -20,7 +20,7 @@
       "version": "bd0d812d4db9182ecdb907ef074becf9e230c17f",
       "source": "https://huggingface.co/ayousanz/piper-plus-css10-ja-6lang",
       "license": "CSS10 public domain（模型卡说明）",
-      "notice": "Resources/Attribution/Tts/Piper-CSS10-model-card.md"
+      "notice": "LICENSES/Tts/Piper-CSS10-model-card.md"
     },
     {
       "id": "openjtalk",
@@ -28,7 +28,7 @@
       "source": "https://github.com/r9y9/open_jtalk/releases/download/v1.11.1/open_jtalk_dic_utf_8-1.11.tar.gz",
       "archiveSha256": "FE6BA0E43542CEF98339ABDFFD903E062008EA170B04E7E2A35DA805902F382A",
       "license": "以COPYING中的多方许可为准",
-      "notice": "Resources/Attribution/Tts/OpenJTalk-COPYING.txt"
+      "notice": "LICENSES/Tts/OpenJTalk-COPYING.txt"
     },
     {
       "id": "kokoro-sherpa",
@@ -36,7 +36,7 @@
       "source": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_0.tar.bz2",
       "archiveSha256": "C5F7E2D2CAF082BC1D20FB70334A61D99D20B484500AAD32E7CF84C128EA3298",
       "license": "模型卡Apache-2.0；eSpeak依赖GPL-3.0-or-later，数据与对应源码尚待发布核验",
-      "notice": "Resources/Attribution/Tts/Kokoro-model-card.md"
+      "notice": "LICENSES/Tts/Kokoro-model-card.md"
     },
     {
       "id": "espeak-ng-source",
@@ -44,7 +44,7 @@
       "source": "https://github.com/csukuangfj/espeak-ng/tree/ed530aa113046142eb5115cf2fc9157854d0ffe1",
       "archiveSha256": "E4E262CBE34F7FE21F91F1BA3397F2728E1F30EAFBAE7853F2B753A9ED13F0DD",
       "license": "GPL-3.0-or-later，子组件另见COPYING副本",
-      "notice": "Resources/Attribution/Tts/SOURCES.md"
+      "notice": "LICENSES/Tts/SOURCES.md"
     }
   ],
   "files": [
@@ -2247,97 +2247,97 @@
   ],
   "notices": [
     {
-      "path": "Resources/Attribution/Tts/dotnetg2p.mecab/LICENSE",
+      "path": "LICENSES/Tts/dotnetg2p.mecab/LICENSE",
       "sizeBytes": 10758,
       "sha256": "E3667E2691D25A577FF65851C97CBE817362543C73A146B98D0F8B923D5E05EE"
     },
     {
-      "path": "Resources/Attribution/Tts/dotnetg2p.mecab/NOTICE",
+      "path": "LICENSES/Tts/dotnetg2p.mecab/NOTICE",
       "sizeBytes": 15497,
       "sha256": "08CEAAC0DF01A16CAC191041CAA05B2872AE4694AC5A9DC742169B078945D977"
     },
     {
-      "path": "Resources/Attribution/Tts/dotnetg2p.mecab/THIRD-PARTY-NOTICES.md",
+      "path": "LICENSES/Tts/dotnetg2p.mecab/THIRD-PARTY-NOTICES.md",
       "sizeBytes": 3377,
       "sha256": "0F3AAD398D845011D7CDFCEC70068FE41BE185CC981082B1071D265E976DF68C"
     },
     {
-      "path": "Resources/Attribution/Tts/dotnetg2p/LICENSE",
+      "path": "LICENSES/Tts/dotnetg2p/LICENSE",
       "sizeBytes": 10758,
       "sha256": "E3667E2691D25A577FF65851C97CBE817362543C73A146B98D0F8B923D5E05EE"
     },
     {
-      "path": "Resources/Attribution/Tts/dotnetg2p/NOTICE",
+      "path": "LICENSES/Tts/dotnetg2p/NOTICE",
       "sizeBytes": 15497,
       "sha256": "08CEAAC0DF01A16CAC191041CAA05B2872AE4694AC5A9DC742169B078945D977"
     },
     {
-      "path": "Resources/Attribution/Tts/dotnetg2p/THIRD-PARTY-NOTICES.md",
+      "path": "LICENSES/Tts/dotnetg2p/THIRD-PARTY-NOTICES.md",
       "sizeBytes": 3179,
       "sha256": "F60D32EF2C0F15C6B217E29B61F83C3766D3120B10A25EE7EAF08B7F3AC5D13B"
     },
     {
-      "path": "Resources/Attribution/Tts/eSpeak-NG-COPYING.APACHE.txt",
+      "path": "LICENSES/Tts/eSpeak-NG-COPYING.APACHE.txt",
       "sizeBytes": 11358,
       "sha256": "CFC7749B96F63BD31C3C42B5C471BF756814053E847C10F3EB003417BC523D30"
     },
     {
-      "path": "Resources/Attribution/Tts/eSpeak-NG-COPYING.BSD2.txt",
+      "path": "LICENSES/Tts/eSpeak-NG-COPYING.BSD2.txt",
       "sizeBytes": 1244,
       "sha256": "A8B0C1C7D7AF6C0415C068BE8CF373799D1A42B0707B79DC4CCFCAF593CD902D"
     },
     {
-      "path": "Resources/Attribution/Tts/eSpeak-NG-COPYING.txt",
+      "path": "LICENSES/Tts/eSpeak-NG-COPYING.txt",
       "sizeBytes": 35147,
       "sha256": "8CEB4B9EE5ADEDDE47B31E975C1D90C73AD27B6B165A1DCD80C7C545EB65B903"
     },
     {
-      "path": "Resources/Attribution/Tts/eSpeak-NG-COPYING.UCD.txt",
+      "path": "LICENSES/Tts/eSpeak-NG-COPYING.UCD.txt",
       "sizeBytes": 2788,
       "sha256": "BE029C50DF83105A810E391778B6EDCB522D6CB4B4E142332ACA54437A499BF7"
     },
     {
-      "path": "Resources/Attribution/Tts/eSpeak-NG-src-ucd-tools-COPYING.txt",
+      "path": "LICENSES/Tts/eSpeak-NG-src-ucd-tools-COPYING.txt",
       "sizeBytes": 35147,
       "sha256": "8CEB4B9EE5ADEDDE47B31E975C1D90C73AD27B6B165A1DCD80C7C545EB65B903"
     },
     {
-      "path": "Resources/Attribution/Tts/eSpeak-NG-src-ucd-tools-COPYING.UCD.txt",
+      "path": "LICENSES/Tts/eSpeak-NG-src-ucd-tools-COPYING.UCD.txt",
       "sizeBytes": 2788,
       "sha256": "BE029C50DF83105A810E391778B6EDCB522D6CB4B4E142332ACA54437A499BF7"
     },
     {
-      "path": "Resources/Attribution/Tts/Kokoro-model-card.md",
+      "path": "LICENSES/Tts/Kokoro-model-card.md",
       "sizeBytes": 6465,
       "sha256": "994A56FF22A45429976BE494CB2650D2FAF1A2E3536A0158A1DF570F390C6313"
     },
     {
-      "path": "Resources/Attribution/Tts/OnnxRuntime-LICENSE.txt",
+      "path": "LICENSES/Tts/OnnxRuntime-LICENSE.txt",
       "sizeBytes": 1094,
       "sha256": "C250D6278F0B47A6439FB7592B08B58A55EB9F535AA49A1DB63211C3F982B674"
     },
     {
-      "path": "Resources/Attribution/Tts/OpenJTalk-COPYING.txt",
+      "path": "LICENSES/Tts/OpenJTalk-COPYING.txt",
       "sizeBytes": 5865,
       "sha256": "F4ECA42EBD930E2C6E57FCA58319D989BEBCD1510CB7714B149C50F5425135EA"
     },
     {
-      "path": "Resources/Attribution/Tts/Piper-CSS10-model-card.md",
+      "path": "LICENSES/Tts/Piper-CSS10-model-card.md",
       "sizeBytes": 6474,
       "sha256": "15FD9DA09594D35AB299F423F8423AA4E4144F30E61139BB57CB0C5991FDE6F9"
     },
     {
-      "path": "Resources/Attribution/Tts/PiperPlus-Core-LICENSE.txt",
+      "path": "LICENSES/Tts/PiperPlus-Core-LICENSE.txt",
       "sizeBytes": 1097,
       "sha256": "76BA36EDA217BE072BFD1CF0855B8C705BBDCAAEC49E1B2E0CA081E89165159A"
     },
     {
-      "path": "Resources/Attribution/Tts/Sherpa-ONNX-LICENSE.txt",
+      "path": "LICENSES/Tts/Sherpa-ONNX-LICENSE.txt",
       "sizeBytes": 11358,
       "sha256": "CFC7749B96F63BD31C3C42B5C471BF756814053E847C10F3EB003417BC523D30"
     },
     {
-      "path": "Resources/Attribution/Tts/SOURCES.md",
+      "path": "LICENSES/Tts/SOURCES.md",
       "sizeBytes": 2477,
       "sha256": "36B031422480F66236584CDDC086659A6FCAACF88E91BC9A446CB063A0F1A796"
     }

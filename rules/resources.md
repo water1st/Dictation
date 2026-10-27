@@ -2,9 +2,9 @@
 
 ## 1. 资源边界
 
-仓库根目录 `Resources/` 保存运行所需的 `Lexicons/`、`Tts/` 和 `Attribution/`，纳入版本控制。大型模型、词库和词典使用 Git LFS；检出后执行 `git lfs pull` 还原资源文件。构建时原始输入由调用者通过显式路径提供，不混入运行资源目录。
+仓库根目录 `Resources/` 保存运行所需的 `Lexicons/` 和 `Tts/`；TTS 许可证、版权声明、模型卡及来源资料保存于 `LICENSES/Tts/`，均纳入版本控制。大型模型、词库和词典使用 Git LFS；检出后执行 `git lfs pull` 还原资源文件。构建时原始输入由调用者通过显式路径提供，不混入运行资源目录。
 
-`Dictation.Presentation.csproj` 将根资源复制到构建和发布输出的 `Resources/`，使用 `PreserveNewest`；运行资源不依赖 `artifacts/`、`dev-temp/` 或本机目录联接。
+`Dictation.Presentation.csproj` 将根资源和 TTS 许可资料分别复制到构建和发布输出的 `Resources/`、`LICENSES/Tts/`，使用 `PreserveNewest`；运行资源不依赖 `artifacts/`、`dev-temp/` 或本机目录联接。
 
 资源分为三类：构建时输入（用于生成只读数据库）、运行时模型/词库（随发布 ZIP 提供）和许可证/归属文件。每次发布都要生成版本、来源、许可证、文件大小、SHA-256 的 manifest；发布前重新计算哈希，不能以文件名代替校验。
 
@@ -102,12 +102,12 @@ Resources/Lexicons/
 - 运行时不在线下载或更新词库；全量 ZIP 发布时可替换内置只读词库，以满足 JMdict 的许可/维护要求。
 - 发布前复制或随包提供 EDRDG JMdict、Open English WordNet、Princeton WordNet、Kokoro、Piper Plus/CSS10 的适用许可证和归属说明；不得把“模型卡标记”扩大解释为所有运行时依赖的许可证。
 - 资源版本、来源、commit/日期、大小、SHA-256、处理结果和许可证路径必须可从 manifest 追溯。缺少核验信息的新增资源不能进入发布子集。
-- 发布校验只检查不可变 `Resources/`；根目录 `CONFIG/`、`DATA/`、`LOGS/`、`BACKUPS/` 和必要的 `CACHE/` 属于用户运行数据，不打包成会覆盖它们的文件。
+- 发布校验检查不可变 `Resources/` 及随包 `LICENSES/`；根目录 `CONFIG/`、`DATA/`、`LOGS/`、`BACKUPS/` 和必要的 `CACHE/` 属于用户运行数据，不打包成会覆盖它们的文件。
 
 ## 5. 固定版本许可来源
 
 PiperPlus.Core 0.4.0的NuGet元数据固定源码提交为 `782edf41248a996551163b0acb3949d5c32258e5`，已取得[原始MIT许可](https://github.com/ayutaz/piper-plus/blob/782edf41248a996551163b0acb3949d5c32258e5/LICENSE.md)，保留Michael Hansen／ayutaz版权。Sherpa托管及win-x64运行时均固定 `3dc7c569f31ca2cd4a20ed6f7db780327e6714c5`，已取得[原始Apache-2.0许可](https://github.com/k2-fsa/sherpa-onnx/blob/3dc7c569f31ca2cd4a20ed6f7db780327e6714c5/LICENSE)。
 
-该Sherpa版本的[构建定义](https://github.com/k2-fsa/sherpa-onnx/blob/3dc7c569f31ca2cd4a20ed6f7db780327e6714c5/cmake/espeak-ng-for-piper.cmake)固定拉取eSpeak分支提交 `ed530aa113046142eb5115cf2fc9157854d0ffe1`（源码归档SHA `E4E262CBE34F7FE21F91F1BA3397F2728E1F30EAFBAE7853F2B753A9ED13F0DD`）。其[README](https://github.com/csukuangfj/espeak-ng/blob/ed530aa113046142eb5115cf2fc9157854d0ffe1/README.md)声明GPLv3或后续版本；已附COPYING及Apache／BSD2／UCD子组件许可副本，来源链另附 `Resources/Attribution/Tts/SOURCES.md`。
+该Sherpa版本的[构建定义](https://github.com/k2-fsa/sherpa-onnx/blob/3dc7c569f31ca2cd4a20ed6f7db780327e6714c5/cmake/espeak-ng-for-piper.cmake)固定拉取eSpeak分支提交 `ed530aa113046142eb5115cf2fc9157854d0ffe1`（源码归档SHA `E4E262CBE34F7FE21F91F1BA3397F2728E1F30EAFBAE7853F2B753A9ED13F0DD`）。其[README](https://github.com/csukuangfj/espeak-ng/blob/ed530aa113046142eb5115cf2fc9157854d0ffe1/README.md)声明GPLv3或后续版本；已附COPYING及Apache／BSD2／UCD子组件许可副本，来源链另附 `LICENSES/Tts/SOURCES.md`。
 
 不得把上层NuGet的Apache标签扩大为所有依赖许可，不能仅因为非商业或只附许可文本就跳过再分发核验。这里记录源码声明，不从单份元数据断言实际二进制／模型数据已具备完整对应源码，也不自动判断整个Dictation必须采用某许可证。当前仓库根目录未设置LICENSE，未代替作者选择许可；实际发布组合应完成相应许可审查后才放开Release门槛。
