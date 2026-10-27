@@ -1,9 +1,13 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Dictation.Presentation.Theme;
 
 namespace Dictation.Tests.Presentation
@@ -103,6 +107,74 @@ namespace Dictation.Tests.Presentation
                 Assert.Contains(Children<Border>(item), border => border.Background is SolidColorBrush brush && brush.Color == ColorOf(host, "AccentSoftBrush"));
                 host.Children.Remove(item);
             }
+            return Task.CompletedTask;
+        });
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public Task ComboBox_OpenPopup_UpdatesRealItemsAndAccessibleSelection(bool editable) => ReviewPlanPageTests.RunStaAsync(() =>
+        {
+            var values = new[] { "日本語", "English" };
+            var selection = new ListBox { ItemsSource = values, SelectedIndex = 0 };
+            var combo = new ComboBox { IsEditable = editable, ItemsSource = values };
+            combo.SetBinding(ComboBox.SelectedItemProperty, new Binding("SelectedItem") { Source = selection, Mode = BindingMode.TwoWay });
+            var host = CreateHost(combo);
+            using var source = new HwndSource(new HwndSourceParameters("表单弹出框验收") { Width = 600, Height = 300 });
+            source.RootVisual = host;
+            ThemePalette.Apply(host.Resources, ResolvedTheme.Light);
+            Layout(host);
+            Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(() => { }));
+            combo.IsDropDownOpen = true;
+            Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.Render, new Action(() => { }));
+            var popup = Assert.IsType<Popup>(combo.Template.FindName("PART_Popup", combo));
+            Assert.True(popup.IsOpen);
+            var item = Assert.IsType<ComboBoxItem>(combo.ItemContainerGenerator.ContainerFromIndex(1));
+            foreach (var theme in new[] { ResolvedTheme.Dark, ResolvedTheme.Light })
+            {
+                ThemePalette.Apply(host.Resources, theme);
+                Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.Render, new Action(() => { }));
+                Assert.Equal(ColorOf(host, "ForegroundBrush"), ((SolidColorBrush)item.Foreground).Color);
+                Assert.Equal(ColorOf(host, "CardBackgroundBrush"), ((SolidColorBrush)((Border)popup.Child).Background).Color);
+            }
+            var peer = UIElementAutomationPeer.CreatePeerForElement(combo)!;
+            var itemPeer = Assert.Single(peer.GetChildren(), child => child.GetName() == "English");
+            var provider = Assert.IsAssignableFrom<ISelectionItemProvider>(itemPeer.GetPattern(PatternInterface.SelectionItem));
+            provider.Select();
+            Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.DataBind, new Action(() => { }));
+            Assert.Equal("English", combo.SelectedItem);
+            Assert.Equal("English", selection.SelectedItem);
+            Assert.True(provider.IsSelected);
+            combo.IsDropDownOpen = false;
+            Assert.False(popup.IsOpen);
+            return Task.CompletedTask;
+        });
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public Task ComboBox_LongItems_PopupStaysWithinControlWidth(bool editable) => ReviewPlanPageTests.RunStaAsync(() =>
+        {
+            var combo = new ComboBox
+            {
+                IsEditable = editable,
+                Width = 180,
+                ItemsSource = new[] { new string('长', 100) }
+            };
+            var host = CreateHost(combo);
+            using var source = new HwndSource(new HwndSourceParameters("下拉宽度验收") { Width = 600, Height = 300 });
+            source.RootVisual = host;
+            ThemePalette.Apply(host.Resources, ResolvedTheme.Dark);
+            Layout(host);
+            Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(() => { }));
+            combo.IsDropDownOpen = true;
+            Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.Render, new Action(() => { }));
+            var popup = (Popup)combo.Template.FindName("PART_Popup", combo);
+            Assert.True(popup.IsOpen);
+            var popupBorder = Assert.IsType<Border>(popup.Child);
+            Assert.True(popupBorder.ActualWidth <= combo.ActualWidth + 1,
+                $"下拉层宽度 {popupBorder.ActualWidth} 不得超出输入框 {combo.ActualWidth} 并遮挡相邻操作。");
+            combo.IsDropDownOpen = false;
             return Task.CompletedTask;
         });
 
