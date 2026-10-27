@@ -1,10 +1,16 @@
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Dictation.Core.Updating;
 using Dictation.DataAccess;
 using Dictation.Presentation;
+using Dictation.Presentation.Navigation;
+using Dictation.Presentation.Theme;
+using Dictation.Presentation.ViewModels;
+using Dictation.Presentation.Views;
 using Dictation.Tests.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -68,6 +74,96 @@ namespace Dictation.Tests.Presentation
             finally { window.Close(); }
         });
 
+        [Theory]
+        [InlineData(ResolvedTheme.Light, "更新失败，网络连接不可用。")]
+        [InlineData(ResolvedTheme.Dark, "更新失败，网络连接不可用。")]
+        [InlineData(ResolvedTheme.Light, "HttpRequestException: TLS handshake failed at UpdatePreparation.PrepareAsync() ")]
+        [InlineData(ResolvedTheme.Dark, "HttpRequestException: TLS handshake failed at UpdatePreparation.PrepareAsync() ")]
+        [InlineData(ResolvedTheme.Light, "连接失败\r\n详细原因\n重试失败\r服务器不可用")]
+        [InlineData(ResolvedTheme.Dark, "连接失败\r\n详细原因\n重试失败\r服务器不可用")]
+        public Task 更新错误_固定窗口长文本_仅占按钮左侧且不移动操作区(ResolvedTheme theme, string message) => ReviewPlanPageTests.RunStaAsync(async () =>
+        {
+            using var fixture = new ToolbarFixture();
+            fixture.Preparation.Message = string.Concat(Enumerable.Repeat(message, 30));
+            using var services = fixture.Build();
+            services.GetRequiredService<NavigationService>().InitializeHome(services.GetRequiredService<LandingViewModel>());
+            var window = services.GetRequiredService<HomeWindow>();
+            window.ShowActivated = false;
+            ThemePalette.Apply(window.Resources, theme);
+            Assert.IsType<ContentControl>(window.FindName("CurrentPagePresenter")).Content =
+                new HomePage { DataContext = services.GetRequiredService<LandingViewModel>() };
+            try
+            {
+                window.Show();
+                await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                var update = Assert.IsType<Button>(window.FindName("UpdateButton"));
+                var error = Assert.IsType<TextBlock>(window.FindName("UpdateStatusText"));
+                var toolbar = Assert.IsType<Grid>(Assert.IsType<Button>(window.FindName("SettingsButton")).Parent);
+                var buttons = toolbar.Children.OfType<Button>().Where(button => Grid.GetColumn(button) >= 3).Prepend(update).ToArray();
+                var before = buttons.Select(button => Bounds(button, window)).ToArray();
+
+                await window.Update.InstallAsync();
+                await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                window.UpdateLayout();
+                Export(window, theme, message.StartsWith("Http") ? "technical" : "chinese");
+                Assert.Equal(Visibility.Visible, error.Visibility);
+                Assert.True(Bounds(error, window).Right <= Bounds(update, window).Left);
+                Assert.InRange(error.ActualWidth, 1, 130);
+                Assert.InRange(error.ActualHeight, 1, 24);
+                Assert.Equal(TextWrapping.NoWrap, error.TextWrapping);
+                Assert.Equal(TextTrimming.CharacterEllipsis, error.TextTrimming);
+                Assert.Equal(window.Update.StatusMessage, error.ToolTip);
+                Assert.True(error.Focusable);
+                for (var index = 0; index < buttons.Length; index++)
+                {
+                    var after = Bounds(buttons[index], window);
+                    Assert.Equal(before[index].X, after.X, 6);
+                    Assert.Equal(before[index].Y, after.Y, 6);
+                    Assert.Equal(before[index].Width, after.Width, 6);
+                    Assert.Equal(before[index].Height, after.Height, 6);
+                    var center = buttons[index].TranslatePoint(new Point(buttons[index].ActualWidth / 2, buttons[index].ActualHeight / 2), window);
+                    var hit = Assert.IsAssignableFrom<DependencyObject>(window.InputHitTest(center));
+                    Assert.True(ReferenceEquals(hit, buttons[index]) || buttons[index].IsAncestorOf(hit));
+                }
+
+                var pending = new TaskCompletionSource<AvailableUpdateDto?>();
+                fixture.Query.Pending = pending.Task;
+                var checking = window.Update.CheckAsync();
+                await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.DataBind);
+                Assert.Equal(Visibility.Collapsed, error.Visibility);
+                Assert.Equal(new Size(0, 0), error.DesiredSize);
+                pending.SetResult(null);
+                await checking;
+                await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.DataBind);
+                Assert.Equal(Visibility.Collapsed, error.Visibility);
+                Assert.Equal(Visibility.Collapsed, update.Visibility);
+            }
+            finally { window.Close(); }
+        });
+
+        private static Rect Bounds(FrameworkElement element, Window window)
+        {
+            return new Rect(element.TranslatePoint(new Point(), window), element.RenderSize);
+        }
+
+        private static void Export(HomeWindow window, ResolvedTheme theme, string name)
+        {
+            var output = Environment.GetEnvironmentVariable("DICTATION_SCREENSHOT_DIRECTORY");
+            if (string.IsNullOrWhiteSpace(output)) return;
+            Directory.CreateDirectory(output);
+            var content = Assert.IsAssignableFrom<FrameworkElement>(window.Content);
+            var bitmap = new RenderTargetBitmap(860, 620, 96, 96, PixelFormats.Pbgra32);
+            var background = new DrawingVisual();
+            using (var drawing = background.RenderOpen())
+                drawing.DrawRectangle((Brush)window.FindResource("WindowBackgroundBrush"), null, new Rect(0, 0, 860, 620));
+            bitmap.Render(background);
+            bitmap.Render(content);
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(bitmap));
+            using var stream = File.Create(Path.Combine(output, $"toolbar-{name}-{theme}.png"));
+            encoder.Save(stream);
+        }
+
         /// <summary>创建真实发行与事务，网络查询和下载替换为确定的能力边界。</summary>
         private sealed class ToolbarFixture : IDisposable
         {
@@ -75,6 +171,7 @@ namespace Dictation.Tests.Presentation
             internal string Root => directory.Path;
             internal string Ready { get; }
             internal RejectingPreparation Preparation { get; } = new();
+            internal Query Query { get; } = new();
             internal ToolbarFixture()
             {
                 var job = Path.Combine(Root, "CACHE", "Updates", Guid.NewGuid().ToString("N"));
@@ -94,7 +191,7 @@ namespace Dictation.Tests.Presentation
                 var collection = new ServiceCollection().AddDictationDataAccess(Root).AddDictationCore().AddDictationPresentation();
                 collection.AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
                     { ["DICTATION_UPDATE_READY_FILE"] = Ready }).Build());
-                collection.AddSingleton<IUpdateReleaseQuery>(new Query());
+                collection.AddSingleton<IUpdateReleaseQuery>(Query);
                 collection.AddSingleton<IUpdatePreparation>(Preparation);
                 return collection.BuildServiceProvider();
             }
@@ -104,7 +201,8 @@ namespace Dictation.Tests.Presentation
         /// <summary>提供确定的新版本，不模拟UI、绑定或启动就绪文件。</summary>
         private sealed class Query : IUpdateReleaseQuery
         {
-            public Task<AvailableUpdateDto?> CheckAsync(CancellationToken cancellationToken = default) => Task.FromResult<AvailableUpdateDto?>(new("1.0.3",
+            internal Task<AvailableUpdateDto?>? Pending { get; set; }
+            public Task<AvailableUpdateDto?> CheckAsync(CancellationToken cancellationToken = default) => Pending ?? Task.FromResult<AvailableUpdateDto?>(new("1.0.3",
                 new("https://github.com/water1st/Dictation/releases/download/v1.0.3/Dictation-win-x64.zip"),
                 new("https://github.com/water1st/Dictation/releases/download/v1.0.3/Dictation-win-x64.zip.sha256")));
         }
@@ -113,10 +211,11 @@ namespace Dictation.Tests.Presentation
         private sealed class RejectingPreparation : IUpdatePreparation
         {
             internal int Calls { get; private set; }
+            internal string Message { get; set; } = "校验失败";
             public Task<PreparedUpdateDto> PrepareAsync(AvailableUpdateDto update, CancellationToken cancellationToken = default)
             {
                 Calls++;
-                return Task.FromException<PreparedUpdateDto>(new InvalidDataException("校验失败"));
+                return Task.FromException<PreparedUpdateDto>(new InvalidDataException(Message));
             }
         }
     }

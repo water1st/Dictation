@@ -57,15 +57,16 @@
                         Visibility="{Binding IsBackButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
                 <TextBlock Grid.Column="1" Margin="12,0" VerticalAlignment="Center" FontSize="20" FontWeight="SemiBold"
                            Text="{Binding PageTitle}" TextTrimming="CharacterEllipsis" />
-                <Grid Grid.Column="2" MaxWidth="250" Margin="6,0" VerticalAlignment="Center" shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                <Grid Grid.Column="2" VerticalAlignment="Center" shell:WindowChrome.IsHitTestVisibleInChrome="True"
                       DataContext="{Binding Update, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                    <Button x:Name="UpdateButton" Style="{StaticResource TopBarButtonStyle}" Width="Auto" Padding="10,0" FontSize="12"
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <TextBlock x:Name="UpdateStatusText" Margin="6,0" MaxWidth="130" Focusable="True"
+                               Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}"
+                               VerticalAlignment="Center" FontSize="11" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                               ToolTip="{Binding StatusMessage}" Foreground="{DynamicResource ErrorBrush}" Text="{Binding ErrorSummary}" />
+                    <Button x:Name="UpdateButton" Grid.Column="1" Style="{StaticResource TopBarButtonStyle}" Width="Auto" Padding="10,0" FontSize="12"
                             Content="{Binding ButtonText}" Command="{Binding InstallCommand}"
                             Visibility="{Binding HasUpdate, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                    <TextBlock x:Name="UpdateStatusText" Grid.Column="1" Margin="6,0,0,0" MaxWidth="130" MaxHeight="40"
-                               VerticalAlignment="Center" FontSize="11" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
-                               ToolTip="{Binding StatusMessage}" Foreground="{DynamicResource SecondaryForegroundBrush}" Text="{Binding StatusMessage}" />
                 </Grid>
                 <Button x:Name="SettingsButton" Grid.Column="3" Style="{StaticResource TopBarButtonStyle}" Content="⚙" ToolTip="设置" AutomationProperties.Name="设置"
                         Command="{Binding OpenSettingsCommand}" Visibility="{Binding IsSettingsButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
