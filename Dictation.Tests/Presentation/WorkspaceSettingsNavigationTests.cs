@@ -17,7 +17,7 @@ namespace Dictation.Tests.Presentation
         [Theory]
         [InlineData(LearningLanguage.Japanese)]
         [InlineData(LearningLanguage.English)]
-        public async Task 工作页_选择语言后往返_复用单例且根页无返回(LearningLanguage language)
+        public async Task Workspace_RoundTripAfterLanguageSelection_ReusesSingletonAndRootHasNoBack(LearningLanguage language)
         {
             using var directory = new TemporaryDirectory();
             using var provider = await CreateProviderAsync(directory.Path);
@@ -45,7 +45,7 @@ namespace Dictation.Tests.Presentation
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
-        public async Task 设置_跨语言打开导入及计划_返回同一分类且工作页语言不变(bool fromWorkspace)
+        public async Task Settings_OpenImportAndPlansAcrossLanguages_ReturnsToSameSectionAndPreservesWorkspaceLanguage(bool fromWorkspace)
         {
             using var directory = new TemporaryDirectory();
             using var provider = await CreateProviderAsync(directory.Path);
@@ -87,7 +87,7 @@ namespace Dictation.Tests.Presentation
         }
 
         [Fact]
-        public async Task 导航_非法来源语言与取消_拒绝且不改变页面()
+        public async Task Navigation_InvalidSourceLanguageOrCancellation_RejectsWithoutPageChange()
         {
             using var directory = new TemporaryDirectory();
             using var provider = await CreateProviderAsync(directory.Path);
@@ -118,7 +118,7 @@ namespace Dictation.Tests.Presentation
             });
 
         [Fact]
-        public async Task 语言选择_进度读取期间点击设置_保持根页直到工作页就绪()
+        public async Task LanguageSelection_OpenSettingsWhileProgressLoads_KeepsRootUntilWorkspaceReady()
         {
             using var directory = new TemporaryDirectory();
             var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -148,7 +148,7 @@ namespace Dictation.Tests.Presentation
         }
 
         [Fact]
-        public async Task 设置入口_快速重复点击_转场期间保持同一页面()
+        public async Task SettingsEntry_RapidRepeatedClicks_PreservesPageDuringTransition()
         {
             using var directory = new TemporaryDirectory();
             using var provider = await CreateProviderAsync(directory.Path);
