@@ -54,9 +54,14 @@
                     </StackPanel>
                 </Border>
 
-                <Grid Margin="0,16,0,0">
+                <Grid Margin="0,16,0,0" Grid.IsSharedSizeScope="True">
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" SharedSizeGroup="WorkspaceCardRow" />
+                        <RowDefinition Height="Auto" SharedSizeGroup="WorkspaceCardRow" />
+                        <RowDefinition Height="Auto" SharedSizeGroup="WorkspaceCardRow" />
+                        <RowDefinition Height="Auto" SharedSizeGroup="WorkspaceCardRow" />
+                    </Grid.RowDefinitions>
                     <Button  Grid.Row="0" Grid.Column="0" Margin="0,0,12,12"
                             Style="{StaticResource CardButtonStyle}"
                             Command="{Binding OpenLearningCommand}">

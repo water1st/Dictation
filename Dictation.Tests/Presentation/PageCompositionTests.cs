@@ -8,6 +8,46 @@ namespace Dictation.Tests.Presentation
     public sealed class PageCompositionTests
     {
         [Theory]
+        [InlineData(true, 640)]
+        [InlineData(false, 640)]
+        [InlineData(true, 860)]
+        [InlineData(false, 860)]
+        public Task WorkspaceCards_MixedContentAndLanguage_HaveEqualBounds(bool isJapanese, double width) => ReviewPlanPageTests.RunStaAsync(() =>
+        {
+            var page = new LanguageWorkspacePage
+            {
+                Height = 556,
+                DataContext = new
+                {
+                    IsJapaneseSelected = isJapanese,
+                    LearningProgressLabel = "学习 0/20",
+                    ReviewProgressLabel = "复习 0/20",
+                    KanaProgressLabel = "五十音 0/46"
+                }
+            };
+            var host = FormControlThemeTests.CreateHost(page);
+            host.Width = width;
+            host.Measure(new Size(width, 556));
+            host.Arrange(new Rect(0, 0, width, 556));
+            host.UpdateLayout();
+            var review = (Button)page.FindName("StartReviewButton");
+            var grid = Assert.IsType<Grid>(review.Parent);
+            var cards = grid.Children.OfType<Button>().Where(item => item.Visibility == Visibility.Visible).ToArray();
+            Assert.Equal(isJapanese ? 7 : 6, cards.Length);
+            Assert.All(cards, card =>
+            {
+                Assert.True(card.ActualWidth > 0);
+                Assert.True(card.ActualHeight > 0);
+                Assert.InRange(Math.Abs(card.ActualWidth - review.ActualWidth), 0, 0.5);
+                Assert.InRange(Math.Abs(card.ActualHeight - review.ActualHeight), 0, 0.5);
+                var content = Assert.IsType<StackPanel>(card.Content);
+                var bottom = content.TranslatePoint(new Point(0, content.ActualHeight), card).Y;
+                Assert.True(bottom <= card.ActualHeight - card.Padding.Bottom + 0.5);
+            });
+            return Task.CompletedTask;
+        });
+
+        [Theory]
         [InlineData("日语")]
         [InlineData("英语")]
         public Task LanguageEntry_FlagAndText_FormOneHorizontalGroup(string language) => ReviewPlanPageTests.RunStaAsync(() =>
