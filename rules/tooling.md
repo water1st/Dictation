@@ -9,6 +9,18 @@
 - **项目身份核验**：读取 `ProjectInfo.json` 的 `projectName`、`githubRepository`、`prBaseBranch`、`trello.boardName` 和项目标签配置；对照当前 GitHub 仓库、PR 和 Trello 卡片中的完整 Task ID、项目、看板及项目标签。查询得到的实际资源标识用于本次操作，不把它们硬编码到公开仓库。
 - GitHub 的分支、提交、PR 操作遵守 `rules/workflow.md`；Trello 列表、Checklist 与 Task 状态遵守 `rules/project-management.md`。找不到匹配资源时不自行创建替代资源，也不跨项目操作。
 
+## 指定外部服务插件强制路由
+
+本项目指定的外部服务插件仅为 GitHub、Trello 和 Google Drive。执行远端资源操作前，必须从当前环境中发现已授权的对应插件，核实连接、权限、可用动作及其参数；不能未经检查就认定插件不存在。
+
+- **GitHub 插件：** 对 `water1st/Dictation` 的远端仓库、分支、Issue、PR、远端提交及远端文件的读取和管理，必须使用 GitHub 专用插件，继续核实 `master` 基准分支及 Task ID。普通本地源码编辑和本地 Git 工作区操作仍可使用本地文件、Git 工具，但不得通过 Shell、网页或其他间接途径绕过远端 GitHub 插件。
+- **Trello 插件：** `Development Hub` 看板内 Dictation 项目的列表、卡片、原生 Checklist、检查项和生命周期状态必须使用 Trello 专用插件，继续遵守 `rules/project-management.md` 的身份、标签、权限与状态门禁。
+- **Google Drive 插件：** Drive 文件、文件夹、文档和任务附件的搜索、读取、上传、创建、修改、位置验证及管理必须使用 Google Drive 专用插件。本项目任务需要在仓库外持久保存、读取或交换的图片、截图、审核成果及附件，统一存储在 `Trello:Dictation` 根目录或其子目录（逻辑路径 `Google Drive/Trello:Dictation/`）。执行前核实目标文件及实际目录，写入后回读验证，并在对应 Trello Task 记录实际文件链接和完整逻辑路径；不能以聊天文字或临时文件代替。正式 Git 项目文件和本地临时文件仍按现有规则管理。
+
+**禁止替代与回退：** 上述插件负责的操作禁止改用 Computer Use、浏览器自动化、模拟键鼠、命令行、脚本或其他间接方式。插件未连接、不可用、权限不足、不支持所需动作，或调用失败且无法通过该插件解决时，立即停止该操作及依赖步骤，向用户报告插件名称、原计划操作、具体阻塞、已完成的步骤和所需处理，等待用户新的明确指示；不得自动回退或绕行。
+
+**结果验证与边界：** 插件写入后检查返回值并在必要时回读实际远端状态，不能将部分成功报告为全部完成。正常本地文件编辑、Git 工作区操作、.NET 构建与测试、真实 WPF 界面验证不受禁止；但不得借本地工具或 GUI 测试规避上述三插件的远端资源职责。保留 `ProjectInfo.json` 的项目身份核验及既有 Task、PR、版本规则。
+
 ## .NET and SDK Compatibility
 
 - 当前项目使用 .NET 10 / C# / WPF；`TargetFramework` 描述目标 API/运行时兼容性，**不等于必须安装某个精确 SDK 补丁号**。
