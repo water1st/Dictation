@@ -3,30 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:behaviors="clr-namespace:Dictation.Presentation.Behaviors"
              Background="{DynamicResource WindowBackgroundBrush}"
-             Foreground="{DynamicResource ForegroundBrush}">
+             Foreground="{DynamicResource ForegroundBrush}"
+             FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
-        <Style x:Key="DetailSaveButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Padding" Value="16,9" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="14"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/Buttons.xaml" />
+        </ResourceDictionary.MergedDictionaries>
+        <Style x:Key="DetailSaveButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryActionButtonStyle}" />
 
         <Style x:Key="DetailBadgeStyle" TargetType="Border">
             <Setter Property="Margin" Value="0,0,8,8" />
@@ -43,13 +27,12 @@
                     BorderThickness="1"
                     CornerRadius="11">
                 <StackPanel>
-                    <TextBlock FontWeight="SemiBold">
+                    <TextBlock Style="{DynamicResource StrongBodyTextStyle}">
                         <Run Text="{Binding FormLabel, Mode=OneWay}" />
                         <Run Text="：" />
                         <Run Text="{Binding Surface, Mode=OneWay}" />
                     </TextBlock>
-                    <TextBlock Margin="0,2,0,0"
-                               FontSize="12"
+                    <TextBlock Style="{DynamicResource CaptionTextStyle}" Margin="0,2,0,0"
                                Foreground="{DynamicResource SecondaryForegroundBrush}"
                                Text="{Binding DetailLabel}" />
                 </StackPanel>
@@ -58,7 +41,7 @@
 
         <DataTemplate x:Key="MemberTemplate">
             <Border Margin="0,0,0,14"
-                    Padding="20"
+                    Padding="{DynamicResource ContentCardPadding}"
                     Background="{DynamicResource CardBackgroundBrush}"
                     BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="1"
@@ -69,31 +52,28 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontSize="22"
-                                       FontWeight="SemiBold"
+                        <StackPanel>
+                            <TextBlock Style="{DynamicResource GroupHeadwordTextStyle}"
                                        Text="{Binding Headword}" />
-                            <TextBlock Margin="10,5,0,0"
-                                       Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                       Text="{Binding Reading}" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0"
+                                       Text="{Binding Reading}" TextWrapping="Wrap" />
                         </StackPanel>
-                        <TextBlock Grid.Column="1"
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Column="1"
                                    Margin="12,5,0,0"
-                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                   Text="{Binding SourceSenseId}" />
+                                   Text="{Binding SourceSenseId}" TextWrapping="Wrap" />
                     </Grid>
 
                     <WrapPanel Margin="0,12,0,4">
                         <Border Style="{StaticResource DetailBadgeStyle}">
-                            <TextBlock Foreground="{DynamicResource AccentBrush}"
+                            <TextBlock Style="{DynamicResource BodyTextStyle}" Foreground="{DynamicResource AccentBrush}"
                                        Text="{Binding PartOfSpeechLabel}" />
                         </Border>
                         <Border Style="{StaticResource DetailBadgeStyle}">
-                            <TextBlock Foreground="{DynamicResource AccentBrush}"
+                            <TextBlock Style="{DynamicResource BodyTextStyle}" Foreground="{DynamicResource AccentBrush}"
                                        Text="{Binding AttributeLabel}" />
                         </Border>
                         <Border>
-                            <TextBlock Foreground="{DynamicResource AccentBrush}"
+                            <TextBlock Style="{DynamicResource BodyTextStyle}" Foreground="{DynamicResource AccentBrush}"
                                        Text="短语" />
                             <Border.Style>
                                 <Style BasedOn="{StaticResource DetailBadgeStyle}"
@@ -109,8 +89,7 @@
                         </Border>
                     </WrapPanel>
 
-                    <TextBlock Margin="0,4,0,8"
-                               FontWeight="SemiBold"
+                    <TextBlock Style="{DynamicResource SubsectionTitleTextStyle}" Margin="0,4,0,8"
                                Text="词形" />
                     <ItemsControl ItemTemplate="{StaticResource FormTemplate}"
                                   ItemsSource="{Binding Forms}">
@@ -121,8 +100,7 @@
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>
 
-                    <TextBlock Margin="0,10,0,8"
-                               FontWeight="SemiBold"
+                    <TextBlock Style="{DynamicResource FormHeadingTextStyle}" Margin="0,10,0,8"
                                Text="中文释义（每行一条）" />
                     <TextBox MinHeight="78"
                              Padding="12,9"
@@ -137,24 +115,24 @@
                         <Button Command="{Binding SaveCommand}"
                                 Content="保存中文释义"
                                 Style="{StaticResource DetailSaveButtonStyle}" />
-                        <TextBlock Margin="12,0,0,0"
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="12,0,0,0"
                                    VerticalAlignment="Center"
-                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
                                    Text="{Binding SaveStatusMessage}"
                                    TextWrapping="Wrap" />
                     </StackPanel>
                 </StackPanel>
             </Border>
         </DataTemplate>
+        </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Margin="34,28">
+    <Grid Margin="{DynamicResource PageContentMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Grid Margin="0,0,0,20">
+        <Grid Margin="{DynamicResource SectionBottomMargin}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -164,18 +142,15 @@
                     Height="54"
                     Background="{DynamicResource AccentSoftBrush}"
                     CornerRadius="27">
-                <TextBlock HorizontalAlignment="Center"
+                <TextBlock Style="{DynamicResource PageIconTextStyle}" HorizontalAlignment="Center"
                            VerticalAlignment="Center"
-                           FontSize="25"
                            Foreground="{DynamicResource AccentBrush}"
                            Text="◎" />
             </Border>
             <StackPanel Grid.Column="1" Margin="16,0,0,0">
-                <TextBlock FontSize="28"
-                           FontWeight="SemiBold"
-                           Text="{Binding SourceText}" />
-                <TextBlock Margin="0,4,0,0"
-                           Foreground="{DynamicResource SecondaryForegroundBrush}">
+                <TextBlock Style="{DynamicResource PageTitleTextStyle}"
+                           Text="{Binding SourceText}" TextWrapping="Wrap" />
+                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0" TextWrapping="Wrap" >
                     <Run Text="{Binding DecisionLabel, Mode=OneWay}" />
                     <Run Text=" · 整组词条详情" />
                 </TextBlock>
@@ -184,7 +159,7 @@
                     Padding="12,8"
                     Background="{DynamicResource AccentSoftBrush}"
                     CornerRadius="15">
-                <TextBlock FontWeight="SemiBold"
+                <TextBlock Style="{DynamicResource StrongBodyTextStyle}"
                            Foreground="{DynamicResource AccentBrush}"
                            Text="{Binding LanguageLabel}" />
             </Border>

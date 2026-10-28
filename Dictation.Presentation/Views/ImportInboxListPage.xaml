@@ -3,30 +3,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:behaviors="clr-namespace:Dictation.Presentation.Behaviors"
              Background="{DynamicResource WindowBackgroundBrush}"
-             Foreground="{DynamicResource ForegroundBrush}">
+             Foreground="{DynamicResource ForegroundBrush}"
+             FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
-        <Style x:Key="InboxButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Padding" Value="16,9" />
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/Buttons.xaml" />
+        </ResourceDictionary.MergedDictionaries>
+        <Style x:Key="InboxButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryActionButtonStyle}">
             <Setter Property="Margin" Value="0,0,10,0" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="14"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
         <Style x:Key="InboxListItemStyle" TargetType="ListBoxItem">
@@ -63,13 +48,11 @@
 
         <DataTemplate x:Key="BatchTemplate">
             <StackPanel>
-                <TextBlock FontWeight="SemiBold" Text="批次" />
-                <TextBlock Margin="0,3,0,0"
-                           Foreground="{DynamicResource SecondaryForegroundBrush}"
-                           Text="{Binding Items.Count, StringFormat=项目 {0} 个}" />
-                <TextBlock Margin="0,3,0,0"
-                           Foreground="{DynamicResource SecondaryForegroundBrush}"
-                           Text="{Binding CreatedAtUtc, StringFormat={}{0:yyyy-MM-dd HH:mm}}" />
+                <TextBlock Style="{DynamicResource StrongBodyTextStyle}" Text="批次" />
+                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,3,0,0"
+                           Text="{Binding Items.Count, StringFormat=项目 {0} 个}" TextWrapping="Wrap" />
+                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,3,0,0"
+                           Text="{Binding CreatedAtUtc, StringFormat={}{0:yyyy-MM-dd HH:mm}}" TextWrapping="Wrap" />
             </StackPanel>
         </DataTemplate>
 
@@ -88,23 +71,20 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock FontSize="17"
-                                   FontWeight="SemiBold"
-                                   Text="{Binding SourceText}" />
-                        <TextBlock Grid.Column="1"
+                        <TextBlock Style="{DynamicResource ListTitleTextStyle}"
+                                   Text="{Binding SourceText}" TextWrapping="Wrap" />
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Column="1"
                                    Margin="12,0,0,0"
-                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                   Text="{Binding DecisionLabel}" />
+                                   Text="{Binding DecisionLabel}" TextWrapping="Wrap" />
                     </Grid>
-                    <TextBlock Margin="0,4,0,0"
+                    <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,4,0,0"
                                Foreground="{DynamicResource AccentBrush}"
                                Text="{Binding PrimaryMember.Headword}" />
                     <ItemsControl Margin="0,4,0,0"
                                   ItemsSource="{Binding PrimaryMember.Meanings}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Margin="0,1"
-                                           Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,1"
                                            TextWrapping="Wrap">
                                     <Run Text="•  " />
                                     <Run Text="{Binding Path=., Mode=OneWay}" />
@@ -135,7 +115,7 @@
                                   ItemsSource="{Binding PrimaryMember.Forms}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Foreground="{DynamicResource SecondaryForegroundBrush}">
+                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" TextWrapping="Wrap" >
                                     <Run Text="{Binding FormLabel, Mode=OneWay}" />
                                     <Run Text="：" />
                                     <Run Text="{Binding Surface, Mode=OneWay}" />
@@ -146,9 +126,10 @@
                 </StackPanel>
             </Grid>
         </DataTemplate>
+        </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Margin="34,28">
+    <Grid Margin="{DynamicResource PageContentMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -156,7 +137,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="0,0,0,20">
+        <Grid Grid.Row="0" Margin="{DynamicResource SectionBottomMargin}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -166,25 +147,22 @@
                     Height="54"
                     Background="{DynamicResource AccentSoftBrush}"
                     CornerRadius="27">
-                <TextBlock HorizontalAlignment="Center"
+                <TextBlock Style="{DynamicResource PageIconTextStyle}" HorizontalAlignment="Center"
                            VerticalAlignment="Center"
-                           FontSize="25"
                            Foreground="{DynamicResource AccentBrush}"
                            Text="▣" />
             </Border>
-            <StackPanel Grid.Column="1" Margin="16,0,0,0">
-                <TextBlock FontSize="28"
-                           FontWeight="SemiBold"
-                           Text="{Binding WindowTitle}" />
-                <TextBlock Margin="0,4,0,0"
-                           Foreground="{DynamicResource SecondaryForegroundBrush}"
-                           Text="确认词组后，送入学习、复习，或直接丢弃。" />
+            <StackPanel Grid.Column="1" Margin="16,0,0,0" Style="{DynamicResource HeaderTextGroupStyle}">
+                <TextBlock Style="{DynamicResource PageTitleTextStyle}"
+                           Text="{Binding WindowTitle}" TextWrapping="Wrap" />
+                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0"
+                           Text="确认词组，再分配去向" TextWrapping="Wrap" />
             </StackPanel>
             <Border Grid.Column="2"
                     Padding="12,8"
                     Background="{DynamicResource AccentSoftBrush}"
                     CornerRadius="15">
-                <TextBlock FontWeight="SemiBold"
+                <TextBlock Style="{DynamicResource StrongBodyTextStyle}"
                            Foreground="{DynamicResource AccentBrush}"
                            Text="{Binding LanguageLabel}" />
             </Border>
@@ -199,7 +177,7 @@
                      Background="{DynamicResource CardBackgroundBrush}"
                      BorderBrush="{DynamicResource BorderBrush}"
                      BorderThickness="1"
-                     FontSize="16"
+                     FontSize="{DynamicResource ControlFontSize}"
                      Text="{Binding FilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      ToolTip="筛选当前批次项目" />
             <Button Grid.Column="1"
@@ -227,8 +205,7 @@
                         BorderThickness="1"
                         CornerRadius="18">
                     <StackPanel>
-                        <TextBlock FontSize="17"
-                                   FontWeight="SemiBold"
+                        <TextBlock Style="{DynamicResource SectionTitleTextStyle}"
                                    Text="待确认批次" />
                         <ListBox Margin="0,12,0,0"
                                  Background="Transparent"
@@ -254,7 +231,7 @@
                         <CheckBox Content="全选"
                                   IsThreeState="False"
                                   IsChecked="{Binding IsAllSelected, Mode=TwoWay}"
-                                  FontSize="16"
+                                  FontSize="{DynamicResource ControlFontSize}"
                                   FontWeight="SemiBold" />
                         <ListBox Grid.Row="1"
                                  Margin="0,12,0,0"
@@ -264,10 +241,9 @@
                                  ItemTemplate="{StaticResource InboxItemTemplate}"
                                  ItemsSource="{Binding Items}"
                                  SelectedItem="{Binding SelectedItem, Mode=TwoWay}" />
-                        <TextBlock Grid.Row="1"
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Row="1"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
-                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
                                    Text="{Binding EmptyStateText}"
                                    TextWrapping="Wrap" />
                     </Grid>
@@ -280,7 +256,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock VerticalAlignment="Center"
+            <TextBlock Style="{DynamicResource BodyTextStyle}" VerticalAlignment="Center"
                        Foreground="{DynamicResource ErrorBrush}"
                        Text="{Binding ErrorMessage}"
                        TextWrapping="Wrap" />

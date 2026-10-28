@@ -3,15 +3,21 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:views="clr-namespace:Dictation.Presentation.Views"
              xmlns:configuration="clr-namespace:Dictation.Core.Configuration;assembly=Dictation.Core"
-             Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}">
+             Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
+             FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
-        <Style TargetType="Button"><Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" /><Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" /><Setter Property="BorderThickness" Value="0" /><Setter Property="Padding" Value="14,9" /><Setter Property="Margin" Value="4,0" /></Style>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/Buttons.xaml" />
+        </ResourceDictionary.MergedDictionaries>
+        <Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}"><Setter Property="Padding" Value="14,9" /><Setter Property="Margin" Value="4,0" /></Style>
+        </ResourceDictionary>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="36,24" MaxWidth="900">
-            <TextBlock Text="{Binding WindowTitle}" FontSize="28" FontWeight="SemiBold" />
-            <TextBlock Text="每一天的小进步，都值得留下。" Margin="0,8,0,24" Foreground="{DynamicResource SecondaryForegroundBrush}" />
-            <Border Padding="20" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="24">
+        <StackPanel Margin="{DynamicResource PageContentMargin}" MaxWidth="900">
+            <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" TextWrapping="Wrap" />
+            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="记录每日学习变化" Margin="0,8,0,24" TextWrapping="Wrap" />
+            <Border Padding="{DynamicResource ContentCardPadding}" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="24">
                 <StackPanel>
                     <DockPanel Margin="0,0,0,16">
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
@@ -19,10 +25,10 @@
                             <Button Content="本月" Command="{Binding CurrentMonthCommand}" />
                             <Button Content="›" Command="{Binding NextMonthCommand}" ToolTip="下个月" />
                         </StackPanel>
-                        <TextBlock x:Name="CalendarMonthLabel" Text="{Binding MonthLabel}" FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <TextBlock Style="{DynamicResource CalendarTitleTextStyle}" x:Name="CalendarMonthLabel" Text="{Binding MonthLabel}" VerticalAlignment="Center" />
                     </DockPanel>
                     <UniformGrid Columns="7" Margin="0,0,0,8">
-                        <TextBlock Text="一" HorizontalAlignment="Center" /><TextBlock Text="二" HorizontalAlignment="Center" /><TextBlock Text="三" HorizontalAlignment="Center" /><TextBlock Text="四" HorizontalAlignment="Center" /><TextBlock Text="五" HorizontalAlignment="Center" /><TextBlock Text="六" HorizontalAlignment="Center" /><TextBlock Text="日" HorizontalAlignment="Center" />
+                        <TextBlock Style="{DynamicResource BodyTextStyle}" Text="一" HorizontalAlignment="Center" /><TextBlock Style="{DynamicResource BodyTextStyle}" Text="二" HorizontalAlignment="Center" /><TextBlock Style="{DynamicResource BodyTextStyle}" Text="三" HorizontalAlignment="Center" /><TextBlock Style="{DynamicResource BodyTextStyle}" Text="四" HorizontalAlignment="Center" /><TextBlock Style="{DynamicResource BodyTextStyle}" Text="五" HorizontalAlignment="Center" /><TextBlock Style="{DynamicResource BodyTextStyle}" Text="六" HorizontalAlignment="Center" /><TextBlock Style="{DynamicResource BodyTextStyle}" Text="日" HorizontalAlignment="Center" />
                     </UniformGrid>
                     <ItemsControl x:Name="MonthGrid" ItemsSource="{Binding Cells}">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="7" Rows="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
@@ -31,7 +37,7 @@
                                 <Border Margin="3" Padding="9,7" MinHeight="84" CornerRadius="16" Background="{DynamicResource WindowBackgroundBrush}" ToolTip="{Binding Details}">
                                     <Border.Style><Style TargetType="Border"><Setter Property="Opacity" Value="1" /><Style.Triggers><DataTrigger Binding="{Binding HasDate}" Value="False"><Setter Property="Opacity" Value="0" /></DataTrigger></Style.Triggers></Style></Border.Style>
                                     <StackPanel>
-                                        <TextBlock Text="{Binding DayLabel}" FontWeight="SemiBold" />
+                                        <TextBlock Style="{DynamicResource StrongBodyTextStyle}" Text="{Binding DayLabel}" />
                                         <StackPanel Orientation="Horizontal" Margin="0,9,0,0" HorizontalAlignment="Center">
                                             <views:LanguageBadge SourceLanguage="{x:Static configuration:LearningLanguage.Japanese}" IsActive="{Binding JapaneseIsCheckedIn}" Margin="0,0,6,0" />
                                             <views:LanguageBadge SourceLanguage="{x:Static configuration:LearningLanguage.English}" IsActive="{Binding EnglishIsCheckedIn}" />
@@ -41,53 +47,53 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <TextBlock Text="日语与英语分别完成当天任务，分别点亮自己的徽章。" Margin="0,14,0,0" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}" />
-                    <TextBlock Text="{Binding CalendarErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                    <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="日语与英语分别完成当天任务，分别点亮自己的徽章。" Margin="0,14,0,0" TextWrapping="Wrap" />
+                    <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding CalendarErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" Margin="0,8,0,0" />
                     <Button Content="刷新记录" Command="{Binding RefreshCommand}" HorizontalAlignment="Left" Margin="0,12,0,0" />
                 </StackPanel>
             </Border>
-            <TextBlock Text="{Binding ReportErrorMessage}" Foreground="{DynamicResource ErrorBrush}" Margin="0,16,0,0" TextWrapping="Wrap" />
-            <Border Margin="0,20,0,0" Padding="20" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="24">
+            <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding ReportErrorMessage}" Foreground="{DynamicResource ErrorBrush}" Margin="0,16,0,0" TextWrapping="Wrap" />
+            <Border Margin="0,20,0,0" Padding="{DynamicResource ContentCardPadding}" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="24">
                 <StackPanel>
-                    <TextBlock Text="词汇小结 · 按词组计数" FontSize="20" FontWeight="SemiBold" />
-                    <WrapPanel Margin="0,16,0,0">
-                        <StackPanel Width="130" Margin="0,0,10,12"><TextBlock Text="累计已学" /><TextBlock x:Name="LearnedCount" Text="{Binding Report.LearnedGroupCount}" FontSize="28" FontWeight="SemiBold" /></StackPanel>
-                        <StackPanel Width="130" Margin="0,0,10,12"><TextBlock Text="今日学习" /><TextBlock x:Name="TodayLearnedCount" Text="{Binding Report.TodayLearnedGroupCount}" FontSize="28" FontWeight="SemiBold" /></StackPanel>
-                        <StackPanel Width="130" Margin="0,0,10,12"><TextBlock Text="今日复习" /><TextBlock x:Name="TodayReviewedCount" Text="{Binding Report.TodayReviewedGroupCount}" FontSize="28" FontWeight="SemiBold" /></StackPanel>
-                        <StackPanel Width="130" Margin="0,0,10,12"><TextBlock Text="等待初测" /><TextBlock Text="{Binding Report.PendingTestGroupCount}" FontSize="28" FontWeight="SemiBold" /></StackPanel>
-                        <StackPanel Width="130" Margin="0,0,10,12"><TextBlock Text="已逾期" /><TextBlock Text="{Binding Report.OverdueGroupCount}" FontSize="28" FontWeight="SemiBold" /></StackPanel>
-                    </WrapPanel>
-                    <TextBlock Text="{Binding Report.MistakesDescription}" Margin="0,8,0,12" Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                    <TextBlock Style="{DynamicResource SectionTitleTextStyle}" Text="词汇小结 · 按词组计数" />
+                    <UniformGrid Columns="5" Margin="0,16,0,0">
+                        <StackPanel Margin="0,0,12,12"><TextBlock Style="{DynamicResource BodyTextStyle}" Text="累计已学" /><TextBlock Style="{DynamicResource StatisticValueTextStyle}" x:Name="LearnedCount" Text="{Binding Report.LearnedGroupCount}" /></StackPanel>
+                        <StackPanel Margin="0,0,12,12"><TextBlock Style="{DynamicResource BodyTextStyle}" Text="今日学习" /><TextBlock Style="{DynamicResource StatisticValueTextStyle}" x:Name="TodayLearnedCount" Text="{Binding Report.TodayLearnedGroupCount}" /></StackPanel>
+                        <StackPanel Margin="0,0,12,12"><TextBlock Style="{DynamicResource BodyTextStyle}" Text="今日复习" /><TextBlock Style="{DynamicResource StatisticValueTextStyle}" x:Name="TodayReviewedCount" Text="{Binding Report.TodayReviewedGroupCount}" /></StackPanel>
+                        <StackPanel Margin="0,0,12,12"><TextBlock Style="{DynamicResource BodyTextStyle}" Text="等待初测" /><TextBlock Style="{DynamicResource StatisticValueTextStyle}" Text="{Binding Report.PendingTestGroupCount}" /></StackPanel>
+                        <StackPanel Margin="0,0,12,12"><TextBlock Style="{DynamicResource BodyTextStyle}" Text="已逾期" /><TextBlock Style="{DynamicResource StatisticValueTextStyle}" Text="{Binding Report.OverdueGroupCount}" /></StackPanel>
+                    </UniformGrid>
+                    <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="{Binding Report.MistakesDescription}" Margin="0,8,0,12" TextWrapping="Wrap" />
                     <ItemsControl x:Name="FrequentMistakes" ItemsSource="{Binding Report.TopMistakes}">
                         <ItemsControl.ItemTemplate><DataTemplate>
                             <Border Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="12" Padding="14,10" Margin="0,0,0,6">
-                                <DockPanel><TextBlock DockPanel.Dock="Right" Margin="14,0,0,0"><Run Text="{Binding ErrorCount}" /><Run Text=" 次错误" /></TextBlock>
-                                    <StackPanel><TextBlock Text="{Binding Headword}" FontSize="16" FontWeight="SemiBold" /><TextBlock Text="{Binding Meanings}" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}" /></StackPanel>
+                                <DockPanel><TextBlock Style="{DynamicResource BodyTextStyle}" DockPanel.Dock="Right" Margin="14,0,0,0"><Run Text="{Binding ErrorCount}" /><Run Text=" 次错误" /></TextBlock>
+                                    <StackPanel><TextBlock Style="{DynamicResource SubsectionTitleTextStyle}" Text="{Binding Headword}" /><TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="{Binding Meanings}" TextWrapping="Wrap" /></StackPanel>
                                 </DockPanel>
                             </Border>
                         </DataTemplate></ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </StackPanel>
             </Border>
-            <Border Margin="0,20,0,0" Padding="20" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="24">
+            <Border Margin="0,20,0,0" Padding="{DynamicResource ContentCardPadding}" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="24">
                 <StackPanel>
-                    <TextBlock Text="记忆的脚印" FontSize="20" FontWeight="SemiBold" />
-                    <TextBlock x:Name="RetentionCaption" Text="{Binding Report.RetentionDescription}" Margin="0,8,0,16" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                    <TextBlock Style="{DynamicResource SectionTitleTextStyle}" Text="记忆的脚印" />
+                    <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" x:Name="RetentionCaption" Text="{Binding Report.RetentionDescription}" Margin="0,8,0,16" TextWrapping="Wrap" />
                     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="38" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                        <Grid><TextBlock Text="100%" VerticalAlignment="Top" FontSize="11" /><TextBlock Text="0%" VerticalAlignment="Bottom" FontSize="11" /></Grid>
+                        <Grid><TextBlock Style="{DynamicResource MetadataTextStyle}" Text="100%" VerticalAlignment="Top" /><TextBlock Style="{DynamicResource MetadataTextStyle}" Text="0%" VerticalAlignment="Bottom" /></Grid>
                         <Viewbox Grid.Column="1" Stretch="Fill" Height="150"><Canvas Width="600" Height="150">
                             <Line X1="0" Y1="140" X2="600" Y2="140" Stroke="{DynamicResource SecondaryForegroundBrush}" Opacity="0.3" />
                             <Polyline x:Name="RetentionLine" Points="{Binding Report.RetentionPoints}" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3" />
                         </Canvas></Viewbox>
                     </Grid>
-                    <DockPanel Margin="38,8,0,16"><TextBlock DockPanel.Dock="Right" Text="{Binding Report.RetentionEndLabel}" /><TextBlock Text="{Binding Report.RetentionStartLabel}" /></DockPanel>
-                    <TextBlock Text="接下来要复习" FontSize="18" FontWeight="SemiBold" />
-                    <TextBlock Text="{Binding Report.DueDescription}" Margin="0,8,0,12" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                    <DockPanel Margin="38,8,0,16"><TextBlock Style="{DynamicResource BodyTextStyle}" DockPanel.Dock="Right" Text="{Binding Report.RetentionEndLabel}" /><TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding Report.RetentionStartLabel}" /></DockPanel>
+                    <TextBlock Style="{DynamicResource SectionTitleTextStyle}" Text="接下来要复习" />
+                    <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="{Binding Report.DueDescription}" Margin="0,8,0,12" TextWrapping="Wrap" />
                     <ItemsControl x:Name="DueBars" ItemsSource="{Binding Report.DueBars}">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="14" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate><DataTemplate><StackPanel>
-                            <Grid Height="128" Margin="3,0"><StackPanel VerticalAlignment="Bottom"><TextBlock Text="{Binding CountLabel}" HorizontalAlignment="Center" FontSize="11" /><Border Height="{Binding Height}" Background="{DynamicResource AccentSoftBrush}" CornerRadius="5,5,0,0" /></StackPanel></Grid>
-                            <TextBlock Text="{Binding DateLabel}" FontSize="10" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                            <Grid Height="128" Margin="3,0"><StackPanel VerticalAlignment="Bottom"><TextBlock Style="{DynamicResource MetadataTextStyle}" Text="{Binding CountLabel}" HorizontalAlignment="Center" /><Border Height="{Binding Height}" Background="{DynamicResource AccentSoftBrush}" CornerRadius="5,5,0,0" /></StackPanel></Grid>
+                            <TextBlock Style="{DynamicResource FinePrintTextStyle}" Text="{Binding DateLabel}" HorizontalAlignment="Center" Margin="0,6,0,0" />
                         </StackPanel></DataTemplate></ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </StackPanel>

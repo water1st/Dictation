@@ -5,6 +5,14 @@
              xmlns:views="clr-namespace:Dictation.Presentation.Views"
              ShutdownMode="OnMainWindowClose">
     <Application.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="Theme/Typography.xaml" />
+            <ResourceDictionary Source="Theme/Layout.xaml" />
+            <ResourceDictionary Source="Theme/FormControls.xaml" />
+            <ResourceDictionary Source="Theme/NavigationCards.xaml" />
+            <ResourceDictionary Source="Theme/Buttons.xaml" />
+        </ResourceDictionary.MergedDictionaries>
         <DataTemplate DataType="{x:Type viewModels:StatisticsViewModel}"><views:StatisticsPage /></DataTemplate>
         <DataTemplate DataType="{x:Type viewModels:McpSettingsViewModel}"><views:McpSettingsPage /></DataTemplate>
         <DataTemplate DataType="{x:Type viewModels:KanaPlanViewModel}"><views:KanaPlanPage /></DataTemplate>
@@ -41,5 +49,6 @@
         <DataTemplate DataType="{x:Type viewModels:WrongAnswerListViewModel}">
             <views:WrongAnswerListPage />
         </DataTemplate>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>
