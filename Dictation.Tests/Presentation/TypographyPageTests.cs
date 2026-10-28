@@ -1,10 +1,12 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
+using Dictation.Presentation.Theme;
 using Dictation.Presentation.Views;
 
 namespace Dictation.Tests.Presentation
 {
-    /// <summary>验证页面正文、标题和普通操作共用一致的字号角色。</summary>
+    /// <summary>验证全应用信息层级、同级控件文字和共享样式传播。</summary>
     public sealed class TypographyPageTests
     {
         [Theory]
@@ -222,6 +224,26 @@ namespace Dictation.Tests.Presentation
             Assert.Equal(FontWeights.Normal, description.FontWeight);
             Assert.Equal(FontWeights.SemiBold, progress.FontWeight);
             Assert.Equal(18d, Assert.Single(FormControlThemeTests.Children<TextBlock>(page), text => text.Text == "开始学习").FontSize);
+            return Task.CompletedTask;
+        });
+
+        [Theory]
+        [InlineData(typeof(LearningPlanPage), "LearningGroupTemplate", "PrimaryMember.Headword")]
+        [InlineData(typeof(LexiconLookupPage), "LookupResultTemplate", "Headword")]
+        public Task ListTemplate_DarkTheme_UsesReadableSharedHeadingColor(Type pageType, string templateKey, string bindingPath) => ReviewPlanPageTests.RunStaAsync(() =>
+        {
+            var page = (UserControl)Activator.CreateInstance(pageType)!;
+            var list = new ListBox
+            {
+                ItemTemplate = (DataTemplate)page.Resources[templateKey],
+                ItemsSource = new[] { new { Headword = "勉強する", PrimaryMember = new { Headword = "勉強する" } } }
+            };
+            var host = FormControlThemeTests.CreateHost(list);
+            ThemePalette.Apply(host.Resources, ResolvedTheme.Dark);
+            FormControlThemeTests.Layout(host);
+            var heading = Assert.Single(FormControlThemeTests.Children<TextBlock>(list), text =>
+                text.GetBindingExpression(TextBlock.TextProperty)?.ParentBinding.Path?.Path == bindingPath);
+            Assert.Equal(((SolidColorBrush)host.Resources["ForegroundBrush"]).Color, ((SolidColorBrush)heading.Foreground).Color);
             return Task.CompletedTask;
         });
     }

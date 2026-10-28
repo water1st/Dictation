@@ -25,10 +25,12 @@ namespace Dictation.Tests.Presentation
             vm.ExampleQuery = "go";
             await vm.SearchExamplesAsync(TestContext.Current.CancellationToken);
             var page = new ReviewPlanPage { DataContext = vm, Width = 900, Height = 1500 };
+            var host = FormControlThemeTests.CreateHost(page);
+            host.Width = 900;
             ThemePalette.Apply(page.Resources, ResolvedTheme.Dark);
-            page.Measure(new Size(900, 1500));
-            page.Arrange(new Rect(0, 0, 900, 1500));
-            page.UpdateLayout();
+            host.Measure(new Size(900, 1500));
+            host.Arrange(new Rect(0, 0, 900, 1500));
+            host.UpdateLayout();
             var candidates = Assert.Single(Children<ListBox>(page), list => ReferenceEquals(list.ItemsSource, vm.ExampleCandidates));
             Assert.NotEmpty(candidates.Items);
             candidates.SetCurrentValue(ListBox.SelectedItemProperty, candidates.Items[0]);

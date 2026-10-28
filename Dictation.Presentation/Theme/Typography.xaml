@@ -39,6 +39,7 @@
     <Style x:Key="BodyTextStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{DynamicResource BodyFontSize}" />
         <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
     </Style>
     <Style x:Key="StrongBodyTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
         <Setter Property="FontWeight" Value="SemiBold" />
