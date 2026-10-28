@@ -17,16 +17,24 @@
         <StackPanel MaxWidth="880">
             <TextBlock Style="{DynamicResource HeroTitleTextStyle}" Text="AI 导入设置" />
             <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,8,0,24" TextWrapping="Wrap"
-                       Text="让Agent帮你查词和准备导入。导入只进入收件箱，学习或复习仍由你确认。" />
+                       Text="外部工具导入，词条统一确认" />
             <Border x:Name="SettingsCard" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="22" Padding="24">
                 <StackPanel>
                     <CheckBox x:Name="McpEnabled" Content="开启本机 MCP 服务（默认关闭）" IsChecked="{Binding Enabled}" />
-                    <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,20,0,6" Text="监听端口 · 1024–65535" />
-                    <TextBox x:Name="PortInput" Text="{Binding PortText, UpdateSourceTrigger=PropertyChanged}" Width="140" HorizontalAlignment="Left"
-                             Padding="10,6" SpellCheck.IsEnabled="False" Foreground="{DynamicResource ForegroundBrush}" Background="{DynamicResource WindowBackgroundBrush}" />
-                    <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,16,0,6" Text="本机地址 · 可选中复制" />
-                    <TextBox x:Name="EndpointOutput" IsReadOnly="True" Text="{Binding EndpointText, Mode=OneWay}" Padding="10,6"
-                             Foreground="{DynamicResource ForegroundBrush}" Background="{DynamicResource WindowBackgroundBrush}" />
+                    <Grid Margin="0,20,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="120" /><ColumnDefinition Width="16" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="16" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Style="{DynamicResource FormHeadingTextStyle}" Text="监听端口" />
+                            <TextBlock Style="{DynamicResource CaptionTextStyle}" Text="1024–65535" Margin="0,4,0,0" />
+                        </StackPanel>
+                        <TextBox x:Name="PortInput" Grid.Column="2" Text="{Binding PortText, UpdateSourceTrigger=PropertyChanged}" Width="140" HorizontalAlignment="Left" Padding="10,6" SpellCheck.IsEnabled="False" />
+                        <StackPanel Grid.Row="2" VerticalAlignment="Center">
+                            <TextBlock Style="{DynamicResource FormHeadingTextStyle}" Text="本机地址" />
+                            <TextBlock Style="{DynamicResource CaptionTextStyle}" Text="可选中复制" Margin="0,4,0,0" />
+                        </StackPanel>
+                        <TextBox x:Name="EndpointOutput" Grid.Row="2" Grid.Column="2" IsReadOnly="True" Text="{Binding EndpointText, Mode=OneWay}" Padding="10,6" />
+                    </Grid>
                     <TextBlock Style="{DynamicResource BodyTextStyle}" x:Name="RuntimeStatus" Margin="0,12,0,0" Text="{Binding RuntimeStatusLabel}" Foreground="{DynamicResource AccentBrush}" />
                     <WrapPanel Margin="0,12,0,0">
                         <Button x:Name="SaveButton" Content="保存并应用" Command="{Binding SaveCommand}" Padding="18,10" Margin="0,0,12,0" />

@@ -22,12 +22,13 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="42,26" MaxWidth="880" HorizontalAlignment="Stretch">
+        <StackPanel Margin="{DynamicResource PageContentMargin}" MaxWidth="880" HorizontalAlignment="Stretch">
             <TextBlock Style="{DynamicResource HeroTitleTextStyle}" Text="假名小练习" />
             <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,8,0,20"
-                       Text="不混入词汇表。先听发音，再写出指定字形；错项稍后重练。" TextWrapping="Wrap" />
+                       Text="听音后写出假名，错项稍后重练" TextWrapping="Wrap" />
             <Border Padding="24" CornerRadius="22" Background="{DynamicResource CardBackgroundBrush}">
                 <StackPanel>
+                    <TextBlock Style="{DynamicResource CaptionTextStyle}" Text="独立练习假名，不混入词汇表。" Margin="0,0,0,12" />
                     <CheckBox Content="启用五十音每日计划" IsChecked="{Binding Enabled}" />
                     <TextBlock Style="{DynamicResource FormHeadingTextStyle}" Margin="0,16,0,0" Text="书写字形 · 至少选择一种" />
                     <WrapPanel>

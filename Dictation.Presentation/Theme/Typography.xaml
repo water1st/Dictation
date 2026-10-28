@@ -8,11 +8,11 @@
     <system:Double x:Key="MetadataFontSize">11</system:Double>
     <system:Double x:Key="FinePrintFontSize">10</system:Double>
     <system:Double x:Key="BadgeFontSize">13</system:Double>
-    <system:Double x:Key="HeroTitleFontSize">30</system:Double>
+    <system:Double x:Key="HeroTitleFontSize">40</system:Double>
     <system:Double x:Key="PageTitleFontSize">28</system:Double>
-    <system:Double x:Key="LanguageEntryTitleFontSize">25</system:Double>
-    <system:Double x:Key="WorkspaceTitleFontSize">23</system:Double>
-    <system:Double x:Key="NavigationTitleFontSize">18</system:Double>
+    <system:Double x:Key="LanguageEntryTitleFontSize">65</system:Double>
+    <system:Double x:Key="WorkspaceTitleFontSize">32</system:Double>
+    <system:Double x:Key="NavigationTitleFontSize">28</system:Double>
     <system:Double x:Key="PanelTitleFontSize">24</system:Double>
     <system:Double x:Key="WindowTitleFontSize">20</system:Double>
     <system:Double x:Key="SectionTitleFontSize">20</system:Double>

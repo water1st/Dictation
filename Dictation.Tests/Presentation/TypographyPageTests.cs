@@ -10,10 +10,10 @@ namespace Dictation.Tests.Presentation
     public sealed class TypographyPageTests
     {
         [Theory]
-        [InlineData(typeof(HomePage), "今天想练什么？", 30)]
-        [InlineData(typeof(KanaPlanPage), "假名小练习", 30)]
-        [InlineData(typeof(KanaSessionPage), "五十音听写", 30)]
-        [InlineData(typeof(McpSettingsPage), "AI 导入设置", 30)]
+        [InlineData(typeof(HomePage), "今天想练什么？", 40)]
+        [InlineData(typeof(KanaPlanPage), "假名小练习", 40)]
+        [InlineData(typeof(KanaSessionPage), "五十音听写", 40)]
+        [InlineData(typeof(McpSettingsPage), "AI 导入设置", 40)]
         [InlineData(typeof(SettingsPage), "外观与主题", 24)]
         [InlineData(typeof(TextImportPage), "", 28)]
         [InlineData(typeof(LearningPlanPage), "", 28)]
@@ -25,7 +25,7 @@ namespace Dictation.Tests.Presentation
         [InlineData(typeof(WrongAnswerListPage), "", 28)]
         [InlineData(typeof(PracticeSessionPage), "", 28)]
         [InlineData(typeof(StatisticsPage), "", 28)]
-        [InlineData(typeof(LanguageWorkspacePage), "", 23)]
+        [InlineData(typeof(LanguageWorkspacePage), "", 32)]
         public Task Page_TextRoles_PreserveOriginalHeadingHierarchy(Type pageType, string title, double titleSize) => ReviewPlanPageTests.RunStaAsync(() =>
         {
             var page = (UserControl)Activator.CreateInstance(pageType)!;
@@ -142,15 +142,15 @@ namespace Dictation.Tests.Presentation
             Assert.Equal(2, languageTitles.Length);
             Assert.All(languageTitles, text =>
             {
-                Assert.Equal(25d, text.FontSize);
+                Assert.Equal(65d, text.FontSize);
                 Assert.Equal(FontWeights.SemiBold, text.FontWeight);
             });
             var feature = Assert.Single(FormControlThemeTests.Children<TextBlock>(workspace), text => text.Text == "开始学习");
-            Assert.Equal(18d, feature.FontSize);
+            Assert.Equal(28d, feature.FontSize);
             host.Resources["LanguageEntryTitleFontSize"] = 27d;
             FormControlThemeTests.Layout(host);
             Assert.All(languageTitles, text => Assert.Equal(27d, text.FontSize));
-            Assert.Equal(18d, feature.FontSize);
+            Assert.Equal(28d, feature.FontSize);
             Assert.Equal(14d, home.FontSize);
             return Task.CompletedTask;
         });
@@ -217,13 +217,13 @@ namespace Dictation.Tests.Presentation
             FormControlThemeTests.Layout(host);
             host.Resources["BodyFontSize"] = 15d;
             FormControlThemeTests.Layout(host);
-            var description = Assert.Single(FormControlThemeTests.Children<TextBlock>(page), text => text.Text == "继续当前一轮，或开始新一轮");
+            var description = Assert.Single(FormControlThemeTests.Children<TextBlock>(page), text => text.Text == "继续学习开启新轮");
             var progress = (TextBlock)page.FindName("LearningProgressText");
             Assert.Equal(15d, description.FontSize);
             Assert.Equal(15d, progress.FontSize);
             Assert.Equal(FontWeights.Normal, description.FontWeight);
             Assert.Equal(FontWeights.SemiBold, progress.FontWeight);
-            Assert.Equal(18d, Assert.Single(FormControlThemeTests.Children<TextBlock>(page), text => text.Text == "开始学习").FontSize);
+            Assert.Equal(28d, Assert.Single(FormControlThemeTests.Children<TextBlock>(page), text => text.Text == "开始学习").FontSize);
             return Task.CompletedTask;
         });
 

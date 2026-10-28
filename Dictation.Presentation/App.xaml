@@ -8,6 +8,7 @@
         <ResourceDictionary>
         <ResourceDictionary.MergedDictionaries>
             <ResourceDictionary Source="Theme/Typography.xaml" />
+            <ResourceDictionary Source="Theme/Layout.xaml" />
             <ResourceDictionary Source="Theme/FormControls.xaml" />
             <ResourceDictionary Source="Theme/NavigationCards.xaml" />
             <ResourceDictionary Source="Theme/Buttons.xaml" />

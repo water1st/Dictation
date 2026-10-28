@@ -14,18 +14,19 @@
         <BooleanToVisibilityConverter x:Key="BoolVisibility" />
         </ResourceDictionary>
     </UserControl.Resources>
-    <Grid Margin="32,22">
+    <Grid Margin="{DynamicResource PageContentMargin}">
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition /></Grid.RowDefinitions>
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,14" VerticalAlignment="Center">
-            <views:LanguageBadge SourceLanguage="{Binding SelectedLanguage}" IsActive="True" Margin="0,0,12,0" />
-            <TextBlock Style="{DynamicResource WorkspaceTitleTextStyle}" Text="{Binding CurrentLanguageLabel}" VerticalAlignment="Center" />
-            <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="12" Padding="12,5" Margin="14,0,0,0" VerticalAlignment="Center">
-                <TextBlock Style="{DynamicResource BadgeTextStyle}" Text="学习与复习" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
-            </Border>
-        </StackPanel>
+        <Grid Margin="{DynamicResource SectionBottomMargin}">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="16" /><ColumnDefinition /></Grid.ColumnDefinitions>
+            <views:LanguageBadge SourceLanguage="{Binding SelectedLanguage}" IsActive="True" Width="64" Height="64" />
+            <StackPanel Grid.Column="2" Style="{DynamicResource HeaderTextGroupStyle}">
+                <TextBlock Style="{DynamicResource WorkspaceTitleTextStyle}" Text="{Binding CurrentLanguageLabel}" />
+                <TextBlock Style="{DynamicResource BadgeTextStyle}" Text="学习与复习" Margin="0,4,0,0" Foreground="{DynamicResource SecondaryForegroundBrush}" />
+            </StackPanel>
+        </Grid>
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel>
-                <Border x:Name="CheckInCard" Margin="0,18,0,0" Padding="18,14" CornerRadius="18"
+                <Border x:Name="CheckInCard" Margin="0,0,0,0" Padding="20,16" CornerRadius="18"
                         Background="{DynamicResource AccentSoftBrush}">
                     <Border.Style>
                         <Style TargetType="Border">
@@ -59,63 +60,63 @@
                     <Button  Grid.Row="0" Grid.Column="0" Margin="0,0,12,12"
                             Style="{StaticResource CardButtonStyle}"
                             Command="{Binding OpenLearningCommand}">
-                        <StackPanel>
+                        <StackPanel Style="{DynamicResource NavigationTextGroupStyle}">
                             <TextBlock Style="{DynamicResource NavigationTitleTextStyle}" Text="开始学习" />
-                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="继续当前一轮，或开始新一轮" TextWrapping="Wrap" Margin="0,6,0,0" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="继续学习开启新轮" TextWrapping="Wrap" Margin="{DynamicResource DescriptionTopMargin}" />
                             <TextBlock Style="{DynamicResource StrongBodyTextStyle}" x:Name="LearningProgressText" Text="{Binding LearningProgressLabel}" Margin="0,10,0,0" Foreground="{DynamicResource AccentBrush}" />
                         </StackPanel>
                     </Button>
                     <Button x:Name="StartReviewButton" Grid.Row="0" Grid.Column="1" Margin="0,0,12,12"
                             Style="{StaticResource CardButtonStyle}"
                             Command="{Binding OpenReviewSessionCommand}">
-                        <StackPanel>
+                        <StackPanel Style="{DynamicResource NavigationTextGroupStyle}">
                             <TextBlock Style="{DynamicResource NavigationTitleTextStyle}" Text="开始复习" />
-                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="继续当前一轮，或复习待测和到期词组" TextWrapping="Wrap" Margin="0,6,0,0" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="复习待测到期词组" TextWrapping="Wrap" Margin="{DynamicResource DescriptionTopMargin}" />
                             <TextBlock Style="{DynamicResource StrongBodyTextStyle}" x:Name="ReviewDailyProgress" Text="{Binding ReviewProgressLabel}" Margin="0,10,0,0" Foreground="{DynamicResource AccentBrush}" />
                         </StackPanel>
                     </Button>
                     <Button  Grid.Row="1" Grid.Column="0" Margin="0,0,12,12"
                             Style="{StaticResource CardButtonStyle}"
                             Command="{Binding OpenReviewLibraryCommand}">
-                        <StackPanel>
+                        <StackPanel Style="{DynamicResource NavigationTextGroupStyle}">
                             <TextBlock Style="{DynamicResource NavigationTitleTextStyle}" Text="复习词库" />
-                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="浏览当前语言已经学过的词组" TextWrapping="Wrap" Margin="0,6,0,0" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="查看已学词组进度" TextWrapping="Wrap" Margin="{DynamicResource DescriptionTopMargin}" />
 
                         </StackPanel>
                     </Button>
                     <Button x:Name="KanaButton" Grid.Row="1" Grid.Column="1" Margin="0,0,12,12"
                             Style="{StaticResource CardButtonStyle}" Visibility="{Binding IsJapaneseSelected, Converter={StaticResource BoolVisibility}}"
                             Command="{Binding OpenKanaCommand}">
-                        <StackPanel>
+                        <StackPanel Style="{DynamicResource NavigationTextGroupStyle}">
                             <TextBlock Style="{DynamicResource NavigationTitleTextStyle}" Text="五十音听写" />
-                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="独立练习假名" TextWrapping="Wrap" Margin="0,6,0,0" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="独立练习假名听写发音" TextWrapping="Wrap" Margin="{DynamicResource DescriptionTopMargin}" />
                             <TextBlock Style="{DynamicResource StrongBodyTextStyle}" x:Name="KanaProgressText" Text="{Binding KanaProgressLabel}" Margin="0,10,0,0" Foreground="{DynamicResource AccentBrush}" />
                         </StackPanel>
                     </Button>
                     <Button  Grid.Row="2" Grid.Column="0" Margin="0,0,12,12"
                             Style="{StaticResource CardButtonStyle}"
                             Command="{Binding DataContext.OpenStatisticsCommand, RelativeSource={RelativeSource AncestorType=Window}}">
-                        <StackPanel>
+                        <StackPanel Style="{DynamicResource NavigationTextGroupStyle}">
                             <TextBlock Style="{DynamicResource NavigationTitleTextStyle}" Text="学习足迹" />
-                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="打卡日历与词汇、记忆趋势" TextWrapping="Wrap" Margin="0,6,0,0" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="查看打卡记忆趋势" TextWrapping="Wrap" Margin="{DynamicResource DescriptionTopMargin}" />
 
                         </StackPanel>
                     </Button>
                     <Button  Grid.Row="2" Grid.Column="1" Margin="0,0,12,12"
                             Style="{StaticResource CardButtonStyle}"
                             Command="{Binding OpenWrongAnswersCommand}">
-                        <StackPanel>
+                        <StackPanel Style="{DynamicResource NavigationTextGroupStyle}">
                             <TextBlock Style="{DynamicResource NavigationTitleTextStyle}" Text="错题回顾" />
-                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="查看易错词形并进行针对性重练" TextWrapping="Wrap" Margin="0,6,0,0" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="错题词形针对重练" TextWrapping="Wrap" Margin="{DynamicResource DescriptionTopMargin}" />
 
                         </StackPanel>
                     </Button>
                     <Button  Grid.Row="3" Grid.Column="0" Margin="0,0,12,12"
                             Style="{StaticResource CardButtonStyle}"
                             Command="{Binding OpenLexiconLookupCommand}">
-                        <StackPanel>
-                            <TextBlock Style="{DynamicResource NavigationTitleTextStyle}" Text="查词" />
-                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="浏览当前语言的本地词库" TextWrapping="Wrap" Margin="0,6,0,0" />
+                        <StackPanel Style="{DynamicResource NavigationTextGroupStyle}">
+                            <TextBlock Style="{DynamicResource NavigationTitleTextStyle}" Text="本地查词" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="浏览本地词义词形" TextWrapping="Wrap" Margin="{DynamicResource DescriptionTopMargin}" />
 
                         </StackPanel>
                     </Button>

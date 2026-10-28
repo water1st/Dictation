@@ -55,9 +55,9 @@
         </Style>
         </ResourceDictionary>
     </UserControl.Resources>
-    <Grid Margin="28,22">
+    <Grid Margin="{DynamicResource PageContentMargin}">
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-        <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" Margin="0,0,0,14" />
+        <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" Margin="0,0,0,14" TextWrapping="Wrap" />
         <WrapPanel Grid.Row="1">
             <Button Content="保存计划" Command="{Binding SaveCommand}" />
             <Button Content="重新加载" Command="{Binding RefreshCommand}" />
@@ -83,9 +83,9 @@
                 <Border Style="{StaticResource Card}" IsEnabled="{Binding CanEdit}">
                     <StackPanel>
                         <TextBlock Style="{DynamicResource SectionTitleTextStyle}" Text="练习形式" Margin="0,0,0,14" />
-                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="词形（至少一项）" Margin="0,0,0,8" />
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="词形（至少一项）" Margin="0,0,0,8" TextWrapping="Wrap" />
                         <ItemsControl ItemsSource="{Binding FormOptions}" ItemTemplate="{StaticResource OptionTemplate}" ItemsPanel="{StaticResource WrapOptions}" />
-                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="题型（至少一项）" Margin="0,8,0,8" />
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="题型（至少一项）" Margin="0,8,0,8" TextWrapping="Wrap" />
                         <ItemsControl ItemsSource="{Binding ChannelOptions}" ItemTemplate="{StaticResource OptionTemplate}" ItemsPanel="{StaticResource WrapOptions}" />
                         <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="书写要求（至少一项；不适用的汉字不会出题）" TextWrapping="Wrap" Margin="0,8,0,8" />
                         <ItemsControl ItemsSource="{Binding OutputOptions}" ItemTemplate="{StaticResource OptionTemplate}" ItemsPanel="{StaticResource WrapOptions}" />
@@ -106,7 +106,7 @@
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel>
-                                            <TextBlock Style="{DynamicResource ListTitleTextStyle}" Text="{Binding Headword}" />
+                                            <TextBlock Style="{DynamicResource ListTitleTextStyle}" Text="{Binding Headword}" TextWrapping="Wrap" />
                                             <ItemsControl ItemsSource="{Binding Meanings}">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>

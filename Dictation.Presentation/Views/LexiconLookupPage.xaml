@@ -35,9 +35,9 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel>
                         <TextBlock Style="{DynamicResource ListTitleTextStyle}"
-                                   Text="{Binding Headword}" />
+                                   Text="{Binding Headword}" TextWrapping="Wrap" />
                         <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,3,0,0"
-                                   Text="{Binding Reading}" />
+                                   Text="{Binding Reading}" TextWrapping="Wrap" />
                         <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,7,0,0"
                                    Text="{Binding Meanings[0], FallbackValue=暂无中文释义, TargetNullValue=暂无中文释义}"
                                    TextWrapping="Wrap" />
@@ -53,7 +53,7 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Margin="38,30">
+    <Grid Margin="{DynamicResource PageContentMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -85,11 +85,11 @@
                            Foreground="{DynamicResource AccentBrush}"
                            Text="⌕" />
             </Border>
-            <StackPanel Grid.Column="2" Margin="16,0,0,0">
+            <StackPanel Grid.Column="2" Margin="16,0,0,0" Style="{DynamicResource HeaderTextGroupStyle}">
                 <TextBlock Style="{DynamicResource PageTitleTextStyle}"
-                           Text="{Binding WindowTitle}" />
+                           Text="{Binding WindowTitle}" TextWrapping="Wrap" />
                 <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0"
-                           Text="输入词形，查看词库中的义项、属性与全部词形。" />
+                           Text="词义词形一处查看" TextWrapping="Wrap" />
             </StackPanel>
             <Border Grid.Column="3"
                     Padding="13,8"
@@ -171,7 +171,7 @@
                              BorderThickness="0"
                              ItemTemplate="{StaticResource LookupResultTemplate}"
                              ItemsSource="{Binding Results}"
-                             SelectedItem="{Binding SelectedResult, Mode=TwoWay}" />
+                             SelectedItem="{Binding SelectedResult, Mode=TwoWay}" ItemContainerStyle="{DynamicResource ContentListItemStyle}" />
                     <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Row="1"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
@@ -191,9 +191,9 @@
                               VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <TextBlock Style="{DynamicResource DetailTitleTextStyle}"
-                                   Text="{Binding SelectedResult.Headword}" />
+                                   Text="{Binding SelectedResult.Headword}" TextWrapping="Wrap" />
                         <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0"
-                                   Text="{Binding SelectedResult.Reading}" />
+                                   Text="{Binding SelectedResult.Reading}" TextWrapping="Wrap" />
                         <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,14,0,0"
                                    Foreground="{DynamicResource AccentBrush}"
                                    Text="{Binding SelectedResult.PartOfSpeechLabel}" />
@@ -258,9 +258,9 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding Surface}" />
                                         <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Column="1"
-                                                   Text="{Binding Reading}" />
+                                                   Text="{Binding Reading}" TextWrapping="Wrap" />
                                         <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Column="2"
-                                                   Text="{Binding FormLabel}" />
+                                                   Text="{Binding FormLabel}" TextWrapping="Wrap" />
                                         <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Column="3"
                                                    Text="{Binding DetailLabel}"
                                                    TextWrapping="Wrap" />

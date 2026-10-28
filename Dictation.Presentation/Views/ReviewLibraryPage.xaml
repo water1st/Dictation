@@ -36,7 +36,7 @@
         </Style>
         </ResourceDictionary>
     </UserControl.Resources>
-    <Grid Margin="34,28">
+    <Grid Margin="{DynamicResource PageContentMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -49,10 +49,10 @@
                 <Button Content="取消读取" Command="{Binding CancelCommand}" />
                 <Button Content="返回" Command="{Binding BackCommand}" />
             </StackPanel>
-            <StackPanel>
-                <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" />
-                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,6,0,0"
-                           Text="先补薄弱词形，再巩固整组记忆。" />
+            <StackPanel Style="{DynamicResource HeaderTextGroupStyle}">
+                <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" TextWrapping="Wrap" />
+                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="{DynamicResource DescriptionTopMargin}"
+                           Text="查看词组记忆进度" TextWrapping="Wrap" />
             </StackPanel>
         </DockPanel>
         <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Row="1" Margin="0,0,0,18" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
@@ -76,13 +76,13 @@
                             </DockPanel>
                             <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,8,0,0" Text="{Binding MeaningLabel}" TextWrapping="Wrap" />
                             <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,5,0,0" Text="{Binding AttributeLabel}" TextWrapping="Wrap" />
-                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,12,0,0" Text="{Binding NextReviewLabel, StringFormat=下次：{0}}" />
-                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0" Text="{Binding RetentionLabel, StringFormat=预计保持率：{0}}" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,12,0,0" Text="{Binding NextReviewLabel, StringFormat=下次：{0}}" TextWrapping="Wrap" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0" Text="{Binding RetentionLabel, StringFormat=预计保持率：{0}}" TextWrapping="Wrap" />
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-            <Border Grid.Column="2" Padding="20" CornerRadius="20"
+            <Border Grid.Column="2" Padding="{DynamicResource ContentCardPadding}" CornerRadius="20"
                     Background="{DynamicResource CardBackgroundBrush}"
                     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -101,9 +101,9 @@
                                             <StackPanel>
                                                 <TextBlock Style="{DynamicResource StrongBodyTextStyle}" Text="{Binding FormLabel}" TextWrapping="Wrap" />
                                                 <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,6,0,0" Text="{Binding StateLabel}" Foreground="{DynamicResource AccentBrush}" />
-                                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,6,0,0" Text="{Binding DueLabel, StringFormat=下次：{0}}" />
-                                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0" Text="{Binding RetentionLabel, StringFormat=预计保持率：{0}}" />
-                                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0" Text="{Binding CountsLabel}" />
+                                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="{DynamicResource DescriptionTopMargin}" Text="{Binding DueLabel, StringFormat=下次：{0}}" TextWrapping="Wrap" />
+                                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0" Text="{Binding RetentionLabel, StringFormat=预计保持率：{0}}" TextWrapping="Wrap" />
+                                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0" Text="{Binding CountsLabel}" TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Border>
                                     </DataTemplate>

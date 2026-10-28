@@ -14,7 +14,7 @@
         <Style x:Key="CardButtonStyle" TargetType="Button" BasedOn="{StaticResource NavigationCardButtonStyle}" />
         </ResourceDictionary>
     </UserControl.Resources>
-    <Grid Margin="24,22">
+    <Grid Margin="{DynamicResource PageContentMargin}">
         <Grid.ColumnDefinitions><ColumnDefinition Width="168" /><ColumnDefinition Width="24" /><ColumnDefinition /></Grid.ColumnDefinitions>
         <StackPanel>
             <Button Command="{Binding SelectAppearanceCommand}" Content="外观与主题" Margin="0,0,0,10" Padding="14,13">

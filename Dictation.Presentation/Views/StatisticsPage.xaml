@@ -14,10 +14,10 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="36,24" MaxWidth="900">
-            <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" />
-            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="每一天的小进步，都值得留下。" Margin="0,8,0,24" />
-            <Border Padding="20" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="24">
+        <StackPanel Margin="{DynamicResource PageContentMargin}" MaxWidth="900">
+            <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" TextWrapping="Wrap" />
+            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="记录每日学习变化" Margin="0,8,0,24" TextWrapping="Wrap" />
+            <Border Padding="{DynamicResource ContentCardPadding}" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="24">
                 <StackPanel>
                     <DockPanel Margin="0,0,0,16">
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
@@ -53,17 +53,17 @@
                 </StackPanel>
             </Border>
             <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding ReportErrorMessage}" Foreground="{DynamicResource ErrorBrush}" Margin="0,16,0,0" TextWrapping="Wrap" />
-            <Border Margin="0,20,0,0" Padding="20" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="24">
+            <Border Margin="0,20,0,0" Padding="{DynamicResource ContentCardPadding}" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="24">
                 <StackPanel>
                     <TextBlock Style="{DynamicResource SectionTitleTextStyle}" Text="词汇小结 · 按词组计数" />
-                    <WrapPanel Margin="0,16,0,0">
-                        <StackPanel Width="130" Margin="0,0,10,12"><TextBlock Style="{DynamicResource BodyTextStyle}" Text="累计已学" /><TextBlock Style="{DynamicResource StatisticValueTextStyle}" x:Name="LearnedCount" Text="{Binding Report.LearnedGroupCount}" /></StackPanel>
-                        <StackPanel Width="130" Margin="0,0,10,12"><TextBlock Style="{DynamicResource BodyTextStyle}" Text="今日学习" /><TextBlock Style="{DynamicResource StatisticValueTextStyle}" x:Name="TodayLearnedCount" Text="{Binding Report.TodayLearnedGroupCount}" /></StackPanel>
-                        <StackPanel Width="130" Margin="0,0,10,12"><TextBlock Style="{DynamicResource BodyTextStyle}" Text="今日复习" /><TextBlock Style="{DynamicResource StatisticValueTextStyle}" x:Name="TodayReviewedCount" Text="{Binding Report.TodayReviewedGroupCount}" /></StackPanel>
-                        <StackPanel Width="130" Margin="0,0,10,12"><TextBlock Style="{DynamicResource BodyTextStyle}" Text="等待初测" /><TextBlock Style="{DynamicResource StatisticValueTextStyle}" Text="{Binding Report.PendingTestGroupCount}" /></StackPanel>
-                        <StackPanel Width="130" Margin="0,0,10,12"><TextBlock Style="{DynamicResource BodyTextStyle}" Text="已逾期" /><TextBlock Style="{DynamicResource StatisticValueTextStyle}" Text="{Binding Report.OverdueGroupCount}" /></StackPanel>
-                    </WrapPanel>
-                    <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="{Binding Report.MistakesDescription}" Margin="0,8,0,12" />
+                    <UniformGrid Columns="5" Margin="0,16,0,0">
+                        <StackPanel Margin="0,0,12,12"><TextBlock Style="{DynamicResource BodyTextStyle}" Text="累计已学" /><TextBlock Style="{DynamicResource StatisticValueTextStyle}" x:Name="LearnedCount" Text="{Binding Report.LearnedGroupCount}" /></StackPanel>
+                        <StackPanel Margin="0,0,12,12"><TextBlock Style="{DynamicResource BodyTextStyle}" Text="今日学习" /><TextBlock Style="{DynamicResource StatisticValueTextStyle}" x:Name="TodayLearnedCount" Text="{Binding Report.TodayLearnedGroupCount}" /></StackPanel>
+                        <StackPanel Margin="0,0,12,12"><TextBlock Style="{DynamicResource BodyTextStyle}" Text="今日复习" /><TextBlock Style="{DynamicResource StatisticValueTextStyle}" x:Name="TodayReviewedCount" Text="{Binding Report.TodayReviewedGroupCount}" /></StackPanel>
+                        <StackPanel Margin="0,0,12,12"><TextBlock Style="{DynamicResource BodyTextStyle}" Text="等待初测" /><TextBlock Style="{DynamicResource StatisticValueTextStyle}" Text="{Binding Report.PendingTestGroupCount}" /></StackPanel>
+                        <StackPanel Margin="0,0,12,12"><TextBlock Style="{DynamicResource BodyTextStyle}" Text="已逾期" /><TextBlock Style="{DynamicResource StatisticValueTextStyle}" Text="{Binding Report.OverdueGroupCount}" /></StackPanel>
+                    </UniformGrid>
+                    <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="{Binding Report.MistakesDescription}" Margin="0,8,0,12" TextWrapping="Wrap" />
                     <ItemsControl x:Name="FrequentMistakes" ItemsSource="{Binding Report.TopMistakes}">
                         <ItemsControl.ItemTemplate><DataTemplate>
                             <Border Background="{DynamicResource WindowBackgroundBrush}" CornerRadius="12" Padding="14,10" Margin="0,0,0,6">
@@ -75,7 +75,7 @@
                     </ItemsControl>
                 </StackPanel>
             </Border>
-            <Border Margin="0,20,0,0" Padding="20" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="24">
+            <Border Margin="0,20,0,0" Padding="{DynamicResource ContentCardPadding}" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="24">
                 <StackPanel>
                     <TextBlock Style="{DynamicResource SectionTitleTextStyle}" Text="记忆的脚印" />
                     <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" x:Name="RetentionCaption" Text="{Binding Report.RetentionDescription}" Margin="0,8,0,16" TextWrapping="Wrap" />

@@ -40,9 +40,9 @@
                               IsChecked="{Binding IsSelected, Mode=TwoWay}" />
                     <StackPanel Grid.Column="1">
                         <TextBlock Style="{DynamicResource ListTitleTextStyle}"
-                                   Text="{Binding PrimaryMember.Headword}" />
+                                   Text="{Binding PrimaryMember.Headword}" TextWrapping="Wrap" />
                         <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,3,0,0"
-                                   Text="{Binding PrimaryMember.Reading}" />
+                                   Text="{Binding PrimaryMember.Reading}" TextWrapping="Wrap" />
                         <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,5,0,0"
                                    Foreground="{DynamicResource AccentBrush}"
                                    Text="{Binding PrimaryMember.PartOfSpeechLabel}" />
@@ -62,14 +62,14 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Margin="34,28">
+    <Grid Margin="{DynamicResource PageContentMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Grid Margin="0,0,0,20">
+        <Grid Margin="{DynamicResource SectionBottomMargin}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -80,10 +80,10 @@
                     CornerRadius="27">
                 <TextBlock Style="{DynamicResource PageIconTextStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource AccentBrush}" Text="◎" />
             </Border>
-            <StackPanel Grid.Column="1" Margin="16,0,0,0">
-                <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" />
+            <StackPanel Grid.Column="1" Margin="16,0,0,0" Style="{DynamicResource HeaderTextGroupStyle}">
+                <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" TextWrapping="Wrap" />
                 <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0"
-                           Text="选好本轮范围与练习方式，再开始今天的学习。" />
+                           Text="设定每日学习节奏" TextWrapping="Wrap" />
             </StackPanel>
             <Border Grid.Column="2" Padding="12,8"
                     Background="{DynamicResource AccentSoftBrush}" CornerRadius="15">
@@ -94,8 +94,8 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="360" />
-                <ColumnDefinition Width="18" />
+                <ColumnDefinition Width="0.42*" MinWidth="290" />
+                <ColumnDefinition Width="20" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
@@ -136,19 +136,19 @@
                             BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="18">
                         <StackPanel>
                             <TextBlock Style="{DynamicResource SectionTitleTextStyle}" Text="练习内容" />
-                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,13,0,7" Text="词形" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,13,0,7" Text="词形" TextWrapping="Wrap" />
                             <ItemsControl ItemsSource="{Binding FormOptions}" ItemTemplate="{StaticResource OptionTemplate}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                             </ItemsControl>
-                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,9,0,7" Text="出题方式" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,9,0,7" Text="出题方式" TextWrapping="Wrap" />
                             <ItemsControl ItemsSource="{Binding ChannelOptions}" ItemTemplate="{StaticResource OptionTemplate}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                             </ItemsControl>
-                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,9,0,7" Text="书写形式" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,9,0,7" Text="书写形式" TextWrapping="Wrap" />
                             <ItemsControl ItemsSource="{Binding OutputOptions}" ItemTemplate="{StaticResource OptionTemplate}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
@@ -176,7 +176,7 @@
                             <ListBox Margin="0,9,0,0" MaxHeight="130"
                                      ItemsSource="{Binding ExampleCandidates}"
                                      SelectedItem="{Binding SelectedExample, Mode=TwoWay}"
-                                     DisplayMemberPath="Headword" />
+                                     DisplayMemberPath="Headword" ItemContainerStyle="{DynamicResource ContentListItemStyle}" />
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -196,7 +196,7 @@
                         <CheckBox Content="全选" IsThreeState="True"
                                   IsChecked="{Binding IsAllSelected, Mode=TwoWay}"
                                   FontSize="{DynamicResource ControlFontSize}" FontWeight="SemiBold" />
-                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Column="1">
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Column="1" TextWrapping="Wrap" >
                             <Run Text="共 " /><Run Text="{Binding TotalCount, Mode=OneWay}" /><Run Text=" 组" />
                         </TextBlock>
                     </Grid>
@@ -204,10 +204,10 @@
                              Background="Transparent" BorderThickness="0"
                              ItemsSource="{Binding LibraryItems}"
                              ItemTemplate="{StaticResource LearningGroupTemplate}"
-                             HorizontalContentAlignment="Stretch" />
+                             HorizontalContentAlignment="Stretch" ItemContainerStyle="{DynamicResource ContentListItemStyle}" />
                     <Grid Grid.Row="2" Margin="0,12,0,0">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" VerticalAlignment="Center">
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" VerticalAlignment="Center" TextWrapping="Wrap" >
                             <Run Text="第 " /><Run Text="{Binding PageNumber, Mode=OneWay}" /><Run Text=" 页" />
                         </TextBlock>
                         <StackPanel Grid.Column="1" Orientation="Horizontal">

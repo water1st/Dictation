@@ -41,7 +41,7 @@
 
         <DataTemplate x:Key="MemberTemplate">
             <Border Margin="0,0,0,14"
-                    Padding="20"
+                    Padding="{DynamicResource ContentCardPadding}"
                     Background="{DynamicResource CardBackgroundBrush}"
                     BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="1"
@@ -52,15 +52,15 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel Orientation="Horizontal">
+                        <StackPanel>
                             <TextBlock Style="{DynamicResource GroupHeadwordTextStyle}"
                                        Text="{Binding Headword}" />
-                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="10,5,0,0"
-                                       Text="{Binding Reading}" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0"
+                                       Text="{Binding Reading}" TextWrapping="Wrap" />
                         </StackPanel>
                         <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Column="1"
                                    Margin="12,5,0,0"
-                                   Text="{Binding SourceSenseId}" />
+                                   Text="{Binding SourceSenseId}" TextWrapping="Wrap" />
                     </Grid>
 
                     <WrapPanel Margin="0,12,0,4">
@@ -126,13 +126,13 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Margin="34,28">
+    <Grid Margin="{DynamicResource PageContentMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Grid Margin="0,0,0,20">
+        <Grid Margin="{DynamicResource SectionBottomMargin}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -149,8 +149,8 @@
             </Border>
             <StackPanel Grid.Column="1" Margin="16,0,0,0">
                 <TextBlock Style="{DynamicResource PageTitleTextStyle}"
-                           Text="{Binding SourceText}" />
-                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0">
+                           Text="{Binding SourceText}" TextWrapping="Wrap" />
+                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0" TextWrapping="Wrap" >
                     <Run Text="{Binding DecisionLabel, Mode=OneWay}" />
                     <Run Text=" · 整组词条详情" />
                 </TextBlock>

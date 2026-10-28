@@ -20,7 +20,7 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Margin="42,30">
+    <Grid Margin="{DynamicResource PageContentMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -31,10 +31,10 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <StackPanel>
-                <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" />
+            <StackPanel Style="{DynamicResource HeaderTextGroupStyle}">
+                <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" TextWrapping="Wrap" />
                 <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,5,0,0"
-                           Text="{Binding ProgressLabel}" />
+                           Text="{Binding ProgressLabel}" TextWrapping="Wrap" />
             </StackPanel>
             <Button Grid.Column="1"
                     Command="{Binding OpenBrowseCommand}"
@@ -55,7 +55,7 @@
                         <TextBlock Style="{DynamicResource PanelTitleTextStyle}" Text="暂时没有复习任务" />
                         <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,10,0,0" TextWrapping="Wrap" Text="{Binding EmptyMessage}" />
                         <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,10,0,0"
-                                   Text="可返回首页，调整复习计划或导入待测词组。" />
+                                   Text="可返回首页，调整复习计划或导入待测词组。" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
                 <Border x:Name="QuestionPanel"
@@ -73,7 +73,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}"
-                                           Text="中文释义" />
+                                           Text="中文释义" TextWrapping="Wrap" />
                                 <TextBlock Style="{DynamicResource QuestionContentTextStyle}" Margin="0,6,0,0"
                                            Text="{Binding MeaningText}"
                                            TextWrapping="Wrap" />
@@ -154,7 +154,7 @@
                                  Background="Transparent"
                                  BorderThickness="0"
                                  ItemsSource="{Binding BrowseMembers}"
-                                 SelectedItem="{Binding SelectedBrowseMember}">
+                                 SelectedItem="{Binding SelectedBrowseMember}" ItemContainerStyle="{DynamicResource ContentListItemStyle}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Border Margin="0,0,0,10"
@@ -163,7 +163,7 @@
                                             BorderThickness="1"
                                             CornerRadius="14">
                                         <StackPanel>
-                                            <TextBlock Style="{DynamicResource GroupTitleTextStyle}" Text="{Binding Headword}" />
+                                            <TextBlock Style="{DynamicResource GroupTitleTextStyle}" Text="{Binding Headword}" TextWrapping="Wrap" />
                                             <ItemsControl Margin="0,5,0,0" ItemsSource="{Binding Meanings}">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
@@ -172,9 +172,9 @@
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
                                             <WrapPanel Margin="0,7,0,0">
-                                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="{Binding PartOfSpeechLabel}" />
+                                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="{Binding PartOfSpeechLabel}" TextWrapping="Wrap" />
                                                 <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="12,0,0,0"
-                                                           Text="{Binding AttributeLabel}" />
+                                                           Text="{Binding AttributeLabel}" TextWrapping="Wrap" />
                                             </WrapPanel>
                                         </StackPanel>
                                     </Border>

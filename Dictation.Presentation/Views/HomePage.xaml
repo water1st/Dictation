@@ -10,29 +10,37 @@
             <ResourceDictionary Source="/Dictation.Presentation;component/Theme/Buttons.xaml" />
             <ResourceDictionary Source="/Dictation.Presentation;component/Theme/NavigationCards.xaml" />
         </ResourceDictionary.MergedDictionaries>
-        <Style x:Key="CardButtonStyle" TargetType="Button" BasedOn="{StaticResource NavigationCardButtonStyle}" />
+        <Style x:Key="CardButtonStyle" TargetType="Button" BasedOn="{StaticResource NavigationCardButtonStyle}"><Setter Property="VerticalContentAlignment" Value="Center" /></Style>
         <BooleanToVisibilityConverter x:Key="BoolVisibility" />
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid Margin="46,32">
         <StackPanel VerticalAlignment="Center">
             <TextBlock Style="{DynamicResource HeroTitleTextStyle}" Text="今天想练什么？" />
-            <TextBlock Style="{DynamicResource IntroTextStyle}" Text="选择一种语言，开始今天的学习与复习。" Margin="0,10,0,30" />
+            <TextBlock Style="{DynamicResource IntroTextStyle}" Text="选择一种语言，开始今天的学习与复习。" Margin="0,10,0,30" TextWrapping="Wrap" />
             <Grid Height="220">
                 <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
                 <Button Command="{Binding SelectJapaneseCommand}" Style="{StaticResource CardButtonStyle}" Margin="0,0,10,0" AutomationProperties.Name="日语">
-                    <StackPanel>
-                        <views:LanguageBadge SourceLanguage="Japanese" IsActive="True" HorizontalAlignment="Left" />
-                        <TextBlock Style="{DynamicResource LanguageEntryTitleTextStyle}" Text="日语" Margin="0,18,0,8" />
-                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="假名、汉字与听写练习" />
-                    </StackPanel>
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="24" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel x:Name="JapaneseEntryTextGroup" Style="{DynamicResource LanguageEntryTextGroupStyle}">
+                            <TextBlock Style="{DynamicResource LanguageEntryTitleTextStyle}" Text="日语" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="假名、汉字听写练习" Margin="0,4,0,0" />
+                        </StackPanel>
+                        <views:LanguageBadge Grid.Column="2" SourceLanguage="Japanese" IsActive="True"
+                            Width="{Binding ActualHeight, ElementName=JapaneseEntryTextGroup}" Height="{Binding ActualHeight, ElementName=JapaneseEntryTextGroup}" VerticalAlignment="Center" />
+                    </Grid>
                 </Button>
                 <Button Grid.Column="1" Command="{Binding SelectEnglishCommand}" Style="{StaticResource CardButtonStyle}" Margin="10,0,0,0" AutomationProperties.Name="英语">
-                    <StackPanel>
-                        <views:LanguageBadge SourceLanguage="English" IsActive="True" HorizontalAlignment="Left" />
-                        <TextBlock Style="{DynamicResource LanguageEntryTitleTextStyle}" Text="英语" Margin="0,18,0,8" />
-                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="词形变化与键盘听写" />
-                    </StackPanel>
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="24" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel x:Name="EnglishEntryTextGroup" Style="{DynamicResource LanguageEntryTextGroupStyle}">
+                            <TextBlock Style="{DynamicResource LanguageEntryTitleTextStyle}" Text="英语" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="词形变化与键盘听写" Margin="0,4,0,0" />
+                        </StackPanel>
+                        <views:LanguageBadge Grid.Column="2" SourceLanguage="English" IsActive="True"
+                            Width="{Binding ActualHeight, ElementName=EnglishEntryTextGroup}" Height="{Binding ActualHeight, ElementName=EnglishEntryTextGroup}" VerticalAlignment="Center" />
+                    </Grid>
                 </Button>
             </Grid>
             <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding Home.ErrorMessage}" TextWrapping="Wrap" Foreground="{DynamicResource ErrorBrush}" Margin="0,20,0,0" />

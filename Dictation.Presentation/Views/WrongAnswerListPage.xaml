@@ -30,11 +30,11 @@
         </Style>
         </ResourceDictionary>
     </UserControl.Resources>
-    <Grid Margin="24">
+    <Grid Margin="{DynamicResource PageContentMargin}">
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
         <StackPanel>
-            <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" />
-            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,8,0,0" Text="历史错误不会因重试答对而消失；自动复习仍按记忆安排。" TextWrapping="Wrap" />
+            <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" TextWrapping="Wrap" />
+            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,8,0,0" Text="回顾错题巩固记忆" TextWrapping="Wrap" />
             <WrapPanel Margin="0,16,0,0">
                 <Button x:Name="RepracticeButton" Content="重练选中复习错题" Command="{Binding RepracticeCommand}" />
                 <Button Content="继续原学习" Command="{Binding ContinueLearningCommand}" />
@@ -59,14 +59,14 @@
                                 <TextBlock Style="{DynamicResource ListTitleTextStyle}" Text="{Binding Heading}" TextWrapping="Wrap" />
                                 <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,6,0,0" Text="{Binding Item.Meanings}" TextWrapping="Wrap" />
                                 <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,6,0,0" Text="{Binding HistoryLabel}" Foreground="{DynamicResource ErrorBrush}" />
-                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0" Text="{Binding PlacementLabel}" />
+                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0" Text="{Binding PlacementLabel}" TextWrapping="Wrap" />
                                 <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0" Text="{Binding NextReviewLabel}" TextWrapping="Wrap" />
                             </StackPanel>
                         </DockPanel>
                     </DataTemplate></ListBox.ItemTemplate>
                 </ListBox>
             </DockPanel>
-            <Border x:Name="DetailPanel" Grid.Column="2" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="18" Padding="20">
+            <Border x:Name="DetailPanel" Grid.Column="2" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="18" Padding="{DynamicResource ContentCardPadding}">
                 <Border.Style><Style TargetType="Border">
                     <Setter Property="Visibility" Value="Visible" />
                     <Style.Triggers><DataTrigger Binding="{Binding SelectedItem}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers>

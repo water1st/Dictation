@@ -271,6 +271,7 @@ namespace Dictation.Tests.Presentation
         {
             var host = new StackPanel { Width = 420 };
             host.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/Dictation.Presentation;component/Theme/Typography.xaml", UriKind.Relative) });
+            host.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/Dictation.Presentation;component/Theme/Layout.xaml", UriKind.Relative) });
             host.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/Dictation.Presentation;component/Theme/Buttons.xaml", UriKind.Relative) });
             host.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/Dictation.Presentation;component/Theme/FormControls.xaml", UriKind.Relative) });
             host.Children.Add(child);

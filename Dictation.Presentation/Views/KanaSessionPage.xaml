@@ -27,9 +27,15 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="42,28" MaxWidth="880">
-            <TextBlock Style="{DynamicResource HeroTitleTextStyle}" Text="五十音听写" />
-            <TextBlock Style="{DynamicResource SessionProgressTextStyle}" Margin="0,10,0,20" Text="{Binding ProgressLabel}" Foreground="{DynamicResource AccentBrush}" />
+        <StackPanel Margin="{DynamicResource PageContentMargin}" MaxWidth="880">
+            <Grid Margin="{DynamicResource SectionBottomMargin}">
+                <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <StackPanel Style="{DynamicResource HeaderTextGroupStyle}">
+                    <TextBlock Style="{DynamicResource HeroTitleTextStyle}" Text="五十音听写" />
+                    <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="听音后写出假名，逐项巩固记忆" Margin="{DynamicResource DescriptionTopMargin}" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Style="{DynamicResource SessionProgressTextStyle}" Text="{Binding ProgressLabel}" VerticalAlignment="Center" Foreground="{DynamicResource AccentBrush}" Margin="16,0,0,0" />
+            </Grid>
             <Border CornerRadius="24" Padding="28" Background="{DynamicResource CardBackgroundBrush}">
                 <StackPanel>
                     <TextBlock Style="{DynamicResource QuestionPromptTextStyle}" x:Name="QuestionPrompt" Text="{Binding QuestionPrompt}" />
@@ -52,7 +58,7 @@
                     </StackPanel>
                     <StackPanel x:Name="FeedbackPanel" Style="{StaticResource FeedbackVisibility}">
                         <TextBlock Style="{DynamicResource FeedbackTextStyle}" Text="{Binding FeedbackLabel}" Margin="0,14,0,8" TextWrapping="Wrap" />
-                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="正确写法" />
+                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="正确写法" TextWrapping="Wrap" />
                         <TextBlock Style="{DynamicResource AnswerRevealTextStyle}" x:Name="CorrectAnswer" Text="{Binding CorrectAnswerDisplay}" Margin="0,8" />
                         <Button Content="继续" Command="{Binding ContinueCommand}" HorizontalAlignment="Left" />
                     </StackPanel>

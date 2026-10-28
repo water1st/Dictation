@@ -50,9 +50,9 @@
             <StackPanel>
                 <TextBlock Style="{DynamicResource StrongBodyTextStyle}" Text="批次" />
                 <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,3,0,0"
-                           Text="{Binding Items.Count, StringFormat=项目 {0} 个}" />
+                           Text="{Binding Items.Count, StringFormat=项目 {0} 个}" TextWrapping="Wrap" />
                 <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,3,0,0"
-                           Text="{Binding CreatedAtUtc, StringFormat={}{0:yyyy-MM-dd HH:mm}}" />
+                           Text="{Binding CreatedAtUtc, StringFormat={}{0:yyyy-MM-dd HH:mm}}" TextWrapping="Wrap" />
             </StackPanel>
         </DataTemplate>
 
@@ -72,10 +72,10 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Style="{DynamicResource ListTitleTextStyle}"
-                                   Text="{Binding SourceText}" />
+                                   Text="{Binding SourceText}" TextWrapping="Wrap" />
                         <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Column="1"
                                    Margin="12,0,0,0"
-                                   Text="{Binding DecisionLabel}" />
+                                   Text="{Binding DecisionLabel}" TextWrapping="Wrap" />
                     </Grid>
                     <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,4,0,0"
                                Foreground="{DynamicResource AccentBrush}"
@@ -115,7 +115,7 @@
                                   ItemsSource="{Binding PrimaryMember.Forms}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}">
+                                <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" TextWrapping="Wrap" >
                                     <Run Text="{Binding FormLabel, Mode=OneWay}" />
                                     <Run Text="：" />
                                     <Run Text="{Binding Surface, Mode=OneWay}" />
@@ -129,7 +129,7 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Margin="34,28">
+    <Grid Margin="{DynamicResource PageContentMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -137,7 +137,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="0,0,0,20">
+        <Grid Grid.Row="0" Margin="{DynamicResource SectionBottomMargin}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -152,11 +152,11 @@
                            Foreground="{DynamicResource AccentBrush}"
                            Text="▣" />
             </Border>
-            <StackPanel Grid.Column="1" Margin="16,0,0,0">
+            <StackPanel Grid.Column="1" Margin="16,0,0,0" Style="{DynamicResource HeaderTextGroupStyle}">
                 <TextBlock Style="{DynamicResource PageTitleTextStyle}"
-                           Text="{Binding WindowTitle}" />
+                           Text="{Binding WindowTitle}" TextWrapping="Wrap" />
                 <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0"
-                           Text="确认词组后，送入学习、复习，或直接丢弃。" />
+                           Text="确认词组，再分配去向" TextWrapping="Wrap" />
             </StackPanel>
             <Border Grid.Column="2"
                     Padding="12,8"
