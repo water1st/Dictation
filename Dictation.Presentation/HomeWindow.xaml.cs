@@ -46,6 +46,13 @@ namespace Dictation.Presentation
         /// <summary>工具栏的独立更新组件，不让导航和语言页面互相依赖。</summary>
         public UpdateViewModel Update { get; }
 
+        /// <summary>将页面、转场与弹层裁切到描边内侧，避免背景覆盖圆角和边缘。</summary>
+        private void OnFrameContentSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            var content = (FrameworkElement)sender;
+            content.Clip = new RectangleGeometry(new Rect(e.NewSize), 11, 11);
+        }
+
         /// <summary>为本次错误创建独立参数列表，不通过命令行拼接路径。</summary>
         internal static ProcessStartInfo CreateErrorLogStartInfo(string path)
         {
