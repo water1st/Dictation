@@ -35,6 +35,12 @@ namespace Dictation.Tests.Presentation
                 var choices = Children<Control>(page).Where(control => control is CheckBox or RadioButton).ToArray();
                 Assert.NotEmpty(choices);
                 Assert.All(choices, control => Assert.Equal(expected, Assert.IsType<SolidColorBrush>(control.Foreground).Color));
+                foreach (var choice in choices)
+                {
+                    var texts = FormControlThemeTests.Children<TextBlock>(choice).Where(text => !string.IsNullOrEmpty(text.Text)).ToArray();
+                    Assert.NotEmpty(texts);
+                    Assert.All(texts, text => Assert.Equal(expected, Assert.IsType<SolidColorBrush>(text.Foreground).Color));
+                }
             }
         });
 
