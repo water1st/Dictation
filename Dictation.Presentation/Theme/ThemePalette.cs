@@ -47,6 +47,7 @@ namespace Dictation.Presentation.Theme
             resources["CardBackgroundBrush"] = CreateBrush(palette.Card);
             resources["BorderBrush"] = CreateBrush(palette.Border);
             resources["AccentBrush"] = CreateBrush(palette.Accent);
+            resources["AccentForegroundBrush"] = CreateBrush(theme == ResolvedTheme.Dark ? palette.Background : Colors.White);
             resources["AccentSoftBrush"] = CreateBrush(palette.AccentSoft);
             resources["ErrorBrush"] = CreateBrush(palette.Error);
         }
