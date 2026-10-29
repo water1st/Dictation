@@ -32,7 +32,7 @@
     <Style x:Key="PrimaryActionButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
         <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}" />
     </Style>
     <Style x:Key="IconActionButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
         <Setter Property="FontSize" Value="{DynamicResource IconFontSize}" />
