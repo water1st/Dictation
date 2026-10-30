@@ -1,6 +1,7 @@
 <UserControl x:Class="Dictation.Presentation.Views.KanaPlanPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Dictation.Presentation.Controls"
              Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
              FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
@@ -21,7 +22,7 @@
         </Style>
         </ResourceDictionary>
     </UserControl.Resources>
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <ScrollViewer controls:PageScrollHost.IsPageScrollViewer="True" VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="{DynamicResource PageContentMargin}" MaxWidth="880" HorizontalAlignment="Stretch">
             <TextBlock Style="{DynamicResource HeroTitleTextStyle}" Text="假名小练习" />
             <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,8,0,20"

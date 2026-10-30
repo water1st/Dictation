@@ -120,8 +120,8 @@ namespace Dictation.Tests.Presentation
             try
             {
                 await root.SelectLanguageAsync(LearningLanguage.Japanese, TestContext.Current.CancellationToken);
-                Assert.False(Assert.IsType<ContentControl>(window.FindName("PreviousPagePresenter")).IsHitTestVisible);
-                Assert.False(Assert.IsType<ContentControl>(window.FindName("CurrentPagePresenter")).IsHitTestVisible);
+                Assert.False(Assert.IsAssignableFrom<ContentControl>(window.FindName("PreviousPagePresenter")).IsHitTestVisible);
+                Assert.False(Assert.IsAssignableFrom<ContentControl>(window.FindName("CurrentPagePresenter")).IsHitTestVisible);
             }
             finally { window.Close(); }
         });
@@ -153,7 +153,7 @@ namespace Dictation.Tests.Presentation
                 Assert.Equal(ResizeMode.NoResize, window.ResizeMode);
                 Assert.Equal(WindowStyle.None, window.WindowStyle);
                 Assert.Equal(new Thickness(0), WindowChrome.GetWindowChrome(window).ResizeBorderThickness);
-                Assert.IsType<ContentControl>(window.FindName("CurrentPagePresenter")).Content = new HomePage { DataContext = root };
+                Assert.IsAssignableFrom<ContentControl>(window.FindName("CurrentPagePresenter")).Content = new HomePage { DataContext = root };
                 var content = Assert.IsAssignableFrom<FrameworkElement>(window.Content);
                 ThemePalette.Apply(window.Resources, theme);
                 content.Measure(new Size(860, 620)); content.Arrange(new Rect(0, 0, 860, 620)); content.UpdateLayout();

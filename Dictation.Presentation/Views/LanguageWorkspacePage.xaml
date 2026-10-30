@@ -1,6 +1,7 @@
 <UserControl x:Class="Dictation.Presentation.Views.LanguageWorkspacePage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Dictation.Presentation.Controls"
              xmlns:views="clr-namespace:Dictation.Presentation.Views"
              Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
              FontSize="{DynamicResource BodyFontSize}">
@@ -24,7 +25,7 @@
                 <TextBlock Style="{DynamicResource BadgeTextStyle}" Text="学习与复习" Margin="0,4,0,0" Foreground="{DynamicResource SecondaryForegroundBrush}" />
             </StackPanel>
         </Grid>
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer controls:PageScrollHost.IsPageScrollViewer="True" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel>
                 <Border x:Name="CheckInCard" Margin="0,0,0,0" Padding="20,16" CornerRadius="18"
                         Background="{DynamicResource AccentSoftBrush}">

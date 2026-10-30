@@ -1,6 +1,7 @@
 <UserControl x:Class="Dictation.Presentation.Views.ReviewPlanPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Dictation.Presentation.Controls"
              Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
              FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
@@ -64,7 +65,7 @@
             <Button Content="取消操作" Command="{Binding CancelCommand}" />
             <Button Content="返回" Command="{Binding BackCommand}" />
         </WrapPanel>
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer controls:PageScrollHost.IsPageScrollViewer="True" Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="0,10,12,0">
                 <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="{Binding StatusMessage}" TextWrapping="Wrap" Margin="0,0,0,16" />
                 <Border Style="{StaticResource Card}" IsEnabled="{Binding CanEdit}">
