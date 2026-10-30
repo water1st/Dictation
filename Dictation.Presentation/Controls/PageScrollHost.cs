@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using System.Windows.Input;
 
 namespace Dictation.Presentation.Controls
 {
@@ -47,6 +48,23 @@ namespace Dictation.Presentation.Controls
         {
             DetachViewer();
             base.OnContentChanged(oldContent, newContent);
+        }
+
+        /// <summary>轨道位于内容之外，将其滚轮输入交给原容器，沿用原生增量和边界处理。</summary>
+        protected override void OnMouseWheel(MouseWheelEventArgs e)
+        {
+            if (targetViewer is { IsEnabled: true } && pageScrollBar is not null
+                && e.OriginalSource is DependencyObject source
+                && (ReferenceEquals(source, pageScrollBar) || pageScrollBar.IsAncestorOf(source)))
+            {
+                var forwarded = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+                {
+                    RoutedEvent = Mouse.MouseWheelEvent
+                };
+                targetViewer.RaiseEvent(forwarded);
+                e.Handled = forwarded.Handled;
+            }
+            base.OnMouseWheel(e);
         }
 
         /// <summary>读取滚动容器是否承担页面主滚动。</summary>
@@ -99,7 +117,9 @@ namespace Dictation.Presentation.Controls
             targetViewer.SetCurrentValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Hidden);
             targetViewer.ScrollChanged += OnViewerScrollChanged;
             targetViewer.IsEnabledChanged += OnViewerIsEnabledChanged;
+            targetViewer.IsKeyboardFocusWithinChanged += OnViewerFocusChanged;
             SynchronizeBar();
+            SynchronizeFocus();
         }
 
         private void DetachViewer()
@@ -110,11 +130,13 @@ namespace Dictation.Presentation.Controls
                 targetViewer = null;
                 previous.ScrollChanged -= OnViewerScrollChanged;
                 previous.IsEnabledChanged -= OnViewerIsEnabledChanged;
+                previous.IsKeyboardFocusWithinChanged -= OnViewerFocusChanged;
                 previous.SetCurrentValue(ScrollViewer.VerticalScrollBarVisibilityProperty, originalVisibility);
             }
             if (pageScrollBar is not null)
             {
                 pageScrollBar.Visibility = Visibility.Collapsed;
+                pageScrollBar.ClearValue(BorderBrushProperty);
             }
         }
 
@@ -129,6 +151,27 @@ namespace Dictation.Presentation.Controls
         private void OnViewerIsEnabledChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             SynchronizeBar();
+        }
+
+        private void OnViewerFocusChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            SynchronizeFocus();
+        }
+
+        private void SynchronizeFocus()
+        {
+            if (pageScrollBar is null)
+            {
+                return;
+            }
+            if (targetViewer?.IsKeyboardFocusWithin == true)
+            {
+                pageScrollBar.SetResourceReference(BorderBrushProperty, "AccentBrush");
+            }
+            else
+            {
+                pageScrollBar.ClearValue(BorderBrushProperty);
+            }
         }
 
         private void SynchronizeBar()

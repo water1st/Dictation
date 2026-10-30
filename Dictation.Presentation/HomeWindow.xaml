@@ -1,6 +1,7 @@
 <Window x:Class="Dictation.Presentation.HomeWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:Dictation.Presentation.Controls"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="{Binding PageTitle}"
         Width="860"
@@ -20,6 +21,7 @@
         <ResourceDictionary>
         <ResourceDictionary.MergedDictionaries>
             <ResourceDictionary Source="/Dictation.Presentation;component/Theme/Buttons.xaml" />
+            <ResourceDictionary Source="/Dictation.Presentation;component/Theme/ScrollBars.xaml" />
         </ResourceDictionary.MergedDictionaries>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <Style x:Key="TopBarButtonStyle" TargetType="Button">
@@ -98,12 +100,12 @@
         </Border>
 
         <Grid Grid.Row="1" ClipToBounds="True">
-            <ContentControl x:Name="PreviousPagePresenter"
+            <controls:PageScrollHost x:Name="PreviousPagePresenter"
                             IsHitTestVisible="False"
                             HorizontalContentAlignment="Stretch"
                             VerticalContentAlignment="Stretch"
                             Opacity="0" />
-            <ContentControl x:Name="CurrentPagePresenter"
+            <controls:PageScrollHost x:Name="CurrentPagePresenter"
                             HorizontalContentAlignment="Stretch"
                             VerticalContentAlignment="Stretch"
                             Content="{Binding CurrentPage}" />

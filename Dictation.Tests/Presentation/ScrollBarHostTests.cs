@@ -3,6 +3,9 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Threading;
 using Dictation.Presentation.Behaviors;
 using Dictation.Presentation.Controls;
 using Dictation.Presentation.Theme;
@@ -104,6 +107,73 @@ namespace Dictation.Tests.Presentation
                 bar.Value = 180;
                 ScrollBarThemeTests.Layout(host);
                 Assert.Equal(180, saved.Value);
+                return Task.CompletedTask;
+            });
+        }
+
+        [Fact]
+        public Task Host_WheelOverMainRail_UsesViewerInputInBothDirectionsAndRespectsDisabled()
+        {
+            return ReviewPlanPageTests.RunStaAsync(() =>
+            {
+                var viewer = CreateViewer();
+                var shell = new PageScrollHost { Content = viewer };
+                var host = CreateHost(shell);
+                var bar = MainBar(shell);
+                var down = new MouseWheelEventArgs(Mouse.PrimaryDevice, 0, -120) { RoutedEvent = Mouse.MouseWheelEvent };
+                bar.RaiseEvent(down);
+                ScrollBarThemeTests.Layout(host);
+                Assert.True(down.Handled);
+                Assert.True(viewer.VerticalOffset > 0);
+                var offset = viewer.VerticalOffset;
+                bar.RaiseEvent(new MouseWheelEventArgs(Mouse.PrimaryDevice, 0, 120) { RoutedEvent = Mouse.MouseWheelEvent });
+                ScrollBarThemeTests.Layout(host);
+                Assert.True(viewer.VerticalOffset < offset);
+                Assert.Equal(0, viewer.VerticalOffset);
+                bar.RaiseEvent(new MouseWheelEventArgs(Mouse.PrimaryDevice, 0, 120) { RoutedEvent = Mouse.MouseWheelEvent });
+                ScrollBarThemeTests.Layout(host);
+                Assert.Equal(0, viewer.VerticalOffset);
+                viewer.IsEnabled = false;
+                bar.RaiseEvent(new MouseWheelEventArgs(Mouse.PrimaryDevice, 0, -120) { RoutedEvent = Mouse.MouseWheelEvent });
+                ScrollBarThemeTests.Layout(host);
+                Assert.False(bar.IsEnabled);
+                Assert.Equal(0, viewer.VerticalOffset);
+                return Task.CompletedTask;
+            });
+        }
+
+        [Fact]
+        public Task Host_KeyboardFocusInPageViewer_UpdatesMainThumbOutline()
+        {
+            return ReviewPlanPageTests.RunStaAsync(() =>
+            {
+                var input = new TextBox { Height = 40 };
+                var content = new StackPanel();
+                content.Children.Add(input);
+                content.Children.Add(new Border { Height = 2000 });
+                var viewer = CreateViewer();
+                viewer.Content = content;
+                var outside = new TextBox { Height = 30 };
+                var page = new DockPanel();
+                DockPanel.SetDock(outside, Dock.Top);
+                page.Children.Add(outside);
+                page.Children.Add(viewer);
+                var shell = new PageScrollHost { Content = page };
+                var host = CreateHost(shell);
+                using var source = new HwndSource(new HwndSourceParameters("页面主轨道焦点验收") { Width = 860, Height = 556 });
+                source.RootVisual = host;
+                ScrollBarThemeTests.Layout(host);
+                Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(() => { }));
+                Assert.Same(input, Keyboard.Focus(input));
+                ScrollBarThemeTests.Layout(host);
+                Assert.True(viewer.IsKeyboardFocusWithin);
+                var track = (Track)MainBar(shell).Template.FindName("PART_Track", MainBar(shell));
+                var body = Assert.Single(FormControlThemeTests.Children<Border>(track.Thumb));
+                Assert.Equal(Color.FromRgb(255, 112, 148), Assert.IsType<SolidColorBrush>(body.BorderBrush).Color);
+                Assert.Same(outside, Keyboard.Focus(outside));
+                ScrollBarThemeTests.Layout(host);
+                Assert.False(viewer.IsKeyboardFocusWithin);
+                Assert.Equal(Colors.Transparent, Assert.IsType<SolidColorBrush>(body.BorderBrush).Color);
                 return Task.CompletedTask;
             });
         }

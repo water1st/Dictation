@@ -181,7 +181,7 @@ namespace Dictation.Tests.Presentation
             var window = services.GetRequiredService<HomeWindow>();
             window.ShowActivated = false;
             ThemePalette.Apply(window.Resources, theme);
-            Assert.IsType<ContentControl>(window.FindName("CurrentPagePresenter")).Content =
+            Assert.IsAssignableFrom<ContentControl>(window.FindName("CurrentPagePresenter")).Content =
                 new HomePage { DataContext = services.GetRequiredService<LandingViewModel>() };
             try
             {

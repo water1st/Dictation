@@ -1,6 +1,7 @@
 <UserControl x:Class="Dictation.Presentation.Views.ImportInboxListPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Dictation.Presentation.Controls"
              xmlns:behaviors="clr-namespace:Dictation.Presentation.Behaviors"
              Background="{DynamicResource WindowBackgroundBrush}"
              Foreground="{DynamicResource ForegroundBrush}"
@@ -187,7 +188,7 @@
                     Style="{StaticResource InboxButtonStyle}" />
         </Grid>
 
-        <ScrollViewer Grid.Row="2"
+        <ScrollViewer controls:PageScrollHost.IsPageScrollViewer="True" Grid.Row="2"
                       behaviors:ScrollViewerOffsetBehavior.VerticalOffset="{Binding ScrollOffset, Mode=TwoWay}"
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">

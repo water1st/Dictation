@@ -1,6 +1,7 @@
 <UserControl x:Class="Dictation.Presentation.Views.StatisticsPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Dictation.Presentation.Controls"
              xmlns:views="clr-namespace:Dictation.Presentation.Views"
              xmlns:configuration="clr-namespace:Dictation.Core.Configuration;assembly=Dictation.Core"
              Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
@@ -13,7 +14,7 @@
         <Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}"><Setter Property="Padding" Value="14,9" /><Setter Property="Margin" Value="4,0" /></Style>
         </ResourceDictionary>
     </UserControl.Resources>
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <ScrollViewer controls:PageScrollHost.IsPageScrollViewer="True" VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="{DynamicResource PageContentMargin}" MaxWidth="900">
             <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" TextWrapping="Wrap" />
             <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="记录每日学习变化" Margin="0,8,0,24" TextWrapping="Wrap" />

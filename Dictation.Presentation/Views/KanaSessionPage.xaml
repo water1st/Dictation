@@ -1,6 +1,7 @@
 <UserControl x:Class="Dictation.Presentation.Views.KanaSessionPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Dictation.Presentation.Controls"
              Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
              FontSize="{DynamicResource BodyFontSize}">
     <UserControl.Resources>
@@ -26,7 +27,7 @@
         </Style>
         </ResourceDictionary>
     </UserControl.Resources>
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <ScrollViewer controls:PageScrollHost.IsPageScrollViewer="True" VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="{DynamicResource PageContentMargin}" MaxWidth="880">
             <Grid Margin="{DynamicResource SectionBottomMargin}">
                 <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>

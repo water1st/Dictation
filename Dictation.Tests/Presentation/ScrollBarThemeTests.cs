@@ -58,12 +58,15 @@ namespace Dictation.Tests.Presentation
                 Assert.Same(thumb, track.Thumb);
                 Assert.Contains(FormControlThemeTests.Children<Border>(thumb), border =>
                     border.Background is SolidColorBrush brush && brush.Color == Color.FromRgb(172, 184, 204));
+                var root = Assert.Single(FormControlThemeTests.Children<Grid>(bar), element => element.Name == "Root");
+                var enabledOpacity = root.Opacity;
                 bar.IsEnabled = false;
                 Layout(host);
                 Assert.False(thumb.IsEnabled);
-                Assert.Contains(FormControlThemeTests.Children<UIElement>(bar), element => element.Opacity < 1);
+                Assert.True(root.Opacity < enabledOpacity);
                 Assert.Equal(size, bar.RenderSize);
                 bar.IsEnabled = true;
+                Assert.Equal(enabledOpacity, root.Opacity);
                 Assert.Equal(25, bar.Value);
                 return Task.CompletedTask;
             });

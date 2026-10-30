@@ -21,7 +21,7 @@
                 <ControlTemplate TargetType="Thumb">
                     <Border x:Name="ThumbBody" Margin="3" CornerRadius="4" Opacity="0.65"
                             Background="{DynamicResource SecondaryForegroundBrush}"
-                            BorderBrush="Transparent" BorderThickness="1" />
+                            BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType=ScrollBar}}" BorderThickness="1" />
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="ThumbBody" Property="Opacity" Value="1" />
@@ -47,6 +47,7 @@
         <Setter Property="Width" Value="12" />
         <Setter Property="Height" Value="Auto" />
         <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="OverridesDefaultStyle" Value="True" />
