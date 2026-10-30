@@ -60,8 +60,9 @@
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
         <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" Margin="0,0,0,14" TextWrapping="Wrap" />
         <WrapPanel Grid.Row="1">
-            <Button Content="保存计划" Command="{Binding SaveCommand}" />
-            <Button Content="重新加载" Command="{Binding RefreshCommand}" />
+            <Button Content="保存计划" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryActionButtonStyle}"
+                    Margin="0,0,8,8" Tag="{StaticResource SaveIconGeometry}" ContentTemplate="{StaticResource IconTextButtonContentTemplate}" />
+            <Button Content="重新加载" Command="{Binding RefreshCommand}" Tag="{StaticResource RefreshIconGeometry}" ContentTemplate="{StaticResource IconTextButtonContentTemplate}" />
             <Button Content="取消操作" Command="{Binding CancelCommand}" />
             <Button Content="返回" Command="{Binding BackCommand}" />
         </WrapPanel>
@@ -74,10 +75,10 @@
                         <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="每天的目标与每轮词数分开；整组不论词形多少只计一个词。"
                                    TextWrapping="Wrap" Margin="0,7,0,16" />
                         <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding DailyReviewTarget, StringFormat=每日复习目标：{0} 组}" />
-                        <Slider Minimum="1" Maximum="500" TickFrequency="1" IsSnapToTickEnabled="True"
+                        <Slider Style="{StaticResource FormSliderStyle}" Minimum="1" Maximum="500" TickFrequency="1" IsSnapToTickEnabled="True"
                                 Value="{Binding DailyReviewTarget, Mode=TwoWay}" Margin="0,8,0,16" />
                         <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding SessionWordLimit, StringFormat=每轮最多：{0} 组}" />
-                        <Slider Minimum="1" Maximum="500" TickFrequency="1" IsSnapToTickEnabled="True"
+                        <Slider Style="{StaticResource FormSliderStyle}" Minimum="1" Maximum="500" TickFrequency="1" IsSnapToTickEnabled="True"
                                 Value="{Binding SessionWordLimit, Mode=TwoWay}" Margin="0,8,0,4" />
                     </StackPanel>
                 </Border>
@@ -99,7 +100,8 @@
                             <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="例如使用 go / went / gone 作为提示，不显示待答单词的答案。" TextWrapping="Wrap" Margin="0,0,0,10" />
                             <TextBox Text="{Binding ExampleQuery, UpdateSourceTrigger=PropertyChanged}" Padding="10" Margin="0,0,0,10"
                                      Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}" />
-                            <Button Content="查找示例动词" HorizontalAlignment="Left" Command="{Binding SearchExamplesCommand}" />
+                            <Button Content="查找示例动词" HorizontalAlignment="Left" Command="{Binding SearchExamplesCommand}"
+                                    Tag="{StaticResource SearchIconGeometry}" ContentTemplate="{StaticResource IconTextButtonContentTemplate}" />
                             <ListBox ItemsSource="{Binding ExampleCandidates}" SelectedItem="{Binding SelectedExample, Mode=TwoWay}"
                                      Height="130" Background="Transparent" BorderThickness="0"
                                      Foreground="{DynamicResource ForegroundBrush}" Margin="0,0,0,10"
@@ -157,7 +159,8 @@
                             <ItemsControl.ItemTemplate><DataTemplate><TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding FormLabel}" TextWrapping="Wrap" Margin="0,4,0,0" /></DataTemplate></ItemsControl.ItemTemplate>
                         </ItemsControl>
                         <Button Content="删除当前词组及进度" Command="{Binding DeleteSelectedCommand}" HorizontalAlignment="Left" Margin="0,16,0,0"
-                                Foreground="{DynamicResource ErrorBrush}" />
+                                Style="{StaticResource DestructiveActionButtonStyle}" Tag="{StaticResource DeleteIconGeometry}"
+                                ContentTemplate="{StaticResource IconTextButtonContentTemplate}" />
                     </StackPanel>
                 </Border>
             </StackPanel>

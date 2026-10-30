@@ -57,8 +57,6 @@ namespace Dictation.Presentation.Theme
             resources["PrimaryActionBrush"] = CreateBrush(isDark ? palette.Accent : MediaColor.FromRgb(185, 38, 83));
             resources["PrimaryActionHoverBrush"] = CreateBrush(isDark ? MediaColor.FromRgb(255, 140, 168) : MediaColor.FromRgb(166, 27, 69));
             resources["PrimaryActionPressedBrush"] = CreateBrush(isDark ? MediaColor.FromRgb(241, 94, 134) : MediaColor.FromRgb(144, 18, 56));
-            resources["DisabledSurfaceBrush"] = CreateBrush(isDark ? MediaColor.FromRgb(47, 57, 74) : MediaColor.FromRgb(228, 232, 239));
-            resources["DisabledForegroundBrush"] = CreateBrush(isDark ? MediaColor.FromRgb(141, 152, 171) : MediaColor.FromRgb(108, 119, 136));
         }
 
         private static SolidColorBrush CreateBrush(MediaColor color)

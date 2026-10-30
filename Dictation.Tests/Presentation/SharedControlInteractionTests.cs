@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -14,6 +15,40 @@ namespace Dictation.Tests.Presentation
     /// <summary>验证公共控件在空集合、交互与主题切换时的实际显示和操作合同。</summary>
     public sealed class SharedControlInteractionTests
     {
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public Task ComboBox_EmptyOpenRequest_ResetsBoundStateBeforeItemsArrive(bool immediateItems)
+        {
+            return ReviewPlanPageTests.RunStaAsync(() =>
+            {
+                var items = new ObservableCollection<string>();
+                var state = new CheckBox { IsChecked = false };
+                var combo = new ComboBox { IsEditable = true, ItemsSource = items };
+                combo.SetBinding(ComboBox.IsDropDownOpenProperty, new Binding("IsChecked") { Source = state, Mode = BindingMode.TwoWay });
+                var host = FormControlThemeTests.CreateHost(combo);
+                ThemePalette.Apply(host.Resources, ResolvedTheme.Light);
+                using var source = new HwndSource(new HwndSourceParameters("空弹层状态验收") { Width = 600, Height = 300 });
+                source.RootVisual = host;
+                FormControlThemeTests.Layout(host);
+                Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(() => { }));
+                state.IsChecked = true;
+                if (immediateItems) items.Add("English");
+                Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(() => { }));
+                Assert.False(combo.IsDropDownOpen);
+                Assert.False(state.IsChecked);
+                if (!immediateItems) items.Add("English");
+                Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(() => { }));
+                Assert.False(((Popup)combo.Template.FindName("PART_Popup", combo)).IsOpen);
+                state.IsChecked = true;
+                Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(() => { }));
+                Assert.True(combo.IsDropDownOpen);
+                Assert.True(((Popup)combo.Template.FindName("PART_Popup", combo)).IsOpen);
+                combo.IsDropDownOpen = false;
+                return Task.CompletedTask;
+            });
+        }
+
         [Theory]
         [InlineData(false)]
         [InlineData(true)]

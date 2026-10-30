@@ -136,6 +136,7 @@
                             Margin="14,0,0,0"
                             Command="{Binding SearchCommand}"
                             Content="搜索"
+                            Tag="{StaticResource SearchIconGeometry}" ContentTemplate="{StaticResource IconTextButtonContentTemplate}"
                             Style="{StaticResource LookupButtonStyle}" />
                 </Grid>
                 <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,10,0,0"

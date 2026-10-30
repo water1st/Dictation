@@ -173,7 +173,8 @@
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                 <TextBox Padding="10,7" Text="{Binding ExampleQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 <Button Grid.Column="1" Margin="8,0,0,0" Command="{Binding SearchExamplesCommand}"
-                                        Content="查找" Style="{StaticResource PlanButtonStyle}" />
+                                        Content="查找" Style="{StaticResource PlanButtonStyle}" Tag="{StaticResource SearchIconGeometry}"
+                                        ContentTemplate="{StaticResource IconTextButtonContentTemplate}" />
                             </Grid>
                             <ListBox Margin="0,9,0,0" MaxHeight="130"
                                      ItemsSource="{Binding ExampleCandidates}"
@@ -229,8 +230,9 @@
                 <TextBlock Style="{DynamicResource BodyTextStyle}" Foreground="{DynamicResource AccentBrush}" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button Command="{Binding DeleteSelectedCommand}" Content="移除所选" Style="{StaticResource PlanButtonStyle}" />
-                <Button Command="{Binding SaveCommand}" Content="保存计划" Style="{StaticResource PlanButtonStyle}" />
+                <Button Command="{Binding DeleteSelectedCommand}" Content="移除所选" Style="{StaticResource DestructiveActionButtonStyle}" Margin="8,0,0,0" />
+                <Button Command="{Binding SaveCommand}" Content="保存计划" Style="{StaticResource PlanButtonStyle}"
+                        Tag="{StaticResource SaveIconGeometry}" ContentTemplate="{StaticResource IconTextButtonContentTemplate}" />
                 <Button Command="{Binding StartCommand}" Content="开始本轮" Style="{StaticResource PlanButtonStyle}" />
             </StackPanel>
         </Grid>
