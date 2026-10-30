@@ -157,10 +157,13 @@
                 </TextBlock>
             </StackPanel>
             <Border Grid.Column="2"
+                    VerticalAlignment="Center"
+                    MinHeight="40"
                     Padding="12,8"
                     Background="{DynamicResource AccentSoftBrush}"
                     CornerRadius="15">
                 <TextBlock Style="{DynamicResource StrongBodyTextStyle}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
                            Foreground="{DynamicResource AccentBrush}"
                            Text="{Binding LanguageLabel}" />
             </Border>
