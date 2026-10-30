@@ -84,6 +84,7 @@ namespace Dictation.Presentation.ViewModels
             }
         }
         public bool IsBusy => isBusy;
+        public bool CanSelectAll => !disposed && !IsBusy && Items.Count > 0;
         public string? ErrorMessage => errorMessage;
         public string StatusMessage => statusMessage;
         public ICommand RefreshCommand { get; }
@@ -209,7 +210,11 @@ namespace Dictation.Presentation.ViewModels
             commands.Add(command);
             return command;
         }
-        private void NotifyCommands() { foreach (var command in commands) command.NotifyCanExecuteChanged(); }
+        private void NotifyCommands()
+        {
+            Changed(nameof(CanSelectAll));
+            foreach (var command in commands) command.NotifyCanExecuteChanged();
+        }
         private void SetStatus(string value) { statusMessage = value; Changed(nameof(StatusMessage)); }
         private void Changed([CallerMemberName] string? name = null)
         {

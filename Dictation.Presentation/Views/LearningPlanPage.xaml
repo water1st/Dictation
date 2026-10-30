@@ -196,6 +196,7 @@
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <CheckBox Content="全选" IsThreeState="True"
+                                  IsEnabled="{Binding CanSelectAll, FallbackValue=False}"
                                   IsChecked="{Binding IsAllSelected, Mode=TwoWay}"
                                   FontSize="{DynamicResource ControlFontSize}" FontWeight="SemiBold" />
                         <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Column="1" TextWrapping="Wrap" >

@@ -90,6 +90,7 @@ namespace Dictation.Presentation.ViewModels
         }
         public bool CanEdit => isInitialized && !isDisposed && !IsBusy;
         public bool CanStage => CanEdit && SelectedCount > 0;
+        public bool CanSelectAll => CanEdit && Lines.Any(line => line.CanSelect);
         public int SelectedCount => Lines.Count(line => line.IsSelected && line.CanSelect);
         public bool AreAllSelected
         {
@@ -321,6 +322,7 @@ namespace Dictation.Presentation.ViewModels
 
         private void NotifySelectionChanged()
         {
+            OnPropertyChanged(nameof(CanSelectAll));
             OnPropertyChanged(nameof(SelectedCount));
             OnPropertyChanged(nameof(AreAllSelected));
             OnPropertyChanged(nameof(CanStage));

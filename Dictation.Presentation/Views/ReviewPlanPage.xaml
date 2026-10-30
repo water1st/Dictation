@@ -133,7 +133,7 @@
                             <RadioButton Content="指定词组" GroupName="ReviewRange" IsChecked="{Binding IsSelectedRange, Mode=TwoWay}" />
                         </WrapPanel>
                         <CheckBox x:Name="SelectAllGroups" Content="全选当前复习库" IsThreeState="False"
-                                  IsChecked="{Binding IsAllSelected, Mode=TwoWay}" IsEnabled="{Binding CanSelectGroups}" />
+                                  IsChecked="{Binding IsAllSelected, Mode=TwoWay}" IsEnabled="{Binding CanSelectAll, FallbackValue=False}" />
                         <ListBox Height="320" ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup, Mode=TwoWay}"
                                  Background="Transparent" BorderThickness="0" Foreground="{DynamicResource ForegroundBrush}"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" IsEnabled="{Binding CanEdit}">

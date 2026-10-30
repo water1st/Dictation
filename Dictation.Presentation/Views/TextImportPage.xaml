@@ -58,7 +58,7 @@
                 <Button Style="{StaticResource ActionButton}" Content="选择 TXT" IsEnabled="{Binding CanEdit}" Click="SelectFileClick" />
                 <Button Style="{StaticResource ActionButton}" Content="取消操作" Command="{Binding CancelCommand}" />
                 <CheckBox Content="全选已确认义项" VerticalAlignment="Center"
-                          IsChecked="{Binding AreAllSelected}" IsEnabled="{Binding CanEdit}" />
+                          IsChecked="{Binding AreAllSelected}" IsEnabled="{Binding CanSelectAll, FallbackValue=False}" />
                 <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="14,0,0,0" VerticalAlignment="Center" Text="{Binding SelectedCount, StringFormat=已选 {0} 项}" />
             </StackPanel>
             <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,8,0,0" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
