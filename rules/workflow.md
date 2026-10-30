@@ -13,6 +13,23 @@
 - 在原仓库目录（或当次用户明确授权的工作区）切换专用分支。新增工作区需逐次用户明确授权；禁止擅自创建 Worktree、Clone、IDE/Agent 临时工作区。
 - 仅实施 Task Goal 与 Acceptance Criteria 要求的文件修改；不顺手修复无关业务或调整发布流程。
 
+## Task 开始前的 Git 强制同步
+
+每次开始新的、已获授权的 Task，在创建工作分支或修改任何仓库文件之前，必须在原仓库工作区依次执行：
+
+1. 核实 Task 执行授权、所需 Trello 状态及当前 Git 工作区状态。
+2. 执行 `git switch master`，切换至本地主分支。
+3. 执行 `git pull --ff-only origin master`，同步本地主分支。
+4. 执行 `git fetch origin --prune`，清理失效的远程跟踪引用。
+5. 从已同步的本地 `master` 创建符合现有命名规则的 Task 工作分支。
+6. 上述步骤全部成功后，才允许正式修改文件并执行 Task。
+
+每个新 Task 均须执行，不得以本地已有主分支或此前同步过为由跳过。
+`git fetch origin --prune` 只清理远程跟踪引用；不得自动删除或清理任何本地工作分支，不得丢弃未提交修改。
+
+切换、拉取、获取更新或其他前置条件失败时，必须停止创建工作分支及后续开发并报告阻塞。
+恢复已开始或挂起的 Task 时，使用原工作分支和 Checkpoint，继续遵守既有挂起与恢复规则；不得以新 Task 同步流程替代恢复流程。
+
 ## Git Traceability
 
 - 开发分支格式 `codex/<feature|fix|opt|verify>/<task-id>/<slug>`，PR 目标分支为 `master`。
