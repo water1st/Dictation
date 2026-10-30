@@ -59,9 +59,9 @@
             </Border>
             <TextBlock Style="{DynamicResource SectionTitleTextStyle}" Margin="0,20,0,4" Text="{Binding ProgressLabel}" />
             <WrapPanel>
-                <Button Content="保存计划" Command="{Binding SaveCommand}" />
+                <Button Content="保存计划" Command="{Binding SaveCommand}" Tag="{StaticResource SaveIconGeometry}" ContentTemplate="{StaticResource IconTextButtonContentTemplate}" />
                 <Button Content="开始／继续听写" Command="{Binding StartCommand}" />
-                <Button Content="刷新" Command="{Binding RefreshCommand}" />
+                <Button Content="刷新" Command="{Binding RefreshCommand}" Tag="{StaticResource RefreshIconGeometry}" ContentTemplate="{StaticResource IconTextButtonContentTemplate}" />
                 <Button Content="取消操作" Command="{Binding CancelCommand}" />
             </WrapPanel>
             <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,12,0,0" Text="{Binding StatusMessage}" TextWrapping="Wrap" />

@@ -158,6 +158,8 @@ namespace Dictation.Presentation.ViewModels
             }
         }
 
+        public bool CanSelectAll => allItems.Any(item => item.IsSelectable);
+
         public bool? IsAllSelected
         {
             get => isAllSelected;
@@ -528,6 +530,7 @@ namespace Dictation.Presentation.ViewModels
             }
 
             SetIsAllSelected(false);
+            OnPropertyChanged(nameof(CanSelectAll));
             OnPropertyChanged(nameof(CanDecide));
         }
 
@@ -574,6 +577,7 @@ namespace Dictation.Presentation.ViewModels
 
         private void RecalculateSelectionState()
         {
+            OnPropertyChanged(nameof(CanSelectAll));
             var selectableItems = allItems.Where(item => item.IsSelectable).ToArray();
             var selectedCount = selectableItems.Count(item => item.IsSelected);
             SetIsAllSelected(selectableItems.Length > 0 && selectedCount == selectableItems.Length

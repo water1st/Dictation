@@ -50,6 +50,7 @@
             <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="20" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
             <DockPanel>
                 <CheckBox x:Name="SelectAllBox" DockPanel.Dock="Top" Content="全选" IsThreeState="True"
+                          IsEnabled="{Binding CanSelectAll, FallbackValue=False}"
                           IsChecked="{Binding SelectAll,Mode=TwoWay}" Margin="4,0,0,12" />
                 <ListBox x:Name="WrongAnswerList" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem,Mode=TwoWay}"
                          Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">

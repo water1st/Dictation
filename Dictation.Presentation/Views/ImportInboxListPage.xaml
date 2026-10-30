@@ -233,6 +233,7 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <CheckBox Content="全选"
+                                  IsEnabled="{Binding CanSelectAll, FallbackValue=False}"
                                   IsThreeState="False"
                                   IsChecked="{Binding IsAllSelected, Mode=TwoWay}"
                                   FontSize="{DynamicResource ControlFontSize}"

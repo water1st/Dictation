@@ -50,6 +50,13 @@ namespace Dictation.Presentation.Theme
             resources["AccentForegroundBrush"] = CreateBrush(theme == ResolvedTheme.Dark ? palette.Background : Colors.White);
             resources["AccentSoftBrush"] = CreateBrush(palette.AccentSoft);
             resources["ErrorBrush"] = CreateBrush(palette.Error);
+            var isDark = theme == ResolvedTheme.Dark;
+            resources["ControlBorderBrush"] = CreateBrush(isDark ? MediaColor.FromRgb(130, 148, 176) : MediaColor.FromRgb(116, 132, 155));
+            resources["ControlHoverBrush"] = CreateBrush(isDark ? MediaColor.FromRgb(49, 65, 91) : MediaColor.FromRgb(242, 227, 234));
+            resources["ControlPressedBrush"] = CreateBrush(isDark ? MediaColor.FromRgb(68, 49, 72) : MediaColor.FromRgb(236, 204, 218));
+            resources["PrimaryActionBrush"] = CreateBrush(isDark ? palette.Accent : MediaColor.FromRgb(185, 38, 83));
+            resources["PrimaryActionHoverBrush"] = CreateBrush(isDark ? MediaColor.FromRgb(255, 140, 168) : MediaColor.FromRgb(166, 27, 69));
+            resources["PrimaryActionPressedBrush"] = CreateBrush(isDark ? MediaColor.FromRgb(241, 94, 134) : MediaColor.FromRgb(144, 18, 56));
         }
 
         private static SolidColorBrush CreateBrush(MediaColor color)

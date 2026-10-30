@@ -195,6 +195,8 @@ namespace Dictation.Presentation.ViewModels
 
         public ObservableCollection<LexiconLookupResultDto> ExampleCandidates { get; }
 
+        public bool CanSelectAll => LibraryItems.Count > 0;
+
         public bool? IsAllSelected
         {
             get => isAllSelected;
@@ -645,6 +647,7 @@ namespace Dictation.Presentation.ViewModels
 
         private void RecalculateAllSelected()
         {
+            OnPropertyChanged(nameof(CanSelectAll));
             var selectedCount = LibraryItems.Count(item => item.IsSelected);
             bool? value = LibraryItems.Count > 0 && selectedCount == LibraryItems.Count
                 ? true
