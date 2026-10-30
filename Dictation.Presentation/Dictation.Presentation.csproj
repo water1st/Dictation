@@ -7,7 +7,7 @@
     <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
     <PackageIcon></PackageIcon>
-    <ApplicationIcon>pen.ico</ApplicationIcon>
+    <ApplicationIcon>logo.ico</ApplicationIcon>
     <StartupObject>Dictation.Presentation.Program</StartupObject>
   </PropertyGroup>
 
@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="pen.ico" />
+    <Content Include="logo.ico" />
     <Content Include="Samples\*.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\Resources\**\*" Link="Resources\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\LICENSES\Tts\**\*" Link="LICENSES\Tts\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
