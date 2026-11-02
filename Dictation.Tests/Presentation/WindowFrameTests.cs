@@ -218,6 +218,12 @@ namespace Dictation.Tests.Presentation
                     Assert.Equal(3, buttons.Length);
                     foreach (var button in buttons)
                     {
+                        var name = AutomationProperties.GetName(button);
+                        var glyph = name switch { "设置" => "⚙", "最小化" => "−", "关闭" => "×", _ => string.Empty };
+                        Assert.Equal(glyph, button.Content);
+                        Assert.Equal(38, button.Width);
+                        Assert.Equal(36, button.Height);
+                        Assert.Null(button.Tag);
                         var point = button.TranslatePoint(new Point(button.ActualWidth / 2, button.ActualHeight / 2), window);
                         Assert.Equal(1, HitTest(window, point));
                         Assert.True(button.IsHitTestVisible);
