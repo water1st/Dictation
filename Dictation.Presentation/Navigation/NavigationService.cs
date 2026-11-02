@@ -97,18 +97,26 @@ namespace Dictation.Presentation.Navigation
         }
 
         /// <inheritdoc />
-        public Task OpenSettingsAsync(CancellationToken cancellationToken = default)
+        public async Task OpenSettingsAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (transitionPending) return Task.CompletedTask;
-            if (currentEntry?.ViewModel is LandingViewModel { IsSelecting: true }) return Task.CompletedTask;
-            if (currentEntry?.ViewModel is not (LandingViewModel or HomeViewModel))
-                throw new InvalidOperationException("请从首页或语言工作页进入设置。");
-            if (!TryPrepareForwardNavigation()) return Task.CompletedTask;
+            EnsureInitialized();
+            if (transitionPending || navigationOperationPending) return;
+            if (currentEntry?.ViewModel is LandingViewModel { IsSelecting: true }) return;
+            if (currentEntry?.ViewModel is SettingsViewModel currentSettings)
+            {
+                await currentSettings.SelectSectionAsync(SettingsSection.Appearance, cancellationToken);
+                return;
+            }
+            if (!TryPrepareForwardNavigation()) return;
             var scope = scopeFactory.CreateScope();
             try
             {
                 var settings = scope.ServiceProvider.GetRequiredService<SettingsViewModel>();
+                if (currentEntry?.Language is { } language)
+                {
+                    await settings.SelectTargetLanguageAsync(language);
+                }
                 NavigateForward(new NavigationEntry(settings, "设置", null, scope, null));
             }
             catch
@@ -116,7 +124,6 @@ namespace Dictation.Presentation.Navigation
                 if (!ReferenceEquals(currentEntry?.Scope, scope)) scope.Dispose();
                 throw;
             }
-            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -592,7 +599,8 @@ namespace Dictation.Presentation.Navigation
             OnPropertyChanged(nameof(CanGoBack));
             try
             {
-                if (previousEntry.ResumeAsync is not null)
+                // 设置是临时入口，返回时保留业务表单和选择；原业务页面之间仍按原流程刷新。
+                if (currentEntry?.ViewModel is not SettingsViewModel && previousEntry.ResumeAsync is not null)
                 {
                     await previousEntry.ResumeAsync(cancellationToken);
                     cancellationToken.ThrowIfCancellationRequested();

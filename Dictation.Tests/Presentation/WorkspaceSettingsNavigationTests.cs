@@ -102,7 +102,9 @@ namespace Dictation.Tests.Presentation
             await Assert.ThrowsAsync<InvalidOperationException>(() => nav.OpenLanguageWorkspaceAsync(LearningLanguage.Japanese, Token));
             await nav.OpenSettingsAsync(Token);
             nav.CompleteTransition();
-            await Assert.ThrowsAsync<InvalidOperationException>(() => nav.OpenSettingsAsync(Token));
+            var settings = nav.CurrentPage;
+            await nav.OpenSettingsAsync(Token);
+            Assert.Same(settings, nav.CurrentPage);
             await Assert.ThrowsAsync<InvalidOperationException>(() => nav.OpenStatisticsAsync(LearningLanguage.Japanese, Token));
         }
 

@@ -103,7 +103,7 @@ namespace Dictation.Tests.Presentation
             nav.CompleteTransition();
             await nav.OpenSettingsAsync(TestContext.Current.CancellationToken);
             Assert.True(shell.IsBackButtonVisible);
-            Assert.False(shell.IsSettingsButtonVisible);
+            Assert.True(shell.IsSettingsButtonVisible);
             Assert.Contains(nameof(ShellViewModel.IsBackButtonVisible), changes);
             Assert.Contains(nameof(ShellViewModel.IsSettingsButtonVisible), changes);
         }

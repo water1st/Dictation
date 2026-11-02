@@ -19,7 +19,7 @@ namespace Dictation.Presentation.Shell
         /// </summary>
         /// <param name="navigationHost">提供导航状态和转场生命周期的宿主能力。</param>
         /// <param name="overlayHost">提供弹层显示状态和完成操作的宿主能力。</param>
-        /// <param name="settingsNavigation">从首页或语言工作页进入设置的导航能力。</param>
+        /// <param name="settingsNavigation">从当前页面进入设置的导航能力。</param>
         /// <param name="statisticsNavigation">从当前语言工作页进入统计的能力。</param>
         public ShellViewModel(
             INavigationHost navigationHost,
@@ -62,7 +62,7 @@ namespace Dictation.Presentation.Shell
         public bool CanGoBack => navigationHost.CanGoBack;
 
         public bool IsBackButtonVisible => CurrentPage is not null and not LandingViewModel;
-        public bool IsSettingsButtonVisible => CurrentPage is LandingViewModel or HomeViewModel;
+        public bool IsSettingsButtonVisible => CurrentPage is not null;
 
         public OverlayRequest? CurrentOverlay => overlayHost.CurrentRequest;
 
