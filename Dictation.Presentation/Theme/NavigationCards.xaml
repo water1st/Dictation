@@ -1,12 +1,13 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Style x:Key="NavigationCardButtonStyle" TargetType="Button">
-        <Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+        <Setter Property="FontSize" Value="{DynamicResource NavigationTitleFontSize}" />
         <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding" Value="20,18" />
+        <Setter Property="MinHeight" Value="80" />
         <Setter Property="VerticalContentAlignment" Value="Top" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="Template">
@@ -14,8 +15,18 @@
                 <ControlTemplate TargetType="Button">
                     <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" CornerRadius="18">
-                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        <DockPanel>
+                            <Path x:Name="CardIcon" DockPanel.Dock="Left" Margin="0,0,16,0" VerticalAlignment="Center"
+                                  Width="{TemplateBinding FontSize}" Height="{TemplateBinding FontSize}" Stretch="Uniform"
+                                  StrokeThickness="1.7" Stroke="{TemplateBinding Foreground}" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  Data="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" />
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}" TextElement.FontSize="{TemplateBinding FontSize}" />
+                        </DockPanel>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Tag" Value="{x:Null}"><Setter TargetName="CardIcon" Property="Visibility" Value="Collapsed" /></Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

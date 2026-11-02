@@ -54,9 +54,9 @@
         </StackPanel>
         <StackPanel Grid.Row="2" Margin="0,12,0,12">
             <StackPanel Orientation="Horizontal">
-                <Button Style="{StaticResource ActionButton}" Content="匹配词表" Command="{Binding PrepareCommand}" />
-                <Button Style="{StaticResource ActionButton}" Content="选择 TXT" IsEnabled="{Binding CanEdit}" Click="SelectFileClick" />
-                <Button Style="{StaticResource ActionButton}" Content="取消操作" Command="{Binding CancelCommand}" />
+                <Button Tag="{StaticResource SearchIconGeometry}" Style="{StaticResource ActionButton}" Content="匹配词表" Command="{Binding PrepareCommand}" />
+                <Button Tag="{StaticResource FolderIconGeometry}" Style="{StaticResource ActionButton}" Content="选择 TXT" IsEnabled="{Binding CanEdit}" Click="SelectFileClick" />
+                <Button Tag="{StaticResource StopIconGeometry}" Style="{StaticResource ActionButton}" Content="取消操作" Command="{Binding CancelCommand}" />
                 <CheckBox Content="全选已确认义项" VerticalAlignment="Center"
                           IsChecked="{Binding AreAllSelected}" IsEnabled="{Binding CanSelectAll, FallbackValue=False}" />
                 <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="14,0,0,0" VerticalAlignment="Center" Text="{Binding SelectedCount, StringFormat=已选 {0} 项}" />
@@ -107,8 +107,8 @@
             </ListBox.ItemTemplate>
         </ListBox>
         <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,16,0,0">
-            <Button Style="{StaticResource ActionButton}" Content="加入收件箱" Command="{Binding StageSelectedCommand}" />
-            <Button Style="{StaticResource ActionButton}" Content="打开收件箱" Command="{Binding OpenInboxCommand}" />
+            <Button Tag="{StaticResource InboxIconGeometry}" Style="{StaticResource ActionButton}" Content="加入收件箱" Command="{Binding StageSelectedCommand}" />
+            <Button Tag="{StaticResource InboxIconGeometry}" Style="{StaticResource ActionButton}" Content="打开收件箱" Command="{Binding OpenInboxCommand}" />
         </StackPanel>
     </Grid>
 </UserControl>

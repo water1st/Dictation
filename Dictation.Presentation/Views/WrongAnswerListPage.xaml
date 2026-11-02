@@ -37,10 +37,10 @@
             <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" TextWrapping="Wrap" />
             <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,8,0,0" Text="回顾错题巩固记忆" TextWrapping="Wrap" />
             <WrapPanel Margin="0,16,0,0">
-                <Button x:Name="RepracticeButton" Content="重练选中复习错题" Command="{Binding RepracticeCommand}" />
-                <Button Content="继续原学习" Command="{Binding ContinueLearningCommand}" />
-                <Button Content="刷新" Command="{Binding RefreshCommand}" />
-                <Button Content="取消" Command="{Binding CancelCommand}" />
+                <Button Tag="{StaticResource RefreshIconGeometry}" x:Name="RepracticeButton" Content="重练选中复习错题" Command="{Binding RepracticeCommand}" />
+                <Button Tag="{StaticResource PlayIconGeometry}" Content="继续原学习" Command="{Binding ContinueLearningCommand}" />
+                <Button Tag="{StaticResource RefreshIconGeometry}" Content="刷新" Command="{Binding RefreshCommand}" />
+                <Button Tag="{StaticResource StopIconGeometry}" Content="取消" Command="{Binding CancelCommand}" />
             </WrapPanel>
             <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,10,0,0" Text="有未完成复习时会先恢复原轮次，不丢弃进度。" TextWrapping="Wrap" />
             <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,8,0,0" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
@@ -78,8 +78,7 @@
                         <TextBlock Style="{DynamicResource DetailTitleTextStyle}" Text="{Binding SelectedItem.Heading}" TextWrapping="Wrap" />
                         <TextBlock Style="{DynamicResource BodyTextStyle}" x:Name="DetailMeanings" Margin="0,10,0,0" Text="{Binding SelectedItem.Item.Meanings}" TextWrapping="Wrap"
                                    Foreground="{DynamicResource ForegroundBrush}" />
-                        <Button x:Name="DetailSpeakerButton" Content="🔊" ToolTip="播放对应词形" AutomationProperties.Name="播放对应词形"
-                                FontSize="{DynamicResource IconFontSize}"
+                        <Button Tag="{StaticResource PlayIconGeometry}" x:Name="DetailSpeakerButton" Content="播放发音" ToolTip="播放对应词形" AutomationProperties.Name="播放对应词形"
                                 HorizontalAlignment="Left" Margin="0,12,0,12" Command="{Binding PlayDetailCommand}" />
                         <TextBlock Style="{DynamicResource StrongBodyTextStyle}" Text="原始错误记录" Margin="0,0,0,12" />
                     </StackPanel>

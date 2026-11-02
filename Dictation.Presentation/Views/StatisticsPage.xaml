@@ -22,9 +22,9 @@
                 <StackPanel>
                     <DockPanel Margin="0,0,0,16">
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                            <Button Content="‹" Command="{Binding PreviousMonthCommand}" ToolTip="上个月" />
-                            <Button Content="本月" Command="{Binding CurrentMonthCommand}" />
-                            <Button Content="›" Command="{Binding NextMonthCommand}" ToolTip="下个月" />
+                            <Button Tag="{StaticResource BackIconGeometry}" Content="上个月" Command="{Binding PreviousMonthCommand}" ToolTip="上个月" />
+                            <Button Tag="{StaticResource ChartIconGeometry}" Content="本月" Command="{Binding CurrentMonthCommand}" />
+                            <Button Tag="{StaticResource ForwardIconGeometry}" Content="下个月" Command="{Binding NextMonthCommand}" ToolTip="下个月" />
                         </StackPanel>
                         <TextBlock Style="{DynamicResource CalendarTitleTextStyle}" x:Name="CalendarMonthLabel" Text="{Binding MonthLabel}" VerticalAlignment="Center" />
                     </DockPanel>
@@ -50,7 +50,7 @@
                     </ItemsControl>
                     <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="日语与英语分别完成当天任务，分别点亮自己的徽章。" Margin="0,14,0,0" TextWrapping="Wrap" />
                     <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding CalendarErrorMessage}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" Margin="0,8,0,0" />
-                    <Button Content="刷新记录" Command="{Binding RefreshCommand}" HorizontalAlignment="Left" Margin="0,12,0,0" />
+                    <Button Tag="{StaticResource RefreshIconGeometry}" Content="刷新记录" Command="{Binding RefreshCommand}" HorizontalAlignment="Left" Margin="0,12,0,0" />
                 </StackPanel>
             </Border>
             <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding ReportErrorMessage}" Foreground="{DynamicResource ErrorBrush}" Margin="0,16,0,0" TextWrapping="Wrap" />

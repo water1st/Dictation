@@ -44,7 +44,21 @@ namespace Dictation.Tests.Presentation
             {
                 if (button.Content is string label)
                 {
-                    Assert.Equal(label == "🔊" ? 24d : 16d, button.FontSize);
+                    var isLargeSettingsAction = pageType == typeof(SettingsPage)
+                        && label is "批量导入词表" or "导入收件箱" or "学习计划" or "复习计划";
+                    var expectedSize = isLargeSettingsAction ? 28d : label == "🔊" ? 24d : 16d;
+                    Assert.Equal(expectedSize, button.FontSize);
+                    if (isLargeSettingsAction)
+                    {
+                        // 未选中的设置分区不会参与布局，单独渲染同一按钮样式以核验尺寸。
+                        var preview = new Button { Content = label, Style = button.Style, Tag = button.Tag };
+                        host.Children.Add(preview);
+                        FormControlThemeTests.Layout(host);
+                        Assert.True(preview.ActualHeight >= 80);
+                        var icon = Assert.Single(FormControlThemeTests.Children<System.Windows.Shapes.Path>(preview), path => path.Data is not null);
+                        Assert.Equal(expectedSize, Math.Max(icon.ActualWidth, icon.ActualHeight), 3);
+                        host.Children.Remove(preview);
+                    }
                 }
             }
             return Task.CompletedTask;

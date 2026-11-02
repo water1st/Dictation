@@ -61,10 +61,10 @@
         <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" Margin="0,0,0,14" TextWrapping="Wrap" />
         <WrapPanel Grid.Row="1">
             <Button Content="保存计划" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryActionButtonStyle}"
-                    Margin="0,0,8,8" Tag="{StaticResource SaveIconGeometry}" ContentTemplate="{StaticResource IconTextButtonContentTemplate}" />
-            <Button Content="重新加载" Command="{Binding RefreshCommand}" Tag="{StaticResource RefreshIconGeometry}" ContentTemplate="{StaticResource IconTextButtonContentTemplate}" />
-            <Button Content="取消操作" Command="{Binding CancelCommand}" />
-            <Button Content="返回" Command="{Binding BackCommand}" />
+                    Margin="0,0,8,8" Tag="{StaticResource SaveIconGeometry}" />
+            <Button Content="重新加载" Command="{Binding RefreshCommand}" Tag="{StaticResource RefreshIconGeometry}" />
+            <Button Tag="{StaticResource StopIconGeometry}" Content="取消操作" Command="{Binding CancelCommand}" />
+            <Button Tag="{StaticResource BackIconGeometry}" Content="返回" Command="{Binding BackCommand}" />
         </WrapPanel>
         <ScrollViewer controls:PageScrollHost.IsPageScrollViewer="True" Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="0,10,12,0">
@@ -101,7 +101,7 @@
                             <TextBox Text="{Binding ExampleQuery, UpdateSourceTrigger=PropertyChanged}" Padding="10" Margin="0,0,0,10"
                                      Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}" />
                             <Button Content="查找示例动词" HorizontalAlignment="Left" Command="{Binding SearchExamplesCommand}"
-                                    Tag="{StaticResource SearchIconGeometry}" ContentTemplate="{StaticResource IconTextButtonContentTemplate}" />
+                                    Tag="{StaticResource SearchIconGeometry}" />
                             <ListBox ItemsSource="{Binding ExampleCandidates}" SelectedItem="{Binding SelectedExample, Mode=TwoWay}"
                                      Height="130" Background="Transparent" BorderThickness="0"
                                      Foreground="{DynamicResource ForegroundBrush}" Margin="0,0,0,10"
@@ -160,7 +160,7 @@
                         </ItemsControl>
                         <Button Content="删除当前词组及进度" Command="{Binding DeleteSelectedCommand}" HorizontalAlignment="Left" Margin="0,16,0,0"
                                 Style="{StaticResource DestructiveActionButtonStyle}" Tag="{StaticResource DeleteIconGeometry}"
-                                ContentTemplate="{StaticResource IconTextButtonContentTemplate}" />
+                                />
                     </StackPanel>
                 </Border>
             </StackPanel>
