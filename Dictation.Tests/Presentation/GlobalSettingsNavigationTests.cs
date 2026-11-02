@@ -1,7 +1,10 @@
 using Dictation.Core.Configuration;
+using Dictation.Core.Importing;
+using Dictation.Core.Learning;
 using Dictation.Core.Tts;
 using Dictation.Presentation.Audio;
 using Dictation.Presentation.Navigation;
+using Dictation.Presentation.Practice;
 using Dictation.Presentation.Shell;
 using Dictation.Presentation.ViewModels;
 using Dictation.Tests.Infrastructure;
@@ -159,6 +162,34 @@ namespace Dictation.Tests.Presentation
             Assert.Equal(120, lookup.ScrollOffset);
         }
 
+        [Fact]
+        public async Task Workspace_SettingsChangesPlan_RefreshesDailyProgressOnReturn()
+        {
+            using var directory = new TemporaryDirectory();
+            using var provider = await CreateProviderAsync(directory.Path);
+            var nav = provider.GetRequiredService<NavigationService>();
+            var root = provider.GetRequiredService<LandingViewModel>();
+            nav.InitializeHome(root);
+            await root.SelectLanguageAsync(LearningLanguage.Japanese, Token);
+            nav.CompleteTransition();
+            await nav.OpenSettingsAsync(Token);
+            var settings = nav.CurrentPage;
+            nav.CompleteTransition();
+            await nav.OpenLearningPlanAsync(LearningLanguage.Japanese, Token);
+            nav.CompleteTransition();
+            var plan = Assert.IsType<LearningPlanViewModel>(nav.CurrentPage);
+            plan.DailyNewTarget = 37;
+            await plan.SaveAsync(Token);
+            Assert.Null(plan.ErrorMessage);
+            await nav.GoBackAsync(Token);
+            nav.CompleteTransition();
+            Assert.Same(settings, nav.CurrentPage);
+            await nav.GoBackAsync(Token);
+            nav.CompleteTransition();
+            Assert.Same(root.Home, nav.CurrentPage);
+            Assert.EndsWith("/37", root.Home.LearningProgressLabel);
+        }
+
         private static Task<ServiceProvider> CreateProviderAsync(string path)
         {
             return WorkspaceSettingsNavigationTests.CreateProviderAsync(path, services =>
@@ -166,6 +197,63 @@ namespace Dictation.Tests.Presentation
                 services.AddSingleton<ITtsProvider>(new LearningPresentationTestEnvironment.ControlledTtsProvider());
                 services.AddSingleton<IAudioPlayer>(new LearningPresentationTestEnvironment.ControlledAudioPlayer());
             });
+        }
+
+        [Fact]
+        public async Task LearningSession_SettingsDuringSpeechPreparation_CancelsAndRetainsUsablePage()
+        {
+            using var directory = new TemporaryDirectory();
+            var tts = new LearningPresentationTestEnvironment.ControlledTtsProvider();
+            var audio = new LearningPresentationTestEnvironment.ControlledAudioPlayer();
+            using var provider = await WorkspaceSettingsNavigationTests.CreateProviderAsync(directory.Path, services =>
+            {
+                services.AddSingleton<ITtsProvider>(tts);
+                services.AddSingleton<IAudioPlayer>(audio);
+            });
+            var staged = await provider.GetRequiredService<IImportStaging>().StageAsync(new StageImportBatchRequestDto(
+                LearningLanguage.Japanese, ImportSourceKind.Manual, new[] { new ImportSelectionDto("食べる", "jmdict:1:1") }), Token);
+            await provider.GetRequiredService<IImportInboxActions>().DecideAsync(new DecideImportBatchRequestDto(
+                staged.Batch.BatchId, new[] { Assert.Single(staged.Batch.Items).ItemId }, ImportDecision.Learning), Token);
+            await provider.GetRequiredService<LearningPlanService>().SaveAsync(new SaveLearningPlanRequestDto(
+                LearningLanguage.Japanese, 20, 20, LearningSelectionMode.Sequential, EnglishFormLabelMode.GrammarName, null,
+                new[] { "Polite" }, new[] { LearningChannel.Dictation }, new[] { LearningOutputMode.Kana }), Token);
+            var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(Token);
+            timeout.CancelAfter(TimeSpan.FromSeconds(8));
+            CancellationToken speechToken = default;
+            tts.BeforeReturnAsync = async token =>
+            {
+                speechToken = token;
+                entered.TrySetResult();
+                await Task.Delay(Timeout.Infinite, token);
+            };
+            var nav = provider.GetRequiredService<NavigationService>();
+            nav.InitializeHome(provider.GetRequiredService<LandingViewModel>());
+            var starting = nav.OpenLearningAsync(LearningLanguage.Japanese, timeout.Token);
+            try
+            {
+                await entered.Task.WaitAsync(timeout.Token);
+                var session = Assert.IsType<PracticeSessionViewModel>(nav.CurrentPage);
+                var question = session.Question;
+                nav.CompleteTransition();
+                await nav.OpenSettingsAsync(Token);
+                Assert.True(speechToken.IsCancellationRequested);
+                await starting.WaitAsync(timeout.Token);
+                Assert.Empty(audio.Played);
+                nav.CompleteTransition();
+                await nav.GoBackAsync(Token);
+                nav.CompleteTransition();
+                Assert.Same(session, nav.CurrentPage);
+                Assert.Same(question, session.Question);
+                tts.BeforeReturnAsync = null;
+                await session.ReplayQuestionAsync(Token);
+                Assert.Single(audio.Played);
+            }
+            finally
+            {
+                timeout.Cancel();
+                await Record.ExceptionAsync(() => starting);
+            }
         }
 
         private static async Task OpenPageAsync(NavigationService nav, string page, LearningLanguage language)
@@ -190,6 +278,93 @@ namespace Dictation.Tests.Presentation
                 case "ReviewSession": await nav.OpenReviewSessionAsync(language, Token); break;
                 case "Mcp": await nav.OpenMcpSettingsAsync(Token); break;
                 default: throw new ArgumentOutOfRangeException(nameof(page));
+            }
+        }
+
+        [Fact]
+        public async Task Inbox_SettingsNestedDecision_RefreshesOriginalPendingBatchesAndPreservesSelection()
+        {
+            using var directory = new TemporaryDirectory();
+            using var provider = await CreateProviderAsync(directory.Path);
+            var staging = provider.GetRequiredService<IImportStaging>();
+            var first = await staging.StageAsync(new StageImportBatchRequestDto(LearningLanguage.Japanese,
+                ImportSourceKind.Manual, new[] { new ImportSelectionDto("食べる", "jmdict:1:1") }), Token);
+            var second = await staging.StageAsync(new StageImportBatchRequestDto(LearningLanguage.Japanese,
+                ImportSourceKind.Manual, new[] { new ImportSelectionDto("食前", "jmdict:2:1") }), Token);
+            var nav = provider.GetRequiredService<NavigationService>();
+            nav.InitializeHome(provider.GetRequiredService<LandingViewModel>());
+            await nav.OpenImportInboxAsync(LearningLanguage.Japanese, Token);
+            nav.CompleteTransition();
+            var original = Assert.IsType<ImportInboxListViewModel>(nav.CurrentPage);
+            original.SelectedBatch = original.Batches.Single(batch => batch.BatchId == second.Batch.BatchId);
+            original.IsAllSelected = true;
+            await nav.OpenSettingsAsync(Token);
+            nav.CompleteTransition();
+            await nav.OpenImportInboxAsync(LearningLanguage.Japanese, Token);
+            nav.CompleteTransition();
+            var nested = Assert.IsType<ImportInboxListViewModel>(nav.CurrentPage);
+            nested.SelectedBatch = nested.Batches.Single(batch => batch.BatchId == first.Batch.BatchId);
+            nested.IsAllSelected = true;
+            await nested.DecideAsync(ImportDecision.Learning, Token);
+            Assert.Null(nested.ErrorMessage);
+            await nav.GoBackAsync(Token);
+            nav.CompleteTransition();
+            await nav.GoBackAsync(Token);
+            nav.CompleteTransition();
+            Assert.Same(original, nav.CurrentPage);
+            Assert.Equal(second.Batch.BatchId, Assert.Single(original.Batches).BatchId);
+            Assert.Equal(second.Batch.BatchId, original.SelectedBatch?.BatchId);
+            Assert.True(Assert.Single(original.Items).IsSelected);
+        }
+
+        [Fact]
+        public async Task LearningSession_SettingsAfterSubmissionCommitted_PreservesFeedbackAndCanContinue()
+        {
+            using var directory = new TemporaryDirectory();
+            DelayedPracticeSubmissionWorkflow delayed = null!;
+            using var provider = await WorkspaceSettingsNavigationTests.CreateProviderAsync(directory.Path, services =>
+            {
+                services.AddSingleton<ITtsProvider>(new LearningPresentationTestEnvironment.ControlledTtsProvider());
+                services.AddSingleton<IAudioPlayer>(new LearningPresentationTestEnvironment.ControlledAudioPlayer());
+                services.AddScoped<PracticeSessionViewModel>(p =>
+                {
+                    delayed = new DelayedPracticeSubmissionWorkflow(new LearningPracticeWorkflow(
+                        p.GetRequiredService<ILearningSessionOperations>(), p.GetRequiredService<ILearningPlanReader>()));
+                    return new PracticeSessionViewModel(delayed, p.GetRequiredService<TtsService>(), p.GetRequiredService<IAudioPlayer>());
+                });
+            });
+            var staged = await provider.GetRequiredService<IImportStaging>().StageAsync(new StageImportBatchRequestDto(
+                LearningLanguage.Japanese, ImportSourceKind.Manual, new[] { new ImportSelectionDto("食べる", "jmdict:1:1") }), Token);
+            await provider.GetRequiredService<IImportInboxActions>().DecideAsync(new DecideImportBatchRequestDto(
+                staged.Batch.BatchId, new[] { Assert.Single(staged.Batch.Items).ItemId }, ImportDecision.Learning), Token);
+            var nav = provider.GetRequiredService<NavigationService>();
+            nav.InitializeHome(provider.GetRequiredService<LandingViewModel>());
+            await nav.OpenLearningAsync(LearningLanguage.Japanese, Token);
+            nav.CompleteTransition();
+            var session = Assert.IsType<PracticeSessionViewModel>(nav.CurrentPage);
+            session.AnswerText = "test";
+            Assert.True(session.SubmitCommand.CanExecute(null));
+            var submitting = session.SubmitAsync(Token);
+            try
+            {
+                await delayed.Committed.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+                await nav.OpenSettingsAsync(Token);
+                delayed.Release.TrySetResult();
+                Assert.Null(await Record.ExceptionAsync(() => submitting));
+                nav.CompleteTransition();
+                await nav.GoBackAsync(Token);
+                nav.CompleteTransition();
+                Assert.Same(session, nav.CurrentPage);
+                Assert.NotNull(session.Feedback);
+                Assert.True(session.ContinueCommand.CanExecute(null));
+                await session.ContinueAsync(Token);
+                Assert.Null(session.ErrorMessage);
+                Assert.Null(session.Feedback);
+            }
+            finally
+            {
+                delayed.Release.TrySetResult();
+                await Record.ExceptionAsync(() => submitting);
             }
         }
     }

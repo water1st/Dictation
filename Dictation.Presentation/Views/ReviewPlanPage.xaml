@@ -64,7 +64,6 @@
                     Margin="0,0,8,8" Tag="{StaticResource SaveIconGeometry}" />
             <Button Content="重新加载" Command="{Binding RefreshCommand}" Tag="{StaticResource RefreshIconGeometry}" />
             <Button Tag="{StaticResource StopIconGeometry}" Content="取消操作" Command="{Binding CancelCommand}" />
-            <Button Tag="{StaticResource BackIconGeometry}" Content="返回" Command="{Binding BackCommand}" />
         </WrapPanel>
         <ScrollViewer controls:PageScrollHost.IsPageScrollViewer="True" Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="0,10,12,0">

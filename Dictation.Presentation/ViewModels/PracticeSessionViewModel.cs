@@ -39,6 +39,7 @@ namespace Dictation.Presentation.ViewModels
         private string? errorMessage;
         private bool isInitialized;
         private bool isBusy;
+        private bool isSubmittingAnswer;
         private bool isBrowsing;
         private bool hasHeardQuestion;
         private bool isDisposed;
@@ -234,12 +235,20 @@ namespace Dictation.Presentation.ViewModels
             if (!CanSubmit) return Task.CompletedTask;
             return RunOperationAsync(async token =>
             {
-                var currentQuestion = question!;
-                var submittedText = answerText;
-                var result = await RunWorkflowAsync(() => workflow.SubmitAnswerAsync(currentQuestion.SessionId, currentQuestion.QuestionId, submittedText, token), token);
-                token.ThrowIfCancellationRequested();
-                feedback = result;
-                NotifyState();
+                isSubmittingAnswer = true;
+                try
+                {
+                    var currentQuestion = question!;
+                    var submittedText = answerText;
+                    var result = await RunWorkflowAsync(() => workflow.SubmitAnswerAsync(currentQuestion.SessionId, currentQuestion.QuestionId, submittedText, token), token);
+                    token.ThrowIfCancellationRequested();
+                    feedback = result;
+                    NotifyState();
+                }
+                finally
+                {
+                    isSubmittingAnswer = false;
+                }
             }, cancellationToken, "提交答案失败");
         }
 
@@ -339,6 +348,12 @@ namespace Dictation.Presentation.ViewModels
 
         /// <summary>返回上级时立即取消当前操作，旧页动画结束前也不允许晚结果回写。</summary>
         public void CancelOperation() => currentOperation?.Cancel();
+
+        /// <summary>临时进入设置时停止语音等操作；提交期间保留结果确认，避免丢失已保存的反馈。</summary>
+        internal void SuspendForSettings()
+        {
+            if (!isSubmittingAnswer) CancelOperation();
+        }
 
         /// <summary>
         /// 用非阻塞信号量防止重叠 UI 操作，关联页面寿命取消；业务错误写入提示，取消继续向上传播。

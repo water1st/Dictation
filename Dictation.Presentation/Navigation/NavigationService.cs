@@ -117,11 +117,12 @@ namespace Dictation.Presentation.Navigation
                 {
                     await settings.SelectTargetLanguageAsync(language);
                 }
+                CancelCurrentPageOperation(leavingPage: false);
                 NavigateForward(new NavigationEntry(settings, "设置", null, scope, null));
             }
             catch
             {
-                if (!ReferenceEquals(currentEntry?.Scope, scope)) scope.Dispose();
+                if (!IsScopeRetained(scope)) scope.Dispose();
                 throw;
             }
         }
@@ -144,7 +145,7 @@ namespace Dictation.Presentation.Navigation
             }
             catch
             {
-                if (!ReferenceEquals(currentEntry?.Scope, scope) && !pendingDisposals.Any(entry => ReferenceEquals(entry.Scope, scope))) scope.Dispose();
+                if (!IsScopeRetained(scope)) scope.Dispose();
                 throw;
             }
         }
@@ -165,7 +166,7 @@ namespace Dictation.Presentation.Navigation
             }
             catch
             {
-                if (!ReferenceEquals(currentEntry?.Scope, scope) && !pendingDisposals.Any(entry => ReferenceEquals(entry.Scope, scope))) scope.Dispose();
+                if (!IsScopeRetained(scope)) scope.Dispose();
                 throw;
             }
         }
@@ -186,7 +187,7 @@ namespace Dictation.Presentation.Navigation
             }
             catch
             {
-                if (!ReferenceEquals(currentEntry?.Scope, scope) && !pendingDisposals.Any(entry => ReferenceEquals(entry.Scope, scope)))
+                if (!IsScopeRetained(scope))
                     scope.Dispose();
                 throw;
             }
@@ -218,7 +219,7 @@ namespace Dictation.Presentation.Navigation
             }
             catch
             {
-                if (!ReferenceEquals(currentEntry?.Scope, scope) && !pendingDisposals.Any(entry => ReferenceEquals(entry.Scope, scope))) scope.Dispose();
+                if (!IsScopeRetained(scope)) scope.Dispose();
                 throw;
             }
         }
@@ -238,7 +239,7 @@ namespace Dictation.Presentation.Navigation
             }
             catch
             {
-                if (!ReferenceEquals(currentEntry?.Scope, scope) && !pendingDisposals.Any(entry => ReferenceEquals(entry.Scope, scope))) scope.Dispose();
+                if (!IsScopeRetained(scope)) scope.Dispose();
                 throw;
             }
         }
@@ -262,7 +263,7 @@ namespace Dictation.Presentation.Navigation
             }
             catch
             {
-                if (!ReferenceEquals(currentEntry?.Scope, scope))
+                if (!IsScopeRetained(scope))
                 {
                     scope.Dispose();
                 }
@@ -291,7 +292,7 @@ namespace Dictation.Presentation.Navigation
             }
             catch
             {
-                if (!ReferenceEquals(currentEntry?.Scope, scope))
+                if (!IsScopeRetained(scope))
                 {
                     scope.Dispose();
                 }
@@ -324,7 +325,7 @@ namespace Dictation.Presentation.Navigation
             }
             catch
             {
-                if (!ReferenceEquals(currentEntry?.Scope, scope))
+                if (!IsScopeRetained(scope))
                 {
                     scope.Dispose();
                 }
@@ -499,14 +500,13 @@ namespace Dictation.Presentation.Navigation
             }
             catch (OperationCanceledException) when (
                 !cancellationToken.IsCancellationRequested
-                && ReferenceEquals(currentEntry?.Scope, scope))
+                && IsScopeRetained(scope))
             {
                 // 页面内取消只停止首题准备；页面仍可重试或返回。
             }
             catch
             {
-                if (!ReferenceEquals(currentEntry?.Scope, scope)
-                    && !pendingDisposals.Any(entry => ReferenceEquals(entry.Scope, scope)))
+                if (!IsScopeRetained(scope))
                 {
                     scope.Dispose();
                 }
@@ -570,37 +570,15 @@ namespace Dictation.Presentation.Navigation
 
             EnsureTransitionCompleted();
             var previousEntry = backStack[^1];
-            // 返回开始即取消导入，不能等退场动画结束才阻止后台暂存。
-            if (currentEntry?.ViewModel is TextImportViewModel textImport)
-            {
-                textImport.CancelOperation();
-            }
-            if (currentEntry?.ViewModel is ReviewLibraryViewModel reviewLibrary)
-            {
-                reviewLibrary.CancelOperation();
-            }
-            if (currentEntry?.ViewModel is ReviewPlanViewModel reviewPlan)
-            {
-                reviewPlan.CancelOperation();
-            }
-            if (currentEntry?.ViewModel is PracticeSessionViewModel practice)
-            {
-                practice.CancelOperation();
-            }
-            if (currentEntry?.ViewModel is WrongAnswerListViewModel wrongAnswers)
-            {
-                wrongAnswers.CancelOperation();
-            }
-            if (currentEntry?.ViewModel is KanaPlanViewModel kanaPlan) kanaPlan.CancelOperation();
-            if (currentEntry?.ViewModel is McpSettingsViewModel mcpSettings) mcpSettings.CancelOperation();
-            if (currentEntry?.ViewModel is SettingsViewModel settings) settings.CancelOperation();
-            if (currentEntry?.ViewModel is KanaSessionViewModel kanaSession) kanaSession.CancelOperation(leavingPage: true);
+            CancelCurrentPageOperation(leavingPage: true);
             navigationOperationPending = true;
             OnPropertyChanged(nameof(CanGoBack));
             try
             {
-                // 设置是临时入口，返回时保留业务表单和选择；原业务页面之间仍按原流程刷新。
-                if (currentEntry?.ViewModel is not SettingsViewModel && previousEntry.ResumeAsync is not null)
+                // 设置返回保留未保存表单；列表和工作台仍通过原有恢复入口刷新业务数据。
+                var preserveForm = currentEntry?.ViewModel is SettingsViewModel
+                    && previousEntry.ViewModel is LearningPlanViewModel or KanaPlanViewModel or McpSettingsViewModel;
+                if (previousEntry.ResumeAsync is not null && !preserveForm)
                 {
                     await previousEntry.ResumeAsync(cancellationToken);
                     cancellationToken.ThrowIfCancellationRequested();
@@ -703,6 +681,37 @@ namespace Dictation.Presentation.Navigation
 
             EnsureTransitionCompleted();
             return true;
+        }
+
+        /// <summary>离开当前视图时立即停止操作；临时进入设置不终结可恢复页面的寿命。</summary>
+        /// <param name="leavingPage">是否永久退出当前页面。</param>
+        private void CancelCurrentPageOperation(bool leavingPage)
+        {
+            switch (currentEntry?.ViewModel)
+            {
+                case TextImportViewModel textImport: textImport.CancelOperation(); break;
+                case ReviewLibraryViewModel reviewLibrary: reviewLibrary.CancelOperation(); break;
+                case ReviewPlanViewModel reviewPlan: reviewPlan.CancelOperation(); break;
+                case PracticeSessionViewModel practice:
+                    if (leavingPage) practice.CancelOperation();
+                    else practice.SuspendForSettings();
+                    break;
+                case WrongAnswerListViewModel wrongAnswers: wrongAnswers.CancelOperation(); break;
+                case KanaPlanViewModel kanaPlan: kanaPlan.CancelOperation(); break;
+                case McpSettingsViewModel mcpSettings: mcpSettings.CancelOperation(); break;
+                case SettingsViewModel settings: settings.CancelOperation(); break;
+                case KanaSessionViewModel kanaSession: kanaSession.CancelOperation(leavingPage); break;
+            }
+        }
+
+        /// <summary>已显示、压栈或等待退场的页面作用域，只由导航寿命管理统一释放。</summary>
+        /// <param name="scope">导航操作创建的页面作用域。</param>
+        /// <returns>该作用域是否仍被导航保留。</returns>
+        private bool IsScopeRetained(IServiceScope scope)
+        {
+            return ReferenceEquals(currentEntry?.Scope, scope)
+                || backStack.Any(entry => ReferenceEquals(entry.Scope, scope))
+                || pendingDisposals.Any(entry => ReferenceEquals(entry.Scope, scope));
         }
 
         private void EnsureInitialized()

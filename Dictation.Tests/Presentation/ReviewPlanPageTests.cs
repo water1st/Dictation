@@ -207,7 +207,7 @@ namespace Dictation.Tests.Presentation
                 page.Measure(new Size(640, 600)); page.Arrange(new Rect(0, 0, 640, 600)); page.UpdateLayout();
                 Assert.Empty(Children<DataGrid>(page));
                 Assert.Contains(Children<Button>(page), button => ReferenceEquals(button.Command, vm.SaveCommand));
-                Assert.Contains(Children<Button>(page), button => ReferenceEquals(button.Command, vm.BackCommand));
+                Assert.DoesNotContain(Children<Button>(page), button => ReferenceEquals(button.Command, vm.BackCommand));
                 Assert.Contains(Children<Button>(page), button => ReferenceEquals(button.Command, vm.DeleteSelectedCommand));
                 Assert.Contains(Children<ScrollViewer>(page), scroll => scroll.ScrollableHeight > 0);
                 var selectAll = Assert.IsType<CheckBox>(page.FindName("SelectAllGroups"));
