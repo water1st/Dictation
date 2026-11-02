@@ -184,7 +184,7 @@
                      FontSize="{DynamicResource ControlFontSize}"
                      Text="{Binding FilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      ToolTip="筛选当前批次项目" />
-            <Button Grid.Column="1"
+            <Button Tag="{StaticResource RefreshIconGeometry}" Grid.Column="1"
                     Margin="12,0,0,0"
                     Command="{Binding RefreshCommand}"
                     Content="刷新"
@@ -233,6 +233,7 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <CheckBox Content="全选"
+                                  IsEnabled="{Binding CanSelectAll, FallbackValue=False}"
                                   IsThreeState="False"
                                   IsChecked="{Binding IsAllSelected, Mode=TwoWay}"
                                   FontSize="{DynamicResource ControlFontSize}"
@@ -265,18 +266,18 @@
                        Text="{Binding ErrorMessage}"
                        TextWrapping="Wrap" />
             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button Command="{Binding OpenSelectedDetailCommand}"
+                <Button Tag="{StaticResource ListIconGeometry}" Command="{Binding OpenSelectedDetailCommand}"
                         Content="查看详情"
                         Style="{StaticResource InboxButtonStyle}" />
-                <Button Command="{Binding SendToLearningCommand}"
+                <Button Tag="{StaticResource BookIconGeometry}" Command="{Binding SendToLearningCommand}"
                         Content="送入学习"
                         IsEnabled="{Binding CanDecide}"
                         Style="{StaticResource InboxButtonStyle}" />
-                <Button Command="{Binding SendToReviewCommand}"
+                <Button Tag="{StaticResource ReviewIconGeometry}" Command="{Binding SendToReviewCommand}"
                         Content="送入复习"
                         IsEnabled="{Binding CanDecide}"
                         Style="{StaticResource InboxButtonStyle}" />
-                <Button Command="{Binding DiscardCommand}"
+                <Button Tag="{StaticResource DeleteIconGeometry}" Command="{Binding DiscardCommand}"
                         Content="丢弃"
                         IsEnabled="{Binding CanDecide}"
                         Style="{StaticResource InboxButtonStyle}" />

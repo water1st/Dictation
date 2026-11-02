@@ -37,8 +37,8 @@
                     </Grid>
                     <TextBlock Style="{DynamicResource BodyTextStyle}" x:Name="RuntimeStatus" Margin="0,12,0,0" Text="{Binding RuntimeStatusLabel}" Foreground="{DynamicResource AccentBrush}" />
                     <WrapPanel Margin="0,12,0,0">
-                        <Button x:Name="SaveButton" Content="保存并应用" Command="{Binding SaveCommand}" Padding="18,10" Margin="0,0,12,0" />
-                        <Button x:Name="RetryButton" Content="重试已保存设置" Command="{Binding RetryCommand}" Padding="18,10" />
+                        <Button Tag="{StaticResource SaveIconGeometry}" x:Name="SaveButton" Content="保存并应用" Command="{Binding SaveCommand}" Padding="18,10" Margin="0,0,12,0" />
+                        <Button Tag="{StaticResource RefreshIconGeometry}" x:Name="RetryButton" Content="重试已保存设置" Command="{Binding RetryCommand}" Padding="18,10" />
                     </WrapPanel>
                 </StackPanel>
             </Border>
@@ -49,8 +49,8 @@
                     <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,8,0,0" Text="{Binding ConfigPath}" TextWrapping="Wrap" />
                     <TextBlock Style="{DynamicResource BodyTextStyle}" x:Name="RegistrationStatus" Margin="0,12,0,0" Text="{Binding RegistrationMessage}" TextWrapping="Wrap" />
                     <WrapPanel Margin="0,12,0,0">
-                        <Button x:Name="RegisterButton" Content="注册当前端点" Command="{Binding RegisterCommand}" Padding="18,10" Margin="0,0,12,0" />
-                        <Button x:Name="UnregisterButton" Content="注销本应用端点" Command="{Binding UnregisterCommand}" Padding="18,10" />
+                        <Button Tag="{StaticResource LinkIconGeometry}" x:Name="RegisterButton" Content="注册当前端点" Command="{Binding RegisterCommand}" Padding="18,10" Margin="0,0,12,0" />
+                        <Button Tag="{StaticResource StopIconGeometry}" x:Name="UnregisterButton" Content="注销本应用端点" Command="{Binding UnregisterCommand}" Padding="18,10" />
                     </WrapPanel>
                 </StackPanel>
             </Border>

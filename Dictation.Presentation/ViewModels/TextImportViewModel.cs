@@ -90,19 +90,26 @@ namespace Dictation.Presentation.ViewModels
         }
         public bool CanEdit => isInitialized && !isDisposed && !IsBusy;
         public bool CanStage => CanEdit && SelectedCount > 0;
+        public bool CanSelectAll => CanEdit && Lines.Any(line => line.CanSelect);
         public int SelectedCount => Lines.Count(line => line.IsSelected && line.CanSelect);
-        public bool AreAllSelected
+        public bool? AreAllSelected
         {
-            get => Lines.Any(line => line.CanSelect) && Lines.Where(line => line.CanSelect).All(line => line.IsSelected);
+            get
+            {
+                var selectable = Lines.Where(line => line.CanSelect).ToArray();
+                var selected = selectable.Count(line => line.IsSelected);
+                if (selected == 0) return false;
+                return selected == selectable.Length ? true : null;
+            }
             set
             {
-                if (!CanEdit)
+                if (!CanEdit || value is not bool selected)
                 {
                     return;
                 }
                 foreach (var line in Lines)
                 {
-                    line.IsSelected = value;
+                    line.IsSelected = selected;
                 }
                 NotifySelectionChanged();
             }
@@ -321,6 +328,7 @@ namespace Dictation.Presentation.ViewModels
 
         private void NotifySelectionChanged()
         {
+            OnPropertyChanged(nameof(CanSelectAll));
             OnPropertyChanged(nameof(SelectedCount));
             OnPropertyChanged(nameof(AreAllSelected));
             OnPropertyChanged(nameof(CanStage));

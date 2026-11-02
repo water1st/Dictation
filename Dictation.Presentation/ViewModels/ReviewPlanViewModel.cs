@@ -74,6 +74,7 @@ namespace Dictation.Presentation.ViewModels
         public bool IsEnglish => isInitialized && SelectedLanguage == LearningLanguage.English;
         public bool CanEdit => isInitialized && hasLoaded && !IsBusy && !isDisposed;
         public bool CanSelectGroups => CanEdit && RangeMode == ReviewRangeMode.Selected;
+        public bool CanSelectAll => CanSelectGroups && Groups.Count > 0;
         public int DailyReviewTarget { get => dailyReviewTarget; set => SetProperty(ref dailyReviewTarget, value); }
         public int SessionWordLimit { get => sessionWordLimit; set => SetProperty(ref sessionWordLimit, value); }
         public ReviewRangeMode RangeMode
@@ -85,6 +86,7 @@ namespace Dictation.Presentation.ViewModels
                 if (SetProperty(ref rangeMode, value))
                 {
                     OnPropertyChanged(nameof(IsAllWords)); OnPropertyChanged(nameof(IsSelectedRange)); OnPropertyChanged(nameof(CanSelectGroups));
+                    OnPropertyChanged(nameof(CanSelectAll));
                 }
             }
         }
@@ -323,6 +325,7 @@ namespace Dictation.Presentation.ViewModels
             }
             SelectedGroup = Groups.FirstOrDefault(item => item.WordGroupId == activeId);
             OnPropertyChanged(nameof(IsAllSelected));
+            OnPropertyChanged(nameof(CanSelectAll));
         }
 
         /// <summary>依据规范化代码更新选项勾选，不改变选项集合或业务规则。</summary>
@@ -357,6 +360,7 @@ namespace Dictation.Presentation.ViewModels
         private void NotifyAvailability()
         {
             OnPropertyChanged(nameof(CanEdit)); OnPropertyChanged(nameof(CanSelectGroups));
+            OnPropertyChanged(nameof(CanSelectAll));
             foreach (var command in editCommands) command.NotifyCanExecuteChanged();
             cancelCommand.NotifyCanExecuteChanged();
         }

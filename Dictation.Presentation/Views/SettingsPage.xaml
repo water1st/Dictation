@@ -18,31 +18,31 @@
     <Grid Margin="{DynamicResource PageContentMargin}">
         <Grid.ColumnDefinitions><ColumnDefinition Width="168" /><ColumnDefinition Width="24" /><ColumnDefinition /></Grid.ColumnDefinitions>
         <StackPanel>
-            <Button Command="{Binding SelectAppearanceCommand}" Content="外观与主题" Margin="0,0,0,10" Padding="14,13">
-                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource CardButtonStyle}">
+            <Button Tag="{StaticResource ThemeIconGeometry}" Command="{Binding SelectAppearanceCommand}" Content="外观与主题" Margin="0,0,0,10" Padding="14,13">
+                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
                     <Style.Triggers><DataTrigger Binding="{Binding SelectedSection}" Value="{x:Static vm:SettingsSection.Appearance}">
-                        <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                        <Setter Property="Background" Value="{DynamicResource ControlPressedBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /><Setter Property="FontWeight" Value="Bold" />
                     </DataTrigger></Style.Triggers>
                 </Style></Button.Style>
             </Button>
-            <Button Command="{Binding SelectImportCommand}" Content="词表导入" Margin="0,0,0,10" Padding="14,13">
-                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource CardButtonStyle}">
+            <Button Tag="{StaticResource InboxIconGeometry}" Command="{Binding SelectImportCommand}" Content="词表导入" Margin="0,0,0,10" Padding="14,13">
+                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
                     <Style.Triggers><DataTrigger Binding="{Binding SelectedSection}" Value="{x:Static vm:SettingsSection.Import}">
-                        <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                        <Setter Property="Background" Value="{DynamicResource ControlPressedBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /><Setter Property="FontWeight" Value="Bold" />
                     </DataTrigger></Style.Triggers>
                 </Style></Button.Style>
             </Button>
-            <Button Command="{Binding SelectLearningReviewCommand}" Content="学习与复习" Margin="0,0,0,10" Padding="14,13">
-                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource CardButtonStyle}">
+            <Button Tag="{StaticResource BookIconGeometry}" Command="{Binding SelectLearningReviewCommand}" Content="学习与复习" Margin="0,0,0,10" Padding="14,13">
+                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
                     <Style.Triggers><DataTrigger Binding="{Binding SelectedSection}" Value="{x:Static vm:SettingsSection.LearningReview}">
-                        <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                        <Setter Property="Background" Value="{DynamicResource ControlPressedBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /><Setter Property="FontWeight" Value="Bold" />
                     </DataTrigger></Style.Triggers>
                 </Style></Button.Style>
             </Button>
-            <Button Command="{Binding SelectMcpCommand}" Content="AI / MCP" Margin="0,0,0,10" Padding="14,13">
-                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource CardButtonStyle}">
+            <Button Tag="{StaticResource LinkIconGeometry}" Command="{Binding SelectMcpCommand}" Content="AI / MCP" Margin="0,0,0,10" Padding="14,13">
+                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
                     <Style.Triggers><DataTrigger Binding="{Binding SelectedSection}" Value="{x:Static vm:SettingsSection.Mcp}">
-                        <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                        <Setter Property="Background" Value="{DynamicResource ControlPressedBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /><Setter Property="FontWeight" Value="Bold" />
                     </DataTrigger></Style.Triggers>
                 </Style></Button.Style>
             </Button>
@@ -53,12 +53,12 @@
 <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding SelectedSection}" Value="{x:Static vm:SettingsSection.Appearance}"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                     <TextBlock Style="{DynamicResource PanelTitleTextStyle}" Text="外观与主题" />
                     <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="选择后立即保存，并应用到整个窗口。" TextWrapping="Wrap" Margin="0,10,0,24" />
-                    <WrapPanel><Button Content="跟随系统" Command="{Binding Home.SelectSystemThemeCommand}" Margin="0,0,10,10">
-<Button.Style><Style TargetType="Button" BasedOn="{StaticResource CardButtonStyle}"><Style.Triggers><DataTrigger Binding="{Binding Home.IsSystemThemeSelected}" Value="True"><Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" /></DataTrigger></Style.Triggers></Style></Button.Style></Button>
-<Button Content="浅色" Command="{Binding Home.SelectLightThemeCommand}" Margin="0,0,10,10">
-<Button.Style><Style TargetType="Button" BasedOn="{StaticResource CardButtonStyle}"><Style.Triggers><DataTrigger Binding="{Binding Home.IsLightThemeSelected}" Value="True"><Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" /></DataTrigger></Style.Triggers></Style></Button.Style></Button>
-<Button Content="深色" Command="{Binding Home.SelectDarkThemeCommand}" Margin="0,0,10,10">
-<Button.Style><Style TargetType="Button" BasedOn="{StaticResource CardButtonStyle}"><Style.Triggers><DataTrigger Binding="{Binding Home.IsDarkThemeSelected}" Value="True"><Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" /></DataTrigger></Style.Triggers></Style></Button.Style></Button></WrapPanel>
+                    <WrapPanel><Button Tag="{StaticResource ThemeIconGeometry}" Content="跟随系统" Command="{Binding Home.SelectSystemThemeCommand}" Margin="0,0,10,10">
+<Button.Style><Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}"><Style.Triggers><DataTrigger Binding="{Binding Home.IsSystemThemeSelected}" Value="True"><Setter Property="Background" Value="{DynamicResource ControlPressedBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /><Setter Property="FontWeight" Value="Bold" /></DataTrigger></Style.Triggers></Style></Button.Style></Button>
+<Button Tag="{StaticResource SunIconGeometry}" Content="浅色" Command="{Binding Home.SelectLightThemeCommand}" Margin="0,0,10,10">
+<Button.Style><Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}"><Style.Triggers><DataTrigger Binding="{Binding Home.IsLightThemeSelected}" Value="True"><Setter Property="Background" Value="{DynamicResource ControlPressedBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /><Setter Property="FontWeight" Value="Bold" /></DataTrigger></Style.Triggers></Style></Button.Style></Button>
+<Button Tag="{StaticResource MoonIconGeometry}" Content="深色" Command="{Binding Home.SelectDarkThemeCommand}" Margin="0,0,10,10">
+<Button.Style><Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}"><Style.Triggers><DataTrigger Binding="{Binding Home.IsDarkThemeSelected}" Value="True"><Setter Property="Background" Value="{DynamicResource ControlPressedBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /><Setter Property="FontWeight" Value="Bold" /></DataTrigger></Style.Triggers></Style></Button.Style></Button></WrapPanel>
                     <TextBlock Style="{DynamicResource BodyTextStyle}" Text="{Binding Home.ErrorMessage}" TextWrapping="Wrap" Foreground="{DynamicResource ErrorBrush}" />
                 </StackPanel>
                 <StackPanel Margin="0,0,0,22">
@@ -69,21 +69,21 @@
                         </Style.Triggers>
                     </Style></StackPanel.Style>
                     <TextBlock Style="{DynamicResource SubsectionTitleTextStyle}" Text="目标语言" Margin="0,0,0,10" />
-                    <StackPanel Orientation="Horizontal"><Button Content="日语" Command="{Binding SelectJapaneseTargetCommand}" Margin="0,0,10,0" Padding="18,8"><Button.Style><Style TargetType="Button" BasedOn="{StaticResource CardButtonStyle}"><Style.Triggers><DataTrigger Binding="{Binding IsJapaneseTarget}" Value="True"><Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" /></DataTrigger></Style.Triggers></Style></Button.Style></Button>
-<Button Content="英语" Command="{Binding SelectEnglishTargetCommand}" Margin="0,0,10,0" Padding="18,8"><Button.Style><Style TargetType="Button" BasedOn="{StaticResource CardButtonStyle}"><Style.Triggers><DataTrigger Binding="{Binding IsEnglishTarget}" Value="True"><Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" /></DataTrigger></Style.Triggers></Style></Button.Style></Button></StackPanel>
+                    <StackPanel Orientation="Horizontal"><Button Tag="{StaticResource LanguageIconGeometry}" Content="日语" Command="{Binding SelectJapaneseTargetCommand}" Margin="0,0,10,0" Padding="18,8"><Button.Style><Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}"><Style.Triggers><DataTrigger Binding="{Binding IsJapaneseTarget}" Value="True"><Setter Property="Background" Value="{DynamicResource ControlPressedBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /><Setter Property="FontWeight" Value="Bold" /></DataTrigger></Style.Triggers></Style></Button.Style></Button>
+<Button Tag="{StaticResource LanguageIconGeometry}" Content="英语" Command="{Binding SelectEnglishTargetCommand}" Margin="0,0,10,0" Padding="18,8"><Button.Style><Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}"><Style.Triggers><DataTrigger Binding="{Binding IsEnglishTarget}" Value="True"><Setter Property="Background" Value="{DynamicResource ControlPressedBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /><Setter Property="FontWeight" Value="Bold" /></DataTrigger></Style.Triggers></Style></Button.Style></Button></StackPanel>
                     <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Text="下列操作使用所选目标语言。" TextWrapping="Wrap" Margin="0,10,0,0" />
                 </StackPanel>
                 <StackPanel>
 <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding SelectedSection}" Value="{x:Static vm:SettingsSection.Import}"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                     <TextBlock Style="{DynamicResource PanelTitleTextStyle}" Text="词表导入" Margin="0,0,0,18" />
-                    <Button Content="批量导入词表" Command="{Binding OpenTextImportCommand}" Style="{StaticResource CardButtonStyle}" Margin="0,0,0,12" />
-                    <Button Content="导入收件箱" Command="{Binding OpenImportInboxCommand}" Style="{StaticResource CardButtonStyle}" />
+                    <Button Tag="{StaticResource FolderIconGeometry}" Content="批量导入词表" Command="{Binding OpenTextImportCommand}" Style="{StaticResource CardButtonStyle}" Margin="0,0,0,12" />
+                    <Button Tag="{StaticResource InboxIconGeometry}" Content="导入收件箱" Command="{Binding OpenImportInboxCommand}" Style="{StaticResource CardButtonStyle}" />
                 </StackPanel>
                 <StackPanel>
 <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding SelectedSection}" Value="{x:Static vm:SettingsSection.LearningReview}"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                     <TextBlock Style="{DynamicResource PanelTitleTextStyle}" Text="学习与复习" Margin="0,0,0,18" />
-                    <Button Content="学习计划" Command="{Binding OpenLearningPlanCommand}" Style="{StaticResource CardButtonStyle}" Margin="0,0,0,12" />
-                    <Button Content="复习计划" Command="{Binding OpenReviewPlanCommand}" Style="{StaticResource CardButtonStyle}" />
+                    <Button Tag="{StaticResource BookIconGeometry}" Content="学习计划" Command="{Binding OpenLearningPlanCommand}" Style="{StaticResource CardButtonStyle}" Margin="0,0,0,12" />
+                    <Button Tag="{StaticResource ReviewIconGeometry}" Content="复习计划" Command="{Binding OpenReviewPlanCommand}" Style="{StaticResource CardButtonStyle}" />
                 </StackPanel>
                 <StackPanel>
 <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding SelectedSection}" Value="{x:Static vm:SettingsSection.Mcp}"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></StackPanel.Style>

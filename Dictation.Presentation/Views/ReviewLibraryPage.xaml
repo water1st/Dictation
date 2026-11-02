@@ -46,9 +46,9 @@
         </Grid.RowDefinitions>
         <DockPanel Margin="0,0,0,18">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                <Button Content="刷新" Command="{Binding RefreshCommand}" />
-                <Button Content="取消读取" Command="{Binding CancelCommand}" />
-                <Button Content="返回" Command="{Binding BackCommand}" />
+                <Button Tag="{StaticResource RefreshIconGeometry}" Content="刷新" Command="{Binding RefreshCommand}" />
+                <Button Tag="{StaticResource StopIconGeometry}" Content="取消读取" Command="{Binding CancelCommand}" />
+                <Button Tag="{StaticResource BackIconGeometry}" Content="返回" Command="{Binding BackCommand}" />
             </StackPanel>
             <StackPanel Style="{DynamicResource HeaderTextGroupStyle}">
                 <TextBlock Style="{DynamicResource PageTitleTextStyle}" Text="{Binding WindowTitle}" TextWrapping="Wrap" />

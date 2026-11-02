@@ -19,12 +19,17 @@ using ThemeMode = Dictation.Core.Configuration.ThemeMode;
 namespace Dictation.Tests.Presentation
 {
     /// <summary>在真实业务数据与页面模板上审计文字，并对同一页面反复切换主题。</summary>
+    [Collection("DpiRendering")]
     public sealed class PageTextThemeTests
     {
         [Theory]
-        [InlineData(LearningLanguage.Japanese)]
-        [InlineData(LearningLanguage.English)]
-        public Task Pages_ThemeChanges_KeepTextAndInlinesReadable(LearningLanguage language) => ReviewPlanPageTests.RunStaAsync(async () =>
+        [InlineData(LearningLanguage.Japanese, 1d)]
+        [InlineData(LearningLanguage.Japanese, 1.5d)]
+        [InlineData(LearningLanguage.Japanese, 2d)]
+        [InlineData(LearningLanguage.English, 1d)]
+        [InlineData(LearningLanguage.English, 1.5d)]
+        [InlineData(LearningLanguage.English, 2d)]
+        public Task Pages_ThemeChanges_KeepTextAndInlinesReadable(LearningLanguage language, double scale) => ReviewPlanPageTests.RunStaAsync(async () =>
         {
             using var directory = new TemporaryDirectory();
             using var provider = await WorkspaceSettingsNavigationTests.CreateProviderAsync(directory.Path, services =>
@@ -118,10 +123,12 @@ namespace Dictation.Tests.Presentation
             {
                 var host = FormControlThemeTests.CreateHost(page);
                 host.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/Dictation.Presentation;component/Theme/NavigationCards.xaml", UriKind.Relative) });
+                host.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/Dictation.Presentation;component/Theme/ScrollBars.xaml", UriKind.Relative) });
                 host.Width = page.Width = 860;
                 page.Height = 556;
                 using var source = new HwndSource(new HwndSourceParameters("页面主题验收") { Width = 860, Height = 556 });
                 source.RootVisual = host;
+                VisualTreeHelper.SetRootDpi(host, new DpiScale(scale, scale));
                 foreach (var mode in new[] { ThemeMode.Light, ThemeMode.Dark, ThemeMode.System, ThemeMode.Dark, ThemeMode.Light })
                 {
                     manager.SetThemeMode(mode);
@@ -205,7 +212,9 @@ namespace Dictation.Tests.Presentation
             foreach (var text in texts)
             {
                 var color = Assert.IsType<SolidColorBrush>(text.Foreground).Color;
-                var accentButton = FindAccentButton(text, ((SolidColorBrush)host.Resources["AccentBrush"]).Color);
+                var accentColors = new[] { "AccentBrush", "PrimaryActionBrush", "PrimaryActionHoverBrush", "PrimaryActionPressedBrush" }
+                    .Select(key => ((SolidColorBrush)host.Resources[key]).Color).ToArray();
+                var accentButton = FindAccentButton(text, accentColors);
                 var expected = accentButton is null ? allowed : new[] { ((SolidColorBrush)host.Resources["AccentForegroundBrush"]).Color };
                 Assert.True(expected.Contains(color), $"{page.GetType().Name} 的文字 {text.Text} 使用不适用于所在背景的颜色 {color}。");
                 foreach (var run in text.Inlines.OfType<Run>().Where(run => !string.IsNullOrEmpty(run.Text)))
@@ -215,13 +224,13 @@ namespace Dictation.Tests.Presentation
             }
         }
 
-        private static Button? FindAccentButton(DependencyObject element, Color accent)
+        private static Button? FindAccentButton(DependencyObject element, Color[] accents)
         {
             for (var parent = VisualTreeHelper.GetParent(element); parent is not null; parent = VisualTreeHelper.GetParent(parent))
             {
                 if (parent is Button button)
                 {
-                    return button.Background is SolidColorBrush brush && brush.Color == accent ? button : null;
+                    return button.Background is SolidColorBrush brush && accents.Contains(brush.Color) ? button : null;
                 }
             }
             return null;
@@ -232,7 +241,8 @@ namespace Dictation.Tests.Presentation
             var output = Environment.GetEnvironmentVariable("DICTATION_SCREENSHOT_DIRECTORY");
             if (string.IsNullOrWhiteSpace(output)) return;
             Directory.CreateDirectory(output);
-            var bitmap = new RenderTargetBitmap(860, 556, 96, 96, PixelFormats.Pbgra32);
+            var scale = VisualTreeHelper.GetDpi(element).DpiScaleX;
+            var bitmap = new RenderTargetBitmap((int)(860 * scale), (int)(556 * scale), 96 * scale, 96 * scale, PixelFormats.Pbgra32);
             var visual = new DrawingVisual();
             using (var drawing = visual.RenderOpen())
             {
@@ -242,7 +252,7 @@ namespace Dictation.Tests.Presentation
             bitmap.Render(visual);
             var encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(bitmap));
-            using var stream = File.Create(Path.Combine(output, $"{name}.png"));
+            using var stream = File.Create(Path.Combine(output, $"{name}-{scale * 100:0}pct.png"));
             encoder.Save(stream);
         }
     }

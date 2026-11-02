@@ -63,7 +63,7 @@
                         <RowDefinition Height="Auto" SharedSizeGroup="WorkspaceCardRow" />
                         <RowDefinition Height="Auto" SharedSizeGroup="WorkspaceCardRow" />
                     </Grid.RowDefinitions>
-                    <Button  Grid.Row="0" Grid.Column="0" Margin="0,0,12,12"
+                    <Button Tag="{StaticResource BookIconGeometry}"  Grid.Row="0" Grid.Column="0" Margin="0,0,12,12"
                             Style="{StaticResource CardButtonStyle}"
                             Command="{Binding OpenLearningCommand}">
                         <StackPanel Style="{DynamicResource NavigationTextGroupStyle}">
@@ -72,7 +72,7 @@
                             <TextBlock Style="{DynamicResource StrongBodyTextStyle}" x:Name="LearningProgressText" Text="{Binding LearningProgressLabel}" Margin="0,10,0,0" Foreground="{DynamicResource AccentBrush}" />
                         </StackPanel>
                     </Button>
-                    <Button x:Name="StartReviewButton" Grid.Row="0" Grid.Column="1" Margin="0,0,12,12"
+                    <Button Tag="{StaticResource ReviewIconGeometry}" x:Name="StartReviewButton" Grid.Row="0" Grid.Column="1" Margin="0,0,12,12"
                             Style="{StaticResource CardButtonStyle}"
                             Command="{Binding OpenReviewSessionCommand}">
                         <StackPanel Style="{DynamicResource NavigationTextGroupStyle}">
@@ -81,7 +81,7 @@
                             <TextBlock Style="{DynamicResource StrongBodyTextStyle}" x:Name="ReviewDailyProgress" Text="{Binding ReviewProgressLabel}" Margin="0,10,0,0" Foreground="{DynamicResource AccentBrush}" />
                         </StackPanel>
                     </Button>
-                    <Button  Grid.Row="1" Grid.Column="0" Margin="0,0,12,12"
+                    <Button Tag="{StaticResource BookIconGeometry}"  Grid.Row="1" Grid.Column="0" Margin="0,0,12,12"
                             Style="{StaticResource CardButtonStyle}"
                             Command="{Binding OpenReviewLibraryCommand}">
                         <StackPanel Style="{DynamicResource NavigationTextGroupStyle}">
@@ -90,7 +90,7 @@
 
                         </StackPanel>
                     </Button>
-                    <Button x:Name="KanaButton" Grid.Row="1" Grid.Column="1" Margin="0,0,12,12"
+                    <Button Tag="{StaticResource LanguageIconGeometry}" x:Name="KanaButton" Grid.Row="1" Grid.Column="1" Margin="0,0,12,12"
                             Style="{StaticResource CardButtonStyle}" Visibility="{Binding IsJapaneseSelected, Converter={StaticResource BoolVisibility}}"
                             Command="{Binding OpenKanaCommand}">
                         <StackPanel Style="{DynamicResource NavigationTextGroupStyle}">
@@ -99,7 +99,7 @@
                             <TextBlock Style="{DynamicResource StrongBodyTextStyle}" x:Name="KanaProgressText" Text="{Binding KanaProgressLabel}" Margin="0,10,0,0" Foreground="{DynamicResource AccentBrush}" />
                         </StackPanel>
                     </Button>
-                    <Button  Grid.Row="2" Grid.Column="0" Margin="0,0,12,12"
+                    <Button Tag="{StaticResource ChartIconGeometry}"  Grid.Row="2" Grid.Column="0" Margin="0,0,12,12"
                             Style="{StaticResource CardButtonStyle}"
                             Command="{Binding DataContext.OpenStatisticsCommand, RelativeSource={RelativeSource AncestorType=Window}}">
                         <StackPanel Style="{DynamicResource NavigationTextGroupStyle}">
@@ -108,7 +108,7 @@
 
                         </StackPanel>
                     </Button>
-                    <Button  Grid.Row="2" Grid.Column="1" Margin="0,0,12,12"
+                    <Button Tag="{StaticResource ReviewIconGeometry}"  Grid.Row="2" Grid.Column="1" Margin="0,0,12,12"
                             Style="{StaticResource CardButtonStyle}"
                             Command="{Binding OpenWrongAnswersCommand}">
                         <StackPanel Style="{DynamicResource NavigationTextGroupStyle}">
@@ -117,7 +117,7 @@
 
                         </StackPanel>
                     </Button>
-                    <Button  Grid.Row="3" Grid.Column="0" Margin="0,0,12,12"
+                    <Button Tag="{StaticResource SearchIconGeometry}"  Grid.Row="3" Grid.Column="0" Margin="0,0,12,12"
                             Style="{StaticResource CardButtonStyle}"
                             Command="{Binding OpenLexiconLookupCommand}">
                         <StackPanel Style="{DynamicResource NavigationTextGroupStyle}">
