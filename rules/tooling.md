@@ -13,7 +13,7 @@
 
 本项目指定的外部服务插件仅为 GitHub、Trello 和 Google Drive。执行远端资源操作前，必须从当前环境中发现已授权的对应插件，核实连接、权限、可用动作及其参数；不能未经检查就认定插件不存在。
 
-- **GitHub 插件：** 对 `water1st/Dictation` 的远端仓库、分支、Issue、PR、远端提交及远端文件的读取和管理，必须使用 GitHub 专用插件，继续核实 `master` 基准分支及 Task ID。普通本地源码编辑、Git 工作区操作及 `git switch`、`git pull`、`git fetch` 等常规 Git 版本控制与传输命令允许使用本地 Git 工具。此许可不包括以本地命令替代 GitHub 插件管理远端仓库、分支、Issue、PR、远端文件或其他 GitHub 平台资源；不得通过 Shell、网页或其他间接途径绕过远端 GitHub 插件。
+- **GitHub 插件：** 对 `water1st/Dictation` 的 GitHub 平台操作（Issue、PR、Review、远端仓库元数据以及通过 GitHub API 管理远端文件或引用），必须使用 GitHub 专用插件，继续核实 `master` 基准分支及 Task ID。普通本地源码编辑、Git 工作区操作及 `git switch`、`git add`、`git commit`、`git pull`、`git fetch`、`git push` 等常规 Git 版本控制与传输操作优先使用本地 Git 客户端。已有本地 Commit 和工作分支应使用 `git push`，不得在本地 Git 工作流可用时以 `create_blob`、`create_tree`、`create_commit`、`update_ref` 等 GitHub API 代替；没有可用的本地 Git 工作流时，允许通过 GitHub 插件的 Git API 完成等效操作，仍须遵守既有授权、分支和验证规则。此例外不授权使用 Shell、网页或其他间接途径替代 GitHub 插件管理 Issue、PR、Review 或其他 GitHub 平台资源。
 - **Trello 插件：** `Development Hub` 看板内 Dictation 项目的列表、卡片、原生 Checklist、检查项和生命周期状态必须使用 Trello 专用插件，继续遵守 `rules/project-management.md` 的身份、标签、权限与状态门禁。
 - **Google Drive 插件：** Drive 文件、文件夹、文档和任务附件的搜索、读取、上传、创建、修改、位置验证及管理必须使用 Google Drive 专用插件。本项目任务需要在仓库外持久保存、读取或交换的图片、截图、审核成果及附件，统一存储在 `Trello:Dictation` 根目录或其子目录（逻辑路径 `Google Drive/Trello:Dictation/`）。执行前核实目标文件及实际目录，写入后回读验证，并在对应 Trello Task 记录实际文件链接和完整逻辑路径；不能以聊天文字或临时文件代替。正式 Git 项目文件和本地临时文件仍按现有规则管理。
 
@@ -52,5 +52,5 @@
 - 临时文件包括一次性分析、草稿、测试或验证过程记录、调试脚本、日志及其他中间产物。无长期用途的工作产物不得作为正式文件进入 Git；不必落盘的信息直接记录在任务管理系统、PR 或对话中。
 - 持续使用的正式项目文件按实际职责保存在对应目录，并纳入版本管理。项目指令、规则、Skills 和工作流配置（如 `AGENTS.md`、`rules/`、`.agents/`、`.github/`）属于正式项目资产，不应被当作临时产物。普通脚本不享有目录级保留例外，是否保存取决于真实的持续用途。
 - 对现有文件提出清理性删除之前，先按编号向用户列出相对路径、文件内容及存在原因、建议删除原因；取得对具体对象的明确批准后方可删除或取消追踪。文件的创建者、名称或所属目录不能单独决定是否删除。
-- Skills 入口：`.agents/skills/grilling/SKILL.md`、`.agents/skills/grill-with-docs/SKILL.md`、`.agents/skills/domain-modeling/SKILL.md`、`.agents/skills/gstack/SKILL.md`。
-- 需求/设计不明确先访谈；Bug 先记录 GitHub Issue，再按关联文档访谈；复杂审查可调用 gstack。任何 Skill 与授权、工作区或仓库规范冲突时服从更高规则。
+- Skills 入口：`.agents/skills/grilling/SKILL.md`、`.agents/skills/grill-with-docs/SKILL.md`、`.agents/skills/domain-modeling/SKILL.md`。
+- 需求/设计不明确先访谈；Bug 先记录 GitHub Issue，再按关联文档访谈。任何 Skill 与授权、工作区或仓库规范冲突时服从更高规则。

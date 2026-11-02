@@ -11,7 +11,7 @@
 
 - 开始修改前读取真实 Task、引用的权威资料、实际 Git 状态，确认用户已批准执行。
 - 在原仓库目录（或当次用户明确授权的工作区）切换专用分支。新增工作区需逐次用户明确授权；禁止擅自创建 Worktree、Clone、IDE/Agent 临时工作区。
-- 仅实施 Task Goal 与 Acceptance Criteria 要求的文件修改；不顺手修复无关业务或调整发布流程。
+- 仅实施已批准 Goal 与 Acceptance Criteria 所必需的改动；不得顺手修复、重构、优化、清理、重命名或格式化无关代码、规则、测试、配置，也不得调整无关发布流程。发现无关问题只报告，未经用户明确批准或另建 Task 不得并入。
 
 ## Task 开始前的 Git 强制同步
 
@@ -45,7 +45,7 @@
 - 首次执行 RED→GREEN 时，RED 必须成功编译并执行预期测试，因行为断言失败；编译失败、零测试或环境错误不算 RED。
 - 需要首次执行 RED→GREEN 的测试在 RED 前冻结正确断言；API 变更所需的测试编译适配须在冻结前完成，不得在 GREEN 阶段修改期望值迎合实现。若测试本身错误，作废本轮证据，修正后重新冻结并执行 RED→GREEN。
 - 对需首次执行 RED→GREEN 的业务垂直切片，严格执行两次中文提交：先在可编译的最小生产骨架上冻结测试并运行行为断言失败的 RED，再仅修改生产实现使同一批测试 GREEN，首次提交；随后贯通 WPF/ViewModel、Service、DTO/Mapper、DataAccessor/PO 与数据库或外部 Provider，相关构建、测试及冒烟通过后第二次提交。复用已验证测试且无需新增 RED 的改动，不套用首次红绿阶段的提交要求。单个切片约 2–3 人/小时，每次提交只包含一个可验证工作单元，任何提交不得保留临时 RED。
-- 验证命令与测试基线见本文件「环境与验证命令」。
+- 完整测试命令与最终验收要求见本文件「环境与验证命令」。
 - 单纯 Rules、文档、Skills、配置、注释及不改变行为的纯文件移动不制造 RED 测试；采用静态检查、内容与引用核对、适用构建及前后回归。映射、DI 边界及业务状态变化仍须真实行为断言验证。
 
 ## Task Execution Rules
@@ -54,7 +54,6 @@
 
 - 开始或恢复任何 Task 前，对照已批准 Goal、Acceptance Criteria 和权威引用逐项检查原生 Trello Checklist：必须覆盖具体类或类组、功能模块、SQLite 迁移、UI 组件、文档单元及特有验证成果；相干单元可合并，普通成员方法不需要逐项拆分。
 - 每项必须在 Execution Plan 中有同名或精确引用的 HOW：输入、职责、关键方法/接口、顺序、约束、产出与验收；描述栏中的 `Checklist:` 不是原生清单。拒绝空泛任务阶段、遗漏单元和未经批准的设计。恢复时核对 Git、实物及勾选情况。
-- Task 执行仅限批准 Goal 与 Acceptance Criteria 所必需的改动；不得顺手修复、重构、优化、清理、重命名或格式化无关代码、规则、测试、配置。发现无关问题只报告；用户明确批准或另建 Task 前不能并入。
 - 优先最小且高置信度的修改；未经批准不得改公共 API、配置键、数据库表或字段、迁移，也不得引入第三方依赖；不为假想的未来需求增加投机性抽象。
 
 ## Final Task Verification
@@ -62,6 +61,7 @@
 - `開發中` 转 `測試中` 前，所有原生 Checklist 具体单元及逐项验收必须真实完成，开发阶段适用检查均已通过；父子组先验证子 Task 及父任务自身交付，再验收父任务集成结果。
 - `測試中` 根据 Expected Result 与 Acceptance Criteria 做最终验证；失败时先同步返回 `開發中` 再修复。
 - **Code Task Gate**：适用 TDD、.NET 构建、xUnit、针对性冒烟；涉及 UI 变更附前后截图。未运行的检查不得声称通过。
+- **全量自动化测试门禁**：每个 Task 在最终验收和 PR 前，必须先完成当前解决方案的适用构建，再执行「环境与验证命令」中不带筛选条件的 `Dictation.Tests` 全量测试；核对实际发现及执行的测试数、通过／失败／跳过数量、完整运行结果和退出状态。测试数量由当前项目实际发现结果决定，不维护固定数量基线。测试未完成、失败、发现零测试或未经核实的跳过，不能作为通过证据；无法执行须明确报告未验证，不得声称全量测试通过。规则或文档修改不制造 RED，但仍须执行本项最终测试。
 - **Document and Rule Task Gate**：审阅完整 diff，确认只修改授权文件和章节，核对受影响术语及引用；不得加入无依据的新规则，不得让 Task 内容或聊天讨论以原文或改写形式泄漏进正式文档。Skills 修改另需检查相对引用、许可证、依赖及实际调用可用性。
 
 ## PR Gate
@@ -78,11 +78,11 @@
 ```powershell
 dotnet restore Dictation.sln
 dotnet build Dictation.sln --configuration Debug --no-restore
-dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 2108 --max-threads 4
+dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --max-threads 4
 dotnet run --project Dictation.Presentation/Dictation.Presentation.csproj
 ```
 
-`Dictation.Tests` 使用 xUnit v3 与 Microsoft.Testing.Platform；测试方法使用英文 `Behavior_Scenario_Expected` 语义结构命名，并遵守 `rules/code-style.md` 的英文标识符要求。聚焦测试使用 `--filter-class` 或 `--filter-method`，并设置适用的 `--minimum-expected-tests`；零测试不算通过。全量测试的基线为 2108 项，不得随意降低；有意删除失效测试须说明原因及数量变化。实际运行时执行适用的构建、测试、冒烟与定向检索；提交前审阅完整 diff，不能运行的检查如实报告。
+`Dictation.Tests` 使用 xUnit v3 与 Microsoft.Testing.Platform；测试方法使用英文 `Behavior_Scenario_Expected` 语义结构命名，并遵守 `rules/code-style.md` 的英文标识符要求。开发阶段可使用 `--filter-class` 或 `--filter-method` 进行定向测试，但最终验收必须在本次修改对应的构建成功后，执行上述不含任何筛选器的全量测试命令，覆盖当前测试项目发现的全部适用测试，并核对发现、执行、通过、失败、跳过数量及退出状态；零测试不算通过。全量测试不采用固定测试数量基线，也不要求每个 Task 更新数量基线。未经当前任务明确授权，不得删除现有有效测试、删减正确断言、删除测试数据用例，或通过 Skip、禁用、过滤、修改测试发现配置等方式隐藏失败；提交前审阅完整 diff，核对测试代码、参数化数据源及发现配置的变化。经批准的测试增删或调整必须核实原因、实际覆盖与数量变化，并在 PR 说明。实际运行时执行适用的构建、全量测试、冒烟与定向检索；无法运行的检查如实报告，不视为通过。
 
 
 ## Final Response
