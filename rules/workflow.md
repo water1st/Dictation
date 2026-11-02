@@ -11,7 +11,7 @@
 
 - 开始修改前读取真实 Task、引用的权威资料、实际 Git 状态，确认用户已批准执行。
 - 在原仓库目录（或当次用户明确授权的工作区）切换专用分支。新增工作区需逐次用户明确授权；禁止擅自创建 Worktree、Clone、IDE/Agent 临时工作区。
-- 仅实施 Task Goal 与 Acceptance Criteria 要求的文件修改；不顺手修复无关业务或调整发布流程。
+- 仅实施已批准 Goal 与 Acceptance Criteria 所必需的改动；不得顺手修复、重构、优化、清理、重命名或格式化无关代码、规则、测试、配置，也不得调整无关发布流程。发现无关问题只报告，未经用户明确批准或另建 Task 不得并入。
 
 ## Task 开始前的 Git 强制同步
 
@@ -54,7 +54,6 @@
 
 - 开始或恢复任何 Task 前，对照已批准 Goal、Acceptance Criteria 和权威引用逐项检查原生 Trello Checklist：必须覆盖具体类或类组、功能模块、SQLite 迁移、UI 组件、文档单元及特有验证成果；相干单元可合并，普通成员方法不需要逐项拆分。
 - 每项必须在 Execution Plan 中有同名或精确引用的 HOW：输入、职责、关键方法/接口、顺序、约束、产出与验收；描述栏中的 `Checklist:` 不是原生清单。拒绝空泛任务阶段、遗漏单元和未经批准的设计。恢复时核对 Git、实物及勾选情况。
-- Task 执行仅限批准 Goal 与 Acceptance Criteria 所必需的改动；不得顺手修复、重构、优化、清理、重命名或格式化无关代码、规则、测试、配置。发现无关问题只报告；用户明确批准或另建 Task 前不能并入。
 - 优先最小且高置信度的修改；未经批准不得改公共 API、配置键、数据库表或字段、迁移，也不得引入第三方依赖；不为假想的未来需求增加投机性抽象。
 
 ## Final Task Verification
@@ -78,11 +77,11 @@
 ```powershell
 dotnet restore Dictation.sln
 dotnet build Dictation.sln --configuration Debug --no-restore
-dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --minimum-expected-tests 2108 --max-threads 4
+dotnet test Dictation.Tests/Dictation.Tests.csproj --configuration Debug --no-build --max-threads 4
 dotnet run --project Dictation.Presentation/Dictation.Presentation.csproj
 ```
 
-`Dictation.Tests` 使用 xUnit v3 与 Microsoft.Testing.Platform；测试方法使用英文 `Behavior_Scenario_Expected` 语义结构命名，并遵守 `rules/code-style.md` 的英文标识符要求。聚焦测试使用 `--filter-class` 或 `--filter-method`，并设置适用的 `--minimum-expected-tests`；零测试不算通过。全量测试的基线为 2108 项，不得随意降低；有意删除失效测试须说明原因及数量变化。实际运行时执行适用的构建、测试、冒烟与定向检索；提交前审阅完整 diff，不能运行的检查如实报告。
+`Dictation.Tests` 使用 xUnit v3 与 Microsoft.Testing.Platform；测试方法使用英文 `Behavior_Scenario_Expected` 语义结构命名，并遵守 `rules/code-style.md` 的英文标识符要求。全量测试必须执行当前测试项目实际发现的全部适用测试，并检查结果；不得通过过滤、跳过或其他方式隐瞒测试失败。聚焦测试可使用 `--filter-class` 或 `--filter-method`，并核对实际执行的测试及预期范围；零测试不算通过。新增或有意删除测试时须核对数量变化并说明原因。实际运行时执行适用的构建、测试、冒烟与定向检索；提交前审阅完整 diff，不能运行的检查如实报告。
 
 
 ## Final Response
