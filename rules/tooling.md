@@ -52,5 +52,5 @@
 - 临时文件包括一次性分析、草稿、测试或验证过程记录、调试脚本、日志及其他中间产物。无长期用途的工作产物不得作为正式文件进入 Git；不必落盘的信息直接记录在任务管理系统、PR 或对话中。
 - 持续使用的正式项目文件按实际职责保存在对应目录，并纳入版本管理。项目指令、规则、Skills 和工作流配置（如 `AGENTS.md`、`rules/`、`.agents/`、`.github/`）属于正式项目资产，不应被当作临时产物。普通脚本不享有目录级保留例外，是否保存取决于真实的持续用途。
 - 对现有文件提出清理性删除之前，先按编号向用户列出相对路径、文件内容及存在原因、建议删除原因；取得对具体对象的明确批准后方可删除或取消追踪。文件的创建者、名称或所属目录不能单独决定是否删除。
-- Skills 入口：`.agents/skills/grilling/SKILL.md`、`.agents/skills/grill-with-docs/SKILL.md`、`.agents/skills/domain-modeling/SKILL.md`、`.agents/skills/gstack/SKILL.md`。
-- 需求/设计不明确先访谈；Bug 先记录 GitHub Issue，再按关联文档访谈；复杂审查可调用 gstack。任何 Skill 与授权、工作区或仓库规范冲突时服从更高规则。
+- Skills 入口：`.agents/skills/grilling/SKILL.md`、`.agents/skills/grill-with-docs/SKILL.md`、`.agents/skills/domain-modeling/SKILL.md`。
+- 需求/设计不明确先访谈；Bug 先记录 GitHub Issue，再按关联文档访谈。任何 Skill 与授权、工作区或仓库规范冲突时服从更高规则。
