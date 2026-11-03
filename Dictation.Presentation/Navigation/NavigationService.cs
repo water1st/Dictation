@@ -500,7 +500,8 @@ namespace Dictation.Presentation.Navigation
             }
             catch (OperationCanceledException) when (
                 !cancellationToken.IsCancellationRequested
-                && IsScopeRetained(scope))
+                && (ReferenceEquals(currentEntry?.Scope, scope)
+                    || backStack.Any(entry => ReferenceEquals(entry.Scope, scope))))
             {
                 // 页面内取消只停止首题准备；页面仍可重试或返回。
             }
