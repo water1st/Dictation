@@ -37,6 +37,9 @@ namespace Dictation.Presentation.ViewModels
         private string? errorMessage;
         private string? statusMessage;
         private bool isInitialized;
+        private bool isBusy;
+        private bool libraryLoaded;
+        private bool isLoadingMore;
 
         /// <summary>
         /// 初始化学习计划页面视图模型并创建页面命令。
@@ -70,13 +73,14 @@ namespace Dictation.Presentation.ViewModels
             LibraryItems = new ObservableCollection<LearningLibraryItemViewModel>();
             ExampleCandidates = new ObservableCollection<LexiconLookupResultDto>();
             BackCommand = new AsyncCommand(() => backNavigation.GoBackAsync());
-            RefreshCommand = new AsyncCommand(() => RefreshAsync());
-            SaveCommand = new AsyncCommand(() => SaveAsync());
-            SearchExamplesCommand = new AsyncCommand(() => SearchExamplesAsync());
-            DeleteSelectedCommand = new AsyncCommand(() => DeleteSelectedAsync());
-            StartCommand = new AsyncCommand(() => StartAsync());
+            RefreshCommand = new AsyncCommand(() => RefreshAsync(), () => !IsBusy);
+            SaveCommand = new AsyncCommand(() => SaveAsync(), () => CanSave);
+            SearchExamplesCommand = new AsyncCommand(() => SearchExamplesAsync(), () => !IsBusy && !string.IsNullOrWhiteSpace(ExampleQuery));
+            DeleteSelectedCommand = new AsyncCommand(() => DeleteSelectedAsync(), () => !IsBusy && LibraryItems.Any(item => item.IsSelected));
+            StartCommand = new AsyncCommand(() => StartAsync(), () => CanStart);
             PreviousPageCommand = new AsyncCommand(() => PreviousPageAsync());
             NextPageCommand = new AsyncCommand(() => NextPageAsync());
+            LoadMoreCommand = new AsyncCommand(() => LoadMoreAsync(), () => !IsBusy && CanNextPage);
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -195,7 +199,19 @@ namespace Dictation.Presentation.ViewModels
 
         public ObservableCollection<LexiconLookupResultDto> ExampleCandidates { get; }
 
-        public bool CanSelectAll => LibraryItems.Count > 0;
+        public bool CanSelectAll => !IsBusy && LibraryItems.Count > 0;
+
+        public bool IsBusy => isBusy;
+        public bool IsLibraryEmpty => libraryLoaded && LibraryItems.Count == 0;
+        public bool CanSave => isInitialized && !IsBusy
+            && DailyNewTarget is >= 1 and <= 500 && SessionWordLimit is >= 1 and <= 500
+            && FormOptions.Any(option => option.IsSelected)
+            && ChannelOptions.Any(option => option.IsSelected)
+            && OutputOptions.Any(option => option.IsSelected)
+            && (!IsEnglish || EnglishFormLabelMode != EnglishFormLabelMode.ExampleParadigm
+                || !string.IsNullOrWhiteSpace(selectedExampleSourceSenseId));
+        public bool CanStart => CanSave && libraryLoaded && TotalCount > 0
+            && (SelectionMode != LearningSelectionMode.Manual || LibraryItems.Any(item => item.IsSelected));
 
         public bool? IsAllSelected
         {
@@ -267,6 +283,7 @@ namespace Dictation.Presentation.ViewModels
         public ICommand StartCommand { get; }
         public ICommand PreviousPageCommand { get; }
         public ICommand NextPageCommand { get; }
+        public ICommand LoadMoreCommand { get; }
 
         /// <summary>
         /// 为页面绑定唯一的学习语言，并构建该语言可选的词形、渠道和输出方式。
@@ -338,6 +355,7 @@ namespace Dictation.Presentation.ViewModels
             EnsureInitialized();
             cancellationToken.ThrowIfCancellationRequested();
             await operationGate.WaitAsync(cancellationToken);
+            SetBusy(true);
             try
             {
                 ErrorMessage = null;
@@ -364,11 +382,6 @@ namespace Dictation.Presentation.ViewModels
                     await learningLibraryManager.DeleteWordGroupAsync(selectedLanguage, item.WordGroupId, cancellationToken);
                 }
 
-                if (selected.Length == LibraryItems.Count && PageNumber > 1)
-                {
-                    PageNumber--;
-                }
-
                 await RefreshLibraryAsync(cancellationToken);
                 StatusMessage = $"已移除 {selected.Length} 个整组词条。";
             }
@@ -382,6 +395,7 @@ namespace Dictation.Presentation.ViewModels
             }
             finally
             {
+                SetBusy(false);
                 operationGate.Release();
             }
         }
@@ -434,6 +448,42 @@ namespace Dictation.Presentation.ViewModels
             }, cancellationToken, "读取下一页失败");
         }
 
+        /// <summary>按需读取下一批学习词组。</summary>
+        /// <param name="cancellationToken">取消读取的令牌。</param>
+        public Task LoadMoreAsync(CancellationToken cancellationToken = default)
+        {
+            EnsureInitialized();
+            cancellationToken.ThrowIfCancellationRequested();
+            if (isLoadingMore || IsBusy || !CanNextPage) return Task.CompletedTask;
+            return LoadMoreCoreAsync(cancellationToken);
+        }
+
+        private async Task LoadMoreCoreAsync(CancellationToken cancellationToken)
+        {
+            isLoadingMore = true;
+            try
+            {
+                await RunExclusiveAsync(async token =>
+                {
+                    var nextPage = PageNumber + 1;
+                    var page = await learningLibraryManager.GetLibraryPageAsync(selectedLanguage, nextPage, PageSize, token);
+                    token.ThrowIfCancellationRequested();
+                    var existing = LibraryItems.Select(item => item.WordGroupId).ToHashSet(StringComparer.Ordinal);
+                    foreach (var group in page.Groups)
+                    {
+                        if (existing.Add(group.WordGroupId)) AddLibraryItem(group, false);
+                    }
+                    PageNumber = nextPage;
+                    TotalCount = page.TotalCount;
+                    RecalculateAllSelected();
+                }, cancellationToken, "加载更多词条失败");
+            }
+            finally
+            {
+                isLoadingMore = false;
+            }
+        }
+
         private async Task RefreshCoreAsync(bool resetPage, CancellationToken cancellationToken)
         {
             if (resetPage)
@@ -453,26 +503,42 @@ namespace Dictation.Presentation.ViewModels
         /// <param name="cancellationToken">取消读取的令牌。</param>
         private async Task RefreshLibraryAsync(CancellationToken cancellationToken)
         {
-            var page = await learningLibraryManager.GetLibraryPageAsync(
-                selectedLanguage,
-                PageNumber,
-                PageSize,
-                cancellationToken);
+            var selectedIds = LibraryItems.Where(item => item.IsSelected).Select(item => item.WordGroupId).ToHashSet(StringComparer.Ordinal);
+            var groups = new List<LearningWordGroupDto>();
+            var loadedPages = Math.Max(1, PageNumber);
+            var actualPage = 0;
+            var currentTotal = 0;
+            for (var number = 1; number <= loadedPages; number++)
+            {
+                var page = await learningLibraryManager.GetLibraryPageAsync(selectedLanguage, number, PageSize, cancellationToken);
+                groups.AddRange(page.Groups);
+                currentTotal = page.TotalCount;
+                actualPage = number;
+                if (number * PageSize >= currentTotal) break;
+            }
+            cancellationToken.ThrowIfCancellationRequested();
             foreach (var item in LibraryItems)
             {
                 item.PropertyChanged -= OnLibraryItemPropertyChanged;
             }
 
             LibraryItems.Clear();
-            foreach (var group in page.Groups)
+            foreach (var group in groups.DistinctBy(group => group.WordGroupId))
             {
-                var item = new LearningLibraryItemViewModel(group);
-                item.PropertyChanged += OnLibraryItemPropertyChanged;
-                LibraryItems.Add(item);
+                AddLibraryItem(group, selectedIds.Contains(group.WordGroupId));
             }
-
-            TotalCount = page.TotalCount;
+            PageNumber = actualPage;
+            TotalCount = currentTotal;
+            libraryLoaded = true;
+            OnPropertyChanged(nameof(IsLibraryEmpty));
             RecalculateAllSelected();
+        }
+
+        private void AddLibraryItem(LearningWordGroupDto group, bool selected)
+        {
+            var item = new LearningLibraryItemViewModel(group) { IsSelected = selected };
+            item.PropertyChanged += OnLibraryItemPropertyChanged;
+            LibraryItems.Add(item);
         }
 
         private async Task SaveCoreAsync(CancellationToken cancellationToken)
@@ -585,16 +651,19 @@ namespace Dictation.Presentation.ViewModels
             FormOptions.Clear();
             foreach (var option in PracticePlanOptionFactory.CreateForms(language))
             {
+                option.PropertyChanged += OnPlanOptionPropertyChanged;
                 FormOptions.Add(option);
             }
             ChannelOptions.Clear();
             foreach (var option in PracticePlanOptionFactory.CreateChannels())
             {
+                option.PropertyChanged += OnPlanOptionPropertyChanged;
                 ChannelOptions.Add(option);
             }
             OutputOptions.Clear();
             foreach (var option in PracticePlanOptionFactory.CreateOutputs(language))
             {
+                option.PropertyChanged += OnPlanOptionPropertyChanged;
                 OutputOptions.Add(option);
             }
         }
@@ -617,6 +686,7 @@ namespace Dictation.Presentation.ViewModels
         {
             cancellationToken.ThrowIfCancellationRequested();
             await operationGate.WaitAsync(cancellationToken);
+            SetBusy(true);
             try
             {
                 ErrorMessage = null;
@@ -633,6 +703,7 @@ namespace Dictation.Presentation.ViewModels
             }
             finally
             {
+                SetBusy(false);
                 operationGate.Release();
             }
         }
@@ -647,6 +718,7 @@ namespace Dictation.Presentation.ViewModels
 
         private void RecalculateAllSelected()
         {
+            NotifyCommands();
             OnPropertyChanged(nameof(CanSelectAll));
             var selectedCount = LibraryItems.Count(item => item.IsSelected);
             bool? value = LibraryItems.Count > 0 && selectedCount == LibraryItems.Count
@@ -692,6 +764,32 @@ namespace Dictation.Presentation.ViewModels
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            if (propertyName is nameof(DailyNewTarget) or nameof(SessionWordLimit) or nameof(SelectionMode)
+                or nameof(EnglishFormLabelMode) or nameof(SelectedExample) or nameof(ExampleQuery)
+                or nameof(TotalCount) or nameof(PageNumber)) NotifyCommands();
+        }
+
+        private void OnPlanOptionPropertyChanged(object? sender, PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == nameof(LearningPlanOptionViewModel.IsSelected)) NotifyCommands();
+        }
+
+        private void SetBusy(bool value)
+        {
+            isBusy = value;
+            OnPropertyChanged(nameof(IsBusy));
+            OnPropertyChanged(nameof(CanSelectAll));
+            NotifyCommands();
+        }
+
+        private void NotifyCommands()
+        {
+            foreach (var command in new[] { RefreshCommand, SaveCommand, SearchExamplesCommand, DeleteSelectedCommand, StartCommand, LoadMoreCommand })
+            {
+                (command as AsyncCommand)?.NotifyCanExecuteChanged();
+            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanSave)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanStart)));
         }
     }
 }
