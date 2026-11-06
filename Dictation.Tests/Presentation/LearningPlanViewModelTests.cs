@@ -287,6 +287,24 @@ namespace Dictation.Tests.Presentation
             Assert.Equal(new[] { 1, 2, 2 }, library.RequestedPages);
         }
 
+        [Fact]
+        public async Task ExampleSelection_CommandNotificationsUseTheNewSelection()
+        {
+            using var environment = await TestEnvironment.CreateAsync();
+            var viewModel = environment.CreateViewModel();
+            viewModel.Initialize(LearningLanguage.English);
+            await viewModel.RefreshAsync(TestContext.Current.CancellationToken);
+            viewModel.ExampleQuery = "go";
+            await viewModel.SearchExamplesAsync(TestContext.Current.CancellationToken);
+            viewModel.IsExampleParadigm = true;
+            var availableAtNotification = true;
+            viewModel.SaveCommand.CanExecuteChanged += (_, _) => availableAtNotification = viewModel.SaveCommand.CanExecute(null);
+            viewModel.SelectedExample = viewModel.ExampleCandidates.First();
+            Assert.True(availableAtNotification);
+            viewModel.SelectedExample = null;
+            Assert.False(availableAtNotification);
+        }
+
         private static void SetSelected(
             IEnumerable<LearningPlanOptionViewModel> options,
             params string[] selectedCodes)

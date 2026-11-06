@@ -40,6 +40,7 @@ namespace Dictation.Presentation.ViewModels
         private bool isBusy;
         private bool libraryLoaded;
         private bool isLoadingMore;
+        private double scrollOffset;
 
         /// <summary>
         /// 初始化学习计划页面视图模型并创建页面命令。
@@ -185,6 +186,7 @@ namespace Dictation.Presentation.ViewModels
                 if (SetField(ref selectedExample, value))
                 {
                     selectedExampleSourceSenseId = value?.SourceSenseId;
+                    NotifyCommands();
                 }
             }
         }
@@ -202,6 +204,11 @@ namespace Dictation.Presentation.ViewModels
         public bool CanSelectAll => !IsBusy && LibraryItems.Count > 0;
 
         public bool IsBusy => isBusy;
+        public double ScrollOffset
+        {
+            get => scrollOffset;
+            set => SetField(ref scrollOffset, value);
+        }
         public bool IsLibraryEmpty => libraryLoaded && LibraryItems.Count == 0;
         public bool CanSave => isInitialized && !IsBusy
             && DailyNewTarget is >= 1 and <= 500 && SessionWordLimit is >= 1 and <= 500
@@ -308,7 +315,7 @@ namespace Dictation.Presentation.ViewModels
         }
 
         /// <summary>
-        /// 重新加载当前语言的计划和当前页学习库。
+        /// 重新加载当前语言的计划和已加载范围内的学习词条。
         /// </summary>
         /// <param name="cancellationToken">取消刷新操作的令牌。</param>
         public Task RefreshAsync(CancellationToken cancellationToken = default)
@@ -318,7 +325,7 @@ namespace Dictation.Presentation.ViewModels
         }
 
         /// <summary>
-        /// 在保留当前页码与页面选择上下文的前提下重新加载计划和学习库。
+        /// 在保留已加载范围与页面选择上下文的前提下重新加载计划和学习库。
         /// </summary>
         /// <param name="cancellationToken">取消刷新操作的令牌。</param>
         public Task RefreshPreservingStateAsync(CancellationToken cancellationToken = default)
@@ -347,7 +354,7 @@ namespace Dictation.Presentation.ViewModels
         }
 
         /// <summary>
-        /// 经用户确认后删除当前页选中的整组学习词条，并刷新学习库分页状态。
+        /// 经用户确认后删除已加载范围中选中的整组学习词条，并刷新学习库。
         /// </summary>
         /// <param name="cancellationToken">取消确认、删除或刷新操作的令牌。</param>
         public async Task DeleteSelectedAsync(CancellationToken cancellationToken = default)
@@ -498,7 +505,7 @@ namespace Dictation.Presentation.ViewModels
         }
 
         /// <summary>
-        /// 读取当前学习库页，并重新建立条目选择状态监听。
+        /// 先读取已加载范围，成功后按稳定词组标识恢复选择与监听。
         /// </summary>
         /// <param name="cancellationToken">取消读取的令牌。</param>
         private async Task RefreshLibraryAsync(CancellationToken cancellationToken)
