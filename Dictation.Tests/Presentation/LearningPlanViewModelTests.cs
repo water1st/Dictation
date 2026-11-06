@@ -178,6 +178,133 @@ namespace Dictation.Tests.Presentation
             Assert.Empty(viewModel.LibraryItems);
         }
 
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(20)]
+        [InlineData(21)]
+        [InlineData(1001)]
+        public async Task LoadMore_BoundedPagesAppendEveryGroupAndPreserveSelection(int count)
+        {
+            using var environment = await TestEnvironment.CreateAsync();
+            await environment.StageAndDecideAsync(LearningLanguage.Japanese, "食前", "jmdict:2:1", ImportDecision.Learning);
+            var template = (await environment.LearningPlanService.GetLibraryPageAsync(LearningLanguage.Japanese, 1, 20, TestContext.Current.CancellationToken)).Groups[0];
+            var library = new ControlledLearningLibraryManager(template, count);
+            var viewModel = environment.CreateViewModel(library);
+            viewModel.Initialize(LearningLanguage.Japanese);
+            await viewModel.RefreshAsync(TestContext.Current.CancellationToken);
+            Assert.Equal(Math.Min(20, count), viewModel.LibraryItems.Count);
+            Assert.Single(library.RequestedPages);
+            if (count > 0) viewModel.LibraryItems[0].IsSelected = true;
+            for (var page = 2; page <= (count + 19) / 20; page++)
+            {
+                await viewModel.LoadMoreAsync(TestContext.Current.CancellationToken);
+                Assert.Equal(Math.Min(page * 20, count), viewModel.LibraryItems.Count);
+                Assert.True(viewModel.LibraryItems[0].IsSelected);
+                Assert.False(viewModel.LibraryItems[^1].IsSelected);
+            }
+            await viewModel.LoadMoreAsync(TestContext.Current.CancellationToken);
+            Assert.Equal(count, viewModel.LibraryItems.Select(item => item.WordGroupId).Distinct().Count());
+            Assert.Equal(Math.Max(1, (count + 19) / 20), library.RequestedPages.Count);
+        }
+
+        [Fact]
+        public async Task Refresh_LoadedRangeKeepsSelectionAndFailureDoesNotReplaceVisibleItems()
+        {
+            using var environment = await TestEnvironment.CreateAsync();
+            await environment.StageAndDecideAsync(LearningLanguage.English, "gone", "go%2:01:00::", ImportDecision.Learning);
+            var template = (await environment.LearningPlanService.GetLibraryPageAsync(LearningLanguage.English, 1, 20, TestContext.Current.CancellationToken)).Groups[0];
+            var library = new ControlledLearningLibraryManager(template, 41);
+            var viewModel = environment.CreateViewModel(library);
+            viewModel.Initialize(LearningLanguage.English);
+            await viewModel.RefreshAsync(TestContext.Current.CancellationToken);
+            viewModel.LibraryItems[0].IsSelected = true;
+            library.FailNextRead = true;
+            await viewModel.LoadMoreAsync(TestContext.Current.CancellationToken);
+            Assert.Equal(20, viewModel.LibraryItems.Count);
+            Assert.True(viewModel.LibraryItems[0].IsSelected);
+            Assert.NotNull(viewModel.ErrorMessage);
+            await viewModel.LoadMoreAsync(TestContext.Current.CancellationToken);
+            Assert.Equal(40, viewModel.LibraryItems.Count);
+            viewModel.LibraryItems[25].IsSelected = true;
+            await viewModel.RefreshPreservingStateAsync(TestContext.Current.CancellationToken);
+            Assert.Equal(40, viewModel.LibraryItems.Count);
+            Assert.True(viewModel.LibraryItems[0].IsSelected);
+            Assert.True(viewModel.LibraryItems[25].IsSelected);
+            Assert.Null(viewModel.IsAllSelected);
+            Assert.Equal(new[] { 1, 2, 2, 1, 2 }, library.RequestedPages);
+        }
+
+        [Fact]
+        public async Task Commands_InvalidPlanEmptyLibraryAndManualSelectionHaveAccurateAvailability()
+        {
+            using var environment = await TestEnvironment.CreateAsync();
+            var viewModel = environment.CreateViewModel();
+            viewModel.Initialize(LearningLanguage.Japanese);
+            await viewModel.RefreshAsync(TestContext.Current.CancellationToken);
+            Assert.False(viewModel.StartCommand.CanExecute(null));
+            Assert.False(viewModel.DeleteSelectedCommand.CanExecute(null));
+            Assert.False(viewModel.CanSelectAll);
+            Assert.True(viewModel.SaveCommand.CanExecute(null));
+            viewModel.DailyNewTarget = -1;
+            Assert.False(viewModel.SaveCommand.CanExecute(null));
+            viewModel.DailyNewTarget = 20;
+            viewModel.FormOptions.ToList().ForEach(option => option.IsSelected = false);
+            Assert.False(viewModel.SaveCommand.CanExecute(null));
+            await environment.StageAndDecideAsync(LearningLanguage.Japanese, "食前", "jmdict:2:1", ImportDecision.Learning);
+            await viewModel.RefreshAsync(TestContext.Current.CancellationToken);
+            Assert.True(viewModel.StartCommand.CanExecute(null));
+            viewModel.IsManualSelection = true;
+            Assert.False(viewModel.StartCommand.CanExecute(null));
+            viewModel.LibraryItems[0].IsSelected = true;
+            Assert.True(viewModel.StartCommand.CanExecute(null));
+            Assert.True(viewModel.DeleteSelectedCommand.CanExecute(null));
+        }
+
+        [Fact]
+        public async Task LoadMore_ConcurrentRequestsReadOnceAndCanceledReadCanRetry()
+        {
+            using var environment = await TestEnvironment.CreateAsync();
+            await environment.StageAndDecideAsync(LearningLanguage.Japanese, "食前", "jmdict:2:1", ImportDecision.Learning);
+            var template = (await environment.LearningPlanService.GetLibraryPageAsync(LearningLanguage.Japanese, 1, 20, TestContext.Current.CancellationToken)).Groups[0];
+            var library = new ControlledLearningLibraryManager(template, 60);
+            var viewModel = environment.CreateViewModel(library);
+            viewModel.Initialize(LearningLanguage.Japanese);
+            await viewModel.RefreshAsync(TestContext.Current.CancellationToken);
+            library.PendingRead = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var cancellation = new CancellationTokenSource();
+            var first = viewModel.LoadMoreAsync(cancellation.Token);
+            var second = viewModel.LoadMoreAsync(TestContext.Current.CancellationToken);
+            Assert.False(viewModel.StartCommand.CanExecute(null));
+            cancellation.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+            library.PendingRead.SetResult();
+            await second;
+            library.PendingRead = null;
+            Assert.Equal(20, viewModel.LibraryItems.Count);
+            await viewModel.LoadMoreAsync(TestContext.Current.CancellationToken);
+            Assert.Equal(40, viewModel.LibraryItems.Count);
+            Assert.Equal(new[] { 1, 2, 2 }, library.RequestedPages);
+        }
+
+        [Fact]
+        public async Task ExampleSelection_CommandNotificationsUseTheNewSelection()
+        {
+            using var environment = await TestEnvironment.CreateAsync();
+            var viewModel = environment.CreateViewModel();
+            viewModel.Initialize(LearningLanguage.English);
+            await viewModel.RefreshAsync(TestContext.Current.CancellationToken);
+            viewModel.ExampleQuery = "go";
+            await viewModel.SearchExamplesAsync(TestContext.Current.CancellationToken);
+            viewModel.IsExampleParadigm = true;
+            var availableAtNotification = true;
+            viewModel.SaveCommand.CanExecuteChanged += (_, _) => availableAtNotification = viewModel.SaveCommand.CanExecute(null);
+            viewModel.SelectedExample = viewModel.ExampleCandidates.First();
+            Assert.True(availableAtNotification);
+            viewModel.SelectedExample = null;
+            Assert.False(availableAtNotification);
+        }
+
         private static void SetSelected(
             IEnumerable<LearningPlanOptionViewModel> options,
             params string[] selectedCodes)
@@ -249,11 +376,11 @@ namespace Dictation.Tests.Presentation
                 return new TestEnvironment(temporaryDirectory, planService, lexiconService, importService);
             }
 
-            public LearningPlanViewModel CreateViewModel()
+            public LearningPlanViewModel CreateViewModel(ILearningLibraryManager? library = null)
             {
                 return new LearningPlanViewModel(
                     LearningPlanService,
-                    LearningPlanService,
+                    library ?? LearningPlanService,
                     LearningPlanService,
                     LearningNavigation,
                     LexiconLookupService,

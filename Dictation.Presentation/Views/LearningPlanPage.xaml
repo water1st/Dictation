@@ -16,6 +16,16 @@
             <Setter Property="Padding" Value="17,10" />
             <Setter Property="Margin" Value="8,0,0,0" />
         </Style>
+        <Style x:Key="ValidPlanButtonStyle" TargetType="Button" BasedOn="{StaticResource PlanButtonStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding ElementName=DailyTargetInput, Path=(Validation.HasError)}" Value="True">
+                    <Setter Property="IsEnabled" Value="False" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding ElementName=SessionLimitInput, Path=(Validation.HasError)}" Value="True">
+                    <Setter Property="IsEnabled" Value="False" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
         <Style x:Key="OptionCheckStyle" TargetType="CheckBox" BasedOn="{StaticResource FormCheckBoxStyle}">
             <Setter Property="Margin" Value="0,0,14,9" />
         </Style>
@@ -94,16 +104,13 @@
             </Border>
         </Grid>
 
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="0.42*" MinWidth="290" />
-                <ColumnDefinition Width="20" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-
-            <ScrollViewer controls:PageScrollHost.IsPageScrollViewer="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <StackPanel>
-                    <Border Padding="18" Background="{DynamicResource CardBackgroundBrush}"
+        <ScrollViewer x:Name="PlanScrollViewer" Grid.Row="1"
+                      controls:PageScrollHost.IsPageScrollViewer="True"
+                      ScrollChanged="OnPlanScrollChanged"
+                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel x:Name="PlanContent" SizeChanged="OnPlanContentSizeChanged">
+                <WrapPanel x:Name="OptionsPanel">
+                    <Border x:Name="RhythmCard" Padding="18" Background="{DynamicResource CardBackgroundBrush}"
                             BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="18">
                         <StackPanel>
                             <TextBlock Style="{DynamicResource SectionTitleTextStyle}" Text="今天的节奏" />
@@ -115,12 +122,12 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <TextBlock Style="{DynamicResource BodyTextStyle}" Text="每日新词" />
-                                    <TextBox Margin="0,6,0,0" Padding="10,7"
+                                    <TextBox x:Name="DailyTargetInput" Margin="0,6,0,0" Padding="10,7"
                                              Text="{Binding DailyNewTarget, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Style="{DynamicResource BodyTextStyle}" Text="每轮词数" />
-                                    <TextBox Margin="0,6,0,0" Padding="10,7"
+                                    <TextBox x:Name="SessionLimitInput" Margin="0,6,0,0" Padding="10,7"
                                              Text="{Binding SessionWordLimit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                             </Grid>
@@ -133,7 +140,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Margin="0,12,0,0" Padding="18"
+                    <Border x:Name="PracticeCard" Margin="0,0,0,0" Padding="18"
                             Background="{DynamicResource CardBackgroundBrush}"
                             BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="18">
                         <StackPanel>
@@ -159,6 +166,7 @@
                         </StackPanel>
                     </Border>
 
+                </WrapPanel>
                     <Border Margin="0,12,0,0" Padding="18"
                             Background="{DynamicResource CardBackgroundBrush}"
                             BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="18"
@@ -182,59 +190,51 @@
                                      DisplayMemberPath="Headword" ItemContainerStyle="{DynamicResource ContentListItemStyle}" />
                         </StackPanel>
                     </Border>
-                </StackPanel>
-            </ScrollViewer>
-
-            <Border Grid.Column="2" Padding="18"
-                    Background="{DynamicResource CardBackgroundBrush}"
-                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="18">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                        <CheckBox Content="全选" IsThreeState="True"
-                                  IsEnabled="{Binding CanSelectAll, FallbackValue=False}"
-                                  IsChecked="{Binding IsAllSelected, Mode=TwoWay}"
-                                  FontSize="{DynamicResource ControlFontSize}" FontWeight="SemiBold" />
-                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Grid.Column="1" TextWrapping="Wrap" >
-                            <Run Text="共 " /><Run Text="{Binding TotalCount, Mode=OneWay}" /><Run Text=" 组" />
-                        </TextBlock>
-                    </Grid>
-                    <ListBox Grid.Row="1" Margin="0,14,0,0"
-                             Background="Transparent" BorderThickness="0"
-                             ItemsSource="{Binding LibraryItems}"
-                             ItemTemplate="{StaticResource LearningGroupTemplate}"
-                             HorizontalContentAlignment="Stretch" ItemContainerStyle="{DynamicResource ContentListItemStyle}" />
-                    <Grid Grid.Row="2" Margin="0,12,0,0">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                        <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" VerticalAlignment="Center" TextWrapping="Wrap" >
-                            <Run Text="第 " /><Run Text="{Binding PageNumber, Mode=OneWay}" /><Run Text=" 页" />
-                        </TextBlock>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Button Tag="{StaticResource BackIconGeometry}" Command="{Binding PreviousPageCommand}" Content="上一页" Style="{StaticResource PlanButtonStyle}" />
-                            <Button Tag="{StaticResource ForwardIconGeometry}" Command="{Binding NextPageCommand}" Content="下一页" Style="{StaticResource PlanButtonStyle}" />
-                        </StackPanel>
-                    </Grid>
-                </Grid>
-            </Border>
-        </Grid>
-
-        <Grid Grid.Row="2" Margin="0,18,0,0">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-            <StackPanel VerticalAlignment="Center">
-                <TextBlock Style="{DynamicResource BodyTextStyle}" Foreground="{DynamicResource ErrorBrush}" Text="{Binding ErrorMessage}" TextWrapping="Wrap" />
-                <TextBlock Style="{DynamicResource BodyTextStyle}" Foreground="{DynamicResource AccentBrush}" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+                <Border Margin="0,12,0,0" Padding="18"
+                        Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="18">
+                    <StackPanel>
+                        <TextBlock Style="{DynamicResource SectionTitleTextStyle}" Text="学习词条" />
+                        <WrapPanel Margin="0,12,0,0">
+                            <CheckBox Content="全选已加载词条" IsThreeState="True" Margin="0,0,16,8"
+                                      IsEnabled="{Binding CanSelectAll, FallbackValue=False}"
+                                      IsChecked="{Binding IsAllSelected, Mode=TwoWay}" />
+                            <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" TextWrapping="Wrap">
+                                <Run Text="已加载 " /><Run Text="{Binding LibraryItems.Count, Mode=OneWay}" />
+                                <Run Text=" / " /><Run Text="{Binding TotalCount, Mode=OneWay}" /><Run Text=" 组" />
+                            </TextBlock>
+                        </WrapPanel>
+                        <TextBlock Margin="0,16,0,16" Style="{DynamicResource SecondaryBodyTextStyle}"
+                                   Text="学习库暂无词条，请先导入学习内容。" TextWrapping="Wrap"
+                                   Visibility="{Binding IsLibraryEmpty, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                        <ItemsControl Margin="0,6,0,0" ItemsSource="{Binding LibraryItems}"
+                                      ItemTemplate="{StaticResource LearningGroupTemplate}" />
+                        <Button Command="{Binding LoadMoreCommand}" Content="加载更多词条" Tag="{StaticResource ForwardIconGeometry}"
+                                HorizontalAlignment="Left" Margin="0,8,0,0"
+                                Style="{StaticResource SecondaryActionButtonStyle}"
+                                Visibility="{Binding CanNextPage, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                        <TextBlock Margin="0,8,0,0" Style="{DynamicResource SecondaryBodyTextStyle}" Text="正在处理…"
+                                   Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    </StackPanel>
+                </Border>
             </StackPanel>
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button Tag="{StaticResource DeleteIconGeometry}" Command="{Binding DeleteSelectedCommand}" Content="移除所选" Style="{StaticResource DestructiveActionButtonStyle}" Margin="8,0,0,0" />
-                <Button Command="{Binding SaveCommand}" Content="保存计划" Style="{StaticResource PlanButtonStyle}"
-                        Tag="{StaticResource SaveIconGeometry}" />
-                <Button Tag="{StaticResource PlayIconGeometry}" Command="{Binding StartCommand}" Content="开始本轮" Style="{StaticResource PlanButtonStyle}" />
-            </StackPanel>
-        </Grid>
+        </ScrollViewer>
+        <StackPanel Grid.Row="2" Margin="0,16,0,0">
+            <TextBlock Style="{DynamicResource BodyTextStyle}" Foreground="{DynamicResource ErrorBrush}"
+                       Text="{Binding ErrorMessage}" TextWrapping="Wrap" />
+            <TextBlock Style="{DynamicResource BodyTextStyle}" Foreground="{DynamicResource AccentBrush}"
+                       Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+            <WrapPanel Margin="0,10,0,0" HorizontalAlignment="Right">
+                <Button Tag="{StaticResource RefreshIconGeometry}" Command="{Binding RefreshCommand}"
+                        Content="刷新词条" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,8" />
+                <Button Tag="{StaticResource DeleteIconGeometry}" Command="{Binding DeleteSelectedCommand}"
+                        Content="移除所选" Style="{StaticResource DestructiveActionButtonStyle}" Margin="0,0,8,8" />
+                <Button Command="{Binding SaveCommand}" Content="保存计划" Style="{StaticResource ValidPlanButtonStyle}"
+                        Tag="{StaticResource SaveIconGeometry}" Margin="0,0,8,8" />
+                <Button Tag="{StaticResource PlayIconGeometry}" Command="{Binding StartCommand}"
+                        Content="开始本轮" Style="{StaticResource ValidPlanButtonStyle}" Margin="0,0,0,8" />
+            </WrapPanel>
+        </StackPanel>
+
     </Grid>
 </UserControl>

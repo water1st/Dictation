@@ -238,7 +238,7 @@ namespace Dictation.Tests.Presentation
                 RenderControl(page);
 
                 Assert.True(typeof(UserControl).IsAssignableFrom(typeof(LearningPlanPage)));
-                Assert.Contains(FindVisualChildren<CheckBox>(page), item => Equals(item.Content, "全选"));
+                Assert.Contains(FindVisualChildren<CheckBox>(page), item => Equals(item.Content, "全选已加载词条"));
                 Assert.Contains(FindVisualChildren<Button>(page), item => Equals(item.Content, "保存计划"));
                 Assert.Contains(FindVisualChildren<Button>(page), item => Equals(item.Content, "开始本轮"));
                 Assert.DoesNotContain(FindVisualChildren<Button>(page), item =>
