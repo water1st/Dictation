@@ -64,18 +64,10 @@
         <Grid Grid.Row="0" Margin="0,0,0,24">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <Button Tag="{StaticResource BackIconGeometry}" Grid.Column="0"
-                    Margin="0,0,18,0"
-                    Command="{Binding BackCommand}"
-                    Content="返回"
-                    Padding="10,6"
-                    BorderThickness="0"
-                    />
-            <Border Grid.Column="1"
+            <Border Grid.Column="0"
                     Width="54"
                     Height="54"
                     Background="{DynamicResource AccentSoftBrush}"
@@ -85,13 +77,13 @@
                            Foreground="{DynamicResource AccentBrush}"
                            Text="⌕" />
             </Border>
-            <StackPanel Grid.Column="2" Margin="16,0,0,0" Style="{DynamicResource HeaderTextGroupStyle}">
+            <StackPanel Grid.Column="1" Margin="16,0,0,0" Style="{DynamicResource HeaderTextGroupStyle}">
                 <TextBlock Style="{DynamicResource PageTitleTextStyle}"
                            Text="{Binding WindowTitle}" TextWrapping="Wrap" />
                 <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,4,0,0"
                            Text="词义词形一处查看" TextWrapping="Wrap" />
             </StackPanel>
-            <Border Grid.Column="3"
+            <Border Grid.Column="2"
                     Padding="13,8"
                     Background="{DynamicResource AccentSoftBrush}"
                     CornerRadius="15">

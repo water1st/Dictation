@@ -55,7 +55,7 @@ namespace Dictation.Tests.Presentation
             Assert.Contains(Children<TextBlock>(page), text => text.Text.Contains("て形"));
             Assert.Contains(Children<TextBlock>(page), text => text.Text == "尚未评价");
             Assert.Contains(Children<Button>(page), button => ReferenceEquals(button.Command, vm.RefreshCommand));
-            Assert.Contains(Children<Button>(page), button => ReferenceEquals(button.Command, vm.BackCommand));
+            Assert.DoesNotContain(Children<Button>(page), button => ReferenceEquals(button.Command, vm.BackCommand));
             Assert.Contains(Children<Button>(page), button => ReferenceEquals(button.Command, vm.CancelCommand));
             Assert.Empty(Children<DataGrid>(page));
             Assert.DoesNotContain(Children<Button>(page), button => Equals(button.Content, "切换日语") || Equals(button.Content, "切换英语"));
