@@ -203,7 +203,8 @@ namespace Dictation.Tests.Presentation
         public async Task SearchAsync_MissingDatabaseShowsChineseErrorAndKeepsWindowUsable()
         {
             using var temporaryDirectory = new TemporaryDirectory();
-            var viewModel = CreateViewModel(new ApplicationPaths(temporaryDirectory.Path));
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            var viewModel = CreateViewModel(paths);
             viewModel.Initialize(LearningLanguage.English);
             viewModel.Query = "went";
 
@@ -213,6 +214,13 @@ namespace Dictation.Tests.Presentation
             Assert.Empty(viewModel.Results);
             Assert.Null(viewModel.SelectedResult);
             Assert.False(viewModel.IsResultDropDownOpen);
+
+            LexiconTestDatabases.CreateBoth(paths);
+            await viewModel.SearchAsync(TestContext.Current.CancellationToken);
+
+            Assert.Null(viewModel.ErrorMessage);
+            Assert.Equal("go", viewModel.SelectedResult?.Headword);
+            Assert.True(viewModel.CanStageSelected);
         }
 
         [Fact]
@@ -333,6 +341,29 @@ namespace Dictation.Tests.Presentation
             cancellation.Cancel();
             await Assert.ThrowsAsync<OperationCanceledException>(() =>
                 viewModel.StageSelectedAsync(cancellation.Token));
+        }
+
+        [Fact]
+        public async Task StageSelectedAsync_FailureAfterNewSearchDoesNotChangeNewDetails()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = new ApplicationPaths(temporaryDirectory.Path);
+            LexiconTestDatabases.CreateBoth(paths);
+            var staging = new ControlledImportStaging();
+            var viewModel = new LexiconLookupViewModel(CreateLexiconService(paths), staging,
+                new NavigationService(new TestScopeFactory()));
+            viewModel.Initialize(LearningLanguage.English);
+            viewModel.Query = "went";
+            await viewModel.SearchAsync(TestContext.Current.CancellationToken);
+            var pendingStage = viewModel.StageSelectedAsync(TestContext.Current.CancellationToken);
+
+            viewModel.Query = "take off";
+            await viewModel.SearchAsync(TestContext.Current.CancellationToken);
+            staging.Completion.SetException(new IOException("旧词条暂存失败"));
+
+            Assert.Null(await pendingStage);
+            Assert.Equal("take off", viewModel.SelectedResult?.Headword);
+            Assert.Null(viewModel.ImportErrorMessage);
         }
 
         [Fact]

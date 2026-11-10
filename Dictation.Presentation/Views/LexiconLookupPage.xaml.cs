@@ -1,3 +1,5 @@
+using System.Windows.Controls;
+using System.Windows.Input;
 using Dictation.Presentation.ViewModels;
 
 namespace Dictation.Presentation.Views
@@ -5,7 +7,7 @@ namespace Dictation.Presentation.Views
     /// <summary>
     /// 显示日英语词库查询结果和导入操作。
     /// </summary>
-    public sealed partial class LexiconLookupPage : System.Windows.Controls.UserControl
+    public sealed partial class LexiconLookupPage : UserControl
     {
         /// <summary>
         /// 显示日英语词库查询结果和导入操作。
@@ -15,11 +17,9 @@ namespace Dictation.Presentation.Views
             InitializeComponent();
         }
 
-        private void SearchComboBoxPreviewKeyDown(
-            object sender,
-            System.Windows.Input.KeyEventArgs e)
+        private void SearchComboBoxPreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key != System.Windows.Input.Key.Enter)
+            if (e.Key != Key.Enter || sender is ComboBox { IsDropDownOpen: true })
             {
                 return;
             }

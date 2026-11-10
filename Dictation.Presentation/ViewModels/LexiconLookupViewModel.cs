@@ -321,6 +321,7 @@ namespace Dictation.Presentation.ViewModels
 
             var selection = selectedResult;
             var sourceText = lastSuccessfulSourceText;
+            var revision = searchRevision;
             if (selection is null || sourceText is null || !CanStageSelected)
             {
                 ImportErrorMessage = "请选择一个查词结果后再加入导入收件箱。";
@@ -341,6 +342,11 @@ namespace Dictation.Presentation.ViewModels
                         }),
                     cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
+                if (revision != searchRevision || !ReferenceEquals(selection, selectedResult))
+                {
+                    return result;
+                }
+
                 ImportStatusMessage = result switch
                 {
                     { AddedCount: > 0, DuplicateCount: > 0 }
@@ -357,7 +363,11 @@ namespace Dictation.Presentation.ViewModels
             }
             catch (Exception exception)
             {
-                ImportErrorMessage = $"加入导入收件箱失败：{exception.Message}";
+                if (revision == searchRevision && ReferenceEquals(selection, selectedResult))
+                {
+                    ImportErrorMessage = $"加入导入收件箱失败：{exception.Message}";
+                }
+
                 return null;
             }
         }
