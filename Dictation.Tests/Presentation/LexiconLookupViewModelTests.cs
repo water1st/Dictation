@@ -142,6 +142,44 @@ namespace Dictation.Tests.Presentation
         }
 
         [Fact]
+        public async Task Query_EditingAfterSuccessfulSearchClearsStaleResultsAndSelection()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var paths = await CreateEnvironmentAsync(temporaryDirectory);
+            var viewModel = CreateViewModel(paths);
+            viewModel.Initialize(LearningLanguage.English);
+            viewModel.Query = "went";
+            await viewModel.SearchAsync(TestContext.Current.CancellationToken);
+            viewModel.IsResultDropDownOpen = true;
+            viewModel.ScrollOffset = 100;
+            Assert.True(viewModel.CanStageSelected);
+
+            viewModel.Query = "take off";
+
+            Assert.Empty(viewModel.Results);
+            Assert.Null(viewModel.SelectedResult);
+            Assert.False(viewModel.IsResultDropDownOpen);
+            Assert.False(viewModel.CanStageSelected);
+            Assert.Equal(0, viewModel.ScrollOffset);
+            Assert.Null(await viewModel.StageSelectedAsync(TestContext.Current.CancellationToken));
+            Assert.Empty(await CreateService(paths).GetPendingBatchesAsync(
+                LearningLanguage.English,
+                TestContext.Current.CancellationToken));
+        }
+
+        [Fact]
+        public void IsResultDropDownOpen_WithoutCandidates_RemainsClosed()
+        {
+            using var temporaryDirectory = new TemporaryDirectory();
+            var viewModel = CreateViewModel(new ApplicationPaths(temporaryDirectory.Path));
+            viewModel.Initialize(LearningLanguage.Japanese);
+
+            viewModel.IsResultDropDownOpen = true;
+
+            Assert.False(viewModel.IsResultDropDownOpen);
+        }
+
+        [Fact]
         public async Task SearchAsync_NoResultsClearsSelectionAndShowsEmptyState()
         {
             using var temporaryDirectory = new TemporaryDirectory();
@@ -239,17 +277,16 @@ namespace Dictation.Tests.Presentation
             var paths = await CreateEnvironmentAsync(temporaryDirectory);
             var viewModel = CreateViewModel(paths);
             viewModel.Initialize(LearningLanguage.English);
-            viewModel.Query = "went";
+            viewModel.Query = " WENT ";
             await viewModel.SearchAsync(TestContext.Current.CancellationToken);
             Assert.NotNull(viewModel.SelectedResult);
             var selected = viewModel.SelectedResult!;
 
-            viewModel.Query = "not-the-last-search";
             var staged = await viewModel.StageSelectedAsync(TestContext.Current.CancellationToken);
 
             Assert.NotNull(staged);
             var item = Assert.Single(staged!.Batch.Items);
-            Assert.Equal("went", item.SourceText);
+            Assert.Equal("WENT", item.SourceText);
             Assert.Equal(selected.SourceSenseId, item.AnchorSourceSenseId);
             Assert.Equal(1, staged.AddedCount);
             Assert.Equal(0, staged.DuplicateCount);

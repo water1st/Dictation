@@ -14,12 +14,14 @@ namespace Dictation.Presentation.ViewModels
     /// </summary>
     public sealed class LexiconLookupViewModel : INotifyPropertyChanged
     {
+        private const string QueryPrompt = "请输入要查询的词语。";
         private readonly ILexiconSearch lexiconSearch;
         private LearningLanguage selectedLanguage;
         private string query = string.Empty;
         private LexiconLookupResultDto? selectedResult;
         private string? errorMessage;
-        private string emptyStateText = "请输入要查询的词语。";
+        private string emptyStateText = QueryPrompt;
+        private int searchRevision;
         private bool isResultDropDownOpen;
         private bool isInitialized;
         private readonly IImportStaging importStaging;
@@ -92,6 +94,7 @@ namespace Dictation.Presentation.ViewModels
                 }
 
                 query = nextValue;
+                ResetSearchState();
                 OnPropertyChanged();
             }
         }
@@ -141,6 +144,7 @@ namespace Dictation.Presentation.ViewModels
 
         public bool CanStageSelected => isInitialized
             && selectedResult is not null
+            && Results.Contains(selectedResult)
             && !string.IsNullOrWhiteSpace(lastSuccessfulSourceText);
 
         public string? ImportStatusMessage
@@ -208,12 +212,13 @@ namespace Dictation.Presentation.ViewModels
             get => isResultDropDownOpen;
             set
             {
-                if (isResultDropDownOpen == value)
+                var shouldOpen = value && Results.Count > 0;
+                if (isResultDropDownOpen == shouldOpen)
                 {
                     return;
                 }
 
-                isResultDropDownOpen = value;
+                isResultDropDownOpen = shouldOpen;
                 OnPropertyChanged();
             }
         }
@@ -246,21 +251,26 @@ namespace Dictation.Presentation.ViewModels
             EnsureInitialized();
             var searchQuery = Query;
             ResetSearchState();
-            Query = searchQuery;
+            var revision = searchRevision;
             cancellationToken.ThrowIfCancellationRequested();
 
             if (string.IsNullOrWhiteSpace(searchQuery))
             {
-                EmptyStateText = "请输入要查询的词语。";
                 return;
             }
 
+            EmptyStateText = "正在查词…";
             try
             {
                 var results = await lexiconSearch.SearchAsync(
                     new LexiconSearchRequestDto(selectedLanguage, searchQuery),
                     cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
+
+                if (revision != searchRevision)
+                {
+                    return;
+                }
 
                 foreach (var result in results)
                 {
@@ -275,16 +285,24 @@ namespace Dictation.Presentation.ViewModels
 
                 lastSuccessfulSourceText = searchQuery.Trim().Normalize(System.Text.NormalizationForm.FormC);
                 SelectedResult = Results[0];
-                OnPropertyChanged(nameof(CanStageSelected));
+                EmptyStateText = string.Empty;
             }
             catch (OperationCanceledException)
             {
+                if (revision == searchRevision)
+                {
+                    EmptyStateText = QueryPrompt;
+                }
+
                 throw;
             }
             catch (Exception exception)
             {
-                ErrorMessage = $"查词失败：{exception.Message}";
-                EmptyStateText = "暂时无法显示结果。";
+                if (revision == searchRevision)
+                {
+                    ErrorMessage = $"查词失败：{exception.Message}";
+                    EmptyStateText = "暂时无法显示结果。";
+                }
             }
         }
 
@@ -301,7 +319,9 @@ namespace Dictation.Presentation.ViewModels
             ImportErrorMessage = null;
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (selectedResult is null || string.IsNullOrWhiteSpace(lastSuccessfulSourceText))
+            var selection = selectedResult;
+            var sourceText = lastSuccessfulSourceText;
+            if (selection is null || sourceText is null || !CanStageSelected)
             {
                 ImportErrorMessage = "请选择一个查词结果后再加入导入收件箱。";
                 return null;
@@ -316,8 +336,8 @@ namespace Dictation.Presentation.ViewModels
                         new[]
                         {
                             new ImportSelectionDto(
-                                lastSuccessfulSourceText,
-                                selectedResult.SourceSenseId)
+                                sourceText,
+                                selection.SourceSenseId)
                         }),
                     cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
@@ -344,15 +364,16 @@ namespace Dictation.Presentation.ViewModels
 
         private void ResetSearchState()
         {
-            Results.Clear();
+            searchRevision++;
+            IsResultDropDownOpen = false;
+            lastSuccessfulSourceText = null;
             SelectedResult = null;
+            Results.Clear();
+            ScrollOffset = 0;
             ErrorMessage = null;
             ImportStatusMessage = null;
             ImportErrorMessage = null;
-            lastSuccessfulSourceText = null;
-            EmptyStateText = string.Empty;
-            IsResultDropDownOpen = false;
-            OnPropertyChanged(nameof(CanStageSelected));
+            EmptyStateText = QueryPrompt;
         }
 
         private void EnsureInitialized()
