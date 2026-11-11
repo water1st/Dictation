@@ -1,6 +1,6 @@
 # Dictation Agent Instructions
 
-执行本仓库任务前，必须核对用户授权、对应 Task 及当前仓库状态，并根据下表读取所有适用的规则文件。实施、验证和交付均须遵守这些规则规定的前置条件、执行顺序与验收要求；不得跳过流程门禁、擅自变更步骤、扩大授权范围，或将未核实的结果视为已完成。规则冲突时优先遵守适用范围更具体的要求；仍无法确定时，停止受影响操作并报告。
+执行本仓库任务前，必须核对用户授权、对应 Task 及当前仓库状态，并根据下表读取所有适用规则和其强制路由的项目 Skill。实施、验证和交付均须遵守这些规则和 Skill 规定的前置条件、执行顺序与验收要求；不得跳过流程门禁、擅自变更步骤、扩大授权范围，或将未核实的结果视为已完成。规则冲突时优先遵守适用范围更具体的要求；仍无法确定时，停止受影响操作并报告。
 
 ## 规则目录
 
@@ -10,9 +10,9 @@
 | SQLite 用户数据库、日语及英语只读词库的表、字段、约束与索引 | `rules/database-schema.md` |
 | 第三方词库与语音资源来源、版本、哈希、运行布局及许可归属 | `rules/resources.md` |
 | C# 命名、文件组织、类型及注释规范 | `rules/code-style.md` |
-| Git 分支、TDD、开发步骤、验证、PR、状态流转 | `rules/workflow.md` |
-| Trello Task、身份、Checklist、任务生命周期与版本 | `rules/project-management.md` |
-| 需求和设计文档、最终状态、文档版本 | `rules/design-documents.md` |
+| Git 分支、TDD、开发步骤、验证、PR、状态流转 | `rules/workflow.md` → `.agents/skills/development-workflow/SKILL.md` |
+| Trello Task、身份、Checklist、任务生命周期与版本 | `rules/project-management.md` → `.agents/skills/project-management/SKILL.md` |
+| 需求和设计文档、最终状态、文档版本 | `rules/design-documents.md` → `.agents/skills/design-document-authoring/SKILL.md` |
 | GitHub/Trello/Google Drive 插件、开发环境、SDK、工具与工作区 | `rules/tooling.md` |
 
-项目身份及版本配置以 `ProjectInfo.json` 为准。项目 Skills 位于 `.agents/skills/`，其适用条件由相应规则指定。
+项目身份及版本配置以 `ProjectInfo.json` 为准。项目 Skills 位于 `.agents/skills/`。本表三项通过规则强制路由的 Skill 在其适用范围内具有对应规则的约束效力；其他 Skill 按各自适用条件使用，不能覆盖任务授权或仓库约束。
