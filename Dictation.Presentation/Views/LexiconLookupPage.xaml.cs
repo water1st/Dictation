@@ -1,4 +1,6 @@
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using Dictation.Presentation.ViewModels;
 
@@ -15,6 +17,30 @@ namespace Dictation.Presentation.Views
         public LexiconLookupPage()
         {
             InitializeComponent();
+        }
+
+        private void SearchComboBoxDropDownOpened(object? sender, EventArgs e)
+        {
+            UpdateCandidatePopupWidth();
+        }
+
+        private void LookupPageSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateCandidatePopupWidth();
+        }
+
+        private void UpdateCandidatePopupWidth()
+        {
+            if (QueryComboBox is null || CandidatePane is null || !QueryComboBox.IsDropDownOpen
+                || QueryComboBox.Template.FindName("PART_Popup", QueryComboBox) is not Popup { Child: FrameworkElement content })
+            {
+                return;
+            }
+
+            // 输入框填充整行，候选弹层仍留在左侧结果区，保留右侧导入操作的点击空间。
+            var right = CandidatePane.TranslatePoint(new Point(CandidatePane.ActualWidth, 0), this).X;
+            var left = QueryComboBox.TranslatePoint(new Point(), this).X;
+            content.MaxWidth = Math.Max(0, right - left);
         }
 
         private void SearchComboBoxPreviewKeyDown(object sender, KeyEventArgs e)

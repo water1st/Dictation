@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:Dictation.Presentation.Controls"
              xmlns:behaviors="clr-namespace:Dictation.Presentation.Behaviors"
+             SizeChanged="LookupPageSizeChanged"
              Background="{DynamicResource WindowBackgroundBrush}"
              Foreground="{DynamicResource ForegroundBrush}"
              FontSize="{DynamicResource BodyFontSize}">
@@ -17,7 +18,7 @@
         </Style>
 
         <Style x:Key="LookupComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource FormComboBoxStyle}">
-            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="Padding" Value="14,0" />
             <Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
             <Setter Property="MaxDropDownHeight" Value="340" />
         </Style>
@@ -103,40 +104,50 @@
             <StackPanel>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" MaxWidth="420" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Style="{DynamicResource FormHeadingTextStyle}" Margin="0,0,16,0"
-                                   VerticalAlignment="Center"
-                                   Text="查询" />
-                        <controls:LexiconQueryComboBox Grid.Column="1"
-                                  IsEditable="True"
-                                  IsTextSearchEnabled="False"
-                                  IsDropDownOpen="{Binding IsResultDropDownOpen, Mode=TwoWay}"
-                                  ItemTemplate="{StaticResource LookupResultTemplate}"
-                                  ItemsSource="{Binding Results}"
-                                  PreviewKeyDown="SearchComboBoxPreviewKeyDown"
-                                  SelectedItem="{Binding SelectedResult, Mode=TwoWay}"
-                                  Style="{StaticResource LookupComboBoxStyle}"
-                                  Text="{Binding Query, Mode=TwoWay, UpdateSourceTrigger=Explicit}" />
-                        <Button Grid.Column="2"
-                                Margin="14,0,0,0"
-                                Command="{Binding SearchCommand}"
-                                Content="搜索"
-                                Tag="{StaticResource SearchIconGeometry}"
-                                Style="{StaticResource LookupButtonStyle}" />
-                    </Grid>
+                    <TextBlock Style="{DynamicResource FormHeadingTextStyle}" Margin="0,0,16,0"
+                               VerticalAlignment="Center"
+                               Text="查询" />
+                    <controls:LexiconQueryComboBox x:Name="QueryComboBox" Grid.Column="1"
+                              IsEditable="True"
+                              IsTextSearchEnabled="False"
+                              IsDropDownOpen="{Binding IsResultDropDownOpen, Mode=TwoWay}"
+                              ItemTemplate="{StaticResource LookupResultTemplate}"
+                              ItemsSource="{Binding Results}"
+                              PreviewKeyDown="SearchComboBoxPreviewKeyDown"
+                              DropDownOpened="SearchComboBoxDropDownOpened"
+                              SelectedItem="{Binding SelectedResult, Mode=TwoWay}"
+                              Style="{StaticResource LookupComboBoxStyle}"
+                              Height="{Binding ElementName=SearchButton, Path=ActualHeight}"
+                              Text="{Binding Query, Mode=TwoWay, UpdateSourceTrigger=Explicit}" />
+                    <Button x:Name="SearchButton" Grid.Column="2"
+                            Margin="14,0,0,0"
+                            Command="{Binding SearchCommand}"
+                            Content="搜索"
+                            Tag="{StaticResource SearchIconGeometry}"
+                            Style="{StaticResource LookupButtonStyle}" />
                 </Grid>
-                <TextBlock Style="{DynamicResource BodyTextStyle}" Margin="0,10,0,0"
-                           Foreground="{DynamicResource ErrorBrush}"
-                           Text="{Binding ErrorMessage}"
-                           TextWrapping="Wrap" />
+                <Border Margin="0,10,0,0">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ErrorMessage}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ErrorMessage}" Value="">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Style="{DynamicResource BodyTextStyle}"
+                               Foreground="{DynamicResource ErrorBrush}"
+                               Text="{Binding ErrorMessage}"
+                               TextWrapping="Wrap" />
+                </Border>
             </StackPanel>
         </Border>
 
@@ -147,7 +158,7 @@
                 <ColumnDefinition Width="1.2*" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0"
+            <Border x:Name="CandidatePane" Grid.Column="0"
                     Padding="18"
                     Background="{DynamicResource CardBackgroundBrush}"
                     BorderBrush="{DynamicResource BorderBrush}"

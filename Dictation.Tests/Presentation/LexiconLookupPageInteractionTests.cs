@@ -61,9 +61,11 @@ namespace Dictation.Tests.Presentation
                 Assert.True(queryBox.ActualWidth > 0);
                 Assert.True(queryBox.IsDropDownOpen);
                 Assert.True(stageButton.ActualWidth > 0);
-                var dropDownRight = queryBox.TranslatePoint(
-                    new Point(queryBox.ActualWidth, 0), page).X;
-                var stageButtonLeft = stageButton.TranslatePoint(new Point(0, 0), page).X;
+                var popup = Assert.IsType<Popup>(queryBox.Template.FindName("PART_Popup", queryBox));
+                var popupContent = Assert.IsAssignableFrom<FrameworkElement>(popup.Child);
+                WaitFor(() => PresentationSource.FromVisual(popupContent) is not null);
+                var dropDownRight = popupContent.PointToScreen(new Point(popupContent.ActualWidth, 0)).X;
+                var stageButtonLeft = stageButton.PointToScreen(new Point()).X;
 
                 Assert.True(dropDownRight <= stageButtonLeft,
                     $"宽度 {pageWidth} 下候选下拉层右缘 {dropDownRight} 遮住加入按钮左缘 {stageButtonLeft}。");
