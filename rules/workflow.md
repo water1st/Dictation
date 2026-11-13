@@ -59,7 +59,7 @@
 ## Final Task Verification
 
 - `開發中` 转 `測試中` 前，所有原生 Checklist 具体单元及逐项验收必须真实完成，开发阶段适用检查均已通过；父子组先验证子 Task 及父任务自身交付，再验收父任务集成结果。
-- `測試中` 根据 Expected Result 与 Acceptance Criteria 做最终验证；失败时先同步返回 `開發中` 再修复。
+- `測試中` 在当前占用的工作空间根据 Expected Result 与 Acceptance Criteria 做最终验证；失败时先同步返回 `開發中` 再修复。
 - **Code Task Gate**：适用 TDD、.NET 构建、xUnit、针对性冒烟；涉及 UI 变更附前后截图。未运行的检查不得声称通过。
 - **全量自动化测试门禁**：每个 Task 在最终验收和 PR 前，必须先完成当前解决方案的适用构建，再执行「环境与验证命令」中不带筛选条件的 `Dictation.Tests` 全量测试；核对实际发现及执行的测试数、通过／失败／跳过数量、完整运行结果和退出状态。测试数量由当前项目实际发现结果决定，不维护固定数量基线。测试未完成、失败、发现零测试或未经核实的跳过，不能作为通过证据；无法执行须明确报告未验证，不得声称全量测试通过。规则或文档修改不制造 RED，但仍须执行本项最终测试。
 - **Document and Rule Task Gate**：审阅完整 diff，确认只修改授权文件和章节，核对受影响术语及引用；不得加入无依据的新规则，不得让 Task 内容或聊天讨论以原文或改写形式泄漏进正式文档。Skills 修改另需检查相对引用、许可证、依赖及实际调用可用性。
@@ -69,7 +69,7 @@
 - 最终验证通过且卡片同步至 `PR` 后交付 PR 审阅；PR 描述写明修改范围、实际执行过的验证命令、未验证项和限制。只有对应 PR 实际合并，普通及父 Task 才能进入 `已完成`；子任务按父子组规则处理。
 - 来源于 GitHub Issue 的 Fix Task 必须在 Task 记录 `Issue: #<issue-number>`，PR 描述包含对应的 `Fixes #<issue-number>`。
 - 代码 Task 的 `ProjectInfo.json.programVersion` 必须等于该 Task 的 Target Program Version。
-- 评审要求返工时先将卡片同步回 `開發中`，完成开发和最终验收后再回到 `PR`。
+- 评审要求返工时先按 `rules/project-management.md` 取得空闲工作空间并将卡片同步回 `開發中`，完成开发和最终验收后再回到 `PR`。
 
 ## 环境与验证命令
 
