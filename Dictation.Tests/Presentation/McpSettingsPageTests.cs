@@ -3,6 +3,8 @@ using System.Net.Sockets;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Threading;
 using Dapper;
 using Dictation.Core.Configuration;
 using Dictation.Core.Importing;
@@ -167,6 +169,67 @@ namespace Dictation.Tests.Presentation
             await Assert.ThrowsAsync<ObjectDisposedException>(() => vm.RefreshAsync(Token));
             window.Close();
         });
+
+        [Theory]
+        [InlineData(ResolvedTheme.Light)]
+        [InlineData(ResolvedTheme.Dark)]
+        public Task SettingsNaming_EmbeddedAndStandalone_UsesMcpEntryAndTitle(ResolvedTheme theme) => ReviewPlanPageTests.RunStaAsync(async () =>
+        {
+            await using var fixture = await Fixture.CreateAsync();
+            var provider = fixture.Host.Services;
+            var navigation = provider.GetRequiredService<NavigationService>();
+            var home = provider.GetRequiredService<HomeViewModel>();
+            navigation.InitializeWorkspace(home);
+            await navigation.OpenSettingsAsync(Token);
+            navigation.CompleteTransition();
+            var settings = Assert.IsType<SettingsViewModel>(navigation.CurrentPage);
+            await settings.SelectSectionAsync(SettingsSection.Mcp, Token);
+            var page = new SettingsPage { DataContext = settings };
+            var window = provider.GetRequiredService<HomeWindow>();
+            var host = ScrollBarThemeTests.CreateHost(new Border());
+            foreach (var dictionary in host.Resources.MergedDictionaries)
+            {
+                window.Resources.MergedDictionaries.Add(dictionary);
+            }
+            window.Width = 1024;
+            window.Height = 900;
+            window.ShowActivated = false;
+            ThemePalette.Apply(window.Resources, theme);
+            ((ContentControl)window.FindName("CurrentPagePresenter")).Content = page;
+            try
+            {
+                window.Show();
+                await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+                window.UpdateLayout();
+                ScrollBarThemeTests.Export((FrameworkElement)window.Content, $"mcp-settings-{theme}");
+                Assert.Contains(Descendants<Button>(page), button => Equals(button.Content, "MCP"));
+                Assert.Contains(Descendants<TextBlock>(page), text => text.Text == "MCP 设置");
+            }
+            finally
+            {
+                window.Close();
+            }
+            await navigation.GoBackAsync(Token);
+            navigation.CompleteTransition();
+            await navigation.OpenMcpSettingsAsync(Token);
+            Assert.Equal("MCP 设置", navigation.PageTitle);
+            Assert.IsType<McpSettingsViewModel>(navigation.CurrentPage);
+        });
+
+        private static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
+        {
+            if (root is T value)
+            {
+                yield return value;
+            }
+            for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+            {
+                foreach (var child in Descendants<T>(VisualTreeHelper.GetChild(root, index)))
+                {
+                    yield return child;
+                }
+            }
+        }
 
         [Fact]
         public Task LeavingPage_IgnoresLateControlCompletion() => ReviewPlanPageTests.RunStaAsync(async () =>

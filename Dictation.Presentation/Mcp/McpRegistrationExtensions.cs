@@ -35,7 +35,8 @@ namespace Dictation.Presentation.Mcp
             services.AddSingleton<IMcpStatusReader>(provider => provider.GetRequiredService<McpHostedService>());
             services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<McpHostedService>());
             services.AddMcpServer().WithHttpTransport(options => options.SessionMode = HttpServerSessionMode.Stateless)
-                .WithTools<DictationMcpTools>();
+                .WithTools<DictationMcpTools>()
+                .WithTools<DictationLearningMcpTools>();
             return services;
         }
     }

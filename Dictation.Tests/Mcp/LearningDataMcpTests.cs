@@ -163,6 +163,34 @@ namespace Dictation.Tests.Mcp
             Assert.Equal(before, await SnapshotAsync(connection));
         }
 
+        [Fact]
+        public async Task Plans_SelectedGroups_PagesIdentifiersWithoutChangingSavedSelection()
+        {
+            using var env = await MemorySeedTestEnvironment.CreateAsync();
+            var first = await env.ImportAsync(decision: ImportDecision.Review);
+            var second = await env.ImportAsync("食前", "jmdict:2:1", ImportDecision.Review);
+            await env.Provider.GetRequiredService<IReviewPlanEditor>().SaveAsync(new(LearningLanguage.Japanese,
+                20, 20, ReviewRangeMode.Selected, new[] { second, first }, new[] { "Dictionary" },
+                new[] { LearningChannel.Dictation }, new[] { LearningOutputMode.Kana },
+                EnglishFormLabelMode.GrammarName, null), Token);
+            var reader = env.Provider.GetRequiredService<IReviewPlanReader>();
+            var saved = JsonSerializer.Serialize(await reader.LoadAsync(LearningLanguage.Japanese, Token));
+            var tools = Tools(env);
+            var page = Read(await tools.PlansAsync(LearningLanguage.Japanese, 1, 0, Token));
+            var next = Read(await tools.PlansAsync(LearningLanguage.Japanese, 1, 1, Token));
+            Assert.Equal(2, page.GetProperty("totalSelectedGroupCount").GetInt32());
+            Assert.True(page.GetProperty("hasMore").GetBoolean());
+            Assert.False(next.GetProperty("hasMore").GetBoolean());
+            var ids = new[] { page.GetProperty("review").GetProperty("wordGroupIds")[0].GetString(),
+                next.GetProperty("review").GetProperty("wordGroupIds")[0].GetString() };
+            Assert.Equal(new[] { first, second }.Order(StringComparer.Ordinal), ids);
+            var empty = Read(await tools.PlansAsync(LearningLanguage.Japanese, 100, int.MaxValue, Token));
+            Assert.Equal(2, empty.GetProperty("totalSelectedGroupCount").GetInt32());
+            Assert.Equal(0, empty.GetProperty("review").GetProperty("wordGroupIds").GetArrayLength());
+            Assert.False(empty.GetProperty("hasMore").GetBoolean());
+            Assert.Equal(saved, JsonSerializer.Serialize(await reader.LoadAsync(LearningLanguage.Japanese, Token)));
+        }
+
         private static DictationLearningMcpTools Tools(MemorySeedTestEnvironment env)
         {
             var services = env.Provider;
