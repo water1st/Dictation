@@ -1,3 +1,7 @@
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using Dictation.Presentation.ViewModels;
 
 namespace Dictation.Presentation.Views
@@ -5,7 +9,7 @@ namespace Dictation.Presentation.Views
     /// <summary>
     /// 显示日英语词库查询结果和导入操作。
     /// </summary>
-    public sealed partial class LexiconLookupPage : System.Windows.Controls.UserControl
+    public sealed partial class LexiconLookupPage : UserControl
     {
         /// <summary>
         /// 显示日英语词库查询结果和导入操作。
@@ -15,11 +19,33 @@ namespace Dictation.Presentation.Views
             InitializeComponent();
         }
 
-        private void SearchComboBoxPreviewKeyDown(
-            object sender,
-            System.Windows.Input.KeyEventArgs e)
+        private void SearchComboBoxDropDownOpened(object? sender, EventArgs e)
         {
-            if (e.Key != System.Windows.Input.Key.Enter)
+            UpdateCandidatePopupWidth();
+        }
+
+        private void LookupPageSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateCandidatePopupWidth();
+        }
+
+        private void UpdateCandidatePopupWidth()
+        {
+            if (QueryComboBox is null || CandidatePane is null || !QueryComboBox.IsDropDownOpen
+                || QueryComboBox.Template.FindName("PART_Popup", QueryComboBox) is not Popup { Child: FrameworkElement content })
+            {
+                return;
+            }
+
+            // 输入框填充整行，候选弹层仍留在左侧结果区，保留右侧导入操作的点击空间。
+            var right = CandidatePane.TranslatePoint(new Point(CandidatePane.ActualWidth, 0), this).X;
+            var left = QueryComboBox.TranslatePoint(new Point(), this).X;
+            content.MaxWidth = Math.Max(0, right - left);
+        }
+
+        private void SearchComboBoxPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter || sender is ComboBox { IsDropDownOpen: true })
             {
                 return;
             }
