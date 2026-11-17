@@ -155,13 +155,13 @@ namespace Dictation.Presentation.Navigation
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (currentEntry?.ViewModel is not HomeViewModel)
-                throw new InvalidOperationException("请从首页进入AI导入设置。");
+                throw new InvalidOperationException("请从首页进入 MCP 设置。");
             if (!TryPrepareForwardNavigation()) return;
             var scope = scopeFactory.CreateScope();
             try
             {
                 var viewModel = scope.ServiceProvider.GetRequiredService<McpSettingsViewModel>();
-                NavigateForward(new NavigationEntry(viewModel, "AI导入设置", null, scope, viewModel.RefreshAsync));
+                NavigateForward(new NavigationEntry(viewModel, "MCP 设置", null, scope, viewModel.RefreshAsync));
                 await viewModel.RefreshAsync(cancellationToken);
             }
             catch

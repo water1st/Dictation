@@ -15,9 +15,9 @@
         </ResourceDictionary>
     </UserControl.Resources>
         <StackPanel MaxWidth="880">
-            <TextBlock Style="{DynamicResource HeroTitleTextStyle}" Text="AI 导入设置" />
+            <TextBlock Style="{DynamicResource HeroTitleTextStyle}" Text="MCP 设置" />
             <TextBlock Style="{DynamicResource SecondaryBodyTextStyle}" Margin="0,8,0,24" TextWrapping="Wrap"
-                       Text="外部工具导入，词条统一确认" />
+                       Text="查询学习数据与导入词条，导入需在应用内确认" />
             <Border x:Name="SettingsCard" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="22" Padding="24">
                 <StackPanel>
                     <CheckBox x:Name="McpEnabled" Content="开启本机 MCP 服务（默认关闭）" IsChecked="{Binding Enabled}" />

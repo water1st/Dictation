@@ -13,7 +13,7 @@ namespace Dictation.Tests.Presentation
         [InlineData(typeof(HomePage), "今天想练什么？", 40)]
         [InlineData(typeof(KanaPlanPage), "假名小练习", 40)]
         [InlineData(typeof(KanaSessionPage), "五十音听写", 40)]
-        [InlineData(typeof(McpSettingsPage), "AI 导入设置", 40)]
+        [InlineData(typeof(McpSettingsPage), "MCP 设置", 40)]
         [InlineData(typeof(SettingsPage), "外观与主题", 24)]
         [InlineData(typeof(TextImportPage), "", 28)]
         [InlineData(typeof(LearningPlanPage), "", 28)]

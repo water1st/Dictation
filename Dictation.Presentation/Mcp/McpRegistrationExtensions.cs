@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol.AspNetCore;
+using ModelContextProtocol.Server;
 
 namespace Dictation.Presentation.Mcp
 {
@@ -35,7 +36,19 @@ namespace Dictation.Presentation.Mcp
             services.AddSingleton<IMcpStatusReader>(provider => provider.GetRequiredService<McpHostedService>());
             services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<McpHostedService>());
             services.AddMcpServer().WithHttpTransport(options => options.SessionMode = HttpServerSessionMode.Stateless)
-                .WithTools<DictationMcpTools>();
+                .WithTools<DictationMcpTools>()
+                .WithTools<DictationLearningMcpTools>();
+            services.PostConfigure<McpServerOptions>(options =>
+            {
+                if (options.ToolCollection is null)
+                {
+                    return;
+                }
+                foreach (var tool in options.ToolCollection)
+                {
+                    tool.ProtocolTool.InputSchema = McpInputSchemaNormalizer.Normalize(tool.ProtocolTool.InputSchema);
+                }
+            });
             return services;
         }
     }

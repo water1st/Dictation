@@ -39,7 +39,7 @@
                     </DataTrigger></Style.Triggers>
                 </Style></Button.Style>
             </Button>
-            <Button Tag="{StaticResource LinkIconGeometry}" Command="{Binding SelectMcpCommand}" Content="AI / MCP" Margin="0,0,0,10" Padding="14,13">
+            <Button Tag="{StaticResource LinkIconGeometry}" Command="{Binding SelectMcpCommand}" Content="MCP" Margin="0,0,0,10" Padding="14,13">
                 <Button.Style><Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
                     <Style.Triggers><DataTrigger Binding="{Binding SelectedSection}" Value="{x:Static vm:SettingsSection.Mcp}">
                         <Setter Property="Background" Value="{DynamicResource ControlPressedBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" /><Setter Property="FontWeight" Value="Bold" />

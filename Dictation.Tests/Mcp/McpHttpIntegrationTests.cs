@@ -5,6 +5,9 @@ using System.Text.Json;
 using Dapper;
 using Dictation.Core.Configuration;
 using Dictation.Core.Importing;
+using Dictation.Core.Learning;
+using Dictation.Core.Review;
+using Dictation.Core.Statistics;
 using Dictation.Core.Startup;
 using Dictation.DataAccess;
 using Dictation.DataAccess.Runtime;
@@ -34,7 +37,7 @@ namespace Dictation.Tests.Mcp
             await using var transport = new HttpClientTransport(new() { Endpoint = environment.Endpoint, TransportMode = HttpTransportMode.StreamableHttp });
             await using var client = await McpClient.CreateAsync(transport, cancellationToken: Token);
             var tools = await client.ListToolsAsync(cancellationToken: Token);
-            Assert.Equal(new[] { "dictation_capabilities", "dictation_diagnostics", "dictation_import_prepare", "dictation_import_stage", "dictation_import_status", "dictation_lexicon_search" }, tools.Select(tool => tool.Name).Order().ToArray());
+            Assert.Equal(new[] { "dictation_capabilities", "dictation_diagnostics", "dictation_import_prepare", "dictation_import_stage", "dictation_import_status", "dictation_learning_overview", "dictation_lexicon_search", "dictation_memory_details", "dictation_plans", "dictation_wrong_answer_history", "dictation_wrong_answers" }, tools.Select(tool => tool.Name).Order().ToArray());
             Assert.All(tools, tool => Assert.False(string.IsNullOrWhiteSpace(tool.Description)));
             Assert.False(tools.Single(tool => tool.Name == "dictation_import_stage").JsonSchema.GetProperty("properties").TryGetProperty("sourceKind", out _));
             var lookup = await CallAsync(client, "dictation_lexicon_search", new() { ["language"] = language, ["query"] = query });
@@ -140,6 +143,245 @@ namespace Dictation.Tests.Mcp
             await Assert.ThrowsAnyAsync<Exception>(() => client.CallToolAsync("dictation_confirm", new Dictionary<string, object?>(), cancellationToken: Token).AsTask());
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => client.CallToolAsync("dictation_import_stage", new Dictionary<string, object?>(), cancellationToken: new CancellationToken(true)).AsTask());
             Assert.Equal(0L, await environment.ScalarAsync("SELECT COUNT(*) FROM ImportBatches;"));
+        }
+
+        [Theory]
+        [InlineData(LearningLanguage.Japanese, "食べる", "jmdict:1:1", "Dictionary", LearningOutputMode.Kana)]
+        [InlineData(LearningLanguage.English, "go", "go%2:01:00::", "Base", LearningOutputMode.Latin)]
+        public async Task LearningQueries_RealHistoryAndMemories_MatchCoreWithoutWriting(
+            LearningLanguage language, string word, string sense, string formCode, LearningOutputMode outputMode)
+        {
+            await using var environment = await EnvironmentAsync();
+            var services = environment.Host.Services;
+            var stage = await services.GetRequiredService<IImportStaging>().StageAsync(new(language,
+                ImportSourceKind.Manual, new[] { new ImportSelectionDto(word, sense) }), Token);
+            var item = Assert.Single(stage.Batch.Items);
+            await services.GetRequiredService<IImportInboxActions>().DecideAsync(new(stage.Batch.BatchId,
+                new[] { item.ItemId }, ImportDecision.Learning), Token);
+            await services.GetRequiredService<ILearningPlanEditor>().SaveAsync(new(language, 20, 20,
+                LearningSelectionMode.Sequential, EnglishFormLabelMode.GrammarName, null, new[] { formCode },
+                new[] { LearningChannel.Dictation }, new[] { outputMode }), Token);
+            var sessions = services.GetRequiredService<LearningSessionService>();
+            var session = await sessions.StartOrResumeAsync(new(language), Token);
+            var question = (await sessions.GetCurrentQuestionAsync(session.SessionId, Token))!;
+            // 英语词组包含关联成员；先定位锚定义项，避免随机出题使错误落在另一成员上。
+            while (language == LearningLanguage.English && question.SpokenText != word)
+            {
+                question = (await sessions.SubmitAnswerAsync(new(session.SessionId, question.QuestionId, question.SpokenText), Token)).NextQuestion!;
+                Assert.NotNull(question);
+            }
+            var feedback = await sessions.SubmitAnswerAsync(new(session.SessionId, question.QuestionId, "故意写错"), Token);
+            for (var index = 0; feedback.NextQuestion is { } next && index < 100; index++)
+            {
+                feedback = await sessions.SubmitAnswerAsync(new(session.SessionId, next.QuestionId, next.SpokenText), Token);
+            }
+            Assert.Null(feedback.NextQuestion);
+            var expectedLibrary = await services.GetRequiredService<IReviewLibraryQuery>().LoadAsync(language, Token);
+            var expectedMemory = Assert.Single(expectedLibrary.Groups.Single().Forms,
+                form => form.SourceSenseId == sense && form.FormCode == formCode);
+            Assert.True(expectedMemory.HasMemory);
+            var before = await UserDataAsync(environment);
+            await environment.Control.ApplyAsync(new(true, environment.Port), Token);
+            await using var transport = new HttpClientTransport(new() { Endpoint = environment.Endpoint });
+            await using var client = await McpClient.CreateAsync(transport, cancellationToken: Token);
+            var tools = await client.ListToolsAsync(cancellationToken: Token);
+            var newNames = new[] { "dictation_learning_overview", "dictation_wrong_answers", "dictation_wrong_answer_history", "dictation_memory_details", "dictation_plans" };
+            foreach (var name in newNames)
+            {
+                var tool = tools.Single(tool => tool.Name == name);
+                Assert.True(tool.ProtocolTool.Annotations!.ReadOnlyHint);
+                Assert.False(tool.ProtocolTool.Annotations.DestructiveHint);
+                Assert.False(tool.ProtocolTool.Annotations.OpenWorldHint);
+                Assert.Contains("language", tool.JsonSchema.GetProperty("required").EnumerateArray().Select(value => value.GetString()));
+            }
+            var arguments = new Dictionary<string, object?> { ["language"] = language.ToString() };
+            var overview = await CallAsync(client, "dictation_learning_overview", arguments);
+            Assert.Equal(1, overview.GetProperty("statistics").GetProperty("learnedGroupCount").GetInt32());
+            var expectedStatistics = await services.GetRequiredService<ILanguageStatisticsReader>().LoadAsync(language, Token);
+            Assert.Equal(expectedStatistics.TodayLearnedGroupCount, overview.GetProperty("statistics").GetProperty("todayLearnedGroupCount").GetInt64());
+            var errors = await CallAsync(client, "dictation_wrong_answers", arguments);
+            Assert.Equal(1, errors.GetProperty("totalCount").GetInt32());
+            Assert.Equal(1, errors.GetProperty("items")[0].GetProperty("errorCount").GetInt32());
+            arguments["wordGroupId"] = item.WordGroupId;
+            arguments["sourceSenseId"] = sense;
+            arguments["formCode"] = formCode;
+            var memories = await CallAsync(client, "dictation_memory_details", arguments);
+            var memory = memories.GetProperty("items")[0].GetProperty("memory");
+            Assert.Equal(expectedMemory.Stability, memory.GetProperty("stability").GetDouble());
+            Assert.Equal(expectedMemory.Difficulty, memory.GetProperty("difficulty").GetDouble());
+            Assert.Equal(expectedMemory.DueAtUtc, memory.GetProperty("dueAtUtc").GetDateTimeOffset());
+            Assert.Equal(expectedMemory.ReviewCount, memory.GetProperty("reviewCount").GetInt32());
+            var history = await CallAsync(client, "dictation_wrong_answer_history", arguments);
+            Assert.Equal("故意写错", history.GetProperty("items")[0].GetProperty("submittedText").GetString());
+            arguments["language"] = language == LearningLanguage.Japanese ? "English" : "Japanese";
+            Assert.Equal(0, (await CallAsync(client, "dictation_memory_details", arguments)).GetProperty("totalCount").GetInt32());
+            Assert.Equal(0, (await CallAsync(client, "dictation_wrong_answer_history", arguments)).GetProperty("totalCount").GetInt32());
+            var plans = await CallAsync(client, "dictation_plans", new() { ["language"] = language.ToString() });
+            Assert.Equal(formCode, plans.GetProperty("learning").GetProperty("formCodes")[0].GetString());
+            var concurrent = await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => CallAsync(client,
+                "dictation_learning_overview", new() { ["language"] = language.ToString() })));
+            Assert.All(concurrent, result => Assert.Equal(1, result.GetProperty("statistics").GetProperty("learnedGroupCount").GetInt32()));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => client.CallToolAsync("dictation_memory_details",
+                new Dictionary<string, object?> { ["language"] = language.ToString() }, cancellationToken: new(true)).AsTask());
+            foreach (var invalid in new Dictionary<string, object?>[]
+            {
+                new() { ["language"] = language.ToString(), ["limit"] = 101 },
+                new() { ["language"] = language.ToString(), ["offset"] = -1 },
+                new() { ["language"] = "Chinese" },
+                new()
+            })
+            {
+                var error = await client.CallToolAsync("dictation_memory_details", invalid, cancellationToken: Token);
+                Assert.True(error.IsError);
+                Assert.DoesNotContain(environment.Directory.Path, string.Join("", error.Content.OfType<TextContentBlock>().Select(block => block.Text)));
+            }
+            Assert.Equal(before, await UserDataAsync(environment));
+        }
+
+        private static async Task<string> UserDataAsync(McpEnvironment environment)
+        {
+            await using var connection = environment.Host.Services.GetRequiredService<SqliteConnectionFactory>().CreateConnection();
+            await connection.OpenAsync(Token);
+            var names = await connection.QueryAsync<string>("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name;");
+            var values = new List<string>();
+            foreach (var name in names)
+            {
+                values.Add(name + JsonSerializer.Serialize(await connection.QueryAsync("SELECT * FROM \"" + name.Replace("\"", "\"\"") + "\" ORDER BY rowid;")));
+            }
+            return string.Join("\n", values);
+        }
+
+        [Fact]
+        public async Task InputSchemas_Discovery_UsesSingleTypeStringsAndPortableNames()
+        {
+            await using var environment = await EnvironmentAsync();
+            await environment.Control.ApplyAsync(new(true, environment.Port), Token);
+            await using var transport = new HttpClientTransport(new() { Endpoint = environment.Endpoint });
+            await using var client = await McpClient.CreateAsync(transport, cancellationToken: Token);
+            var tools = await client.ListToolsAsync(cancellationToken: Token);
+            foreach (var tool in tools)
+            {
+                Assert.Matches("^[A-Za-z][A-Za-z0-9_]*$", tool.Name);
+                AssertPortableSchema(tool.JsonSchema);
+            }
+            foreach (var name in new[] { "dictation_wrong_answers", "dictation_memory_details" })
+            {
+                var schema = tools.Single(tool => tool.Name == name).JsonSchema;
+                var required = schema.GetProperty("required").EnumerateArray().Select(item => item.GetString()).ToArray();
+                Assert.Contains("language", required);
+                foreach (var field in new[] { "wordGroupId", "sourceSenseId", "formCode" })
+                {
+                    Assert.DoesNotContain(field, required);
+                    Assert.Equal(new[] { "string", "null" }, schema.GetProperty("properties").GetProperty(field)
+                        .GetProperty("anyOf").EnumerateArray().Select(branch => branch.GetProperty("type").GetString()));
+                }
+                Assert.Equal(20, schema.GetProperty("properties").GetProperty("limit").GetProperty("default").GetInt32());
+                Assert.Equal(0, schema.GetProperty("properties").GetProperty("offset").GetProperty("default").GetInt32());
+            }
+            var selection = tools.Single(tool => tool.Name == "dictation_import_stage").JsonSchema
+                .GetProperty("properties").GetProperty("selections").GetProperty("items");
+            var meaning = selection.GetProperty("properties").GetProperty("chineseMeaningOverride");
+            Assert.Equal(new[] { "array", "null" }, meaning.GetProperty("anyOf").EnumerateArray().Select(branch => branch.GetProperty("type").GetString()));
+            Assert.Equal("string", meaning.GetProperty("items").GetProperty("type").GetString());
+            Assert.DoesNotContain("chineseMeaningOverride", selection.GetProperty("required").EnumerateArray().Select(item => item.GetString()));
+        }
+
+        [Theory]
+        [InlineData("dictation_memory_details", 4)]
+        [InlineData("dictation_wrong_answers", 0)]
+        public async Task InputSchemas_NullableFilters_PreserveOmittedNullAndActualValues(string tool, int total)
+        {
+            await using var environment = await EnvironmentAsync();
+            var services = environment.Host.Services;
+            var staged = await services.GetRequiredService<IImportStaging>().StageAsync(new(LearningLanguage.Japanese,
+                ImportSourceKind.Manual, new[] { new ImportSelectionDto("食べる", "jmdict:1:1") }), Token);
+            var item = Assert.Single(staged.Batch.Items);
+            await services.GetRequiredService<IImportInboxActions>().DecideAsync(new(staged.Batch.BatchId,
+                new[] { item.ItemId }, ImportDecision.Review), Token);
+            var before = await UserDataAsync(environment);
+            await environment.Control.ApplyAsync(new(true, environment.Port), Token);
+            await using var transport = new HttpClientTransport(new() { Endpoint = environment.Endpoint });
+            await using var client = await McpClient.CreateAsync(transport, cancellationToken: Token);
+            var omitted = await CallAsync(client, tool, new() { ["language"] = "Japanese" });
+            var explicitNull = await CallAsync(client, tool, new() { ["language"] = "Japanese", ["wordGroupId"] = null, ["sourceSenseId"] = null, ["formCode"] = null });
+            Assert.Equal(total, omitted.GetProperty("totalCount").GetInt32());
+            Assert.Equal(total, explicitNull.GetProperty("totalCount").GetInt32());
+            var selected = await CallAsync(client, tool, new() { ["language"] = "Japanese", ["wordGroupId"] = item.WordGroupId, ["sourceSenseId"] = "jmdict:1:1", ["formCode"] = "Dictionary" });
+            Assert.Equal(tool == "dictation_memory_details" ? 1 : 0, selected.GetProperty("totalCount").GetInt32());
+            Assert.Equal(before, await UserDataAsync(environment));
+        }
+
+        [Theory]
+        [InlineData("omitted", "吃")]
+        [InlineData("null", "吃")]
+        [InlineData("array", "自定义释义")]
+        public async Task InputSchemas_NullableMeaningOverride_PreservesImportSemantics(string mode, string expected)
+        {
+            await using var environment = await EnvironmentAsync();
+            await environment.Control.ApplyAsync(new(true, environment.Port), Token);
+            await using var transport = new HttpClientTransport(new() { Endpoint = environment.Endpoint });
+            await using var client = await McpClient.CreateAsync(transport, cancellationToken: Token);
+            var selection = new Dictionary<string, object?> { ["sourceText"] = "食べる", ["sourceSenseId"] = "jmdict:1:1" };
+            if (mode != "omitted")
+            {
+                selection["chineseMeaningOverride"] = mode == "null" ? null : new[] { "自定义释义" };
+            }
+            var result = await CallAsync(client, "dictation_import_stage", new() { ["language"] = "Japanese", ["selections"] = new[] { selection } });
+            Assert.Equal("Pending", result.GetProperty("batch").GetProperty("status").GetString());
+            var meanings = result.GetProperty("batch").GetProperty("items")[0].GetProperty("wordGroup")
+                .GetProperty("members")[0].GetProperty("meanings").EnumerateArray().Select(value => value.GetString());
+            Assert.Contains(expected, meanings);
+            Assert.Equal(0L, await environment.ScalarAsync("SELECT COUNT(*) FROM WordGroups WHERE Placement IN ('Learning','Review');"));
+        }
+
+        [Fact]
+        public async Task InputSchemas_ScalarMeaningOverride_ReturnsErrorWithoutStaging()
+        {
+            await using var environment = await EnvironmentAsync();
+            await environment.Control.ApplyAsync(new(true, environment.Port), Token);
+            await using var transport = new HttpClientTransport(new() { Endpoint = environment.Endpoint });
+            await using var client = await McpClient.CreateAsync(transport, cancellationToken: Token);
+            var result = await client.CallToolAsync("dictation_import_stage", new Dictionary<string, object?>
+            {
+                ["language"] = "Japanese",
+                ["selections"] = new[] { new Dictionary<string, object?> { ["sourceText"] = "食べる", ["sourceSenseId"] = "jmdict:1:1", ["chineseMeaningOverride"] = "自定义释义" } }
+            }, cancellationToken: Token);
+            Assert.True(result.IsError);
+            Assert.Equal(0L, await environment.ScalarAsync("SELECT COUNT(*) FROM ImportBatches;"));
+        }
+
+        private static void AssertPortableSchema(JsonElement schema)
+        {
+            if (schema.ValueKind == JsonValueKind.Object)
+            {
+                if (schema.TryGetProperty("type", out var type))
+                {
+                    Assert.Equal(JsonValueKind.String, type.ValueKind);
+                    Assert.Contains(type.GetString(), new[] { "object", "array", "string", "number", "integer", "boolean", "null" });
+                }
+                foreach (var property in schema.EnumerateObject())
+                {
+                    if (property.Name is "default" or "enum" or "const" or "examples")
+                    {
+                        continue;
+                    }
+                    if (property.Name == "properties")
+                    {
+                        foreach (var field in property.Value.EnumerateObject())
+                        {
+                            Assert.Matches("^[A-Za-z][A-Za-z0-9_]*$", field.Name);
+                        }
+                    }
+                    AssertPortableSchema(property.Value);
+                }
+            }
+            else if (schema.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in schema.EnumerateArray())
+                {
+                    AssertPortableSchema(item);
+                }
+            }
         }
 
         private static async Task<JsonElement> CallAsync(McpClient client, string name, Dictionary<string, object?> arguments)
