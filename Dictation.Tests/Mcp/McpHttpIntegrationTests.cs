@@ -251,6 +251,139 @@ namespace Dictation.Tests.Mcp
             return string.Join("\n", values);
         }
 
+        [Fact]
+        public async Task InputSchemas_Discovery_UsesSingleTypeStringsAndPortableNames()
+        {
+            await using var environment = await EnvironmentAsync();
+            await environment.Control.ApplyAsync(new(true, environment.Port), Token);
+            await using var transport = new HttpClientTransport(new() { Endpoint = environment.Endpoint });
+            await using var client = await McpClient.CreateAsync(transport, cancellationToken: Token);
+            var tools = await client.ListToolsAsync(cancellationToken: Token);
+            foreach (var tool in tools)
+            {
+                Assert.Matches("^[A-Za-z][A-Za-z0-9_]*$", tool.Name);
+                AssertPortableSchema(tool.JsonSchema);
+            }
+            foreach (var name in new[] { "dictation_wrong_answers", "dictation_memory_details" })
+            {
+                var schema = tools.Single(tool => tool.Name == name).JsonSchema;
+                var required = schema.GetProperty("required").EnumerateArray().Select(item => item.GetString()).ToArray();
+                Assert.Contains("language", required);
+                foreach (var field in new[] { "wordGroupId", "sourceSenseId", "formCode" })
+                {
+                    Assert.DoesNotContain(field, required);
+                    Assert.Equal(new[] { "string", "null" }, schema.GetProperty("properties").GetProperty(field)
+                        .GetProperty("anyOf").EnumerateArray().Select(branch => branch.GetProperty("type").GetString()));
+                }
+                Assert.Equal(20, schema.GetProperty("properties").GetProperty("limit").GetProperty("default").GetInt32());
+                Assert.Equal(0, schema.GetProperty("properties").GetProperty("offset").GetProperty("default").GetInt32());
+            }
+            var selection = tools.Single(tool => tool.Name == "dictation_import_stage").JsonSchema
+                .GetProperty("properties").GetProperty("selections").GetProperty("items");
+            var meaning = selection.GetProperty("properties").GetProperty("chineseMeaningOverride");
+            Assert.Equal(new[] { "array", "null" }, meaning.GetProperty("anyOf").EnumerateArray().Select(branch => branch.GetProperty("type").GetString()));
+            Assert.Equal("string", meaning.GetProperty("items").GetProperty("type").GetString());
+            Assert.DoesNotContain("chineseMeaningOverride", selection.GetProperty("required").EnumerateArray().Select(item => item.GetString()));
+        }
+
+        [Theory]
+        [InlineData("dictation_memory_details", 4)]
+        [InlineData("dictation_wrong_answers", 0)]
+        public async Task InputSchemas_NullableFilters_PreserveOmittedNullAndActualValues(string tool, int total)
+        {
+            await using var environment = await EnvironmentAsync();
+            var services = environment.Host.Services;
+            var staged = await services.GetRequiredService<IImportStaging>().StageAsync(new(LearningLanguage.Japanese,
+                ImportSourceKind.Manual, new[] { new ImportSelectionDto("食べる", "jmdict:1:1") }), Token);
+            var item = Assert.Single(staged.Batch.Items);
+            await services.GetRequiredService<IImportInboxActions>().DecideAsync(new(staged.Batch.BatchId,
+                new[] { item.ItemId }, ImportDecision.Review), Token);
+            var before = await UserDataAsync(environment);
+            await environment.Control.ApplyAsync(new(true, environment.Port), Token);
+            await using var transport = new HttpClientTransport(new() { Endpoint = environment.Endpoint });
+            await using var client = await McpClient.CreateAsync(transport, cancellationToken: Token);
+            var omitted = await CallAsync(client, tool, new() { ["language"] = "Japanese" });
+            var explicitNull = await CallAsync(client, tool, new() { ["language"] = "Japanese", ["wordGroupId"] = null, ["sourceSenseId"] = null, ["formCode"] = null });
+            Assert.Equal(total, omitted.GetProperty("totalCount").GetInt32());
+            Assert.Equal(total, explicitNull.GetProperty("totalCount").GetInt32());
+            var selected = await CallAsync(client, tool, new() { ["language"] = "Japanese", ["wordGroupId"] = item.WordGroupId, ["sourceSenseId"] = "jmdict:1:1", ["formCode"] = "Dictionary" });
+            Assert.Equal(tool == "dictation_memory_details" ? 1 : 0, selected.GetProperty("totalCount").GetInt32());
+            Assert.Equal(before, await UserDataAsync(environment));
+        }
+
+        [Theory]
+        [InlineData("omitted", "吃")]
+        [InlineData("null", "吃")]
+        [InlineData("array", "自定义释义")]
+        public async Task InputSchemas_NullableMeaningOverride_PreservesImportSemantics(string mode, string expected)
+        {
+            await using var environment = await EnvironmentAsync();
+            await environment.Control.ApplyAsync(new(true, environment.Port), Token);
+            await using var transport = new HttpClientTransport(new() { Endpoint = environment.Endpoint });
+            await using var client = await McpClient.CreateAsync(transport, cancellationToken: Token);
+            var selection = new Dictionary<string, object?> { ["sourceText"] = "食べる", ["sourceSenseId"] = "jmdict:1:1" };
+            if (mode != "omitted")
+            {
+                selection["chineseMeaningOverride"] = mode == "null" ? null : new[] { "自定义释义" };
+            }
+            var result = await CallAsync(client, "dictation_import_stage", new() { ["language"] = "Japanese", ["selections"] = new[] { selection } });
+            Assert.Equal("Pending", result.GetProperty("batch").GetProperty("status").GetString());
+            var meanings = result.GetProperty("batch").GetProperty("items")[0].GetProperty("wordGroup")
+                .GetProperty("members")[0].GetProperty("meanings").EnumerateArray().Select(value => value.GetString());
+            Assert.Contains(expected, meanings);
+            Assert.Equal(0L, await environment.ScalarAsync("SELECT COUNT(*) FROM WordGroups WHERE Placement IN ('Learning','Review');"));
+        }
+
+        [Fact]
+        public async Task InputSchemas_ScalarMeaningOverride_ReturnsErrorWithoutStaging()
+        {
+            await using var environment = await EnvironmentAsync();
+            await environment.Control.ApplyAsync(new(true, environment.Port), Token);
+            await using var transport = new HttpClientTransport(new() { Endpoint = environment.Endpoint });
+            await using var client = await McpClient.CreateAsync(transport, cancellationToken: Token);
+            var result = await client.CallToolAsync("dictation_import_stage", new Dictionary<string, object?>
+            {
+                ["language"] = "Japanese",
+                ["selections"] = new[] { new Dictionary<string, object?> { ["sourceText"] = "食べる", ["sourceSenseId"] = "jmdict:1:1", ["chineseMeaningOverride"] = "自定义释义" } }
+            }, cancellationToken: Token);
+            Assert.True(result.IsError);
+            Assert.Equal(0L, await environment.ScalarAsync("SELECT COUNT(*) FROM ImportBatches;"));
+        }
+
+        private static void AssertPortableSchema(JsonElement schema)
+        {
+            if (schema.ValueKind == JsonValueKind.Object)
+            {
+                if (schema.TryGetProperty("type", out var type))
+                {
+                    Assert.Equal(JsonValueKind.String, type.ValueKind);
+                    Assert.Contains(type.GetString(), new[] { "object", "array", "string", "number", "integer", "boolean", "null" });
+                }
+                foreach (var property in schema.EnumerateObject())
+                {
+                    if (property.Name is "default" or "enum" or "const" or "examples")
+                    {
+                        continue;
+                    }
+                    if (property.Name == "properties")
+                    {
+                        foreach (var field in property.Value.EnumerateObject())
+                        {
+                            Assert.Matches("^[A-Za-z][A-Za-z0-9_]*$", field.Name);
+                        }
+                    }
+                    AssertPortableSchema(property.Value);
+                }
+            }
+            else if (schema.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in schema.EnumerateArray())
+                {
+                    AssertPortableSchema(item);
+                }
+            }
+        }
+
         private static async Task<JsonElement> CallAsync(McpClient client, string name, Dictionary<string, object?> arguments)
         {
             var result = await client.CallToolAsync(name, arguments, cancellationToken: Token);
